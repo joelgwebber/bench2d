@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Bench2d</title>
+  </head>
+
+  <body>
+    <canvas id="canvas" width="854" height="400"></canvas>
+  </body>
+
+  <script type="text/javascript" src="box2d-web/Box2dWeb-2.1.a.3.min.js"></script>
+  <script type='text/javascript'>
+     var Vec2 = Box2D.Common.Math.b2Vec2
+       , BodyDef = Box2D.Dynamics.b2BodyDef
+       , Body = Box2D.Dynamics.b2Body
+       , FixtureDef = Box2D.Dynamics.b2FixtureDef
+       , Fixture = Box2D.Dynamics.b2Fixture
+       , World = Box2D.Dynamics.b2World
+       , MassData = Box2D.Collision.Shapes.b2MassData
+       , PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+       , CircleShape = Box2D.Collision.Shapes.b2CircleShape
+       , DebugDraw = Box2D.Dynamics.b2DebugDraw
+       ;
+  </script>
+
+  <script type="text/javascript">
+  var world, ctx;
+
+  var PYRAMID_SIZE = 40;
+
+  function init() {
+
+    var gravity = new Vec2(0, -10);
+    world = new World(gravity, true);
+
+    {
+      var shape = new PolygonShape();
+      shape.SetAsEdge(new Vec2(-40.0, 0), new Vec2(40.0, 0));
+
+      var fd = new FixtureDef();
+      fd.density = 0.0;
+      fd.shape = shape;
+
+      var bd = new BodyDef();
+      var ground = world.CreateBody(bd);
+      ground.CreateFixture(fd);
+    }
+
+    {
+      var a = .5;
+      var shape = new PolygonShape();
+      shape.SetAsBox(a, a);
+
+      var x = new Vec2(-7.0, 0.75);
+      var y = new Vec2();
+      var deltaX = new Vec2(0.5625, 1);
+      var deltaY = new Vec2(1.125, 0.0);
+
+      for (var i = 0; i < PYRAMID_SIZE; ++i) {
+        y.Set(x.x, x.y);
+
+        for (var j = i; j < PYRAMID_SIZE; ++j) {
+          var fd = new FixtureDef();
+          fd.density = 5.0;
+          fd.shape = shape;
+
+          var bd = new BodyDef();
+          bd.type = Body.b2_dynamicBody;
+          bd.position.Set(y.x, y.y);
+          var body = world.CreateBody(bd);
+          body.CreateFixture(fd);
+          y.Add(deltaY);
+        }
+
+        x.Add(deltaX);
+      }
+    }
+  }
+
+  function render() {
+    // setup debug draw
+    var debugDraw = new DebugDraw();
+    ctx = document.getElementById("canvas").getContext("2d");
+    debugDraw.SetSprite(ctx);
+    debugDraw.SetLineThickness(1.0);
+    debugDraw.SetFlags(DebugDraw.e_shapeBit | DebugDraw.e_jointBit);
+    world.SetDebugDraw(debugDraw);
+
+    window.setInterval(update, 1000 / 60);
+  }
+
+  function step() {
+    world.Step(1 / 60, 8, 3);
+  }
+
+  function update() {
+    step();
+
+    ctx.clearRect(0, 0, 854, 400);
+    ctx.save();
+    ctx.transform(10, 0, 0, -10, 854 / 2, 400);
+    world.DrawDebugData();
+    ctx.restore();
+  };
+
+  var FRAMES = 256;
+
+  function warmup() {
+    for (var i = 0; i < FRAMES; ++i) {
+      step();
+    }
+  }
+
+  function bench() {
+    var times = [];
+    for (var i = 0; i < FRAMES; ++i) {
+      var begin = new Date().getTime();
+      step();
+      var end = new Date().getTime();
+      times[i] = end - begin;
+      console.log(i + ' :: ' + times[i] + ", ");
+    }
+
+    var total = 0;
+    for (var i = 0; i < FRAMES; ++i) {
+      total += times[i];
+    }
+    console.log(total / FRAMES);
+  }
+
+  init();
+
+  // Uncomment this (and comment warmup/bench below) to render the simulation.
+  // render();
+
+  warmup();
+  bench();
+  </script>
+</html>
+
