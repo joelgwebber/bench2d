@@ -1,0 +1,6 @@
+{
+  "program": {
+    "x86-64": {"url": "bench2d_x86_64_dbg.nexe"},
+    "x86-32": {"url": "bench2d_x86_32_dbg.nexe"}
+  }
+}

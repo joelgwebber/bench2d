@@ -8,7 +8,7 @@ using namespace std;
 #define FRAMES 256
 const int e_count = 40;
 
-int main(int argc, char** argv) {
+void bench() {
 	// Define the gravity vector.
 	b2Vec2 gravity(0.0f, -10.0f);
 
@@ -36,17 +36,17 @@ int main(int argc, char** argv) {
 
 		for (int32 i = 0; i < e_count; ++i) {
 			y = x;
-			
+
 			for (int32 j = i; j < e_count; ++j) {
 				b2BodyDef bd;
 				bd.type = b2_dynamicBody;
 				bd.position = y;
 				b2Body* body = world.CreateBody(&bd);
 				body->CreateFixture(&shape, 5.0f);
-				
+
 				y += deltaY;
 			}
-			
+
 			x += deltaX;
 		}
 	}
@@ -67,6 +67,12 @@ int main(int argc, char** argv) {
 		total += times[i];
 	}
 	printf("%f\n", (float32)total / FRAMES / CLOCKS_PER_SEC * 1000);
-	return 0;
 }
+
+#if 0
+int main(int argc, char** argv) {
+  bench();
+  return 0;
+}
+#endif
 
