@@ -29,13 +29,12 @@ public class Bench2d {
       times[i] = (int)(end - begin);
       System.out.println(times[i]);
     }
-    System.out.println();
 
     int total = 0;
     for (int i = 0; i < FRAMES; ++i) {
       total += times[i];
     }
-    System.out.println((float) total / FRAMES);
+    System.out.println("Average: " + (float) total / FRAMES);
   }
 
   void warmup() {
@@ -89,3 +88,4 @@ public class Bench2d {
 		world.step(timeStep, 3, 3);
 	}
 }
+

@@ -14,7 +14,7 @@ function bench() {
     step();
     var end = new Date().getTime();
     times[i] = end - begin;
-    print(times[i] + ", ");
+    print(times[i]);
   }
 
   var total = 0;
