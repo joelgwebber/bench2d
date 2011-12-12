@@ -1,30 +1,30 @@
 EMMAKEN=/Users/jgw/src/emscripten/tools/emmaken.py -IBox2D_v2.2.1
 EMSCRIPTEN=/Users/jgw/src/emscripten/emscripten.py
 LLVM_LINK=/Users/jgw/llvm/bin/llvm-link
-LLVM_OPT=/Users/jgw/llvm/bin/opt -stats -std-compile-opts 
+LLVM_OPT=/Users/jgw/llvm/bin/opt
 
 # This set of flags has been chosen by the "cargo cult" method -- I picked them
 # mostly from the ammo.js build file, and tweaked them until I got the best
 # results. It's entirely possible I've missed something important here.
 EMSCRIPTEN_FLAGS = \
---optimize \
--s USE_TYPED_ARRAYS=1 \
--s RELOP=1 \
--s SAFE_HEAP=0 \
--s ASSERTIONS=0 \
--s QUANTUM_SIZE=1 \
--s SKIP_STACK_IN_SMALL=1 \
--s INIT_STACK=0 \
--s PGO=0 \
--s CHECK_OVERFLOWS=0 \
--s CHECK_SIGNED_OVERFLOWS=0 \
--s CORRECT_OVERFLOWS=0 \
--s CHCK_SIGNS=0 \
--s CORRECT_SIGNS=0 \
--s DISABLE_EXCEPTION_CATCHING=1 \
--s RUNTYPE_TYPE_INFO=0 \
--s CORRECT_ROUNDINGS=0 \
--s MICRO_OPTS=0
+#-s ASSERTIONS=0 \
+#--optimize \
+#-s USE_TYPED_ARRAYS=1 \
+#-s RELOOP=1 \
+#-s SAFE_HEAP=0 \
+#-s QUANTUM_SIZE=1 \
+#-s SKIP_STACK_IN_SMALL=1 \
+#-s INIT_STACK=0 \
+#-s PGO=0 \
+#-s CHECK_OVERFLOWS=0 \
+#-s CHECK_SIGNED_OVERFLOWS=0 \
+#-s CORRECT_OVERFLOWS=0 \
+#-s CHCK_SIGNS=0 \
+#-s CORRECT_SIGNS=0 \
+#-s DISABLE_EXCEPTION_CATCHING=1 \
+#-s RUNTYPE_TYPE_INFO=0 \
+#-s CORRECT_ROUNDINGS=0 \
+#-s MICRO_OPTS=0
 
 OBJECTS = \
 Bench2d.bc \
