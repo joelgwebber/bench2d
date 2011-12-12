@@ -4,4 +4,7 @@ dbg_x86_64
 opt_x86_32
 opt_x86_64
 build
-out
+bench2d
+bench2d.js
+*.bc
+*.o
