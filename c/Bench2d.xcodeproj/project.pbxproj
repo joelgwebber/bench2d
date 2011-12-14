@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		913915231498FEAB0044A340 /* bench2d_main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 913915221498FEAB0044A340 /* bench2d_main.cpp */; };
 		9151393D1492651C00911A2F /* Bench2d.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9151393C1492651C00911A2F /* Bench2d.cpp */; };
 		91513A8C14926B2600911A2F /* b2BroadPhase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91513A2C14926B2500911A2F /* b2BroadPhase.cpp */; };
 		91513A8D14926B2600911A2F /* b2CollideCircle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 91513A2E14926B2500911A2F /* b2CollideCircle.cpp */; };
@@ -69,6 +70,7 @@
 
 /* Begin PBXFileReference section */
 		8DD76F6C0486A84900D96B5E /* Bench2d */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Bench2d; sourceTree = BUILT_PRODUCTS_DIR; };
+		913915221498FEAB0044A340 /* bench2d_main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bench2d_main.cpp; sourceTree = "<group>"; };
 		9151393C1492651C00911A2F /* Bench2d.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Bench2d.cpp; sourceTree = "<group>"; };
 		91513A2814926B2500911A2F /* Box2D.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Box2D.h; sourceTree = "<group>"; };
 		91513A2914926B2500911A2F /* Box2DConfig.cmake */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Box2DConfig.cmake; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				913915221498FEAB0044A340 /* bench2d_main.cpp */,
 				9151393C1492651C00911A2F /* Bench2d.cpp */,
 			);
 			name = Source;
@@ -463,6 +466,7 @@
 				91513AB614926B2600911A2F /* b2WeldJoint.cpp in Sources */,
 				91513AB714926B2600911A2F /* b2WheelJoint.cpp in Sources */,
 				91513AB814926B2600911A2F /* b2Rope.cpp in Sources */,
+				913915231498FEAB0044A340 /* bench2d_main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

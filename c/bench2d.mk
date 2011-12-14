@@ -2,7 +2,8 @@ CC = gcc
 CFLAGS=-s -O3 -msse -mfpmath=sse -ffast-math -fomit-frame-pointer -IBox2D_v2.2.1 -DNDEBUG=1
 LFLAGS = -lstdc++
 
-OBJECTS = Bench2d.o \
+OBJECTS = bench2d_main.o \
+Bench2d.o \
 Box2D_v2.2.1/Box2D/Collision/b2BroadPhase.o \
 Box2D_v2.2.1/Box2D/Collision/b2CollideCircle.o \
 Box2D_v2.2.1/Box2D/Collision/b2CollideEdge.o \

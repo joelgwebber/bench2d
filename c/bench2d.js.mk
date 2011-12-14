@@ -27,7 +27,7 @@ EMSCRIPTEN_FLAGS = \
 -s RUNTYPE_TYPE_INFO=0 \
 -s CORRECT_ROUNDINGS=0
 
-OBJECTS = \
+OBJECTS = bench2d_main.bc \
 Bench2d.bc \
 Box2D_v2.2.1/Box2D/Collision/b2BroadPhase.bc \
 Box2D_v2.2.1/Box2D/Collision/b2CollideCircle.bc \

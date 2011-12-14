@@ -86,8 +86,3 @@ void bench() {
 	printf("%f\n", (float32)total / FRAMES / CLOCKS_PER_SEC * 1000);
 }
 
-int main(int argc, char** argv) {
-  bench();
-  return 0;
-}
-

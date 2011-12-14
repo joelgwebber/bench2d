@@ -14,6 +14,7 @@ nacl_env = make_nacl_env.NaClEnvironment(
 )
 
 nacl_env.Append(CPPPATH='Box2D_v2.2.1')
+nacl_env.Append(CFLAGS='-s -O3 -msse -mfpmath=sse -ffast-math -fomit-frame-pointer -DNACL=1')
 
 sources = [
   'bench2d_nacl.cpp',
