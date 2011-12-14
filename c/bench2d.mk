@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -O3 -IBox2D_v2.2.1 -DNDEBUG=1
+CFLAGS=-s -O3 -msse -mfpmath=sse -ffast-math -fomit-frame-pointer -IBox2D_v2.2.1 -DNDEBUG=1
 LFLAGS = -lstdc++
 
 OBJECTS = Bench2d.o \
