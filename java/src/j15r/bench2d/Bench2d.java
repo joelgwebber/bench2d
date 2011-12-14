@@ -1,4 +1,4 @@
-package bench2d;
+package j15r.bench2d;
 
 import java.util.Date;
 
@@ -13,28 +13,30 @@ public class Bench2d {
   static final int FRAMES = 256;
   static final int PYRAMID_SIZE = 40;
 
+  public static void main(String[] args) {
+    Bench2d bench = new Bench2d();
+    bench.warmup();
+    bench.bench();
+  }
+
 	World world;
   Body groundBody;
 
-  public static void main(String[] args) {
-    Bench2d bench = new Bench2d();
-
-    bench.warmup();
-
+  public void bench() {
     int[] times = new int[FRAMES];
     for (int i = 0; i < FRAMES; ++i) {
       long begin = new Date().getTime();
-      bench.step();
+      step();
       long end = new Date().getTime();
       times[i] = (int)(end - begin);
-      System.out.println(times[i]);
+      log("" + times[i]);
     }
 
     int total = 0;
     for (int i = 0; i < FRAMES; ++i) {
       total += times[i];
     }
-    System.out.println("Average: " + (float) total / FRAMES);
+    log("Average: " + (float) total / FRAMES);
   }
 
   void warmup() {
@@ -87,5 +89,8 @@ public class Bench2d {
 		float timeStep = 1f / 60f;
 		world.step(timeStep, 3, 3);
 	}
-}
 
+	void log(String msg) {
+    System.out.println(msg);
+	}
+}
