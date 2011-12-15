@@ -5,6 +5,5 @@ opt_x86_32
 opt_x86_64
 build
 bench2d
-bench2d.js
 *.bc
 *.o
