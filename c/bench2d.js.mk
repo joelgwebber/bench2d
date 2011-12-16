@@ -53,7 +53,7 @@ Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WeldJoint.bc \
 Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WheelJoint.bc \
 Box2D_v2.2.1/Box2D/Rope/b2Rope.bc
 
-all: bench2d.opt.js bench2d_native
+all: bench2d.js
 
 %.bc: %.cpp
 	python $(EMCC) $< -o $@
@@ -61,18 +61,9 @@ all: bench2d.opt.js bench2d_native
 bench2d.bc: $(OBJECTS)
 	$(LLVM)/llvm-link -o $@ $(OBJECTS)
 
-bench2d.opt.js: bench2d.bc
+bench2d.js: bench2d.bc
 	$(EMCC) -O3 -s USE_TYPED_ARRAYS=1 -s QUANTUM_SIZE=1 -s TOTAL_MEMORY=150000000 $< -o $@
 
-bench2d.opt.bc: bench2d.bc
-	$(LLVM)/opt -O3 $< -o=$@
-
-bench2d_native: bench2d.opt.bc
-	$(LLVM)/llc $< -o=bench2d_native.s
-	grep -v __assert_func bench2d_native.s > bench2d_native_clean.s
-	as bench2d_native_clean.s -o bench2d_native_clean.o
-	g++ bench2d_native_clean.o -o $@
-
 clean:
-	rm bench2d.opt.js bench2d.bc $(OBJECTS) bench2d.native bench2d_native.s bench2d_native_clean.s bench2d_native_clean.o bench2d.opt.bc 
+	rm bench2d.js bench2d.bc $(OBJECTS)
 
