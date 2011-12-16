@@ -1,31 +1,9 @@
 # Makefile for generating Javascript from the C++ source, using Emscripten.
 
 # You'll likely need to edit these for your particular directory layout.
-EMMAKEN=~/src/emscripten/tools/emmaken.py -IBox2D_v2.2.1
 EMSCRIPTEN=~/src/emscripten/emscripten.py
-LLVM_LINK=~/llvm/bin/llvm-link
-LLVM_OPT=~/llvm/bin/opt
-
-# This set of flags has been chosen by the "cargo cult" method -- I picked them
-# mostly from the ammo.js build file, and tweaked them until I got the best
-# results. It's entirely possible I've missed something important here.
-EMSCRIPTEN_FLAGS = \
---optimize \
--s USE_TYPED_ARRAYS=1 \
--s ASSERTIONS=0 \
--s RELOOP=1 \
--s SAFE_HEAP=0 \
--s QUANTUM_SIZE=1 \
--s SKIP_STACK_IN_SMALL=1 \
--s INIT_STACK=0 \
--s CHECK_OVERFLOWS=0 \
--s CHECK_SIGNED_OVERFLOWS=0 \
--s CORRECT_OVERFLOWS=0 \
--s CHECK_SIGNS=0 \
--s CORRECT_SIGNS=0 \
--s DISABLE_EXCEPTION_CATCHING=1 \
--s RUNTYPE_TYPE_INFO=0 \
--s CORRECT_ROUNDINGS=0
+LLVM=~/llvm/bin
+EMCC=~/src/emscripten/emcc -IBox2D_v2.2.1
 
 OBJECTS = bench2d_main.bc \
 Bench2d.bc \
@@ -75,20 +53,26 @@ Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WeldJoint.bc \
 Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WheelJoint.bc \
 Box2D_v2.2.1/Box2D/Rope/b2Rope.bc
 
-all: bench2d.js
+all: bench2d.opt.js bench2d_native
 
 %.bc: %.cpp
-	python $(EMMAKEN) $< -o $@
+	python $(EMCC) $< -o $@
 
-bench2d.out.bc: $(OBJECTS)
-	$(LLVM_LINK) -o $@ $(OBJECTS)
+bench2d.bc: $(OBJECTS)
+	$(LLVM)/llvm-link -o $@ $(OBJECTS)
 
-bench2d.opt.bc: bench2d.out.bc
-	$(LLVM_OPT) $< -o $@
+bench2d.opt.js: bench2d.bc
+	$(EMCC) -O3 -s USE_TYPED_ARRAYS=1 -s QUANTUM_SIZE=1 -s TOTAL_MEMORY=150000000 $< -o $@
 
-bench2d.js: bench2d.opt.bc
-	$(EMSCRIPTEN) $(EMSCRIPTEN_FLAGS) $< > $@
+bench2d.opt.bc: bench2d.bc
+	$(LLVM)/opt -O3 $< -o=$@
+
+bench2d_native: bench2d.opt.bc
+	$(LLVM)/llc $< -o=bench2d_native.s
+	grep -v __assert_func bench2d_native.s > bench2d_native_clean.s
+	as bench2d_native_clean.s -o bench2d_native_clean.o
+	g++ bench2d_native_clean.o -o $@
 
 clean:
-	rm bench2d.js bench2d.out.bc bench2d.opt.bc $(OBJECTS)
+	rm bench2d.opt.js bench2d.bc $(OBJECTS) bench2d.native bench2d_native.s bench2d_native_clean.s bench2d_native_clean.o bench2d.opt.bc 
 
