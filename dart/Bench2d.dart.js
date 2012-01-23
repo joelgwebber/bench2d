@@ -239,17 +239,17 @@ Object.defineProperty(ListFactory.prototype, "setRange$3", { value: function($0,
 }, enumerable: false, writable: true, configurable: true });
 // ********** Code for ListIterator **************
 function ListIterator(array) {
-  this._array = array;
-  this._pos = (0);
+  this._dart_coreimpl_array = array;
+  this._dart_coreimpl_pos = (0);
 }
 ListIterator.prototype.hasNext = function() {
-  return this._array.get$length() > this._pos;
+  return this._dart_coreimpl_array.get$length() > this._dart_coreimpl_pos;
 }
 ListIterator.prototype.next = function() {
   if (!this.hasNext()) {
     $throw(const$0001);
   }
-  return this._array.$index(this._pos++);
+  return this._dart_coreimpl_array.$index(this._dart_coreimpl_pos++);
 }
 // ********** Code for NumImplementation **************
 NumImplementation = Number;
@@ -486,12 +486,12 @@ StringBufferImpl.prototype.add = function(obj) {
   var str = obj.toString();
   if (str == null || str.isEmpty()) return this;
   this._buffer.add(str);
-  this._length = this._length + str.length;
+  this._dart_coreimpl_length = this._dart_coreimpl_length + str.length;
   return this;
 }
 StringBufferImpl.prototype.clear = function() {
   this._buffer = new Array();
-  this._length = (0);
+  this._dart_coreimpl_length = (0);
   return this;
 }
 StringBufferImpl.prototype.toString = function() {
@@ -2101,19 +2101,19 @@ function _Collections() {}
 // ********** Code for _VariableSizeListIterator **************
 function _VariableSizeListIterator() {}
 _VariableSizeListIterator.prototype.hasNext = function() {
-  return this._dom_array.get$length() > this._dom_pos;
+  return this._array.get$length() > this._pos;
 }
 _VariableSizeListIterator.prototype.next = function() {
   if (!this.hasNext()) {
     $throw(const$0001);
   }
-  return this._dom_array.$index(this._dom_pos++);
+  return this._array.$index(this._pos++);
 }
 // ********** Code for _FixedSizeListIterator **************
 $inherits(_FixedSizeListIterator, _VariableSizeListIterator);
 function _FixedSizeListIterator() {}
 _FixedSizeListIterator.prototype.hasNext = function() {
-  return this._dom_length > this._dom_pos;
+  return this._length > this._pos;
 }
 // ********** Code for _Lists **************
 function _Lists() {}
@@ -6359,7 +6359,7 @@ Vector.prototype.toString = function() {
 // ********** Code for top level **************
 //  ********** Library Bench2d **************
 // ********** Code for Bench2d **************
-function Bench2d(_doDebugDraw) {
+function Bench2d() {
   var gravity = new Vector((0), (-10));
   var doSleep = true;
   this.world = new World(gravity, doSleep, new DefaultWorldPool());
@@ -6410,16 +6410,15 @@ Bench2d.prototype.warmup = function() {
    i < (64); ++i) this.step();
 }
 Bench2d.prototype.bench = function() {
-  var bench2d = new Bench2d(false);
   var times = new Array((256));
   for (var i = (0);
    i < (256); ++i) {
     var watch = new StopwatchImplementation();
     watch.start$0();
-    bench2d.step();
+    this.step();
     watch.stop();
-    times.$setindex(i, watch.elapsed() / watch.frequency());
-    dart_core_print(times.$index(i));
+    times.$setindex(i, (1000) * watch.elapsed() / watch.frequency());
+    dart_core_print(("" + i + ": " + times.$index(i)));
   }
   var total = (0);
   for (var i = (0);
@@ -6429,7 +6428,7 @@ Bench2d.prototype.bench = function() {
 Bench2d.prototype.initialize$0 = Bench2d.prototype.initialize;
 // ********** Code for top level **************
 function main() {
-  var bench2d = new Bench2d(false);
+  var bench2d = new Bench2d();
   bench2d.initialize$0();
   bench2d.warmup();
   bench2d.bench();
