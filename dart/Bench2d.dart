@@ -39,7 +39,9 @@ class Bench2d {
 
   World world;
 
-  Bench2d() {
+  bool _doDebugDraw;
+
+  Bench2d([_doDebugDraw = false]) {
     final gravity = new Vector(0, GRAVITY);
     bool doSleep = true;
     world = new World(gravity, doSleep, new DefaultWorldPool());
@@ -62,11 +64,13 @@ class Bench2d {
     viewport = new CanvasViewportTransform(extents, extents);
     viewport.scale = _VIEWPORT_SCALE;
 
-    // Create our canvas drawing tool to give to the world.
-    debugDraw = new CanvasDraw(viewport, ctx);
+    if (_doDebugDraw) {
+      // Create our canvas drawing tool to give to the world.
+      debugDraw = new CanvasDraw(viewport, ctx);
 
-    // Have the world draw itself for debugging purposes.
-    world.debugDraw = debugDraw;
+      // Have the world draw itself for debugging purposes.
+      world.debugDraw = debugDraw;
+    }
   }
 
   void initialize() {
@@ -122,8 +126,10 @@ class Bench2d {
   void render() {
     step();
 
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    world.drawDebugData();
+    if (_doDebugDraw) {
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      world.drawDebugData();
+    }
     window.webkitRequestAnimationFrame((num time) {
         render();
     }, canvas);
