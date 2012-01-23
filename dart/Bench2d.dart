@@ -39,9 +39,7 @@ class Bench2d {
 
   World world;
 
-  bool _doDebugDraw;
-
-  Bench2d([_doDebugDraw = false]) {
+  Bench2d() {
     final gravity = new Vector(0, GRAVITY);
     bool doSleep = true;
     world = new World(gravity, doSleep, new DefaultWorldPool());
@@ -64,13 +62,13 @@ class Bench2d {
     viewport = new CanvasViewportTransform(extents, extents);
     viewport.scale = _VIEWPORT_SCALE;
 
-    if (_doDebugDraw) {
-      // Create our canvas drawing tool to give to the world.
-      debugDraw = new CanvasDraw(viewport, ctx);
+    // Create our canvas drawing tool to give to the world.
+    debugDraw = new CanvasDraw(viewport, ctx);
 
-      // Have the world draw itself for debugging purposes.
-      world.debugDraw = debugDraw;
-    }
+    // Have the world draw itself for debugging purposes.
+    world.debugDraw = debugDraw;
+
+    initialize();
   }
 
   void initialize() {
@@ -126,10 +124,8 @@ class Bench2d {
   void render() {
     step();
 
-    if (_doDebugDraw) {
-      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      world.drawDebugData();
-    }
+    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    world.drawDebugData();
     window.webkitRequestAnimationFrame((num time) {
         render();
     }, canvas);
@@ -146,16 +142,14 @@ class Bench2d {
   }
 
   void bench() {
-    Bench2d bench2d = new Bench2d();
-
     final times = new List<int>(FRAMES);
     for (int i = 0; i < FRAMES; ++i) {
       final watch = new Stopwatch();
       watch.start();
-      bench2d.step();
+      step();
       watch.stop();
-      times[i] = watch.elapsed() / watch.frequency();
-      print(times[i]);
+      times[i] = 1000 * watch.elapsed() / watch.frequency();
+      print('$i: ${times[i]}');
     }
 
     int total = 0;
@@ -165,6 +159,12 @@ class Bench2d {
 }
 
 void main() {
+  // Render version
+  // final bench2d = new Bench2d();
+  // bench2d.initializeAnimation();
+  // bench2d.runAnimation();
+
+  // Benchmark version
   final bench2d = new Bench2d();
   bench2d.initialize();
   bench2d.warmup();
