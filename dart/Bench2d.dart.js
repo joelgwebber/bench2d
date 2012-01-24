@@ -9,23 +9,34 @@ function $throw(e) {
   }
   throw e;
 }
-Object.prototype.$index = function(i) {
+Object.defineProperty(Object.prototype, '$index', { value: function(i) {
   var proto = Object.getPrototypeOf(this);
   if (proto !== Object) {
     proto.$index = function(i) { return this[i]; }
   }
   return this[i];
-}
-Array.prototype.$index = function(i) { return this[i]; }
-String.prototype.$index = function(i) { return this[i]; }
-Object.prototype.$setindex = function(i, value) {
+}, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Array.prototype, '$index', { value: function(i) { 
+  return this[i]; 
+}, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(String.prototype, '$index', { value: function(i) { 
+  return this[i]; 
+}, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Object.prototype, '$setindex', { value: function(i, value) {
   var proto = Object.getPrototypeOf(this);
   if (proto !== Object) {
     proto.$setindex = function(i, value) { return this[i] = value; }
   }
   return this[i] = value;
+}, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Array.prototype, '$setindex', { value: function(i, value) { 
+  return this[i] = value; }, enumerable: false, writable: true, 
+  configurable: true});
+function $add(x, y) {
+  return ((typeof(x) == 'number' && typeof(y) == 'number') ||
+          (typeof(x) == 'string'))
+    ? x + y : x.$add(y);
 }
-Array.prototype.$setindex = function(i, value) { return this[i] = value; }
 function $eq(x, y) {
   if (x == null) return y == null;
   return (typeof(x) == 'number' && typeof(y) == 'number') ||
@@ -34,7 +45,13 @@ function $eq(x, y) {
     ? x == y : x.$eq(y);
 }
 // TODO(jimhug): Should this or should it not match equals?
-Object.prototype.$eq = function(other) { return this === other; }
+Object.defineProperty(Object.prototype, '$eq', { value: function(other) { 
+  return this === other;
+}, enumerable: false, writable: true, configurable: true });
+function $lt(x, y) {
+  return (typeof(x) == 'number' && typeof(y) == 'number')
+    ? x < y : x.$lt(y);
+}
 function $ne(x, y) {
   if (x == null) return y != null;
   return (typeof(x) == 'number' && typeof(y) == 'number') ||
@@ -42,7 +59,7 @@ function $ne(x, y) {
          (typeof(x) == 'string' && typeof(y) == 'string')
     ? x != y : !x.$eq(y);
 }
-Object.prototype.$typeNameOf = function() {
+Object.defineProperty(Object.prototype, '$typeNameOf', { value: function() {
   if ((typeof(window) != 'undefined' && window.constructor.name == 'DOMWindow')
       || typeof(process) != 'undefined') { // fast-path for Chrome and Node
     return this.constructor.name;
@@ -55,60 +72,27 @@ Object.prototype.$typeNameOf = function() {
     str = 'HTMLDocument';
   }
   return str;
-}
-Object.prototype.get$typeName =  Object.prototype.$typeNameOf;
+}, enumerable: false, writable: true, configurable: true});
+Object.defineProperty(Object.prototype, "get$typeName", { value: Object.prototype.$typeNameOf, enumerable: false, writable: true, configurable: true});
 // ********** Code for Object **************
-Object.prototype.noSuchMethod = function(name, args) {
+Object.defineProperty(Object.prototype, "noSuchMethod", { value: function(name, args) {
   $throw(new NoSuchMethodException(this, name, args));
-}
-Object.prototype.addLocal$1 = function($0) {
-  return this.noSuchMethod("addLocal", [$0]);
-};
-Object.prototype.compareTo$1 = function($0) {
-  return this.noSuchMethod("compareTo", [$0]);
-};
-Object.prototype.hasNext$0 = function() {
-  return this.noSuchMethod("hasNext", []);
-};
-Object.prototype.initVelocityConstraints$1 = function($0) {
-  return this.noSuchMethod("initVelocityConstraints", [$0]);
-};
-Object.prototype.mulLocal$1 = function($0) {
-  return this.noSuchMethod("mulLocal", [$0]);
-};
-Object.prototype.negateLocal$0 = function() {
-  return this.noSuchMethod("negateLocal", []);
-};
-Object.prototype.next$0 = function() {
-  return this.noSuchMethod("next", []);
-};
-Object.prototype.normalize$0 = function() {
-  return this.noSuchMethod("normalize", []);
-};
-Object.prototype.setCoords$2 = function($0, $1) {
-  return this.noSuchMethod("setCoords", [$0, $1]);
-};
-Object.prototype.setFrom$1 = function($0) {
-  return this.noSuchMethod("setFrom", [$0]);
-};
-Object.prototype.setRange$3 = function($0, $1, $2) {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(Object.prototype, "add$1", { value: function($0) {
+  return this.noSuchMethod("add", [$0]);
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(Object.prototype, "initialize$0", { value: function() {
+  return this.noSuchMethod("initialize", []);
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(Object.prototype, "setRange$3", { value: function($0, $1, $2) {
   return this.noSuchMethod("setRange", [$0, $1, $2]);
-};
-Object.prototype.solvePositionConstraints$1 = function($0) {
-  return this.noSuchMethod("solvePositionConstraints", [$0]);
-};
-Object.prototype.solveVelocityConstraints$1 = function($0) {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(Object.prototype, "solveVelocityConstraints$1", { value: function($0) {
   return this.noSuchMethod("solveVelocityConstraints", [$0]);
-};
-Object.prototype.subLocal$1 = function($0) {
-  return this.noSuchMethod("subLocal", [$0]);
-};
-Object.prototype.toString$0 = function() {
-  return this.toString();
-};
-Object.prototype.zero$0 = function() {
-  return this.noSuchMethod("zero", []);
-};
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(Object.prototype, "start$0", { value: function() {
+  return this.noSuchMethod("start", []);
+}, enumerable: false, writable: true, configurable: true });
 // ********** Code for Clock **************
 function Clock() {}
 Clock.now = function() {
@@ -124,7 +108,6 @@ function IndexOutOfRangeException(_index) {
 IndexOutOfRangeException.prototype.toString = function() {
   return ("IndexOutOfRangeException: " + this._index);
 }
-IndexOutOfRangeException.prototype.toString$0 = IndexOutOfRangeException.prototype.toString;
 // ********** Code for NoSuchMethodException **************
 function NoSuchMethodException(_receiver, _functionName, _arguments) {
   this._receiver = _receiver;
@@ -141,9 +124,8 @@ NoSuchMethodException.prototype.toString = function() {
     sb.add(this._arguments.$index(i));
   }
   sb.add("]");
-  return ("NoSuchMethodException - receiver: '" + this._receiver + "' ") + ("function name: '" + this._functionName + "' arguments: [" + sb + "]");
+  return $add(("NoSuchMethodException - receiver: '" + this._receiver + "' "), ("function name: '" + this._functionName + "' arguments: [" + sb + "]"));
 }
-NoSuchMethodException.prototype.toString$0 = NoSuchMethodException.prototype.toString;
 // ********** Code for IllegalArgumentException **************
 function IllegalArgumentException(args) {
   this._args = args;
@@ -151,7 +133,6 @@ function IllegalArgumentException(args) {
 IllegalArgumentException.prototype.toString = function() {
   return ("Illegal argument(s): " + this._args);
 }
-IllegalArgumentException.prototype.toString$0 = IllegalArgumentException.prototype.toString;
 // ********** Code for NoMoreElementsException **************
 function NoMoreElementsException() {
 
@@ -159,7 +140,6 @@ function NoMoreElementsException() {
 NoMoreElementsException.prototype.toString = function() {
   return "NoMoreElementsException";
 }
-NoMoreElementsException.prototype.toString$0 = NoMoreElementsException.prototype.toString;
 // ********** Code for EmptyQueueException **************
 function EmptyQueueException() {
 
@@ -167,7 +147,6 @@ function EmptyQueueException() {
 EmptyQueueException.prototype.toString = function() {
   return "EmptyQueueException";
 }
-EmptyQueueException.prototype.toString$0 = EmptyQueueException.prototype.toString;
 // ********** Code for Expect **************
 function Expect() {}
 Expect.equals = function(expected, actual, reason) {
@@ -188,7 +167,6 @@ function ExpectException(message) {
 ExpectException.prototype.toString = function() {
   return this.message;
 }
-ExpectException.prototype.toString$0 = ExpectException.prototype.toString;
 // ********** Code for Math **************
 Math.min = function(a, b) {
   if (a == b) return a;
@@ -220,24 +198,24 @@ function _print(obj) {
 ListFactory = Array;
 ListFactory.ListFactory$from$factory = function(other) {
   var list = [];
-  for (var $$i = other.iterator(); $$i.hasNext$0(); ) {
-    var e = $$i.next$0();
-    list.add(e);
+  for (var $$i = other.iterator(); $$i.hasNext(); ) {
+    var e = $$i.next();
+    list.add$1(e);
   }
   return list;
 }
-ListFactory.prototype.get$length = function() { return this.length; };
-ListFactory.prototype.set$length = function(value) { return this.length = value; };
-ListFactory.prototype.add = function(value) {
+Object.defineProperty(ListFactory.prototype, "get$length", { value: function() { return this.length; }, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "set$length", { value: function(value) { return this.length = value; }, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "add", { value: function(value) {
   this.push(value);
-}
-ListFactory.prototype.clear = function() {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "clear", { value: function() {
   this.set$length((0));
-}
-ListFactory.prototype.getRange = function(start, length) {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "getRange", { value: function(start, length) {
   return this.slice(start, start + length);
-}
-ListFactory.prototype.setRange = function(start, length, from, startFrom) {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "setRange", { value: function(start, length, from, startFrom) {
   if (length == (0)) return;
   if (length < (0)) $throw(new IllegalArgumentException("length is negative"));
   if (start < (0)) $throw(new IndexOutOfRangeException(start));
@@ -247,34 +225,18 @@ ListFactory.prototype.setRange = function(start, length, from, startFrom) {
   var endFrom = startFrom + length;
   if (endFrom > from.get$length()) $throw(new IndexOutOfRangeException(endFrom));
   for (var i = (0);
-   i < length; (i = i + (1))) this.$setindex(start + i, from.$index(startFrom + i));
-}
-ListFactory.prototype.iterator = function() {
+   $lt(i, length); (i = $add(i, (1)))) this.$setindex($add(start, i), from.$index($add(startFrom, i)));
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "isEmpty", { value: function() {
+  return this.get$length() == (0);
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "iterator", { value: function() {
   return new ListIterator(this);
-}
-ListFactory.prototype.setRange$3 = function($0, $1, $2) {
+}, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "add$1", { value: ListFactory.prototype.add, enumerable: false, writable: true, configurable: true });
+Object.defineProperty(ListFactory.prototype, "setRange$3", { value: function($0, $1, $2) {
   return this.setRange($0, $1, $2, (0));
-};
-ListFactory_Body = ListFactory;
-ListFactory_ClipVertex = ListFactory;
-ListFactory_Contact = ListFactory;
-ListFactory_ContactConstraint = ListFactory;
-ListFactory_ContactConstraintPoint = ListFactory;
-ListFactory_ContactRegister = ListFactory;
-ListFactory_DynamicTreeNode = ListFactory;
-ListFactory_E = ListFactory;
-ListFactory_Joint = ListFactory;
-ListFactory_List_ContactRegister = ListFactory;
-ListFactory_ManifoldPoint = ListFactory;
-ListFactory_Pair = ListFactory;
-ListFactory_Position = ListFactory;
-ListFactory_SimplexVertex = ListFactory;
-ListFactory_dart_core_String = ListFactory;
-ListFactory_TimeOfImpactConstraint = ListFactory;
-ListFactory_Vector = ListFactory;
-ListFactory_Velocity = ListFactory;
-ListFactory_int = ListFactory;
-ListFactory_num = ListFactory;
+}, enumerable: false, writable: true, configurable: true });
 // ********** Code for ListIterator **************
 function ListIterator(array) {
   this._dart_coreimpl_array = array;
@@ -289,10 +251,11 @@ ListIterator.prototype.next = function() {
   }
   return this._dart_coreimpl_array.$index(this._dart_coreimpl_pos++);
 }
-ListIterator.prototype.hasNext$0 = ListIterator.prototype.hasNext;
-ListIterator.prototype.next$0 = ListIterator.prototype.next;
 // ********** Code for NumImplementation **************
 NumImplementation = Number;
+NumImplementation.prototype.$negate = function() {
+  'use strict'; return -this;
+}
 NumImplementation.prototype.isNaN = function() {
   'use strict'; return isNaN(this);
 }
@@ -336,7 +299,6 @@ NumImplementation.prototype.compareTo = function(other) {
     return (-1);
   }
 }
-NumImplementation.prototype.compareTo$1 = NumImplementation.prototype.compareTo;
 // ********** Code for DoubleLinkedQueueEntry **************
 function DoubleLinkedQueueEntry(e) {
   this._element = e;
@@ -348,7 +310,10 @@ DoubleLinkedQueueEntry.prototype._link = function(p, n) {
   n._previous = this;
 }
 DoubleLinkedQueueEntry.prototype.append = function(e) {
-  new DoubleLinkedQueueEntry_E(e)._link(this, this._next);
+  new DoubleLinkedQueueEntry(e)._link(this, this._next);
+}
+DoubleLinkedQueueEntry.prototype.prepend = function(e) {
+  new DoubleLinkedQueueEntry(e)._link(this._previous, this);
 }
 DoubleLinkedQueueEntry.prototype.remove = function() {
   this._previous._next = this._next;
@@ -360,7 +325,7 @@ DoubleLinkedQueueEntry.prototype.remove = function() {
 DoubleLinkedQueueEntry.prototype.get$element = function() {
   return this._element;
 }
-// ********** Code for DoubleLinkedQueueEntry_E **************
+// ********** Code for DoubleLinkedQueueEntry_CircleContact **************
 /** Implements extends for Dart classes on JavaScript prototypes. */
 function $inherits(child, parent) {
   if (child.prototype.__proto__) {
@@ -372,53 +337,68 @@ function $inherits(child, parent) {
     child.prototype.constructor = child;
   }
 }
-$inherits(DoubleLinkedQueueEntry_E, DoubleLinkedQueueEntry);
-function DoubleLinkedQueueEntry_E(e) {
+$inherits(DoubleLinkedQueueEntry_CircleContact, DoubleLinkedQueueEntry);
+function DoubleLinkedQueueEntry_CircleContact(e) {
   this._element = e;
 }
-DoubleLinkedQueueEntry_E.prototype._link = function(p, n) {
-  this._next = n;
-  this._previous = p;
-  p._next = this;
-  n._previous = this;
+// ********** Code for DoubleLinkedQueueEntry_DynamicTreeNode **************
+$inherits(DoubleLinkedQueueEntry_DynamicTreeNode, DoubleLinkedQueueEntry);
+function DoubleLinkedQueueEntry_DynamicTreeNode(e) {
+  this._element = e;
 }
-DoubleLinkedQueueEntry_E.prototype.append = function(e) {
-  new DoubleLinkedQueueEntry_E(e)._link(this, this._next);
+// ********** Code for DoubleLinkedQueueEntry_PolygonAndCircleContact **************
+$inherits(DoubleLinkedQueueEntry_PolygonAndCircleContact, DoubleLinkedQueueEntry);
+function DoubleLinkedQueueEntry_PolygonAndCircleContact(e) {
+  this._element = e;
 }
-DoubleLinkedQueueEntry_E.prototype.remove = function() {
-  this._previous._next = this._next;
-  this._next._previous = this._previous;
-  this._next = null;
-  this._previous = null;
-  return this._element;
+// ********** Code for DoubleLinkedQueueEntry_PolygonContact **************
+$inherits(DoubleLinkedQueueEntry_PolygonContact, DoubleLinkedQueueEntry);
+function DoubleLinkedQueueEntry_PolygonContact(e) {
+  this._element = e;
 }
-// ********** Code for DoubleLinkedQueueEntry_KeyValuePair_K$V **************
-$inherits(DoubleLinkedQueueEntry_KeyValuePair_K$V, DoubleLinkedQueueEntry);
-function DoubleLinkedQueueEntry_KeyValuePair_K$V() {}
 // ********** Code for _DoubleLinkedQueueEntrySentinel **************
-$inherits(_DoubleLinkedQueueEntrySentinel, DoubleLinkedQueueEntry_E);
-function _DoubleLinkedQueueEntrySentinel() {
-  DoubleLinkedQueueEntry_E.call(this, null);
-  this._link(this, this);
-}
+$inherits(_DoubleLinkedQueueEntrySentinel, DoubleLinkedQueueEntry);
+function _DoubleLinkedQueueEntrySentinel() {}
 _DoubleLinkedQueueEntrySentinel.prototype.remove = function() {
   $throw(const$0000);
 }
 _DoubleLinkedQueueEntrySentinel.prototype.get$element = function() {
   $throw(const$0000);
 }
-// ********** Code for _DoubleLinkedQueueEntrySentinel_E **************
-$inherits(_DoubleLinkedQueueEntrySentinel_E, _DoubleLinkedQueueEntrySentinel);
-function _DoubleLinkedQueueEntrySentinel_E() {
-  DoubleLinkedQueueEntry_E.call(this, null);
+// ********** Code for _DoubleLinkedQueueEntrySentinel_CircleContact **************
+$inherits(_DoubleLinkedQueueEntrySentinel_CircleContact, _DoubleLinkedQueueEntrySentinel);
+function _DoubleLinkedQueueEntrySentinel_CircleContact() {
+  DoubleLinkedQueueEntry_CircleContact.call(this, null);
+  this._link(this, this);
+}
+// ********** Code for _DoubleLinkedQueueEntrySentinel_DynamicTreeNode **************
+$inherits(_DoubleLinkedQueueEntrySentinel_DynamicTreeNode, _DoubleLinkedQueueEntrySentinel);
+function _DoubleLinkedQueueEntrySentinel_DynamicTreeNode() {
+  DoubleLinkedQueueEntry_DynamicTreeNode.call(this, null);
+  this._link(this, this);
+}
+// ********** Code for _DoubleLinkedQueueEntrySentinel_PolygonAndCircleContact **************
+$inherits(_DoubleLinkedQueueEntrySentinel_PolygonAndCircleContact, _DoubleLinkedQueueEntrySentinel);
+function _DoubleLinkedQueueEntrySentinel_PolygonAndCircleContact() {
+  DoubleLinkedQueueEntry_PolygonAndCircleContact.call(this, null);
+  this._link(this, this);
+}
+// ********** Code for _DoubleLinkedQueueEntrySentinel_PolygonContact **************
+$inherits(_DoubleLinkedQueueEntrySentinel_PolygonContact, _DoubleLinkedQueueEntrySentinel);
+function _DoubleLinkedQueueEntrySentinel_PolygonContact() {
+  DoubleLinkedQueueEntry_PolygonContact.call(this, null);
   this._link(this, this);
 }
 // ********** Code for DoubleLinkedQueue **************
-function DoubleLinkedQueue() {
-  this._sentinel = new _DoubleLinkedQueueEntrySentinel_E();
+function DoubleLinkedQueue() {}
+DoubleLinkedQueue.prototype.addLast = function(value) {
+  this._sentinel.prepend(value);
 }
 DoubleLinkedQueue.prototype.addFirst = function(value) {
   this._sentinel.append(value);
+}
+DoubleLinkedQueue.prototype.add = function(value) {
+  this.addLast(value);
 }
 DoubleLinkedQueue.prototype.removeFirst = function() {
   return this._sentinel._next.remove();
@@ -427,23 +407,29 @@ DoubleLinkedQueue.prototype.isEmpty = function() {
   return (this._sentinel._next == this._sentinel);
 }
 DoubleLinkedQueue.prototype.iterator = function() {
-  return new _DoubleLinkedQueueIterator_E(this._sentinel);
+  return new _DoubleLinkedQueueIterator(this._sentinel);
 }
+DoubleLinkedQueue.prototype.add$1 = DoubleLinkedQueue.prototype.add;
 // ********** Code for DoubleLinkedQueue_CircleContact **************
 $inherits(DoubleLinkedQueue_CircleContact, DoubleLinkedQueue);
-function DoubleLinkedQueue_CircleContact() {}
+function DoubleLinkedQueue_CircleContact() {
+  this._sentinel = new _DoubleLinkedQueueEntrySentinel_CircleContact();
+}
 // ********** Code for DoubleLinkedQueue_DynamicTreeNode **************
 $inherits(DoubleLinkedQueue_DynamicTreeNode, DoubleLinkedQueue);
-function DoubleLinkedQueue_DynamicTreeNode() {}
-// ********** Code for DoubleLinkedQueue_KeyValuePair_K$V **************
-$inherits(DoubleLinkedQueue_KeyValuePair_K$V, DoubleLinkedQueue);
-function DoubleLinkedQueue_KeyValuePair_K$V() {}
+function DoubleLinkedQueue_DynamicTreeNode() {
+  this._sentinel = new _DoubleLinkedQueueEntrySentinel_DynamicTreeNode();
+}
 // ********** Code for DoubleLinkedQueue_PolygonAndCircleContact **************
 $inherits(DoubleLinkedQueue_PolygonAndCircleContact, DoubleLinkedQueue);
-function DoubleLinkedQueue_PolygonAndCircleContact() {}
+function DoubleLinkedQueue_PolygonAndCircleContact() {
+  this._sentinel = new _DoubleLinkedQueueEntrySentinel_PolygonAndCircleContact();
+}
 // ********** Code for DoubleLinkedQueue_PolygonContact **************
 $inherits(DoubleLinkedQueue_PolygonContact, DoubleLinkedQueue);
-function DoubleLinkedQueue_PolygonContact() {}
+function DoubleLinkedQueue_PolygonContact() {
+  this._sentinel = new _DoubleLinkedQueueEntrySentinel_PolygonContact();
+}
 // ********** Code for _DoubleLinkedQueueIterator **************
 function _DoubleLinkedQueueIterator(_sentinel) {
   this._sentinel = _sentinel;
@@ -458,14 +444,6 @@ _DoubleLinkedQueueIterator.prototype.next = function() {
   }
   this._currentEntry = this._currentEntry._next;
   return this._currentEntry.get$element();
-}
-_DoubleLinkedQueueIterator.prototype.hasNext$0 = _DoubleLinkedQueueIterator.prototype.hasNext;
-_DoubleLinkedQueueIterator.prototype.next$0 = _DoubleLinkedQueueIterator.prototype.next;
-// ********** Code for _DoubleLinkedQueueIterator_E **************
-$inherits(_DoubleLinkedQueueIterator_E, _DoubleLinkedQueueIterator);
-function _DoubleLinkedQueueIterator_E(_sentinel) {
-  this._sentinel = _sentinel;
-  this._currentEntry = this._sentinel;
 }
 // ********** Code for StopwatchImplementation **************
 function StopwatchImplementation() {
@@ -498,6 +476,7 @@ StopwatchImplementation.prototype.elapsed = function() {
 StopwatchImplementation.prototype.frequency = function() {
   return Clock.frequency();
 }
+StopwatchImplementation.prototype.start$0 = StopwatchImplementation.prototype.start;
 // ********** Code for StringBufferImpl **************
 function StringBufferImpl(content) {
   this.clear();
@@ -507,31 +486,31 @@ StringBufferImpl.prototype.add = function(obj) {
   var str = obj.toString();
   if (str == null || str.isEmpty()) return this;
   this._buffer.add(str);
-  this._length += str.length;
+  this._dart_coreimpl_length = this._dart_coreimpl_length + str.length;
   return this;
 }
 StringBufferImpl.prototype.clear = function() {
   this._buffer = new Array();
-  this._length = (0);
+  this._dart_coreimpl_length = (0);
   return this;
 }
 StringBufferImpl.prototype.toString = function() {
   if (this._buffer.get$length() == (0)) return "";
-  if (this._buffer.get$length() == (1)) return this._buffer.$index((0));
+  if (this._buffer.get$length() == (1)) return this._buffer[(0)];
   var result = StringBase.concatAll(this._buffer);
   this._buffer.clear();
   this._buffer.add(result);
   return result;
 }
-StringBufferImpl.prototype.toString$0 = StringBufferImpl.prototype.toString;
+StringBufferImpl.prototype.add$1 = StringBufferImpl.prototype.add;
 // ********** Code for StringBase **************
 function StringBase() {}
 StringBase.join = function(strings, separator) {
   if (strings.get$length() == (0)) return "";
-  var s = strings.$index((0));
+  var s = strings[(0)];
   for (var i = (1);
    i < strings.get$length(); i++) {
-    s = s + separator + strings.$index(i);
+    s = $add($add(s, separator), strings[i]);
   }
   return s;
 }
@@ -546,32 +525,54 @@ StringImplementation.prototype.isEmpty = function() {
 StringImplementation.prototype.compareTo = function(other) {
   'use strict'; return this == other ? 0 : this < other ? -1 : 1;
 }
-StringImplementation.prototype.compareTo$1 = StringImplementation.prototype.compareTo;
 // ********** Code for _Worker **************
+var _Worker = {};
 // ********** Code for top level **************
 //  ********** Library dom **************
 // ********** Code for dom_Window **************
+var dom_Window = {};
 // ********** Code for dom_AbstractWorker **************
+var dom_AbstractWorker = {};
 // ********** Code for dom_ArrayBuffer **************
+var dom_ArrayBuffer = {};
 // ********** Code for dom_ArrayBufferView **************
+var dom_ArrayBufferView = {};
 // ********** Code for dom_Attr **************
+var dom_Attr = {};
 // ********** Code for dom_AudioBuffer **************
+var dom_AudioBuffer = {};
 // ********** Code for dom_AudioBufferSourceNode **************
+var dom_AudioBufferSourceNode = {};
 // ********** Code for dom_AudioChannelMerger **************
+var dom_AudioChannelMerger = {};
 // ********** Code for dom_AudioChannelSplitter **************
+var dom_AudioChannelSplitter = {};
 // ********** Code for dom_AudioContext **************
+var dom_AudioContext = {};
 // ********** Code for dom_AudioDestinationNode **************
+var dom_AudioDestinationNode = {};
 // ********** Code for dom_AudioGain **************
+var dom_AudioGain = {};
 // ********** Code for dom_AudioGainNode **************
+var dom_AudioGainNode = {};
 // ********** Code for dom_AudioListener **************
+var dom_AudioListener = {};
 // ********** Code for dom_AudioNode **************
+var dom_AudioNode = {};
 // ********** Code for dom_AudioPannerNode **************
+var dom_AudioPannerNode = {};
 // ********** Code for dom_AudioParam **************
+var dom_AudioParam = {};
 // ********** Code for dom_AudioProcessingEvent **************
+var dom_AudioProcessingEvent = {};
 // ********** Code for dom_AudioSourceNode **************
+var dom_AudioSourceNode = {};
 // ********** Code for dom_BarInfo **************
+var dom_BarInfo = {};
 // ********** Code for dom_BeforeLoadEvent **************
+var dom_BeforeLoadEvent = {};
 // ********** Code for dom_BiquadFilterNode **************
+var dom_BiquadFilterNode = {};
 function $dynamic(name) {
   var f = Object.prototype[name];
   if (f && f.methods) return f.methods;
@@ -594,15 +595,18 @@ function $dynamic(name) {
       }
     }
     method = method || methods.Object;
-    // Patch the prototype, but don't overwrite an existing stub, like
-    // the one on Object.prototype.
     var proto = Object.getPrototypeOf(obj);
-    if (!proto.hasOwnProperty(name)) proto[name] = method;
+    if (!proto.hasOwnProperty(name)) {
+      Object.defineProperty(proto, name,
+        { value: method, enumerable: false, writable: true, 
+        configurable: true });
+    }
 
     return method.apply(this, Array.prototype.slice.call(arguments));
   };
   $dynamicBind.methods = methods;
-  Object.prototype[name] = $dynamicBind;
+  Object.defineProperty(Object.prototype, name, { value: $dynamicBind,
+      enumerable: false, writable: true, configurable: true});
   return methods;
 }
 if (typeof $dynamicMetadata == 'undefined') $dynamicMetadata = [];
@@ -622,875 +626,1495 @@ function $dynamicSetMetadata(inputTable) {
   }
   $dynamicMetadata = table;
 }
-$dynamic("get$type").BiquadFilterNode = function() { return this.type; };
-$dynamic("set$type").BiquadFilterNode = function(value) { return this.type = value; };
+$dynamic("get$type").BiquadFilterNode = function() {
+  return this.type;
+}
 // ********** Code for dom_Blob **************
-$dynamic("get$type").Blob = function() { return this.type; };
-$dynamic("set$type").Blob = function(value) { return this.type = value; };
+var dom_Blob = {};
+$dynamic("get$type").Blob = function() {
+  return this.type;
+}
 // ********** Code for dom_CDATASection **************
+var dom_CDATASection = {};
 // ********** Code for dom_CSSCharsetRule **************
+var dom_CSSCharsetRule = {};
 // ********** Code for dom_CSSFontFaceRule **************
+var dom_CSSFontFaceRule = {};
 // ********** Code for dom_CSSImportRule **************
+var dom_CSSImportRule = {};
 // ********** Code for dom_CSSMediaRule **************
+var dom_CSSMediaRule = {};
 // ********** Code for dom_CSSPageRule **************
+var dom_CSSPageRule = {};
 // ********** Code for dom_CSSPrimitiveValue **************
+var dom_CSSPrimitiveValue = {};
 // ********** Code for dom_CSSRule **************
-$dynamic("get$type").CSSRule = function() { return this.type; };
-$dynamic("set$type").CSSRule = function(value) { return this.type = value; };
+var dom_CSSRule = {};
+$dynamic("get$type").CSSRule = function() {
+  return this.type;
+}
 // ********** Code for dom_CSSRuleList **************
+var dom_CSSRuleList = {};
 // ********** Code for dom_CSSStyleDeclaration **************
+var dom_CSSStyleDeclaration = {};
 // ********** Code for dom_CSSStyleRule **************
+var dom_CSSStyleRule = {};
 // ********** Code for dom_CSSStyleSheet **************
+var dom_CSSStyleSheet = {};
 // ********** Code for dom_CSSUnknownRule **************
+var dom_CSSUnknownRule = {};
 // ********** Code for dom_CSSValue **************
+var dom_CSSValue = {};
 // ********** Code for dom_CSSValueList **************
+var dom_CSSValueList = {};
 // ********** Code for dom_CanvasGradient **************
+var dom_CanvasGradient = {};
 // ********** Code for dom_CanvasPattern **************
+var dom_CanvasPattern = {};
 // ********** Code for dom_CanvasPixelArray **************
+var dom_CanvasPixelArray = {};
 // ********** Code for dom_CanvasRenderingContext **************
+var dom_CanvasRenderingContext = {};
 // ********** Code for dom_CanvasRenderingContext2D **************
+var dom_CanvasRenderingContext2D = {};
 // ********** Code for dom_CharacterData **************
+var dom_CharacterData = {};
 // ********** Code for dom_ClientRect **************
+var dom_ClientRect = {};
 // ********** Code for dom_ClientRectList **************
+var dom_ClientRectList = {};
 // ********** Code for dom_Clipboard **************
+var dom_Clipboard = {};
 // ********** Code for dom_CloseEvent **************
+var dom_CloseEvent = {};
 // ********** Code for dom_Comment **************
+var dom_Comment = {};
 // ********** Code for dom_CompositionEvent **************
+var dom_CompositionEvent = {};
 // ********** Code for Console **************
 Console = (typeof console == 'undefined' ? {} : console);
 // ********** Code for dom_ConvolverNode **************
+var dom_ConvolverNode = {};
 // ********** Code for dom_Coordinates **************
+var dom_Coordinates = {};
 // ********** Code for dom_Counter **************
+var dom_Counter = {};
 // ********** Code for dom_Crypto **************
+var dom_Crypto = {};
 // ********** Code for dom_CustomEvent **************
+var dom_CustomEvent = {};
 // ********** Code for dom_DOMApplicationCache **************
+var dom_DOMApplicationCache = {};
 // ********** Code for dom_DOMException **************
-$dynamic("toString$0").DOMException = function() {
-  return this.toString();
-};
+var dom_DOMException = {};
 // ********** Code for dom_DOMFileSystem **************
+var dom_DOMFileSystem = {};
 // ********** Code for dom_DOMFileSystemSync **************
+var dom_DOMFileSystemSync = {};
 // ********** Code for dom_DOMFormData **************
+var dom_DOMFormData = {};
 // ********** Code for dom_DOMImplementation **************
+var dom_DOMImplementation = {};
 // ********** Code for dom_DOMMimeType **************
-$dynamic("get$type").DOMMimeType = function() { return this.type; };
-$dynamic("set$type").DOMMimeType = function(value) { return this.type = value; };
+var dom_DOMMimeType = {};
+$dynamic("get$type").DOMMimeType = function() {
+  return this.type;
+}
 // ********** Code for dom_DOMMimeTypeArray **************
+var dom_DOMMimeTypeArray = {};
 // ********** Code for dom_DOMParser **************
+var dom_DOMParser = {};
 // ********** Code for dom_DOMPlugin **************
+var dom_DOMPlugin = {};
 // ********** Code for dom_DOMPluginArray **************
+var dom_DOMPluginArray = {};
 // ********** Code for dom_DOMSelection **************
-$dynamic("get$type").DOMSelection = function() { return this.type; };
-$dynamic("set$type").DOMSelection = function(value) { return this.type = value; };
-$dynamic("toString$0").DOMSelection = function() {
-  return this.toString();
-};
+var dom_DOMSelection = {};
+$dynamic("get$type").DOMSelection = function() {
+  return this.type;
+}
 // ********** Code for dom_DOMSettableTokenList **************
+var dom_DOMSettableTokenList = {};
 // ********** Code for dom_DOMTokenList **************
-$dynamic("toString$0").DOMTokenList = function() {
-  return this.toString();
+var dom_DOMTokenList = {};
+$dynamic("add$1").DOMTokenList = function($0) {
+  return this.add($0);
 };
 // ********** Code for dom_DOMURL **************
+var dom_DOMURL = {};
 // ********** Code for dom_DOMWindow **************
+var dom_DOMWindow = {};
 // ********** Code for dom_DataTransferItem **************
-$dynamic("get$type").DataTransferItem = function() { return this.type; };
-$dynamic("set$type").DataTransferItem = function(value) { return this.type = value; };
+var dom_DataTransferItem = {};
+$dynamic("get$type").DataTransferItem = function() {
+  return this.type;
+}
 // ********** Code for dom_DataTransferItemList **************
+var dom_DataTransferItemList = {};
 // ********** Code for dom_DataView **************
+var dom_DataView = {};
 // ********** Code for dom_Database **************
+var dom_Database = {};
 // ********** Code for dom_DatabaseSync **************
+var dom_DatabaseSync = {};
 // ********** Code for dom_DedicatedWorkerContext **************
+var dom_DedicatedWorkerContext = {};
 // ********** Code for dom_DelayNode **************
+var dom_DelayNode = {};
 // ********** Code for dom_DeviceMotionEvent **************
+var dom_DeviceMotionEvent = {};
 // ********** Code for dom_DeviceOrientationEvent **************
+var dom_DeviceOrientationEvent = {};
 // ********** Code for dom_DirectoryEntry **************
+var dom_DirectoryEntry = {};
 // ********** Code for dom_DirectoryEntrySync **************
+var dom_DirectoryEntrySync = {};
 // ********** Code for dom_DirectoryReader **************
+var dom_DirectoryReader = {};
 // ********** Code for dom_DirectoryReaderSync **************
+var dom_DirectoryReaderSync = {};
 // ********** Code for dom_Document **************
+var dom_Document = {};
 // ********** Code for dom_DocumentFragment **************
+var dom_DocumentFragment = {};
 // ********** Code for dom_DocumentType **************
+var dom_DocumentType = {};
 // ********** Code for dom_DynamicsCompressorNode **************
+var dom_DynamicsCompressorNode = {};
 // ********** Code for dom_Element **************
+var dom_Element = {};
 // ********** Code for dom_ElementTimeControl **************
+var dom_ElementTimeControl = {};
 // ********** Code for dom_ElementTraversal **************
+var dom_ElementTraversal = {};
 // ********** Code for dom_Entity **************
+var dom_Entity = {};
 // ********** Code for dom_EntityReference **************
+var dom_EntityReference = {};
 // ********** Code for dom_Entry **************
+var dom_Entry = {};
 // ********** Code for dom_EntryArray **************
+var dom_EntryArray = {};
 // ********** Code for dom_EntryArraySync **************
+var dom_EntryArraySync = {};
 // ********** Code for dom_EntrySync **************
+var dom_EntrySync = {};
 // ********** Code for dom_ErrorEvent **************
+var dom_ErrorEvent = {};
 // ********** Code for dom_Event **************
-$dynamic("get$type").Event = function() { return this.type; };
-$dynamic("set$type").Event = function(value) { return this.type = value; };
+var dom_Event = {};
+$dynamic("get$type").Event = function() {
+  return this.type;
+}
 // ********** Code for dom_EventException **************
-$dynamic("toString$0").EventException = function() {
-  return this.toString();
-};
+var dom_EventException = {};
 // ********** Code for dom_EventSource **************
+var dom_EventSource = {};
 // ********** Code for dom_EventTarget **************
+var dom_EventTarget = {};
 // ********** Code for dom_File **************
+var dom_File = {};
 // ********** Code for dom_FileEntry **************
+var dom_FileEntry = {};
 // ********** Code for dom_FileEntrySync **************
+var dom_FileEntrySync = {};
 // ********** Code for dom_FileError **************
+var dom_FileError = {};
 // ********** Code for dom_FileException **************
-$dynamic("toString$0").FileException = function() {
-  return this.toString();
-};
+var dom_FileException = {};
 // ********** Code for dom_FileList **************
+var dom_FileList = {};
 // ********** Code for dom_FileReader **************
+var dom_FileReader = {};
 // ********** Code for dom_FileReaderSync **************
+var dom_FileReaderSync = {};
 // ********** Code for dom_FileWriter **************
-$dynamic("get$position").FileWriter = function() { return this.position; };
-$dynamic("set$position").FileWriter = function(value) { return this.position = value; };
+var dom_FileWriter = {};
+$dynamic("get$position").FileWriter = function() {
+  return this.position;
+}
 // ********** Code for dom_FileWriterSync **************
-$dynamic("get$position").FileWriterSync = function() { return this.position; };
-$dynamic("set$position").FileWriterSync = function(value) { return this.position = value; };
+var dom_FileWriterSync = {};
+$dynamic("get$position").FileWriterSync = function() {
+  return this.position;
+}
 // ********** Code for dom_Float32Array **************
-$dynamic("get$length").Float32Array = function() { return this.length; };
-$dynamic("set$length").Float32Array = function(value) { return this.length = value; };
+var dom_Float32Array = {};
+$dynamic("get$length").Float32Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Float64Array **************
-$dynamic("get$length").Float64Array = function() { return this.length; };
-$dynamic("set$length").Float64Array = function(value) { return this.length = value; };
+var dom_Float64Array = {};
+$dynamic("get$length").Float64Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Geolocation **************
+var dom_Geolocation = {};
 // ********** Code for dom_Geoposition **************
+var dom_Geoposition = {};
 // ********** Code for dom_HTMLAllCollection **************
+var dom_HTMLAllCollection = {};
 // ********** Code for dom_HTMLAnchorElement **************
-$dynamic("get$type").HTMLAnchorElement = function() { return this.type; };
-$dynamic("set$type").HTMLAnchorElement = function(value) { return this.type = value; };
-$dynamic("toString$0").HTMLAnchorElement = function() {
-  return this.toString();
-};
+var dom_HTMLAnchorElement = {};
+$dynamic("set$shape").HTMLAnchorElement = function(value) {
+  this.shape = value;
+}
+$dynamic("get$type").HTMLAnchorElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLAppletElement **************
+var dom_HTMLAppletElement = {};
 // ********** Code for dom_HTMLAreaElement **************
+var dom_HTMLAreaElement = {};
+$dynamic("set$shape").HTMLAreaElement = function(value) {
+  this.shape = value;
+}
 // ********** Code for dom_HTMLAudioElement **************
+var dom_HTMLAudioElement = {};
 // ********** Code for dom_HTMLBRElement **************
+var dom_HTMLBRElement = {};
 // ********** Code for dom_HTMLBaseElement **************
+var dom_HTMLBaseElement = {};
 // ********** Code for dom_HTMLBaseFontElement **************
+var dom_HTMLBaseFontElement = {};
 // ********** Code for dom_HTMLBodyElement **************
+var dom_HTMLBodyElement = {};
 // ********** Code for dom_HTMLButtonElement **************
-$dynamic("get$type").HTMLButtonElement = function() { return this.type; };
-$dynamic("set$type").HTMLButtonElement = function(value) { return this.type = value; };
+var dom_HTMLButtonElement = {};
+$dynamic("get$type").HTMLButtonElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLCanvasElement **************
+var dom_HTMLCanvasElement = {};
 // ********** Code for dom_HTMLCollection **************
+var dom_HTMLCollection = {};
+$dynamic("$setindex").HTMLCollection = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_HTMLDListElement **************
+var dom_HTMLDListElement = {};
 // ********** Code for dom_HTMLDataListElement **************
+var dom_HTMLDataListElement = {};
 // ********** Code for dom_HTMLDetailsElement **************
+var dom_HTMLDetailsElement = {};
 // ********** Code for dom_HTMLDirectoryElement **************
+var dom_HTMLDirectoryElement = {};
 // ********** Code for dom_HTMLDivElement **************
+var dom_HTMLDivElement = {};
 // ********** Code for dom_HTMLDocument **************
+var dom_HTMLDocument = {};
 // ********** Code for dom_HTMLElement **************
-$dynamic("get$id").HTMLElement = function() { return this.id; };
-$dynamic("set$id").HTMLElement = function(value) { return this.id = value; };
+var dom_HTMLElement = {};
 // ********** Code for dom_HTMLEmbedElement **************
-$dynamic("get$type").HTMLEmbedElement = function() { return this.type; };
-$dynamic("set$type").HTMLEmbedElement = function(value) { return this.type = value; };
+var dom_HTMLEmbedElement = {};
+$dynamic("get$type").HTMLEmbedElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLFieldSetElement **************
+var dom_HTMLFieldSetElement = {};
 // ********** Code for dom_HTMLFontElement **************
+var dom_HTMLFontElement = {};
 // ********** Code for dom_HTMLFormElement **************
+var dom_HTMLFormElement = {};
 // ********** Code for dom_HTMLFrameElement **************
+var dom_HTMLFrameElement = {};
 // ********** Code for dom_HTMLFrameSetElement **************
+var dom_HTMLFrameSetElement = {};
 // ********** Code for dom_HTMLHRElement **************
+var dom_HTMLHRElement = {};
 // ********** Code for dom_HTMLHeadElement **************
+var dom_HTMLHeadElement = {};
 // ********** Code for dom_HTMLHeadingElement **************
+var dom_HTMLHeadingElement = {};
 // ********** Code for dom_HTMLHtmlElement **************
+var dom_HTMLHtmlElement = {};
 // ********** Code for dom_HTMLIFrameElement **************
+var dom_HTMLIFrameElement = {};
 // ********** Code for dom_HTMLImageElement **************
-$dynamic("get$x").HTMLImageElement = function() { return this.x; };
-$dynamic("set$x").HTMLImageElement = function(value) { return this.x = value; };
-$dynamic("get$y").HTMLImageElement = function() { return this.y; };
-$dynamic("set$y").HTMLImageElement = function(value) { return this.y = value; };
+var dom_HTMLImageElement = {};
+$dynamic("get$x").HTMLImageElement = function() {
+  return this.x;
+}
+$dynamic("get$y").HTMLImageElement = function() {
+  return this.y;
+}
 // ********** Code for dom_HTMLInputElement **************
-$dynamic("get$type").HTMLInputElement = function() { return this.type; };
-$dynamic("set$type").HTMLInputElement = function(value) { return this.type = value; };
+var dom_HTMLInputElement = {};
+$dynamic("get$type").HTMLInputElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLIsIndexElement **************
+var dom_HTMLIsIndexElement = {};
 // ********** Code for dom_HTMLKeygenElement **************
-$dynamic("get$type").HTMLKeygenElement = function() { return this.type; };
-$dynamic("set$type").HTMLKeygenElement = function(value) { return this.type = value; };
+var dom_HTMLKeygenElement = {};
+$dynamic("get$type").HTMLKeygenElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLLIElement **************
-$dynamic("get$type").HTMLLIElement = function() { return this.type; };
-$dynamic("set$type").HTMLLIElement = function(value) { return this.type = value; };
+var dom_HTMLLIElement = {};
+$dynamic("get$type").HTMLLIElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLLabelElement **************
+var dom_HTMLLabelElement = {};
 // ********** Code for dom_HTMLLegendElement **************
+var dom_HTMLLegendElement = {};
 // ********** Code for dom_HTMLLinkElement **************
-$dynamic("get$type").HTMLLinkElement = function() { return this.type; };
-$dynamic("set$type").HTMLLinkElement = function(value) { return this.type = value; };
+var dom_HTMLLinkElement = {};
+$dynamic("get$type").HTMLLinkElement = function() {
+  return this.type;
+}
 // ********** Code for dom_HTMLMapElement **************
+var dom_HTMLMapElement = {};
 // ********** Code for dom_HTMLMarqueeElement **************
-// ********** Code for dom_HTMLMediaElement **************
-// ********** Code for dom_HTMLMenuElement **************
-// ********** Code for dom_HTMLMetaElement **************
-// ********** Code for dom_HTMLMeterElement **************
-// ********** Code for dom_HTMLModElement **************
-// ********** Code for dom_HTMLOListElement **************
-$dynamic("get$type").HTMLOListElement = function() { return this.type; };
-$dynamic("set$type").HTMLOListElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLObjectElement **************
-$dynamic("get$type").HTMLObjectElement = function() { return this.type; };
-$dynamic("set$type").HTMLObjectElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLOptGroupElement **************
-// ********** Code for dom_HTMLOptionElement **************
-// ********** Code for dom_HTMLOptionsCollection **************
-// ********** Code for dom_HTMLOutputElement **************
-$dynamic("get$type").HTMLOutputElement = function() { return this.type; };
-$dynamic("set$type").HTMLOutputElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLParagraphElement **************
-// ********** Code for dom_HTMLParamElement **************
-$dynamic("get$type").HTMLParamElement = function() { return this.type; };
-$dynamic("set$type").HTMLParamElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLPreElement **************
-// ********** Code for dom_HTMLProgressElement **************
-$dynamic("get$position").HTMLProgressElement = function() { return this.position; };
-$dynamic("set$position").HTMLProgressElement = function(value) { return this.position = value; };
-// ********** Code for dom_HTMLPropertiesCollection **************
-// ********** Code for dom_HTMLQuoteElement **************
-// ********** Code for dom_HTMLScriptElement **************
-$dynamic("get$type").HTMLScriptElement = function() { return this.type; };
-$dynamic("set$type").HTMLScriptElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLSelectElement **************
-$dynamic("get$type").HTMLSelectElement = function() { return this.type; };
-$dynamic("set$type").HTMLSelectElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLSourceElement **************
-$dynamic("get$type").HTMLSourceElement = function() { return this.type; };
-$dynamic("set$type").HTMLSourceElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLSpanElement **************
-// ********** Code for dom_HTMLStyleElement **************
-$dynamic("get$type").HTMLStyleElement = function() { return this.type; };
-$dynamic("set$type").HTMLStyleElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLTableCaptionElement **************
-// ********** Code for dom_HTMLTableCellElement **************
-// ********** Code for dom_HTMLTableColElement **************
-// ********** Code for dom_HTMLTableElement **************
-// ********** Code for dom_HTMLTableRowElement **************
-// ********** Code for dom_HTMLTableSectionElement **************
-// ********** Code for dom_HTMLTextAreaElement **************
-$dynamic("get$type").HTMLTextAreaElement = function() { return this.type; };
-$dynamic("set$type").HTMLTextAreaElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLTitleElement **************
-// ********** Code for dom_HTMLTrackElement **************
-// ********** Code for dom_HTMLUListElement **************
-$dynamic("get$type").HTMLUListElement = function() { return this.type; };
-$dynamic("set$type").HTMLUListElement = function(value) { return this.type = value; };
-// ********** Code for dom_HTMLUnknownElement **************
-// ********** Code for dom_HTMLVideoElement **************
-// ********** Code for dom_HashChangeEvent **************
-// ********** Code for dom_HighPass2FilterNode **************
-// ********** Code for dom_History **************
-// ********** Code for dom_IDBAny **************
-// ********** Code for dom_IDBCursor **************
-// ********** Code for dom_IDBCursorWithValue **************
-// ********** Code for dom_IDBDatabase **************
-// ********** Code for dom_IDBDatabaseError **************
-// ********** Code for dom_IDBDatabaseException **************
-$dynamic("toString$0").IDBDatabaseException = function() {
-  return this.toString();
+var dom_HTMLMarqueeElement = {};
+$dynamic("start$0").HTMLMarqueeElement = function() {
+  return this.start();
 };
+// ********** Code for dom_HTMLMediaElement **************
+var dom_HTMLMediaElement = {};
+// ********** Code for dom_HTMLMenuElement **************
+var dom_HTMLMenuElement = {};
+// ********** Code for dom_HTMLMetaElement **************
+var dom_HTMLMetaElement = {};
+// ********** Code for dom_HTMLMeterElement **************
+var dom_HTMLMeterElement = {};
+// ********** Code for dom_HTMLModElement **************
+var dom_HTMLModElement = {};
+// ********** Code for dom_HTMLOListElement **************
+var dom_HTMLOListElement = {};
+$dynamic("get$type").HTMLOListElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLObjectElement **************
+var dom_HTMLObjectElement = {};
+$dynamic("get$type").HTMLObjectElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLOptGroupElement **************
+var dom_HTMLOptGroupElement = {};
+// ********** Code for dom_HTMLOptionElement **************
+var dom_HTMLOptionElement = {};
+// ********** Code for dom_HTMLOptionsCollection **************
+var dom_HTMLOptionsCollection = {};
+// ********** Code for dom_HTMLOutputElement **************
+var dom_HTMLOutputElement = {};
+$dynamic("get$type").HTMLOutputElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLParagraphElement **************
+var dom_HTMLParagraphElement = {};
+// ********** Code for dom_HTMLParamElement **************
+var dom_HTMLParamElement = {};
+$dynamic("get$type").HTMLParamElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLPreElement **************
+var dom_HTMLPreElement = {};
+// ********** Code for dom_HTMLProgressElement **************
+var dom_HTMLProgressElement = {};
+$dynamic("get$position").HTMLProgressElement = function() {
+  return this.position;
+}
+// ********** Code for dom_HTMLPropertiesCollection **************
+var dom_HTMLPropertiesCollection = {};
+// ********** Code for dom_HTMLQuoteElement **************
+var dom_HTMLQuoteElement = {};
+// ********** Code for dom_HTMLScriptElement **************
+var dom_HTMLScriptElement = {};
+$dynamic("get$type").HTMLScriptElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLSelectElement **************
+var dom_HTMLSelectElement = {};
+$dynamic("get$type").HTMLSelectElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLSourceElement **************
+var dom_HTMLSourceElement = {};
+$dynamic("get$type").HTMLSourceElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLSpanElement **************
+var dom_HTMLSpanElement = {};
+// ********** Code for dom_HTMLStyleElement **************
+var dom_HTMLStyleElement = {};
+$dynamic("get$type").HTMLStyleElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLTableCaptionElement **************
+var dom_HTMLTableCaptionElement = {};
+// ********** Code for dom_HTMLTableCellElement **************
+var dom_HTMLTableCellElement = {};
+// ********** Code for dom_HTMLTableColElement **************
+var dom_HTMLTableColElement = {};
+// ********** Code for dom_HTMLTableElement **************
+var dom_HTMLTableElement = {};
+// ********** Code for dom_HTMLTableRowElement **************
+var dom_HTMLTableRowElement = {};
+// ********** Code for dom_HTMLTableSectionElement **************
+var dom_HTMLTableSectionElement = {};
+// ********** Code for dom_HTMLTextAreaElement **************
+var dom_HTMLTextAreaElement = {};
+$dynamic("get$type").HTMLTextAreaElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLTitleElement **************
+var dom_HTMLTitleElement = {};
+// ********** Code for dom_HTMLTrackElement **************
+var dom_HTMLTrackElement = {};
+// ********** Code for dom_HTMLUListElement **************
+var dom_HTMLUListElement = {};
+$dynamic("get$type").HTMLUListElement = function() {
+  return this.type;
+}
+// ********** Code for dom_HTMLUnknownElement **************
+var dom_HTMLUnknownElement = {};
+// ********** Code for dom_HTMLVideoElement **************
+var dom_HTMLVideoElement = {};
+// ********** Code for dom_HashChangeEvent **************
+var dom_HashChangeEvent = {};
+// ********** Code for dom_HighPass2FilterNode **************
+var dom_HighPass2FilterNode = {};
+// ********** Code for dom_History **************
+var dom_History = {};
+// ********** Code for dom_IDBAny **************
+var dom_IDBAny = {};
+// ********** Code for dom_IDBCursor **************
+var dom_IDBCursor = {};
+// ********** Code for dom_IDBCursorWithValue **************
+var dom_IDBCursorWithValue = {};
+// ********** Code for dom_IDBDatabase **************
+var dom_IDBDatabase = {};
+// ********** Code for dom_IDBDatabaseError **************
+var dom_IDBDatabaseError = {};
+// ********** Code for dom_IDBDatabaseException **************
+var dom_IDBDatabaseException = {};
 // ********** Code for dom_IDBFactory **************
+var dom_IDBFactory = {};
 // ********** Code for dom_IDBIndex **************
+var dom_IDBIndex = {};
 // ********** Code for dom_IDBKey **************
+var dom_IDBKey = {};
 // ********** Code for dom_IDBKeyRange **************
+var dom_IDBKeyRange = {};
 // ********** Code for dom_IDBObjectStore **************
+var dom_IDBObjectStore = {};
+$dynamic("add$1").IDBObjectStore = function($0) {
+  return this.add($0);
+};
 // ********** Code for dom_IDBRequest **************
+var dom_IDBRequest = {};
 // ********** Code for dom_IDBTransaction **************
+var dom_IDBTransaction = {};
 // ********** Code for dom_IDBVersionChangeEvent **************
+var dom_IDBVersionChangeEvent = {};
 // ********** Code for dom_IDBVersionChangeRequest **************
+var dom_IDBVersionChangeRequest = {};
 // ********** Code for dom_ImageData **************
+var dom_ImageData = {};
 // ********** Code for dom_InjectedScriptHost **************
+var dom_InjectedScriptHost = {};
 $dynamic("get$type").InjectedScriptHost = function() {
   return this.type.bind(this);
 }
 // ********** Code for dom_InspectorFrontendHost **************
+var dom_InspectorFrontendHost = {};
 // ********** Code for dom_Int16Array **************
-$dynamic("get$length").Int16Array = function() { return this.length; };
-$dynamic("set$length").Int16Array = function(value) { return this.length = value; };
+var dom_Int16Array = {};
+$dynamic("get$length").Int16Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Int32Array **************
-$dynamic("get$length").Int32Array = function() { return this.length; };
-$dynamic("set$length").Int32Array = function(value) { return this.length = value; };
+var dom_Int32Array = {};
+$dynamic("get$length").Int32Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Int8Array **************
-$dynamic("get$length").Int8Array = function() { return this.length; };
-$dynamic("set$length").Int8Array = function(value) { return this.length = value; };
+var dom_Int8Array = {};
+$dynamic("get$length").Int8Array = function() {
+  return this.length;
+}
 // ********** Code for dom_JavaScriptAudioNode **************
+var dom_JavaScriptAudioNode = {};
 // ********** Code for dom_JavaScriptCallFrame **************
-$dynamic("get$type").JavaScriptCallFrame = function() { return this.type; };
-$dynamic("set$type").JavaScriptCallFrame = function(value) { return this.type = value; };
+var dom_JavaScriptCallFrame = {};
+$dynamic("get$type").JavaScriptCallFrame = function() {
+  return this.type;
+}
 // ********** Code for dom_KeyboardEvent **************
+var dom_KeyboardEvent = {};
 // ********** Code for dom_Location **************
-$dynamic("toString$0").Location = function() {
-  return this.toString();
-};
+var dom_Location = {};
 // ********** Code for dom_LowPass2FilterNode **************
+var dom_LowPass2FilterNode = {};
 // ********** Code for dom_MediaController **************
+var dom_MediaController = {};
 // ********** Code for dom_MediaElementAudioSourceNode **************
+var dom_MediaElementAudioSourceNode = {};
 // ********** Code for dom_MediaError **************
+var dom_MediaError = {};
 // ********** Code for dom_MediaList **************
+var dom_MediaList = {};
+$dynamic("$setindex").MediaList = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_MediaQueryList **************
+var dom_MediaQueryList = {};
 // ********** Code for dom_MediaQueryListListener **************
+var dom_MediaQueryListListener = {};
 // ********** Code for dom_MemoryInfo **************
+var dom_MemoryInfo = {};
 // ********** Code for dom_MessageChannel **************
+var dom_MessageChannel = {};
 // ********** Code for dom_MessageEvent **************
+var dom_MessageEvent = {};
 // ********** Code for dom_MessagePort **************
+var dom_MessagePort = {};
+$dynamic("start$0").MessagePort = function() {
+  return this.start();
+};
 // ********** Code for dom_Metadata **************
+var dom_Metadata = {};
 // ********** Code for dom_MouseEvent **************
-$dynamic("get$x").MouseEvent = function() { return this.x; };
-$dynamic("set$x").MouseEvent = function(value) { return this.x = value; };
-$dynamic("get$y").MouseEvent = function() { return this.y; };
-$dynamic("set$y").MouseEvent = function(value) { return this.y = value; };
+var dom_MouseEvent = {};
+$dynamic("get$x").MouseEvent = function() {
+  return this.x;
+}
+$dynamic("get$y").MouseEvent = function() {
+  return this.y;
+}
 // ********** Code for dom_MutationCallback **************
+var dom_MutationCallback = {};
 // ********** Code for dom_MutationEvent **************
+var dom_MutationEvent = {};
 // ********** Code for dom_MutationRecord **************
-$dynamic("get$type").MutationRecord = function() { return this.type; };
-$dynamic("set$type").MutationRecord = function(value) { return this.type = value; };
+var dom_MutationRecord = {};
+$dynamic("get$type").MutationRecord = function() {
+  return this.type;
+}
 // ********** Code for dom_NamedNodeMap **************
+var dom_NamedNodeMap = {};
+$dynamic("$setindex").NamedNodeMap = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_Navigator **************
+var dom_Navigator = {};
 // ********** Code for dom_Node **************
-$dynamic("normalize$0").Node = function() {
-  return this.normalize();
-};
+var dom_Node = {};
 // ********** Code for dom_NodeFilter **************
+var dom_NodeFilter = {};
 // ********** Code for dom_NodeIterator **************
+var dom_NodeIterator = {};
 // ********** Code for dom_NodeList **************
+var dom_NodeList = {};
+$dynamic("$setindex").NodeList = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_NodeSelector **************
+var dom_NodeSelector = {};
 // ********** Code for dom_Notation **************
+var dom_Notation = {};
 // ********** Code for dom_Notification **************
+var dom_Notification = {};
 // ********** Code for dom_NotificationCenter **************
+var dom_NotificationCenter = {};
 // ********** Code for dom_OESStandardDerivatives **************
+var dom_OESStandardDerivatives = {};
 // ********** Code for dom_OESTextureFloat **************
+var dom_OESTextureFloat = {};
 // ********** Code for dom_OESVertexArrayObject **************
+var dom_OESVertexArrayObject = {};
 // ********** Code for dom_OfflineAudioCompletionEvent **************
+var dom_OfflineAudioCompletionEvent = {};
 // ********** Code for dom_OperationNotAllowedException **************
-$dynamic("toString$0").OperationNotAllowedException = function() {
-  return this.toString();
-};
+var dom_OperationNotAllowedException = {};
 // ********** Code for dom_OverflowEvent **************
+var dom_OverflowEvent = {};
 // ********** Code for dom_PageTransitionEvent **************
+var dom_PageTransitionEvent = {};
 // ********** Code for dom_Performance **************
+var dom_Performance = {};
 // ********** Code for dom_PerformanceNavigation **************
-$dynamic("get$type").PerformanceNavigation = function() { return this.type; };
-$dynamic("set$type").PerformanceNavigation = function(value) { return this.type = value; };
+var dom_PerformanceNavigation = {};
+$dynamic("get$type").PerformanceNavigation = function() {
+  return this.type;
+}
 // ********** Code for dom_PerformanceTiming **************
+var dom_PerformanceTiming = {};
 // ********** Code for dom_PointerLock **************
+var dom_PointerLock = {};
 // ********** Code for dom_PopStateEvent **************
+var dom_PopStateEvent = {};
 // ********** Code for dom_PositionError **************
+var dom_PositionError = {};
 // ********** Code for dom_ProcessingInstruction **************
+var dom_ProcessingInstruction = {};
 // ********** Code for dom_ProgressEvent **************
+var dom_ProgressEvent = {};
 // ********** Code for dom_RGBColor **************
+var dom_RGBColor = {};
 // ********** Code for dom_Range **************
-$dynamic("toString$0").Range = function() {
-  return this.toString();
-};
+var dom_Range = {};
 // ********** Code for dom_RangeException **************
-$dynamic("toString$0").RangeException = function() {
-  return this.toString();
-};
+var dom_RangeException = {};
 // ********** Code for dom_RealtimeAnalyserNode **************
+var dom_RealtimeAnalyserNode = {};
 // ********** Code for dom_Rect **************
+var dom_Rect = {};
 // ********** Code for dom_SQLError **************
+var dom_SQLError = {};
 // ********** Code for dom_SQLException **************
+var dom_SQLException = {};
 // ********** Code for dom_SQLResultSet **************
+var dom_SQLResultSet = {};
 // ********** Code for dom_SQLResultSetRowList **************
+var dom_SQLResultSetRowList = {};
 // ********** Code for dom_SQLTransaction **************
+var dom_SQLTransaction = {};
 // ********** Code for dom_SQLTransactionSync **************
+var dom_SQLTransactionSync = {};
 // ********** Code for dom_SVGAElement **************
+var dom_SVGAElement = {};
 // ********** Code for dom_SVGAltGlyphDefElement **************
+var dom_SVGAltGlyphDefElement = {};
 // ********** Code for dom_SVGAltGlyphElement **************
+var dom_SVGAltGlyphElement = {};
 // ********** Code for dom_SVGAltGlyphItemElement **************
+var dom_SVGAltGlyphItemElement = {};
 // ********** Code for dom_SVGAngle **************
+var dom_SVGAngle = {};
 // ********** Code for dom_SVGAnimateColorElement **************
+var dom_SVGAnimateColorElement = {};
 // ********** Code for dom_SVGAnimateElement **************
+var dom_SVGAnimateElement = {};
 // ********** Code for dom_SVGAnimateMotionElement **************
+var dom_SVGAnimateMotionElement = {};
 // ********** Code for dom_SVGAnimateTransformElement **************
+var dom_SVGAnimateTransformElement = {};
 // ********** Code for dom_SVGAnimatedAngle **************
+var dom_SVGAnimatedAngle = {};
 // ********** Code for dom_SVGAnimatedBoolean **************
+var dom_SVGAnimatedBoolean = {};
 // ********** Code for dom_SVGAnimatedEnumeration **************
+var dom_SVGAnimatedEnumeration = {};
 // ********** Code for dom_SVGAnimatedInteger **************
+var dom_SVGAnimatedInteger = {};
 // ********** Code for dom_SVGAnimatedLength **************
+var dom_SVGAnimatedLength = {};
 // ********** Code for dom_SVGAnimatedLengthList **************
+var dom_SVGAnimatedLengthList = {};
 // ********** Code for dom_SVGAnimatedNumber **************
+var dom_SVGAnimatedNumber = {};
 // ********** Code for dom_SVGAnimatedNumberList **************
+var dom_SVGAnimatedNumberList = {};
 // ********** Code for dom_SVGAnimatedPreserveAspectRatio **************
+var dom_SVGAnimatedPreserveAspectRatio = {};
 // ********** Code for dom_SVGAnimatedRect **************
+var dom_SVGAnimatedRect = {};
 // ********** Code for dom_SVGAnimatedString **************
+var dom_SVGAnimatedString = {};
 // ********** Code for dom_SVGAnimatedTransformList **************
+var dom_SVGAnimatedTransformList = {};
 // ********** Code for dom_SVGAnimationElement **************
+var dom_SVGAnimationElement = {};
 // ********** Code for dom_SVGCircleElement **************
+var dom_SVGCircleElement = {};
 // ********** Code for dom_SVGClipPathElement **************
+var dom_SVGClipPathElement = {};
 // ********** Code for dom_SVGColor **************
+var dom_SVGColor = {};
 // ********** Code for dom_SVGComponentTransferFunctionElement **************
-$dynamic("get$type").SVGComponentTransferFunctionElement = function() { return this.type; };
-$dynamic("set$type").SVGComponentTransferFunctionElement = function(value) { return this.type = value; };
+var dom_SVGComponentTransferFunctionElement = {};
+$dynamic("get$type").SVGComponentTransferFunctionElement = function() {
+  return this.type;
+}
 // ********** Code for dom_SVGCursorElement **************
-$dynamic("get$x").SVGCursorElement = function() { return this.x; };
-$dynamic("set$x").SVGCursorElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGCursorElement = function() { return this.y; };
-$dynamic("set$y").SVGCursorElement = function(value) { return this.y = value; };
+var dom_SVGCursorElement = {};
+$dynamic("get$x").SVGCursorElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGCursorElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGDefsElement **************
+var dom_SVGDefsElement = {};
 // ********** Code for dom_SVGDescElement **************
+var dom_SVGDescElement = {};
 // ********** Code for dom_SVGDocument **************
+var dom_SVGDocument = {};
 // ********** Code for dom_SVGElement **************
-$dynamic("get$id").SVGElement = function() { return this.id; };
-$dynamic("set$id").SVGElement = function(value) { return this.id = value; };
+var dom_SVGElement = {};
 // ********** Code for dom_SVGElementInstance **************
+var dom_SVGElementInstance = {};
 // ********** Code for dom_SVGElementInstanceList **************
+var dom_SVGElementInstanceList = {};
 // ********** Code for dom_SVGEllipseElement **************
+var dom_SVGEllipseElement = {};
 // ********** Code for dom_SVGException **************
-$dynamic("toString$0").SVGException = function() {
-  return this.toString();
-};
+var dom_SVGException = {};
 // ********** Code for dom_SVGExternalResourcesRequired **************
+var dom_SVGExternalResourcesRequired = {};
 // ********** Code for dom_SVGFEBlendElement **************
-$dynamic("get$x").SVGFEBlendElement = function() { return this.x; };
-$dynamic("set$x").SVGFEBlendElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEBlendElement = function() { return this.y; };
-$dynamic("set$y").SVGFEBlendElement = function(value) { return this.y = value; };
+var dom_SVGFEBlendElement = {};
+$dynamic("get$x").SVGFEBlendElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEBlendElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEColorMatrixElement **************
-$dynamic("get$type").SVGFEColorMatrixElement = function() { return this.type; };
-$dynamic("set$type").SVGFEColorMatrixElement = function(value) { return this.type = value; };
-$dynamic("get$x").SVGFEColorMatrixElement = function() { return this.x; };
-$dynamic("set$x").SVGFEColorMatrixElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEColorMatrixElement = function() { return this.y; };
-$dynamic("set$y").SVGFEColorMatrixElement = function(value) { return this.y = value; };
+var dom_SVGFEColorMatrixElement = {};
+$dynamic("get$type").SVGFEColorMatrixElement = function() {
+  return this.type;
+}
+$dynamic("get$x").SVGFEColorMatrixElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEColorMatrixElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEComponentTransferElement **************
-$dynamic("get$x").SVGFEComponentTransferElement = function() { return this.x; };
-$dynamic("set$x").SVGFEComponentTransferElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEComponentTransferElement = function() { return this.y; };
-$dynamic("set$y").SVGFEComponentTransferElement = function(value) { return this.y = value; };
+var dom_SVGFEComponentTransferElement = {};
+$dynamic("get$x").SVGFEComponentTransferElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEComponentTransferElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFECompositeElement **************
-$dynamic("get$x").SVGFECompositeElement = function() { return this.x; };
-$dynamic("set$x").SVGFECompositeElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFECompositeElement = function() { return this.y; };
-$dynamic("set$y").SVGFECompositeElement = function(value) { return this.y = value; };
+var dom_SVGFECompositeElement = {};
+$dynamic("get$x").SVGFECompositeElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFECompositeElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEConvolveMatrixElement **************
-$dynamic("get$x").SVGFEConvolveMatrixElement = function() { return this.x; };
-$dynamic("set$x").SVGFEConvolveMatrixElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEConvolveMatrixElement = function() { return this.y; };
-$dynamic("set$y").SVGFEConvolveMatrixElement = function(value) { return this.y = value; };
+var dom_SVGFEConvolveMatrixElement = {};
+$dynamic("get$x").SVGFEConvolveMatrixElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEConvolveMatrixElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEDiffuseLightingElement **************
-$dynamic("get$x").SVGFEDiffuseLightingElement = function() { return this.x; };
-$dynamic("set$x").SVGFEDiffuseLightingElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEDiffuseLightingElement = function() { return this.y; };
-$dynamic("set$y").SVGFEDiffuseLightingElement = function(value) { return this.y = value; };
+var dom_SVGFEDiffuseLightingElement = {};
+$dynamic("get$x").SVGFEDiffuseLightingElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEDiffuseLightingElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEDisplacementMapElement **************
-$dynamic("get$x").SVGFEDisplacementMapElement = function() { return this.x; };
-$dynamic("set$x").SVGFEDisplacementMapElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEDisplacementMapElement = function() { return this.y; };
-$dynamic("set$y").SVGFEDisplacementMapElement = function(value) { return this.y = value; };
+var dom_SVGFEDisplacementMapElement = {};
+$dynamic("get$x").SVGFEDisplacementMapElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEDisplacementMapElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEDistantLightElement **************
+var dom_SVGFEDistantLightElement = {};
 // ********** Code for dom_SVGFEDropShadowElement **************
-$dynamic("get$x").SVGFEDropShadowElement = function() { return this.x; };
-$dynamic("set$x").SVGFEDropShadowElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEDropShadowElement = function() { return this.y; };
-$dynamic("set$y").SVGFEDropShadowElement = function(value) { return this.y = value; };
+var dom_SVGFEDropShadowElement = {};
+$dynamic("get$x").SVGFEDropShadowElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEDropShadowElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEFloodElement **************
-$dynamic("get$x").SVGFEFloodElement = function() { return this.x; };
-$dynamic("set$x").SVGFEFloodElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEFloodElement = function() { return this.y; };
-$dynamic("set$y").SVGFEFloodElement = function(value) { return this.y = value; };
+var dom_SVGFEFloodElement = {};
+$dynamic("get$x").SVGFEFloodElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEFloodElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEFuncAElement **************
+var dom_SVGFEFuncAElement = {};
 // ********** Code for dom_SVGFEFuncBElement **************
+var dom_SVGFEFuncBElement = {};
 // ********** Code for dom_SVGFEFuncGElement **************
+var dom_SVGFEFuncGElement = {};
 // ********** Code for dom_SVGFEFuncRElement **************
+var dom_SVGFEFuncRElement = {};
 // ********** Code for dom_SVGFEGaussianBlurElement **************
-$dynamic("get$x").SVGFEGaussianBlurElement = function() { return this.x; };
-$dynamic("set$x").SVGFEGaussianBlurElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEGaussianBlurElement = function() { return this.y; };
-$dynamic("set$y").SVGFEGaussianBlurElement = function(value) { return this.y = value; };
+var dom_SVGFEGaussianBlurElement = {};
+$dynamic("get$x").SVGFEGaussianBlurElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEGaussianBlurElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEImageElement **************
-$dynamic("get$x").SVGFEImageElement = function() { return this.x; };
-$dynamic("set$x").SVGFEImageElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEImageElement = function() { return this.y; };
-$dynamic("set$y").SVGFEImageElement = function(value) { return this.y = value; };
+var dom_SVGFEImageElement = {};
+$dynamic("get$x").SVGFEImageElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEImageElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEMergeElement **************
-$dynamic("get$x").SVGFEMergeElement = function() { return this.x; };
-$dynamic("set$x").SVGFEMergeElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEMergeElement = function() { return this.y; };
-$dynamic("set$y").SVGFEMergeElement = function(value) { return this.y = value; };
+var dom_SVGFEMergeElement = {};
+$dynamic("get$x").SVGFEMergeElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEMergeElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEMergeNodeElement **************
+var dom_SVGFEMergeNodeElement = {};
 // ********** Code for dom_SVGFEMorphologyElement **************
-$dynamic("get$x").SVGFEMorphologyElement = function() { return this.x; };
-$dynamic("set$x").SVGFEMorphologyElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEMorphologyElement = function() { return this.y; };
-$dynamic("set$y").SVGFEMorphologyElement = function(value) { return this.y = value; };
+var dom_SVGFEMorphologyElement = {};
+$dynamic("get$x").SVGFEMorphologyElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEMorphologyElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEOffsetElement **************
-$dynamic("get$x").SVGFEOffsetElement = function() { return this.x; };
-$dynamic("set$x").SVGFEOffsetElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEOffsetElement = function() { return this.y; };
-$dynamic("set$y").SVGFEOffsetElement = function(value) { return this.y = value; };
+var dom_SVGFEOffsetElement = {};
+$dynamic("get$x").SVGFEOffsetElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEOffsetElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFEPointLightElement **************
-$dynamic("get$x").SVGFEPointLightElement = function() { return this.x; };
-$dynamic("set$x").SVGFEPointLightElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFEPointLightElement = function() { return this.y; };
-$dynamic("set$y").SVGFEPointLightElement = function(value) { return this.y = value; };
+var dom_SVGFEPointLightElement = {};
+$dynamic("get$x").SVGFEPointLightElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFEPointLightElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFESpecularLightingElement **************
-$dynamic("get$x").SVGFESpecularLightingElement = function() { return this.x; };
-$dynamic("set$x").SVGFESpecularLightingElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFESpecularLightingElement = function() { return this.y; };
-$dynamic("set$y").SVGFESpecularLightingElement = function(value) { return this.y = value; };
+var dom_SVGFESpecularLightingElement = {};
+$dynamic("get$x").SVGFESpecularLightingElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFESpecularLightingElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFESpotLightElement **************
-$dynamic("get$x").SVGFESpotLightElement = function() { return this.x; };
-$dynamic("set$x").SVGFESpotLightElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFESpotLightElement = function() { return this.y; };
-$dynamic("set$y").SVGFESpotLightElement = function(value) { return this.y = value; };
+var dom_SVGFESpotLightElement = {};
+$dynamic("get$x").SVGFESpotLightElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFESpotLightElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFETileElement **************
-$dynamic("get$x").SVGFETileElement = function() { return this.x; };
-$dynamic("set$x").SVGFETileElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFETileElement = function() { return this.y; };
-$dynamic("set$y").SVGFETileElement = function(value) { return this.y = value; };
+var dom_SVGFETileElement = {};
+$dynamic("get$x").SVGFETileElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFETileElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFETurbulenceElement **************
-$dynamic("get$type").SVGFETurbulenceElement = function() { return this.type; };
-$dynamic("set$type").SVGFETurbulenceElement = function(value) { return this.type = value; };
-$dynamic("get$x").SVGFETurbulenceElement = function() { return this.x; };
-$dynamic("set$x").SVGFETurbulenceElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFETurbulenceElement = function() { return this.y; };
-$dynamic("set$y").SVGFETurbulenceElement = function(value) { return this.y = value; };
+var dom_SVGFETurbulenceElement = {};
+$dynamic("get$type").SVGFETurbulenceElement = function() {
+  return this.type;
+}
+$dynamic("get$x").SVGFETurbulenceElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFETurbulenceElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFilterElement **************
-$dynamic("get$x").SVGFilterElement = function() { return this.x; };
-$dynamic("set$x").SVGFilterElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFilterElement = function() { return this.y; };
-$dynamic("set$y").SVGFilterElement = function(value) { return this.y = value; };
+var dom_SVGFilterElement = {};
+$dynamic("get$x").SVGFilterElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFilterElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFilterPrimitiveStandardAttributes **************
-$dynamic("get$x").SVGFilterPrimitiveStandardAttributes = function() { return this.x; };
-$dynamic("set$x").SVGFilterPrimitiveStandardAttributes = function(value) { return this.x = value; };
-$dynamic("get$y").SVGFilterPrimitiveStandardAttributes = function() { return this.y; };
-$dynamic("set$y").SVGFilterPrimitiveStandardAttributes = function(value) { return this.y = value; };
+var dom_SVGFilterPrimitiveStandardAttributes = {};
+$dynamic("get$x").SVGFilterPrimitiveStandardAttributes = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGFilterPrimitiveStandardAttributes = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGFitToViewBox **************
+var dom_SVGFitToViewBox = {};
 // ********** Code for dom_SVGFontElement **************
+var dom_SVGFontElement = {};
 // ********** Code for dom_SVGFontFaceElement **************
+var dom_SVGFontFaceElement = {};
 // ********** Code for dom_SVGFontFaceFormatElement **************
+var dom_SVGFontFaceFormatElement = {};
 // ********** Code for dom_SVGFontFaceNameElement **************
+var dom_SVGFontFaceNameElement = {};
 // ********** Code for dom_SVGFontFaceSrcElement **************
+var dom_SVGFontFaceSrcElement = {};
 // ********** Code for dom_SVGFontFaceUriElement **************
+var dom_SVGFontFaceUriElement = {};
 // ********** Code for dom_SVGForeignObjectElement **************
-$dynamic("get$x").SVGForeignObjectElement = function() { return this.x; };
-$dynamic("set$x").SVGForeignObjectElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGForeignObjectElement = function() { return this.y; };
-$dynamic("set$y").SVGForeignObjectElement = function(value) { return this.y = value; };
+var dom_SVGForeignObjectElement = {};
+$dynamic("get$x").SVGForeignObjectElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGForeignObjectElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGGElement **************
+var dom_SVGGElement = {};
 // ********** Code for dom_SVGGlyphElement **************
+var dom_SVGGlyphElement = {};
 // ********** Code for dom_SVGGlyphRefElement **************
-$dynamic("get$x").SVGGlyphRefElement = function() { return this.x; };
-$dynamic("set$x").SVGGlyphRefElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGGlyphRefElement = function() { return this.y; };
-$dynamic("set$y").SVGGlyphRefElement = function(value) { return this.y = value; };
+var dom_SVGGlyphRefElement = {};
+$dynamic("get$x").SVGGlyphRefElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGGlyphRefElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGGradientElement **************
+var dom_SVGGradientElement = {};
 // ********** Code for dom_SVGHKernElement **************
+var dom_SVGHKernElement = {};
 // ********** Code for dom_SVGImageElement **************
-$dynamic("get$x").SVGImageElement = function() { return this.x; };
-$dynamic("set$x").SVGImageElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGImageElement = function() { return this.y; };
-$dynamic("set$y").SVGImageElement = function(value) { return this.y = value; };
+var dom_SVGImageElement = {};
+$dynamic("get$x").SVGImageElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGImageElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGLangSpace **************
+var dom_SVGLangSpace = {};
 // ********** Code for dom_SVGLength **************
+var dom_SVGLength = {};
 // ********** Code for dom_SVGLengthList **************
+var dom_SVGLengthList = {};
 // ********** Code for dom_SVGLineElement **************
+var dom_SVGLineElement = {};
 // ********** Code for dom_SVGLinearGradientElement **************
+var dom_SVGLinearGradientElement = {};
 // ********** Code for dom_SVGLocatable **************
+var dom_SVGLocatable = {};
 // ********** Code for dom_SVGMPathElement **************
+var dom_SVGMPathElement = {};
 // ********** Code for dom_SVGMarkerElement **************
+var dom_SVGMarkerElement = {};
 // ********** Code for dom_SVGMaskElement **************
-$dynamic("get$x").SVGMaskElement = function() { return this.x; };
-$dynamic("set$x").SVGMaskElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGMaskElement = function() { return this.y; };
-$dynamic("set$y").SVGMaskElement = function(value) { return this.y = value; };
+var dom_SVGMaskElement = {};
+$dynamic("get$x").SVGMaskElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGMaskElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGMatrix **************
+var dom_SVGMatrix = {};
 // ********** Code for dom_SVGMetadataElement **************
+var dom_SVGMetadataElement = {};
 // ********** Code for dom_SVGMissingGlyphElement **************
+var dom_SVGMissingGlyphElement = {};
 // ********** Code for dom_SVGNumber **************
+var dom_SVGNumber = {};
 // ********** Code for dom_SVGNumberList **************
+var dom_SVGNumberList = {};
 // ********** Code for dom_SVGPaint **************
+var dom_SVGPaint = {};
 // ********** Code for dom_SVGPathElement **************
+var dom_SVGPathElement = {};
 // ********** Code for dom_SVGPathSeg **************
+var dom_SVGPathSeg = {};
 // ********** Code for dom_SVGPathSegArcAbs **************
-$dynamic("get$angle").SVGPathSegArcAbs = function() { return this.angle; };
-$dynamic("set$angle").SVGPathSegArcAbs = function(value) { return this.angle = value; };
-$dynamic("get$x").SVGPathSegArcAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegArcAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegArcAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegArcAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegArcAbs = {};
+$dynamic("get$angle").SVGPathSegArcAbs = function() {
+  return this.angle;
+}
+$dynamic("get$x").SVGPathSegArcAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegArcAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegArcRel **************
-$dynamic("get$angle").SVGPathSegArcRel = function() { return this.angle; };
-$dynamic("set$angle").SVGPathSegArcRel = function(value) { return this.angle = value; };
-$dynamic("get$x").SVGPathSegArcRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegArcRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegArcRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegArcRel = function(value) { return this.y = value; };
+var dom_SVGPathSegArcRel = {};
+$dynamic("get$angle").SVGPathSegArcRel = function() {
+  return this.angle;
+}
+$dynamic("get$x").SVGPathSegArcRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegArcRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegClosePath **************
+var dom_SVGPathSegClosePath = {};
 // ********** Code for dom_SVGPathSegCurvetoCubicAbs **************
-$dynamic("get$x").SVGPathSegCurvetoCubicAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoCubicAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoCubicAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoCubicAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoCubicAbs = {};
+$dynamic("get$x").SVGPathSegCurvetoCubicAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoCubicAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoCubicRel **************
-$dynamic("get$x").SVGPathSegCurvetoCubicRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoCubicRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoCubicRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoCubicRel = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoCubicRel = {};
+$dynamic("get$x").SVGPathSegCurvetoCubicRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoCubicRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoCubicSmoothAbs **************
-$dynamic("get$x").SVGPathSegCurvetoCubicSmoothAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoCubicSmoothAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoCubicSmoothAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoCubicSmoothAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoCubicSmoothAbs = {};
+$dynamic("get$x").SVGPathSegCurvetoCubicSmoothAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoCubicSmoothAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoCubicSmoothRel **************
-$dynamic("get$x").SVGPathSegCurvetoCubicSmoothRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoCubicSmoothRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoCubicSmoothRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoCubicSmoothRel = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoCubicSmoothRel = {};
+$dynamic("get$x").SVGPathSegCurvetoCubicSmoothRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoCubicSmoothRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoQuadraticAbs **************
-$dynamic("get$x").SVGPathSegCurvetoQuadraticAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoQuadraticAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoQuadraticAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoQuadraticAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoQuadraticAbs = {};
+$dynamic("get$x").SVGPathSegCurvetoQuadraticAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoQuadraticAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoQuadraticRel **************
-$dynamic("get$x").SVGPathSegCurvetoQuadraticRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoQuadraticRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoQuadraticRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoQuadraticRel = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoQuadraticRel = {};
+$dynamic("get$x").SVGPathSegCurvetoQuadraticRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoQuadraticRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoQuadraticSmoothAbs **************
-$dynamic("get$x").SVGPathSegCurvetoQuadraticSmoothAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoQuadraticSmoothAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoQuadraticSmoothAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoQuadraticSmoothAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoQuadraticSmoothAbs = {};
+$dynamic("get$x").SVGPathSegCurvetoQuadraticSmoothAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoQuadraticSmoothAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegCurvetoQuadraticSmoothRel **************
-$dynamic("get$x").SVGPathSegCurvetoQuadraticSmoothRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegCurvetoQuadraticSmoothRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegCurvetoQuadraticSmoothRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegCurvetoQuadraticSmoothRel = function(value) { return this.y = value; };
+var dom_SVGPathSegCurvetoQuadraticSmoothRel = {};
+$dynamic("get$x").SVGPathSegCurvetoQuadraticSmoothRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegCurvetoQuadraticSmoothRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegLinetoAbs **************
-$dynamic("get$x").SVGPathSegLinetoAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegLinetoAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegLinetoAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegLinetoAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegLinetoAbs = {};
+$dynamic("get$x").SVGPathSegLinetoAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegLinetoAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegLinetoHorizontalAbs **************
-$dynamic("get$x").SVGPathSegLinetoHorizontalAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegLinetoHorizontalAbs = function(value) { return this.x = value; };
+var dom_SVGPathSegLinetoHorizontalAbs = {};
+$dynamic("get$x").SVGPathSegLinetoHorizontalAbs = function() {
+  return this.x;
+}
 // ********** Code for dom_SVGPathSegLinetoHorizontalRel **************
-$dynamic("get$x").SVGPathSegLinetoHorizontalRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegLinetoHorizontalRel = function(value) { return this.x = value; };
+var dom_SVGPathSegLinetoHorizontalRel = {};
+$dynamic("get$x").SVGPathSegLinetoHorizontalRel = function() {
+  return this.x;
+}
 // ********** Code for dom_SVGPathSegLinetoRel **************
-$dynamic("get$x").SVGPathSegLinetoRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegLinetoRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegLinetoRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegLinetoRel = function(value) { return this.y = value; };
+var dom_SVGPathSegLinetoRel = {};
+$dynamic("get$x").SVGPathSegLinetoRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegLinetoRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegLinetoVerticalAbs **************
-$dynamic("get$y").SVGPathSegLinetoVerticalAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegLinetoVerticalAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegLinetoVerticalAbs = {};
+$dynamic("get$y").SVGPathSegLinetoVerticalAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegLinetoVerticalRel **************
-$dynamic("get$y").SVGPathSegLinetoVerticalRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegLinetoVerticalRel = function(value) { return this.y = value; };
+var dom_SVGPathSegLinetoVerticalRel = {};
+$dynamic("get$y").SVGPathSegLinetoVerticalRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegList **************
+var dom_SVGPathSegList = {};
 // ********** Code for dom_SVGPathSegMovetoAbs **************
-$dynamic("get$x").SVGPathSegMovetoAbs = function() { return this.x; };
-$dynamic("set$x").SVGPathSegMovetoAbs = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegMovetoAbs = function() { return this.y; };
-$dynamic("set$y").SVGPathSegMovetoAbs = function(value) { return this.y = value; };
+var dom_SVGPathSegMovetoAbs = {};
+$dynamic("get$x").SVGPathSegMovetoAbs = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegMovetoAbs = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPathSegMovetoRel **************
-$dynamic("get$x").SVGPathSegMovetoRel = function() { return this.x; };
-$dynamic("set$x").SVGPathSegMovetoRel = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPathSegMovetoRel = function() { return this.y; };
-$dynamic("set$y").SVGPathSegMovetoRel = function(value) { return this.y = value; };
+var dom_SVGPathSegMovetoRel = {};
+$dynamic("get$x").SVGPathSegMovetoRel = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPathSegMovetoRel = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPatternElement **************
-$dynamic("get$x").SVGPatternElement = function() { return this.x; };
-$dynamic("set$x").SVGPatternElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPatternElement = function() { return this.y; };
-$dynamic("set$y").SVGPatternElement = function(value) { return this.y = value; };
+var dom_SVGPatternElement = {};
+$dynamic("get$x").SVGPatternElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPatternElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPoint **************
-$dynamic("get$x").SVGPoint = function() { return this.x; };
-$dynamic("set$x").SVGPoint = function(value) { return this.x = value; };
-$dynamic("get$y").SVGPoint = function() { return this.y; };
-$dynamic("set$y").SVGPoint = function(value) { return this.y = value; };
+var dom_SVGPoint = {};
+$dynamic("get$x").SVGPoint = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGPoint = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGPointList **************
+var dom_SVGPointList = {};
 // ********** Code for dom_SVGPolygonElement **************
+var dom_SVGPolygonElement = {};
 // ********** Code for dom_SVGPolylineElement **************
+var dom_SVGPolylineElement = {};
 // ********** Code for dom_SVGPreserveAspectRatio **************
+var dom_SVGPreserveAspectRatio = {};
 // ********** Code for dom_SVGRadialGradientElement **************
+var dom_SVGRadialGradientElement = {};
 // ********** Code for dom_SVGRect **************
-$dynamic("get$x").SVGRect = function() { return this.x; };
-$dynamic("set$x").SVGRect = function(value) { return this.x = value; };
-$dynamic("get$y").SVGRect = function() { return this.y; };
-$dynamic("set$y").SVGRect = function(value) { return this.y = value; };
+var dom_SVGRect = {};
+$dynamic("get$x").SVGRect = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGRect = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGRectElement **************
-$dynamic("get$x").SVGRectElement = function() { return this.x; };
-$dynamic("set$x").SVGRectElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGRectElement = function() { return this.y; };
-$dynamic("set$y").SVGRectElement = function(value) { return this.y = value; };
+var dom_SVGRectElement = {};
+$dynamic("get$x").SVGRectElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGRectElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGRenderingIntent **************
+var dom_SVGRenderingIntent = {};
 // ********** Code for dom_SVGSVGElement **************
-$dynamic("get$x").SVGSVGElement = function() { return this.x; };
-$dynamic("set$x").SVGSVGElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGSVGElement = function() { return this.y; };
-$dynamic("set$y").SVGSVGElement = function(value) { return this.y = value; };
+var dom_SVGSVGElement = {};
+$dynamic("get$x").SVGSVGElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGSVGElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGScriptElement **************
-$dynamic("get$type").SVGScriptElement = function() { return this.type; };
-$dynamic("set$type").SVGScriptElement = function(value) { return this.type = value; };
+var dom_SVGScriptElement = {};
+$dynamic("get$type").SVGScriptElement = function() {
+  return this.type;
+}
 // ********** Code for dom_SVGSetElement **************
+var dom_SVGSetElement = {};
 // ********** Code for dom_SVGStopElement **************
+var dom_SVGStopElement = {};
 // ********** Code for dom_SVGStringList **************
+var dom_SVGStringList = {};
 // ********** Code for dom_SVGStylable **************
+var dom_SVGStylable = {};
 // ********** Code for dom_SVGStyleElement **************
-$dynamic("get$type").SVGStyleElement = function() { return this.type; };
-$dynamic("set$type").SVGStyleElement = function(value) { return this.type = value; };
+var dom_SVGStyleElement = {};
+$dynamic("get$type").SVGStyleElement = function() {
+  return this.type;
+}
 // ********** Code for dom_SVGSwitchElement **************
+var dom_SVGSwitchElement = {};
 // ********** Code for dom_SVGSymbolElement **************
+var dom_SVGSymbolElement = {};
 // ********** Code for dom_SVGTRefElement **************
+var dom_SVGTRefElement = {};
 // ********** Code for dom_SVGTSpanElement **************
+var dom_SVGTSpanElement = {};
 // ********** Code for dom_SVGTests **************
+var dom_SVGTests = {};
 // ********** Code for dom_SVGTextContentElement **************
+var dom_SVGTextContentElement = {};
 // ********** Code for dom_SVGTextElement **************
+var dom_SVGTextElement = {};
 // ********** Code for dom_SVGTextPathElement **************
+var dom_SVGTextPathElement = {};
 // ********** Code for dom_SVGTextPositioningElement **************
-$dynamic("get$x").SVGTextPositioningElement = function() { return this.x; };
-$dynamic("set$x").SVGTextPositioningElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGTextPositioningElement = function() { return this.y; };
-$dynamic("set$y").SVGTextPositioningElement = function(value) { return this.y = value; };
+var dom_SVGTextPositioningElement = {};
+$dynamic("get$x").SVGTextPositioningElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGTextPositioningElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGTitleElement **************
+var dom_SVGTitleElement = {};
 // ********** Code for dom_SVGTransform **************
-$dynamic("get$angle").SVGTransform = function() { return this.angle; };
-$dynamic("set$angle").SVGTransform = function(value) { return this.angle = value; };
-$dynamic("get$type").SVGTransform = function() { return this.type; };
-$dynamic("set$type").SVGTransform = function(value) { return this.type = value; };
+var dom_SVGTransform = {};
+$dynamic("get$angle").SVGTransform = function() {
+  return this.angle;
+}
+$dynamic("get$type").SVGTransform = function() {
+  return this.type;
+}
 // ********** Code for dom_SVGTransformList **************
+var dom_SVGTransformList = {};
 // ********** Code for dom_SVGTransformable **************
+var dom_SVGTransformable = {};
 // ********** Code for dom_SVGURIReference **************
+var dom_SVGURIReference = {};
 // ********** Code for dom_SVGUnitTypes **************
+var dom_SVGUnitTypes = {};
 // ********** Code for dom_SVGUseElement **************
-$dynamic("get$x").SVGUseElement = function() { return this.x; };
-$dynamic("set$x").SVGUseElement = function(value) { return this.x = value; };
-$dynamic("get$y").SVGUseElement = function() { return this.y; };
-$dynamic("set$y").SVGUseElement = function(value) { return this.y = value; };
+var dom_SVGUseElement = {};
+$dynamic("get$x").SVGUseElement = function() {
+  return this.x;
+}
+$dynamic("get$y").SVGUseElement = function() {
+  return this.y;
+}
 // ********** Code for dom_SVGVKernElement **************
+var dom_SVGVKernElement = {};
 // ********** Code for dom_SVGViewElement **************
+var dom_SVGViewElement = {};
 // ********** Code for dom_SVGViewSpec **************
+var dom_SVGViewSpec = {};
 // ********** Code for dom_SVGZoomAndPan **************
+var dom_SVGZoomAndPan = {};
 // ********** Code for dom_SVGZoomEvent **************
+var dom_SVGZoomEvent = {};
 // ********** Code for dom_Screen **************
+var dom_Screen = {};
 // ********** Code for dom_ScriptProfile **************
+var dom_ScriptProfile = {};
 // ********** Code for dom_ScriptProfileNode **************
+var dom_ScriptProfileNode = {};
 // ********** Code for dom_SharedWorker **************
-// ********** Code for dom_SharedWorkercontext **************
+var dom_SharedWorker = {};
+// ********** Code for dom_SharedWorkerContext **************
+var dom_SharedWorkerContext = {};
 // ********** Code for dom_SpeechInputEvent **************
+var dom_SpeechInputEvent = {};
 // ********** Code for dom_SpeechInputResult **************
+var dom_SpeechInputResult = {};
 // ********** Code for dom_SpeechInputResultList **************
+var dom_SpeechInputResultList = {};
 // ********** Code for dom_Storage **************
+var dom_Storage = {};
 // ********** Code for dom_StorageEvent **************
+var dom_StorageEvent = {};
 // ********** Code for dom_StorageInfo **************
+var dom_StorageInfo = {};
 // ********** Code for dom_StyleMedia **************
-$dynamic("get$type").StyleMedia = function() { return this.type; };
-$dynamic("set$type").StyleMedia = function(value) { return this.type = value; };
+var dom_StyleMedia = {};
+$dynamic("get$type").StyleMedia = function() {
+  return this.type;
+}
 // ********** Code for dom_StyleSheet **************
-$dynamic("get$type").StyleSheet = function() { return this.type; };
-$dynamic("set$type").StyleSheet = function(value) { return this.type = value; };
+var dom_StyleSheet = {};
+$dynamic("get$type").StyleSheet = function() {
+  return this.type;
+}
 // ********** Code for dom_StyleSheetList **************
+var dom_StyleSheetList = {};
+$dynamic("$setindex").StyleSheetList = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_Text **************
+var dom_Text = {};
 // ********** Code for dom_TextEvent **************
+var dom_TextEvent = {};
 // ********** Code for dom_TextMetrics **************
+var dom_TextMetrics = {};
 // ********** Code for dom_TextTrack **************
+var dom_TextTrack = {};
 // ********** Code for dom_TextTrackCue **************
-$dynamic("get$id").TextTrackCue = function() { return this.id; };
-$dynamic("set$id").TextTrackCue = function(value) { return this.id = value; };
+var dom_TextTrackCue = {};
 // ********** Code for dom_TextTrackCueList **************
+var dom_TextTrackCueList = {};
 // ********** Code for dom_TextTrackList **************
+var dom_TextTrackList = {};
 // ********** Code for dom_TimeRanges **************
+var dom_TimeRanges = {};
 // ********** Code for dom_Touch **************
+var dom_Touch = {};
 // ********** Code for dom_TouchEvent **************
+var dom_TouchEvent = {};
 // ********** Code for dom_TouchList **************
+var dom_TouchList = {};
+$dynamic("$setindex").TouchList = function(index, value) {
+  $throw(new UnsupportedOperationException("Cannot assign element of immutable List."));
+}
 // ********** Code for dom_TrackEvent **************
+var dom_TrackEvent = {};
 // ********** Code for dom_TreeWalker **************
+var dom_TreeWalker = {};
 // ********** Code for dom_UIEvent **************
+var dom_UIEvent = {};
 // ********** Code for dom_Uint16Array **************
-$dynamic("get$length").Uint16Array = function() { return this.length; };
-$dynamic("set$length").Uint16Array = function(value) { return this.length = value; };
+var dom_Uint16Array = {};
+$dynamic("get$length").Uint16Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Uint32Array **************
-$dynamic("get$length").Uint32Array = function() { return this.length; };
-$dynamic("set$length").Uint32Array = function(value) { return this.length = value; };
+var dom_Uint32Array = {};
+$dynamic("get$length").Uint32Array = function() {
+  return this.length;
+}
 // ********** Code for dom_Uint8Array **************
-$dynamic("get$length").Uint8Array = function() { return this.length; };
-$dynamic("set$length").Uint8Array = function(value) { return this.length = value; };
+var dom_Uint8Array = {};
+$dynamic("get$length").Uint8Array = function() {
+  return this.length;
+}
 // ********** Code for dom_ValidityState **************
+var dom_ValidityState = {};
 // ********** Code for dom_WaveShaperNode **************
+var dom_WaveShaperNode = {};
 // ********** Code for dom_WebGLActiveInfo **************
-$dynamic("get$type").WebGLActiveInfo = function() { return this.type; };
-$dynamic("set$type").WebGLActiveInfo = function(value) { return this.type = value; };
+var dom_WebGLActiveInfo = {};
+$dynamic("get$type").WebGLActiveInfo = function() {
+  return this.type;
+}
 // ********** Code for dom_WebGLBuffer **************
+var dom_WebGLBuffer = {};
 // ********** Code for dom_WebGLCompressedTextures **************
+var dom_WebGLCompressedTextures = {};
 // ********** Code for dom_WebGLContextAttributes **************
+var dom_WebGLContextAttributes = {};
 // ********** Code for dom_WebGLContextEvent **************
+var dom_WebGLContextEvent = {};
 // ********** Code for dom_WebGLDebugRendererInfo **************
+var dom_WebGLDebugRendererInfo = {};
 // ********** Code for dom_WebGLDebugShaders **************
+var dom_WebGLDebugShaders = {};
 // ********** Code for dom_WebGLFramebuffer **************
+var dom_WebGLFramebuffer = {};
 // ********** Code for dom_WebGLLoseContext **************
+var dom_WebGLLoseContext = {};
 // ********** Code for dom_WebGLProgram **************
+var dom_WebGLProgram = {};
 // ********** Code for dom_WebGLRenderbuffer **************
+var dom_WebGLRenderbuffer = {};
 // ********** Code for dom_WebGLRenderingContext **************
+var dom_WebGLRenderingContext = {};
 // ********** Code for dom_WebGLShader **************
+var dom_WebGLShader = {};
 // ********** Code for dom_WebGLTexture **************
+var dom_WebGLTexture = {};
 // ********** Code for dom_WebGLUniformLocation **************
+var dom_WebGLUniformLocation = {};
 // ********** Code for dom_WebGLVertexArrayObjectOES **************
+var dom_WebGLVertexArrayObjectOES = {};
 // ********** Code for dom_WebKitAnimation **************
+var dom_WebKitAnimation = {};
 // ********** Code for dom_WebKitAnimationEvent **************
+var dom_WebKitAnimationEvent = {};
 // ********** Code for dom_WebKitAnimationList **************
+var dom_WebKitAnimationList = {};
 // ********** Code for dom_WebKitBlobBuilder **************
+var dom_WebKitBlobBuilder = {};
 // ********** Code for dom_WebKitCSSFilterValue **************
+var dom_WebKitCSSFilterValue = {};
 // ********** Code for dom_WebKitCSSKeyframeRule **************
+var dom_WebKitCSSKeyframeRule = {};
 // ********** Code for dom_WebKitCSSKeyframesRule **************
+var dom_WebKitCSSKeyframesRule = {};
 // ********** Code for dom_WebKitCSSMatrix **************
-$dynamic("toString$0").WebKitCSSMatrix = function() {
-  return this.toString();
-};
+var dom_WebKitCSSMatrix = {};
 // ********** Code for dom_WebKitCSSTransformValue **************
-// ********** Code for dom_WebKitFlags **************
+var dom_WebKitCSSTransformValue = {};
 // ********** Code for dom_WebKitMutationObserver **************
+var dom_WebKitMutationObserver = {};
 // ********** Code for dom_WebKitNamedFlow **************
+var dom_WebKitNamedFlow = {};
 // ********** Code for dom_WebKitPoint **************
-$dynamic("get$x").WebKitPoint = function() { return this.x; };
-$dynamic("set$x").WebKitPoint = function(value) { return this.x = value; };
-$dynamic("get$y").WebKitPoint = function() { return this.y; };
-$dynamic("set$y").WebKitPoint = function(value) { return this.y = value; };
+var dom_WebKitPoint = {};
+$dynamic("get$x").WebKitPoint = function() {
+  return this.x;
+}
+$dynamic("get$y").WebKitPoint = function() {
+  return this.y;
+}
 // ********** Code for dom_WebKitTransitionEvent **************
+var dom_WebKitTransitionEvent = {};
 // ********** Code for dom_WebSocket **************
+var dom_WebSocket = {};
 // ********** Code for dom_WheelEvent **************
-$dynamic("get$x").WheelEvent = function() { return this.x; };
-$dynamic("set$x").WheelEvent = function(value) { return this.x = value; };
-$dynamic("get$y").WheelEvent = function() { return this.y; };
-$dynamic("set$y").WheelEvent = function(value) { return this.y = value; };
+var dom_WheelEvent = {};
+$dynamic("get$x").WheelEvent = function() {
+  return this.x;
+}
+$dynamic("get$y").WheelEvent = function() {
+  return this.y;
+}
 // ********** Code for dom_Worker **************
+var dom_Worker = {};
 // ********** Code for dom_WorkerContext **************
+var dom_WorkerContext = {};
 // ********** Code for dom_WorkerLocation **************
-$dynamic("toString$0").WorkerLocation = function() {
-  return this.toString();
-};
+var dom_WorkerLocation = {};
 // ********** Code for dom_WorkerNavigator **************
+var dom_WorkerNavigator = {};
 // ********** Code for dom_XMLHttpRequest **************
+var dom_XMLHttpRequest = {};
 // ********** Code for dom_XMLHttpRequestException **************
-$dynamic("toString$0").XMLHttpRequestException = function() {
-  return this.toString();
-};
+var dom_XMLHttpRequestException = {};
 // ********** Code for dom_XMLHttpRequestProgressEvent **************
-$dynamic("get$position").XMLHttpRequestProgressEvent = function() { return this.position; };
-$dynamic("set$position").XMLHttpRequestProgressEvent = function(value) { return this.position = value; };
+var dom_XMLHttpRequestProgressEvent = {};
+$dynamic("get$position").XMLHttpRequestProgressEvent = function() {
+  return this.position;
+}
 // ********** Code for dom_XMLHttpRequestUpload **************
+var dom_XMLHttpRequestUpload = {};
 // ********** Code for dom_XMLSerializer **************
+var dom_XMLSerializer = {};
 // ********** Code for dom_XPathEvaluator **************
+var dom_XPathEvaluator = {};
 // ********** Code for dom_XPathException **************
-$dynamic("toString$0").XPathException = function() {
-  return this.toString();
-};
+var dom_XPathException = {};
 // ********** Code for dom_XPathExpression **************
+var dom_XPathExpression = {};
 // ********** Code for dom_XPathNSResolver **************
+var dom_XPathNSResolver = {};
 // ********** Code for dom_XPathResult **************
+var dom_XPathResult = {};
 // ********** Code for dom_XSLTProcessor **************
+var dom_XSLTProcessor = {};
 // ********** Code for _Collections **************
 function _Collections() {}
-// ********** Code for _VariableSizeListIterator_T **************
-$inherits(_VariableSizeListIterator_T, _VariableSizeListIterator);
-function _VariableSizeListIterator_T() {}
-// ********** Code for _FixedSizeListIterator **************
-$inherits(_FixedSizeListIterator, _VariableSizeListIterator_T);
-function _FixedSizeListIterator() {}
-_FixedSizeListIterator.prototype.hasNext$0 = _FixedSizeListIterator.prototype.hasNext;
 // ********** Code for _VariableSizeListIterator **************
 function _VariableSizeListIterator() {}
-_VariableSizeListIterator.prototype.hasNext$0 = _VariableSizeListIterator.prototype.hasNext;
-_VariableSizeListIterator.prototype.next$0 = _VariableSizeListIterator.prototype.next;
+_VariableSizeListIterator.prototype.hasNext = function() {
+  return this._array.get$length() > this._pos;
+}
+_VariableSizeListIterator.prototype.next = function() {
+  if (!this.hasNext()) {
+    $throw(const$0001);
+  }
+  return this._array.$index(this._pos++);
+}
+// ********** Code for _FixedSizeListIterator **************
+$inherits(_FixedSizeListIterator, _VariableSizeListIterator);
+function _FixedSizeListIterator() {}
+_FixedSizeListIterator.prototype.hasNext = function() {
+  return this._length > this._pos;
+}
 // ********** Code for _Lists **************
 function _Lists() {}
 // ********** Code for top level **************
@@ -1535,12 +2159,9 @@ AxisAlignedBox.prototype.setFrom = function(other) {
   this.upperBound.setFrom(other.upperBound);
 }
 AxisAlignedBox.prototype.toString = function() {
-  return this.lowerBound.toString() + ", " + this.upperBound.toString();
+  return $add($add(this.lowerBound.toString(), ", "), this.upperBound.toString());
 }
-AxisAlignedBox.prototype.setFrom$1 = AxisAlignedBox.prototype.setFrom;
-AxisAlignedBox.prototype.toString$0 = AxisAlignedBox.prototype.toString;
 // ********** Code for Collision **************
-function Collision() {}
 Collision._construct$ctor = function(pool) {
   this.normal1 = new Vector((0), (0));
   this.localTangent = new Vector((0), (0));
@@ -1567,6 +2188,7 @@ Collision._construct$ctor = function(pool) {
   this.clipPoints2.$setindex((1), new ClipVertex());
 }
 Collision._construct$ctor.prototype = Collision.prototype;
+function Collision() {}
 Collision.prototype.get$incidentEdge = function() { return this.incidentEdge; };
 Collision.prototype.testOverlap = function(shapeA, shapeB, transformA, transformB) {
   this.input.proxyA.setFromShape(shapeA);
@@ -1580,22 +2202,22 @@ Collision.prototype.testOverlap = function(shapeA, shapeB, transformA, transform
 }
 Collision.clipSegmentToLine = function(vOut, vIn, norm, offset) {
   var numOut = (0);
-  var distance0 = Vector.dot(norm, vIn.$index((0)).get$v()) - offset;
-  var distance1 = Vector.dot(norm, vIn.$index((1)).get$v()) - offset;
+  var distance0 = Vector.dot(norm, vIn[(0)].v) - offset;
+  var distance1 = Vector.dot(norm, vIn[(1)].v) - offset;
   if (distance0 <= (0)) {
-    vOut.$index(numOut++).setFrom$1(vIn.$index((0)));
+    vOut[numOut++].setFrom(vIn[(0)]);
   }
   if (distance1 <= (0)) {
-    vOut.$index(numOut++).setFrom$1(vIn.$index((1)));
+    vOut[numOut++].setFrom(vIn[(1)]);
   }
   if (distance0 * distance1 < (0)) {
     var interp = distance0 / (distance0 - distance1);
-    vOut.$index(numOut).get$v().setFrom$1(vIn.$index((1)).get$v()).subLocal$1(vIn.$index((0)).get$v()).mulLocal$1(interp).addLocal$1(vIn.$index((0)).get$v());
+    vOut[numOut].v.setFrom(vIn[(1)].v).subLocal(vIn[(0)].v).mulLocal(interp).addLocal(vIn[(0)].v);
     if (distance0 > (0)) {
-      vOut.$index(numOut).get$id().setFrom$1(vIn.$index((0)).get$id());
+      vOut[numOut].id.setFrom(vIn[(0)].id);
     }
     else {
-      vOut.$index(numOut).get$id().setFrom$1(vIn.$index((1)).get$id());
+      vOut[numOut].id.setFrom(vIn[(1)].id);
     }
     ++numOut;
   }
@@ -1620,8 +2242,8 @@ Collision.prototype.collideCircles = function(manifold, circle1, xfA, circle2, x
   manifold.localPoint.setFrom(circle1.position);
   manifold.localNormal.setZero();
   manifold.pointCount = (1);
-  manifold.points.$index((0)).get$localPoint().setFrom$1(circle2.position);
-  manifold.points.$index((0)).get$id().zero$0();
+  manifold.points[(0)].localPoint.setFrom(circle2.position);
+  manifold.points[(0)].id.zero();
 }
 Collision.prototype.collidePolygonAndCircle = function(manifold, polygon, xfA, circle, xfB) {
   manifold.pointCount = (0);
@@ -1642,10 +2264,10 @@ Collision.prototype.collidePolygonAndCircle = function(manifold, polygon, xfA, c
   var normals = polygon.normals;
   for (var i = (0);
    i < vertexCount; i++) {
-    var vertex = vertices.$index(i);
+    var vertex = vertices[i];
     var tempx = cLocalx - vertex.x;
     var tempy = cLocaly - vertex.y;
-    var norm = normals.$index(i);
+    var norm = normals[i];
     var s = norm.x * tempx + norm.y * tempy;
     if (s > radius) {
       return;
@@ -1657,17 +2279,17 @@ Collision.prototype.collidePolygonAndCircle = function(manifold, polygon, xfA, c
   }
   var vertIndex1 = normalIndex;
   var vertIndex2 = vertIndex1 + (1) < vertexCount ? vertIndex1 + (1) : (0);
-  var v1 = vertices.$index(vertIndex1);
-  var v2 = vertices.$index(vertIndex2);
+  var v1 = vertices[vertIndex1];
+  var v2 = vertices[vertIndex2];
   if (separation < (1.192e-7)) {
     manifold.pointCount = (1);
     manifold.type = (1);
-    var norm = normals.$index(normalIndex);
+    var norm = normals[normalIndex];
     manifold.localNormal.x = norm.x;
     manifold.localNormal.y = norm.y;
     manifold.localPoint.x = (v1.x + v2.x) * (0.5);
     manifold.localPoint.y = (v1.y + v2.y) * (0.5);
-    var mpoint = manifold.points.$index((0));
+    var mpoint = manifold.points[(0)];
     mpoint.localPoint.x = circle.position.x;
     mpoint.localPoint.y = circle.position.y;
     mpoint.id.zero();
@@ -1695,8 +2317,8 @@ Collision.prototype.collidePolygonAndCircle = function(manifold, polygon, xfA, c
     manifold.localNormal.y = cLocaly - v1.y;
     manifold.localNormal.normalize();
     manifold.localPoint.setFrom(v1);
-    manifold.points.$index((0)).get$localPoint().setFrom$1(circle.position);
-    manifold.points.$index((0)).get$id().zero$0();
+    manifold.points[(0)].localPoint.setFrom(circle.position);
+    manifold.points[(0)].id.zero();
   }
   else if (u2 <= (0)) {
     var dx = cLocalx - v2.x;
@@ -1710,26 +2332,26 @@ Collision.prototype.collidePolygonAndCircle = function(manifold, polygon, xfA, c
     manifold.localNormal.y = cLocaly - v2.y;
     manifold.localNormal.normalize();
     manifold.localPoint.setFrom(v2);
-    manifold.points.$index((0)).get$localPoint().setFrom$1(circle.position);
-    manifold.points.$index((0)).get$id().zero$0();
+    manifold.points[(0)].localPoint.setFrom(circle.position);
+    manifold.points[(0)].id.zero();
   }
   else {
     var fcx = (v1.x + v2.x) * (0.5);
     var fcy = (v1.y + v2.y) * (0.5);
     var tx = cLocalx - fcx;
     var ty = cLocaly - fcy;
-    var norm = normals.$index(vertIndex1);
+    var norm = normals[vertIndex1];
     separation = tx * norm.x + ty * norm.y;
     if (separation > radius) {
       return;
     }
     manifold.pointCount = (1);
     manifold.type = (1);
-    manifold.localNormal.setFrom(normals.$index(vertIndex1));
+    manifold.localNormal.setFrom(normals[vertIndex1]);
     manifold.localPoint.x = fcx;
     manifold.localPoint.y = fcy;
-    manifold.points.$index((0)).get$localPoint().setFrom$1(circle.position);
-    manifold.points.$index((0)).get$id().zero$0();
+    manifold.points[(0)].localPoint.setFrom(circle.position);
+    manifold.points[(0)].id.zero();
   }
 }
 Collision.prototype.edgeSeparation = function(poly1, xf1, edge1, poly2, xf2) {
@@ -1739,7 +2361,7 @@ Collision.prototype.edgeSeparation = function(poly1, xf1, edge1, poly2, xf2) {
   var count2 = poly2.vertexCount;
   var vertices2 = poly2.vertices;
   var R = xf1.rotation;
-  var v = normals1.$index(edge1);
+  var v = normals1[edge1];
   var normal1Worldy = R.col1.y * v.x + R.col2.y * v.y;
   var normal1Worldx = R.col1.x * v.x + R.col2.x * v.y;
   var R1 = xf2.rotation;
@@ -1749,17 +2371,17 @@ Collision.prototype.edgeSeparation = function(poly1, xf1, edge1, poly2, xf2) {
   var minDot = (99999999999999);
   for (var i = (0);
    i < count2; ++i) {
-    var a = vertices2.$index(i);
+    var a = vertices2[i];
     var dot = a.x * normal1x + a.y * normal1y;
     if (dot < minDot) {
       minDot = dot;
       index = i;
     }
   }
-  var v3 = vertices1.$index(edge1);
+  var v3 = vertices1[edge1];
   var v1y = xf1.position.y + R.col1.y * v3.x + R.col2.y * v3.y;
   var v1x = xf1.position.x + R.col1.x * v3.x + R.col2.x * v3.y;
-  var v4 = vertices2.$index(index);
+  var v4 = vertices2[index];
   var v2y = xf2.position.y + R1.col1.y * v4.x + R1.col2.y * v4.y - v1y;
   var v2x = xf2.position.x + R1.col1.x * v4.x + R1.col2.x * v4.y - v1x;
   return v2x * normal1Worldx + v2y * normal1Worldy;
@@ -1783,7 +2405,7 @@ Collision.prototype.findMaxSeparation = function(results, poly1, xf1, poly2, xf2
   var maxDot = (1e-12);
   for (var i = (0);
    i < count1; i++) {
-    var norm = normals1.$index(i);
+    var norm = normals1[i];
     dot = norm.x * dLocal1x + norm.y * dLocal1y;
     if (dot > maxDot) {
       maxDot = dot;
@@ -1838,13 +2460,13 @@ Collision.prototype.findIncidentEdge = function(c, poly1, xf1, edge1, poly2, xf2
   var count2 = poly2.vertexCount;
   var vertices2 = poly2.vertices;
   var normals2 = poly2.normals;
-  Matrix22.mulMatrixAndVectorToOut(xf1.rotation, normals1.$index(edge1), this.normal1);
+  Matrix22.mulMatrixAndVectorToOut(xf1.rotation, normals1[edge1], this.normal1);
   Matrix22.mulTransMatrixAndVectorToOut(xf2.rotation, this.normal1, this.normal1);
   var index = (0);
   var minDot = (99999999999999);
   for (var i = (0);
    i < count2; ++i) {
-    var dot = Vector.dot(this.normal1, normals2.$index(i));
+    var dot = Vector.dot(this.normal1, normals2[i]);
     if (dot < minDot) {
       minDot = dot;
       index = i;
@@ -1852,14 +2474,14 @@ Collision.prototype.findIncidentEdge = function(c, poly1, xf1, edge1, poly2, xf2
   }
   var i1 = index;
   var i2 = i1 + (1) < count2 ? i1 + (1) : (0);
-  Transform.mulToOut(xf2, vertices2.$index(i1), c.$index((0)).get$v());
-  c.$index((0)).get$id().get$features().set$referenceEdge(edge1);
-  c.$index((0)).get$id().get$features().set$incidentEdge(i1);
-  c.$index((0)).get$id().get$features().set$incidentVertex((0));
-  Transform.mulToOut(xf2, vertices2.$index(i2), c.$index((1)).get$v());
-  c.$index((1)).get$id().get$features().set$referenceEdge(edge1);
-  c.$index((1)).get$id().get$features().set$incidentEdge(i2);
-  c.$index((1)).get$id().get$features().set$incidentVertex((1));
+  Transform.mulToOut(xf2, vertices2[i1], c[(0)].v);
+  c[(0)].id.features.referenceEdge = edge1;
+  c[(0)].id.features.incidentEdge = i1;
+  c[(0)].id.features.incidentVertex = (0);
+  Transform.mulToOut(xf2, vertices2[i2], c[(1)].v);
+  c[(1)].id.features.referenceEdge = edge1;
+  c[(1)].id.features.incidentEdge = i2;
+  c[(1)].id.features.incidentVertex = (1);
 }
 Collision.prototype.collidePolygons = function(manifold, polyA, xfA, polyB, xfB) {
   manifold.pointCount = (0);
@@ -1900,8 +2522,8 @@ Collision.prototype.collidePolygons = function(manifold, polyA, xfA, polyB, xfB)
   this.findIncidentEdge(this.incidentEdge, poly1, xf1, edge1, poly2, xf2);
   var count1 = poly1.vertexCount;
   var vertices1 = poly1.vertices;
-  this.v11.setFrom(vertices1.$index(edge1));
-  this.v12.setFrom(edge1 + (1) < count1 ? vertices1.$index(edge1 + (1)) : vertices1.$index((0)));
+  this.v11.setFrom(vertices1[edge1]);
+  this.v12.setFrom(edge1 + (1) < count1 ? vertices1[edge1 + (1)] : vertices1[(0)]);
   this.localTangent.setFrom(this.v12).subLocal(this.v11);
   this.localTangent.normalize();
   Vector.crossVectorAndNumToOut(this.localTangent, (1), this.localNormal);
@@ -1929,11 +2551,11 @@ Collision.prototype.collidePolygons = function(manifold, polyA, xfA, polyB, xfB)
   var pointCount = (0);
   for (var i = (0);
    i < (2); ++i) {
-    var separation = Vector.dot(this.normal, this.clipPoints2.$index(i).get$v()) - frontOffset;
+    var separation = Vector.dot(this.normal, this.clipPoints2[i].v) - frontOffset;
     if (separation <= totalRadius) {
-      var cp = manifold.points.$index(pointCount);
-      Transform.mulTransToOut(xf2, this.clipPoints2.$index(i).get$v(), cp.localPoint);
-      cp.id.setFrom(this.clipPoints2.$index(i).get$id());
+      var cp = manifold.points[pointCount];
+      Transform.mulTransToOut(xf2, this.clipPoints2[i].v, cp.localPoint);
+      cp.id.setFrom(this.clipPoints2[i].id);
       cp.id.features.flip = flip;
       ++pointCount;
     }
@@ -1945,15 +2567,10 @@ function ClipVertex() {
   this.v = new Vector((0), (0));
   this.id = new ContactID();
 }
-ClipVertex.prototype.get$v = function() { return this.v; };
-ClipVertex.prototype.set$v = function(value) { return this.v = value; };
-ClipVertex.prototype.get$id = function() { return this.id; };
-ClipVertex.prototype.set$id = function(value) { return this.id = value; };
 ClipVertex.prototype.setFrom = function(cv) {
   this.v.setFrom(cv.v);
   this.id.setFrom(cv.id);
 }
-ClipVertex.prototype.setFrom$1 = ClipVertex.prototype.setFrom;
 // ********** Code for EdgeResults **************
 function EdgeResults() {
   this.separation = (0);
@@ -1976,10 +2593,7 @@ ContactID.prototype.isEqual = function(other) {
 ContactID.prototype.zero = function() {
   this.features.zero();
 }
-ContactID.prototype.setFrom$1 = ContactID.prototype.setFrom;
-ContactID.prototype.zero$0 = ContactID.prototype.zero;
 // ********** Code for Distance **************
-function Distance() {}
 Distance._construct$ctor = function() {
   this.closestPoint = new Vector((0), (0));
   this.normal = new Vector((0), (0));
@@ -1993,7 +2607,9 @@ Distance._construct$ctor = function() {
   this.saveA = new Array((3));
 }
 Distance._construct$ctor.prototype = Distance.prototype;
+function Distance() {}
 Distance.prototype.distance = function(output, cache, input) {
+  var $0, $1;
   this.calls++;
   var proxyA = input.proxyA;
   var proxyB = input.proxyB;
@@ -2010,8 +2626,8 @@ Distance.prototype.distance = function(output, cache, input) {
     saveCount = this.simplex.count;
     for (var i = (0);
      i < saveCount; i++) {
-      this.saveA.$setindex(i, vertices.$index(i).get$indexA());
-      this.saveB.$setindex(i, vertices.$index(i).get$indexB());
+      this.saveA.$setindex(i, vertices[i].indexA);
+      this.saveB.$setindex(i, vertices[i].indexB);
     }
     switch (this.simplex.count) {
       case (1):
@@ -2044,13 +2660,13 @@ Distance.prototype.distance = function(output, cache, input) {
     if (this.searchDirection.get$lengthSquared() < (1.4208639999999999e-14)) {
       break;
     }
-    var vertex = vertices.$index(this.simplex.count);
+    var vertex = vertices[this.simplex.count];
     Matrix22.mulTransMatrixAndVectorToOut(transformA.rotation, this.searchDirection.negateLocal(), this.temp);
     vertex.indexA = proxyA.getSupport(this.temp);
-    Transform.mulToOut(transformA, proxyA.vertices.$index(vertex.indexA), vertex.wA);
+    Transform.mulToOut(transformA, proxyA.vertices[vertex.indexA], vertex.wA);
     Matrix22.mulTransMatrixAndVectorToOut(transformB.rotation, this.searchDirection.negateLocal(), this.temp);
     vertex.indexB = proxyB.getSupport(this.temp);
-    Transform.mulToOut(transformB, proxyB.vertices.$index(vertex.indexB), vertex.wB);
+    Transform.mulToOut(transformB, proxyB.vertices[vertex.indexB], vertex.wB);
     vertex.w.setFrom(vertex.wB).subLocal(vertex.wA);
     ++iter;
     ++this.iters;
@@ -2065,7 +2681,7 @@ Distance.prototype.distance = function(output, cache, input) {
     if (duplicate) {
       break;
     }
-    ++this.simplex.count;
+    ((($0 = this.simplex).count = ($1 = $0.count + (1)), $1));
   }
   this.maxIters = Math.max(this.maxIters, iter);
   this.simplex.getWitnessPoints(output.pointA, output.pointB);
@@ -2099,10 +2715,6 @@ function DistanceInput() {
   this.proxyB = new DistanceProxy();
   this.useRadii = false;
 }
-DistanceInput.prototype.get$proxyA = function() { return this.proxyA; };
-DistanceInput.prototype.set$proxyA = function(value) { return this.proxyA = value; };
-DistanceInput.prototype.get$proxyB = function() { return this.proxyB; };
-DistanceInput.prototype.set$proxyB = function(value) { return this.proxyB = value; };
 // ********** Code for DistanceOutput **************
 function DistanceOutput() {
   this.pointB = new Vector((0), (0));
@@ -2123,7 +2735,7 @@ DistanceProxy.prototype.get$radius = function() { return this.radius; };
 DistanceProxy.prototype.set$radius = function(value) { return this.radius = value; };
 DistanceProxy.prototype.setFromShape = function(shape) {
   if ($eq(shape.get$type(), (0))) {
-    this.vertices.$index((0)).setFrom$1(shape.get$position());
+    this.vertices[(0)].setFrom(shape.get$position());
     this.count = (1);
     this.radius = shape.get$radius();
   }
@@ -2132,7 +2744,7 @@ DistanceProxy.prototype.setFromShape = function(shape) {
     this.radius = shape.get$radius();
     for (var i = (0);
      i < this.count; i++) {
-      this.vertices.$index(i).setFrom$1(shape.get$vertices().$index(i));
+      this.vertices[i].setFrom(shape.get$vertices().$index(i));
     }
   }
   else {
@@ -2140,10 +2752,10 @@ DistanceProxy.prototype.setFromShape = function(shape) {
 }
 DistanceProxy.prototype.getSupport = function(direction) {
   var bestIndex = (0);
-  var bestValue = Vector.dot(this.vertices.$index((0)), direction);
+  var bestValue = Vector.dot(this.vertices[(0)], direction);
   for (var i = (1);
    i < this.count; i++) {
-    var value = Vector.dot(this.vertices.$index(i), direction);
+    var value = Vector.dot(this.vertices[i], direction);
     if (value > bestValue) {
       bestIndex = i;
       bestValue = value;
@@ -2176,7 +2788,7 @@ Features.prototype.$eq = function(other) {
   return this.referenceEdge == other.get$referenceEdge() && this.incidentEdge == other.get$incidentEdge() && this.incidentVertex == other.get$incidentVertex() && this.flip == other.get$flip();
 }
 Features.prototype.toString = function() {
-  var s = "Features: (" + this.flip + " ," + this.incidentEdge + " ," + this.incidentVertex + " ," + this.referenceEdge + ")";
+  var s = $add($add($add($add("Features: (" + this.flip, " ,") + this.incidentEdge, " ,") + this.incidentVertex, " ,") + this.referenceEdge, ")");
   return s;
 }
 Features.prototype.zero = function() {
@@ -2185,9 +2797,6 @@ Features.prototype.zero = function() {
   this.incidentVertex = (0);
   this.flip = (0);
 }
-Features.prototype.setFrom$1 = Features.prototype.setFrom;
-Features.prototype.toString$0 = Features.prototype.toString;
-Features.prototype.zero$0 = Features.prototype.zero;
 // ********** Code for Manifold **************
 function Manifold() {
   this.pointCount = (0);
@@ -2199,20 +2808,18 @@ function Manifold() {
     this.points.$setindex(i, new ManifoldPoint());
   }
 }
-Manifold.prototype.get$localPoint = function() { return this.localPoint; };
 Manifold.prototype.get$type = function() { return this.type; };
 Manifold.prototype.set$type = function(value) { return this.type = value; };
 Manifold.prototype.setFrom = function(other) {
   for (var i = (0);
    i < other.pointCount; i++) {
-    this.points.$index(i).setFrom$1(other.points.$index(i));
+    this.points[i].setFrom(other.points[i]);
   }
   this.type = other.type;
   this.localNormal.setFrom(other.localNormal);
   this.localPoint.setFrom(other.localPoint);
   this.pointCount = other.pointCount;
 }
-Manifold.prototype.setFrom$1 = Manifold.prototype.setFrom;
 // ********** Code for ManifoldPoint **************
 function ManifoldPoint() {
   this.tangentImpulse = (0);
@@ -2220,19 +2827,12 @@ function ManifoldPoint() {
   this.localPoint = new Vector((0), (0));
   this.normalImpulse = (0);
 }
-ManifoldPoint.prototype.get$localPoint = function() { return this.localPoint; };
-ManifoldPoint.prototype.get$normalImpulse = function() { return this.normalImpulse; };
-ManifoldPoint.prototype.set$normalImpulse = function(value) { return this.normalImpulse = value; };
-ManifoldPoint.prototype.get$tangentImpulse = function() { return this.tangentImpulse; };
-ManifoldPoint.prototype.set$tangentImpulse = function(value) { return this.tangentImpulse = value; };
-ManifoldPoint.prototype.get$id = function() { return this.id; };
 ManifoldPoint.prototype.setFrom = function(other) {
   this.localPoint.setFrom(other.localPoint);
   this.normalImpulse = other.normalImpulse;
   this.tangentImpulse = other.tangentImpulse;
   this.id.setFrom(other.id);
 }
-ManifoldPoint.prototype.setFrom$1 = ManifoldPoint.prototype.setFrom;
 // ********** Code for ManifoldType **************
 function ManifoldType() {}
 // ********** Code for Simplex **************
@@ -2258,11 +2858,11 @@ Simplex.prototype.readCache = function(cache, proxyA, transformA, proxyB, transf
   this.count = cache.count;
   for (var i = (0);
    i < this.count; ++i) {
-    var v = this.vertices.$index(i);
+    var v = this.vertices[i];
     v.indexA = cache.indexA.$index(i);
     v.indexB = cache.indexB.$index(i);
-    var wALocal = proxyA.vertices.$index(v.indexA);
-    var wBLocal = proxyB.vertices.$index(v.indexB);
+    var wALocal = proxyA.vertices[v.indexA];
+    var wBLocal = proxyB.vertices[v.indexB];
     Transform.mulToOut(transformA, wALocal, v.wA);
     Transform.mulToOut(transformB, wBLocal, v.wB);
     v.w.setFrom(v.wB).subLocal(v.wA);
@@ -2276,11 +2876,11 @@ Simplex.prototype.readCache = function(cache, proxyA, transformA, proxyB, transf
     }
   }
   if (this.count == (0)) {
-    var v = this.vertices.$index((0));
+    var v = this.vertices[(0)];
     v.indexA = (0);
     v.indexB = (0);
-    var wALocal = proxyA.vertices.$index((0));
-    var wBLocal = proxyB.vertices.$index((0));
+    var wALocal = proxyA.vertices[(0)];
+    var wBLocal = proxyB.vertices[(0)];
     Transform.mulToOut(transformA, wALocal, v.wA);
     Transform.mulToOut(transformB, wBLocal, v.wB);
     v.w.setFrom(v.wB).subLocal(v.wA);
@@ -2292,8 +2892,8 @@ Simplex.prototype.writeCache = function(cache) {
   cache.count = this.count;
   for (var i = (0);
    i < this.count; ++i) {
-    cache.indexA.$setindex(i, (this.vertices.$index(i).get$indexA()));
-    cache.indexB.$setindex(i, (this.vertices.$index(i).get$indexB()));
+    cache.indexA.$setindex(i, (this.vertices[i].indexA));
+    cache.indexB.$setindex(i, (this.vertices[i].indexB));
   }
 }
 Simplex.prototype.getSearchDirection = function(out) {
@@ -2519,15 +3119,6 @@ function SimplexCache() {
     this.indexB.$setindex(i, (2147483647));
   }
 }
-SimplexCache.prototype.get$indexA = function() { return this.indexA; };
-SimplexCache.prototype.get$indexB = function() { return this.indexB; };
-SimplexCache.prototype.setFrom = function(sc) {
-  this.indexA.setRange$3((0), this.indexA.get$length(), sc.indexA);
-  this.indexB.setRange$3((0), this.indexB.get$length(), sc.indexB);
-  this.metric = sc.metric;
-  this.count = sc.count;
-}
-SimplexCache.prototype.setFrom$1 = SimplexCache.prototype.setFrom;
 // ********** Code for SimplexVertex **************
 function SimplexVertex() {
   this.w = new Vector((0), (0));
@@ -2537,10 +3128,6 @@ function SimplexVertex() {
   this.wA = new Vector((0), (0));
   this.indexA = (0);
 }
-SimplexVertex.prototype.get$indexA = function() { return this.indexA; };
-SimplexVertex.prototype.set$indexA = function(value) { return this.indexA = value; };
-SimplexVertex.prototype.get$indexB = function() { return this.indexB; };
-SimplexVertex.prototype.set$indexB = function(value) { return this.indexB = value; };
 SimplexVertex.prototype.setFrom = function(sv) {
   this.wA.setFrom(sv.wA);
   this.wB.setFrom(sv.wB);
@@ -2550,12 +3137,9 @@ SimplexVertex.prototype.setFrom = function(sv) {
   this.indexB = sv.indexB;
 }
 SimplexVertex.prototype.toString = function() {
-  return "wA: " + this.wA.toString() + " wB: " + this.wB.toString() + " w: " + this.w.toString();
+  return $add($add($add($add($add("wA: ", this.wA.toString()), " wB: "), this.wB.toString()), " w: "), this.w.toString());
 }
-SimplexVertex.prototype.setFrom$1 = SimplexVertex.prototype.setFrom;
-SimplexVertex.prototype.toString$0 = SimplexVertex.prototype.toString;
 // ********** Code for TimeOfImpact **************
-function TimeOfImpact() {}
 TimeOfImpact._construct$ctor = function(argPool) {
   this.fcn = new SeparationFunction();
   this.xfB = new Transform();
@@ -2576,6 +3160,7 @@ TimeOfImpact._construct$ctor = function(argPool) {
   $globals.TimeOfImpact_toiMaxRootIters = (0);
 }
 TimeOfImpact._construct$ctor.prototype = TimeOfImpact.prototype;
+function TimeOfImpact() {}
 TimeOfImpact.prototype.timeOfImpact = function(output, input) {
   ++$globals.TimeOfImpact_toiCalls;
   output.state = (0);
@@ -2713,13 +3298,8 @@ function SeparationFunction() {
   this.type = (0);
   this.axisA = new Vector((0), (0));
 }
-SeparationFunction.prototype.get$proxyA = function() { return this.proxyA; };
-SeparationFunction.prototype.set$proxyA = function(value) { return this.proxyA = value; };
-SeparationFunction.prototype.get$proxyB = function() { return this.proxyB; };
-SeparationFunction.prototype.set$proxyB = function(value) { return this.proxyB = value; };
 SeparationFunction.prototype.get$type = function() { return this.type; };
 SeparationFunction.prototype.set$type = function(value) { return this.type = value; };
-SeparationFunction.prototype.get$localPoint = function() { return this.localPoint; };
 SeparationFunction.prototype.initialize = function(cache, argProxyA, argSweepA, argProxyB, argSweepB, t1) {
   this.proxyA = argProxyA;
   this.proxyB = argProxyB;
@@ -2730,18 +3310,18 @@ SeparationFunction.prototype.initialize = function(cache, argProxyA, argSweepA, 
   this.sweepB.getTransform(this.xfb, t1);
   if (count == (1)) {
     this.type = (0);
-    this.localPointA.setFrom(this.proxyA.vertices.$index(cache.indexA.$index((0))));
-    this.localPointB.setFrom(this.proxyB.vertices.$index(cache.indexB.$index((0))));
+    this.localPointA.setFrom(this.proxyA.vertices[cache.indexA.$index((0))]);
+    this.localPointB.setFrom(this.proxyB.vertices[cache.indexB.$index((0))]);
     Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
     Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
     this.axis.setFrom(this.pointB).subLocal(this.pointA);
     var s = this.axis.normalize();
     return s;
   }
-  else if ($eq(cache.indexA.$index((0)), cache.indexA.$index((1)))) {
+  else if (cache.indexA.$index((0)) == cache.indexA.$index((1))) {
     this.type = (2);
-    this.localPointB1.setFrom(this.proxyB.vertices.$index(cache.indexB.$index((0))));
-    this.localPointB2.setFrom(this.proxyB.vertices.$index(cache.indexB.$index((1))));
+    this.localPointB1.setFrom(this.proxyB.vertices[cache.indexB.$index((0))]);
+    this.localPointB2.setFrom(this.proxyB.vertices[cache.indexB.$index((1))]);
     this.temp.setFrom(this.localPointB2).subLocal(this.localPointB1);
     Vector.crossVectorAndNumToOut(this.temp, (1), this.axis);
     this.axis.normalize();
@@ -2750,7 +3330,7 @@ SeparationFunction.prototype.initialize = function(cache, argProxyA, argSweepA, 
     this.localPoint.addLocal(this.localPointB2);
     this.localPoint.mulLocal((0.5));
     Transform.mulToOut(this.xfb, this.localPoint, this.pointB);
-    this.localPointA.setFrom(this.proxyA.vertices.$index(cache.indexA.$index((0))));
+    this.localPointA.setFrom(this.proxyA.vertices[cache.indexA.$index((0))]);
     Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
     this.temp.setFrom(this.pointA);
     this.temp.subLocal(this.pointB);
@@ -2763,8 +3343,8 @@ SeparationFunction.prototype.initialize = function(cache, argProxyA, argSweepA, 
   }
   else {
     this.type = (1);
-    this.localPointA1.setFrom(this.proxyA.vertices.$index(cache.indexA.$index((0))));
-    this.localPointA2.setFrom(this.proxyA.vertices.$index(cache.indexA.$index((1))));
+    this.localPointA1.setFrom(this.proxyA.vertices[cache.indexA.$index((0))]);
+    this.localPointA2.setFrom(this.proxyA.vertices[cache.indexA.$index((1))]);
     this.temp.setFrom(this.localPointA2);
     this.temp.subLocal(this.localPointA1);
     Vector.crossVectorAndNumToOut(this.temp, (1), this.axis);
@@ -2774,7 +3354,7 @@ SeparationFunction.prototype.initialize = function(cache, argProxyA, argSweepA, 
     this.localPoint.addLocal(this.localPointA2);
     this.localPoint.mulLocal((0.5));
     Transform.mulToOut(this.xfa, this.localPoint, this.pointA);
-    this.localPointB.setFrom(this.proxyB.vertices.$index(cache.indexB.$index((0))));
+    this.localPointB.setFrom(this.proxyB.vertices[cache.indexB.$index((0))]);
     Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
     this.temp.setFrom(this.pointB);
     this.temp.subLocal(this.pointA);
@@ -2797,8 +3377,8 @@ SeparationFunction.prototype.findMinSeparation = function(indexes, t) {
       this.axis.negateLocal();
       indexes.$setindex((0), this.proxyA.getSupport(this.axisA));
       indexes.$setindex((1), this.proxyB.getSupport(this.axisB));
-      this.localPointA.setFrom(this.proxyA.vertices.$index(indexes.$index((0))));
-      this.localPointB.setFrom(this.proxyB.vertices.$index(indexes.$index((1))));
+      this.localPointA.setFrom(this.proxyA.vertices[indexes.$index((0))]);
+      this.localPointB.setFrom(this.proxyB.vertices[indexes.$index((1))]);
       Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
       Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
       var separation = Vector.dot(this.pointB.subLocal(this.pointA), this.axis);
@@ -2813,7 +3393,7 @@ SeparationFunction.prototype.findMinSeparation = function(indexes, t) {
       this.normal.negateLocal();
       indexes.$setindex((0), (-1));
       indexes.$setindex((1), this.proxyB.getSupport(this.axisB));
-      this.localPointB.setFrom(this.proxyB.vertices.$index(indexes.$index((1))));
+      this.localPointB.setFrom(this.proxyB.vertices[indexes.$index((1))]);
       Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
       var separation = Vector.dot(this.pointB.subLocal(this.pointA), this.normal);
       return separation;
@@ -2826,7 +3406,7 @@ SeparationFunction.prototype.findMinSeparation = function(indexes, t) {
       this.normal.negateLocal();
       indexes.$setindex((1), (-1));
       indexes.$setindex((0), this.proxyA.getSupport(this.axisA));
-      this.localPointA.setFrom(this.proxyA.vertices.$index(indexes.$index((0))));
+      this.localPointA.setFrom(this.proxyA.vertices[indexes.$index((0))]);
       Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
       var separation = Vector.dot(this.pointA.subLocal(this.pointB), this.normal);
       return separation;
@@ -2848,8 +3428,8 @@ SeparationFunction.prototype.evaluate = function(indexA, indexB, t) {
       Matrix22.mulTransMatrixAndVectorToOut(this.xfa.rotation, this.axis, this.axisA);
       Matrix22.mulTransMatrixAndVectorToOut(this.xfb.rotation, this.axis.negateLocal(), this.axisB);
       this.axis.negateLocal();
-      this.localPointA.setFrom(this.proxyA.vertices.$index(indexA));
-      this.localPointB.setFrom(this.proxyB.vertices.$index(indexB));
+      this.localPointA.setFrom(this.proxyA.vertices[indexA]);
+      this.localPointB.setFrom(this.proxyB.vertices[indexB]);
       Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
       Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
       var separation = Vector.dot(this.pointB.subLocal(this.pointA), this.axis);
@@ -2862,7 +3442,7 @@ SeparationFunction.prototype.evaluate = function(indexA, indexB, t) {
       this.normal.negateLocal();
       Matrix22.mulTransMatrixAndVectorToOut(this.xfb.rotation, this.normal, this.axisB);
       this.normal.negateLocal();
-      this.localPointB.setFrom(this.proxyB.vertices.$index(indexB));
+      this.localPointB.setFrom(this.proxyB.vertices[indexB]);
       Transform.mulToOut(this.xfb, this.localPointB, this.pointB);
       var separation = Vector.dot(this.pointB.subLocal(this.pointA), this.normal);
       return separation;
@@ -2873,7 +3453,7 @@ SeparationFunction.prototype.evaluate = function(indexA, indexB, t) {
       Transform.mulToOut(this.xfb, this.localPoint, this.pointB);
       Matrix22.mulTransMatrixAndVectorToOut(this.xfa.rotation, this.normal.negateLocal(), this.axisA);
       this.normal.negateLocal();
-      this.localPointA.setFrom(this.proxyA.vertices.$index(indexA));
+      this.localPointA.setFrom(this.proxyA.vertices[indexA]);
       Transform.mulToOut(this.xfa, this.localPointA, this.pointA);
       var separation = Vector.dot(this.pointA.subLocal(this.pointB), this.normal);
       return separation;
@@ -2892,8 +3472,6 @@ function TimeOfImpactInput() {
   this.proxyB = new DistanceProxy();
   this.sweepA = new Sweep();
 }
-TimeOfImpactInput.prototype.get$proxyA = function() { return this.proxyA; };
-TimeOfImpactInput.prototype.get$proxyB = function() { return this.proxyB; };
 // ********** Code for TimeOfImpactOutputState **************
 function TimeOfImpactOutputState() {}
 // ********** Code for TimeOfImpactOutput **************
@@ -2924,8 +3502,8 @@ WorldManifold.prototype.initialize = function(manifold, xfA, radiusA, xfB, radiu
       this.normal.y = (0);
       pointA.x = xfA.position.x + xfA.rotation.col1.x * manifold.localPoint.x + xfA.rotation.col2.x * manifold.localPoint.y;
       pointA.y = xfA.position.y + xfA.rotation.col1.y * manifold.localPoint.x + xfA.rotation.col2.y * manifold.localPoint.y;
-      pointB.x = xfB.position.x + xfB.rotation.col1.x * manifold.points.$index((0)).get$localPoint().get$x() + xfB.rotation.col2.x * manifold.points.$index((0)).get$localPoint().get$y();
-      pointB.y = xfB.position.y + xfB.rotation.col1.y * manifold.points.$index((0)).get$localPoint().get$x() + xfB.rotation.col2.y * manifold.points.$index((0)).get$localPoint().get$y();
+      pointB.x = xfB.position.x + xfB.rotation.col1.x * manifold.points[(0)].localPoint.x + xfB.rotation.col2.x * manifold.points[(0)].localPoint.y;
+      pointB.y = xfB.position.y + xfB.rotation.col1.y * manifold.points[(0)].localPoint.x + xfB.rotation.col2.y * manifold.points[(0)].localPoint.y;
       if (MathBox.distanceSquared(pointA, pointB) > (1.4208639999999999e-14)) {
         this.normal.x = pointB.x - pointA.x;
         this.normal.y = pointB.y - pointA.y;
@@ -2935,8 +3513,8 @@ WorldManifold.prototype.initialize = function(manifold, xfA, radiusA, xfB, radiu
       var cAy = this.normal.y * radiusA + pointA.y;
       var cBx = -this.normal.x * radiusB + pointB.x;
       var cBy = -this.normal.y * radiusB + pointB.y;
-      this.points.$index((0)).set$x((cAx + cBx) * (0.5));
-      this.points.$index((0)).set$y((cAy + cBy) * (0.5));
+      this.points[(0)].x = (cAx + cBx) * (0.5);
+      this.points[(0)].y = (cAy + cBy) * (0.5);
       return;
 
     case (1):
@@ -2949,15 +3527,15 @@ WorldManifold.prototype.initialize = function(manifold, xfA, radiusA, xfB, radiu
       var clipPoint = this.pool4;
       for (var i = (0);
        i < manifold.pointCount; i++) {
-        clipPoint.x = xfB.position.x + xfB.rotation.col1.x * manifold.points.$index(i).get$localPoint().get$x() + xfB.rotation.col2.x * manifold.points.$index(i).get$localPoint().get$y();
-        clipPoint.y = xfB.position.y + xfB.rotation.col1.y * manifold.points.$index(i).get$localPoint().get$x() + xfB.rotation.col2.y * manifold.points.$index(i).get$localPoint().get$y();
+        clipPoint.x = xfB.position.x + xfB.rotation.col1.x * manifold.points[i].localPoint.x + xfB.rotation.col2.x * manifold.points[i].localPoint.y;
+        clipPoint.y = xfB.position.y + xfB.rotation.col1.y * manifold.points[i].localPoint.x + xfB.rotation.col2.y * manifold.points[i].localPoint.y;
         var scalar = radiusA - ((clipPoint.x - planePoint.x) * this.normal.x + (clipPoint.y - planePoint.y) * this.normal.y);
         var cAx = this.normal.x * scalar + clipPoint.x;
         var cAy = this.normal.y * scalar + clipPoint.y;
         var cBx = -this.normal.x * radiusB + clipPoint.x;
         var cBy = -this.normal.y * radiusB + clipPoint.y;
-        this.points.$index(i).set$x((cAx + cBx) * (0.5));
-        this.points.$index(i).set$y((cAy + cBy) * (0.5));
+        this.points[i].x = (cAx + cBx) * (0.5);
+        this.points[i].y = (cAy + cBy) * (0.5);
       }
       return;
 
@@ -2973,15 +3551,15 @@ WorldManifold.prototype.initialize = function(manifold, xfA, radiusA, xfB, radiu
       var clipPoint = this.pool4;
       for (var i = (0);
        i < manifold.pointCount; i++) {
-        clipPoint.x = xfA.position.x + xfA.rotation.col1.x * manifold.points.$index(i).get$localPoint().get$x() + xfA.rotation.col2.x * manifold.points.$index(i).get$localPoint().get$y();
-        clipPoint.y = xfA.position.y + xfA.rotation.col1.y * manifold.points.$index(i).get$localPoint().get$x() + xfA.rotation.col2.y * manifold.points.$index(i).get$localPoint().get$y();
+        clipPoint.x = xfA.position.x + xfA.rotation.col1.x * manifold.points[i].localPoint.x + xfA.rotation.col2.x * manifold.points[i].localPoint.y;
+        clipPoint.y = xfA.position.y + xfA.rotation.col1.y * manifold.points[i].localPoint.x + xfA.rotation.col2.y * manifold.points[i].localPoint.y;
         var scalar = radiusB - ((clipPoint.x - planePoint.x) * this.normal.x + (clipPoint.y - planePoint.y) * this.normal.y);
         var cBx = this.normal.x * scalar + clipPoint.x;
         var cBy = this.normal.y * scalar + clipPoint.y;
         var cAx = -this.normal.x * radiusA + clipPoint.x;
         var cAy = -this.normal.y * radiusA + clipPoint.y;
-        this.points.$index(i).set$x((cAx + cBx) * (0.5));
-        this.points.$index(i).set$y((cAy + cBy) * (0.5));
+        this.points[i].x = (cAx + cBx) * (0.5);
+        this.points[i].y = (cAy + cBy) * (0.5);
       }
       this.normal.x = -this.normal.x;
       this.normal.y = -this.normal.y;
@@ -3032,7 +3610,7 @@ BroadPhase.prototype.updatePairs = function(callback) {
   this._pairCount = (0);
   for (var i = (0);
    i < this._moveCount; ++i) {
-    this.queryProxy = this.moveBuffer.$index(i);
+    this.queryProxy = this.moveBuffer[i];
     if (this.queryProxy == null) {
       continue;
     }
@@ -3041,19 +3619,19 @@ BroadPhase.prototype.updatePairs = function(callback) {
   this._moveCount = (0);
   var pairBuffer = ListFactory.ListFactory$from$factory(this._pairBuffer.getRange((0), this._pairCount));
   pairBuffer.sort((function (a, b) {
-    return a.compareTo$1(b);
+    return a.compareTo(b);
   })
   );
   this._pairBuffer.setRange$3((0), this._pairCount, pairBuffer);
   var i = (0);
   while (i < this._pairCount) {
-    var primaryPair = this._pairBuffer.$index(i);
+    var primaryPair = this._pairBuffer[i];
     var userDataA = primaryPair.proxyA.userData;
     var userDataB = primaryPair.proxyB.userData;
     callback.addPair(userDataA, userDataB);
     i++;
     while (i < this._pairCount) {
-      var pair = this._pairBuffer.$index(i);
+      var pair = this._pairBuffer[i];
       if (pair.proxyA != primaryPair.proxyA || pair.proxyB != primaryPair.proxyB) {
         break;
       }
@@ -3068,11 +3646,11 @@ BroadPhase.prototype.treeCallback = function(proxy) {
   }
   if (this._pairCount == this._pairCapacity) {
     var oldBuffer = this._pairBuffer;
-    this._pairCapacity *= (2);
+    this._pairCapacity = this._pairCapacity * (2);
     this._pairBuffer = new Array(this._pairCapacity);
     for (var i = (0);
      i < oldBuffer.get$length(); i++) {
-      this._pairBuffer.$setindex(i, oldBuffer.$index(i));
+      this._pairBuffer.$setindex(i, oldBuffer[i]);
     }
     for (var i = oldBuffer.get$length();
      i < this._pairCapacity; i++) {
@@ -3080,12 +3658,12 @@ BroadPhase.prototype.treeCallback = function(proxy) {
     }
   }
   if (proxy.key < this.queryProxy.key) {
-    this._pairBuffer.$index(this._pairCount).set$proxyA(proxy);
-    this._pairBuffer.$index(this._pairCount).set$proxyB(this.queryProxy);
+    this._pairBuffer[this._pairCount].proxyA = proxy;
+    this._pairBuffer[this._pairCount].proxyB = this.queryProxy;
   }
   else {
-    this._pairBuffer.$index(this._pairCount).set$proxyA(this.queryProxy);
-    this._pairBuffer.$index(this._pairCount).set$proxyB(proxy);
+    this._pairBuffer[this._pairCount].proxyA = this.queryProxy;
+    this._pairBuffer[this._pairCount].proxyB = proxy;
   }
   this._pairCount++;
   return true;
@@ -3093,11 +3671,11 @@ BroadPhase.prototype.treeCallback = function(proxy) {
 BroadPhase.prototype._bufferMove = function(node) {
   if (this._moveCount == this._moveCapacity) {
     var old = this.moveBuffer;
-    this._moveCapacity *= (2);
+    this._moveCapacity = this._moveCapacity * (2);
     this.moveBuffer = new Array(this._moveCapacity);
     for (var i = (0);
      i < old.get$length(); i++) {
-      this.moveBuffer.$setindex(i, old.$index(i));
+      this.moveBuffer.$setindex(i, old[i]);
     }
   }
   this.moveBuffer.$setindex(this._moveCount, node);
@@ -3112,7 +3690,7 @@ function DynamicTree() {
   this._drawVectors = new Array((4));
   this.center = new Vector((0), (0));
   this._tempVector = new Vector((0), (0));
-  this._nodeStack = new DoubleLinkedQueue();
+  this._nodeStack = new DoubleLinkedQueue_DynamicTreeNode();
   this._root = null;
   this._insertionCount = (0);
   this._tempBox = new AxisAlignedBox();
@@ -3143,28 +3721,28 @@ DynamicTree.prototype.createProxy = function(box, userData) {
   return proxy;
 }
 DynamicTree.prototype.moveProxy = function(argProxy, argBox, displacement) {
-  var $0;
+  var $0, $1, $2, $3, $4, $5, $6, $7;
   if (argProxy.box.contains(argBox)) {
     return false;
   }
   this._removeLeaf(argProxy);
   ($0 = argBox.lowerBound).x = $0.x - (0.1);
-  ($0 = argBox.lowerBound).y = $0.y - (0.1);
-  ($0 = argBox.upperBound).x = $0.x + (0.1);
-  ($0 = argBox.upperBound).y = $0.y + (0.1);
+  ($1 = argBox.lowerBound).y = $1.y - (0.1);
+  ($2 = argBox.upperBound).x = $2.x + (0.1);
+  ($3 = argBox.upperBound).y = $3.y + (0.1);
   this._tempVector.setFrom(displacement);
   this._tempVector.mulLocal((2));
   if (this._tempVector.x < (0)) {
-    ($0 = argBox.lowerBound).x = $0.x + this._tempVector.x;
+    ($4 = argBox.lowerBound).x = $4.x + this._tempVector.x;
   }
   else {
-    ($0 = argBox.upperBound).x = $0.x + this._tempVector.x;
+    ($5 = argBox.upperBound).x = $5.x + this._tempVector.x;
   }
   if (this._tempVector.y < (0)) {
-    ($0 = argBox.lowerBound).y = $0.y + this._tempVector.y;
+    ($6 = argBox.lowerBound).y = $6.y + this._tempVector.y;
   }
   else {
-    ($0 = argBox.upperBound).y = $0.y + this._tempVector.y;
+    ($7 = argBox.upperBound).y = $7.y + this._tempVector.y;
   }
   argProxy.box.setFrom(argBox);
   this._insertLeaf(argProxy);
@@ -3367,7 +3945,6 @@ DynamicTree.prototype._freeNode = function(node) {
   this._nodeCount--;
 }
 // ********** Code for DynamicTreeNode **************
-function DynamicTreeNode() {}
 DynamicTreeNode._construct$ctor = function() {
   this.childOne = null;
   this.next = null;
@@ -3376,25 +3953,18 @@ DynamicTreeNode._construct$ctor = function() {
   this.box = new AxisAlignedBox();
 }
 DynamicTreeNode._construct$ctor.prototype = DynamicTreeNode.prototype;
+function DynamicTreeNode() {}
 DynamicTreeNode.prototype.get$isLeaf = function() {
   return this.childOne == null;
 }
 DynamicTreeNode.prototype.toString = function() {
   return this.box.toString();
 }
-DynamicTreeNode.prototype.next$0 = function() {
-  return this.next();
-};
-DynamicTreeNode.prototype.toString$0 = DynamicTreeNode.prototype.toString;
 // ********** Code for Pair **************
 function Pair() {
   this.proxyA = null;
   this.proxyB = null;
 }
-Pair.prototype.get$proxyA = function() { return this.proxyA; };
-Pair.prototype.set$proxyA = function(value) { return this.proxyA = value; };
-Pair.prototype.get$proxyB = function() { return this.proxyB; };
-Pair.prototype.set$proxyB = function(value) { return this.proxyB = value; };
 Pair.prototype.compareTo = function(pair2) {
   if (this.proxyA.key < pair2.proxyA.key) {
     return (-1);
@@ -3414,7 +3984,6 @@ Pair.prototype.compareTo = function(pair2) {
   }
   return (1);
 }
-Pair.prototype.compareTo$1 = Pair.prototype.compareTo;
 // ********** Code for MassData **************
 function MassData() {
   this.center = new Vector((0), (0));
@@ -3423,12 +3992,6 @@ function MassData() {
 }
 MassData.prototype.get$center = function() { return this.center; };
 MassData.prototype.set$center = function(value) { return this.center = value; };
-MassData.prototype.setFrom = function(md) {
-  this.mass = md.mass;
-  this.inertia = md.inertia;
-  this.center.setFrom(md.center);
-}
-MassData.prototype.setFrom$1 = MassData.prototype.setFrom;
 // ********** Code for Shape **************
 function Shape(type, radius) {
   this.type = type;
@@ -3484,11 +4047,11 @@ PolygonShape.copy$ctor = function(other) {
   }
   for (var i = (0);
    i < other.vertices.get$length(); i++) {
-    this.vertices.$setindex(i, new Vector.copy$ctor(other.vertices.$index(i)));
+    this.vertices.$setindex(i, new Vector.copy$ctor(other.vertices[i]));
   }
   for (var i = (0);
    i < other.normals.get$length(); i++) {
-    this.normals.$setindex(i, new Vector.copy$ctor(other.normals.$index(i)));
+    this.normals.$setindex(i, new Vector.copy$ctor(other.normals[i]));
   }
 }
 PolygonShape.copy$ctor.prototype = PolygonShape.prototype;
@@ -3500,35 +4063,35 @@ PolygonShape.prototype.clone = function() {
 }
 PolygonShape.prototype.setAsBox = function(hx, hy) {
   this.vertexCount = (4);
-  this.vertices.$index((0)).setCoords$2(-hx, -hy);
-  this.vertices.$index((1)).setCoords$2(hx, -hy);
-  this.vertices.$index((2)).setCoords$2(hx, hy);
-  this.vertices.$index((3)).setCoords$2(-hx, hy);
-  this.normals.$index((0)).setCoords$2((0), (-1));
-  this.normals.$index((1)).setCoords$2((1), (0));
-  this.normals.$index((2)).setCoords$2((0), (1));
-  this.normals.$index((3)).setCoords$2((-1), (0));
+  this.vertices[(0)].setCoords(-hx, -hy);
+  this.vertices[(1)].setCoords(hx, -hy);
+  this.vertices[(2)].setCoords(hx, hy);
+  this.vertices[(3)].setCoords(-hx, hy);
+  this.normals[(0)].setCoords((0), (-1));
+  this.normals[(1)].setCoords((1), (0));
+  this.normals[(2)].setCoords((0), (1));
+  this.normals[(3)].setCoords((-1), (0));
   this.centroid.setZero();
 }
 PolygonShape.prototype.setAsEdge = function(v1, v2) {
   this.vertexCount = (2);
-  this.vertices.$index((0)).setFrom$1(v1);
-  this.vertices.$index((1)).setFrom$1(v2);
+  this.vertices[(0)].setFrom(v1);
+  this.vertices[(1)].setFrom(v2);
   this.centroid.setFrom(v1).addLocal(v2).mulLocal((0.5));
-  this.normals.$index((0)).setFrom$1(v2).subLocal$1(v1);
-  Vector.crossVectorAndNumToOut(this.normals.$index((0)), (1), this.normals.$index((0)));
-  this.normals.$index((0)).normalize$0();
-  this.normals.$index((1)).setFrom$1(this.normals.$index((0))).negateLocal$0();
+  this.normals[(0)].setFrom(v2).subLocal(v1);
+  Vector.crossVectorAndNumToOut(this.normals[(0)], (1), this.normals[(0)]);
+  this.normals[(0)].normalize();
+  this.normals[(1)].setFrom(this.normals[(0)]).negateLocal();
 }
 PolygonShape.prototype.computeAxisAlignedBox = function(argAabb, argXf) {
-  var lower = this.vectorPool.$index((0));
-  var upper = this.vectorPool.$index((1));
-  var v = this.vectorPool.$index((2));
-  Transform.mulToOut(argXf, this.vertices.$index((0)), lower);
+  var lower = this.vectorPool[(0)];
+  var upper = this.vectorPool[(1)];
+  var v = this.vectorPool[(2)];
+  Transform.mulToOut(argXf, this.vertices[(0)], lower);
   upper.setFrom(lower);
   for (var i = (1);
    i < this.vertexCount; ++i) {
-    Transform.mulToOut(argXf, this.vertices.$index(i), v);
+    Transform.mulToOut(argXf, this.vertices[i], v);
     Vector.minToOut(lower, v, lower);
     Vector.maxToOut(upper, v, upper);
   }
@@ -3539,25 +4102,25 @@ PolygonShape.prototype.computeAxisAlignedBox = function(argAabb, argXf) {
 }
 PolygonShape.prototype.computeMass = function(massData, density) {
   if (this.vertexCount == (2)) {
-    massData.center.setFrom(this.vertices.$index((0))).addLocal(this.vertices.$index((1))).mulLocal((0.5));
+    massData.center.setFrom(this.vertices[(0)]).addLocal(this.vertices[(1)]).mulLocal((0.5));
     massData.mass = (0);
     massData.inertia = (0);
     return;
   }
-  var center = this.vectorPool.$index((0));
+  var center = this.vectorPool[(0)];
   center.setZero();
   var area = (0);
   var I = (0);
-  var pRef = this.vectorPool.$index((1));
+  var pRef = this.vectorPool[(1)];
   pRef.setZero();
   var k_inv3 = (0.3333333333333333);
-  var e1 = this.vectorPool.$index((2));
-  var e2 = this.vectorPool.$index((3));
+  var e1 = this.vectorPool[(2)];
+  var e2 = this.vectorPool[(3)];
   for (var i = (0);
    i < this.vertexCount; ++i) {
     var p1 = pRef;
-    var p2 = this.vertices.$index(i);
-    var p3 = i + (1) < this.vertexCount ? this.vertices.$index(i + (1)) : this.vertices.$index((0));
+    var p2 = this.vertices[i];
+    var p3 = i + (1) < this.vertexCount ? this.vertices[i + (1)] : this.vertices[(0)];
     e1.setFrom(p2);
     e1.subLocal(p1);
     e2.setFrom(p3);
@@ -3631,19 +4194,19 @@ function Body(bd, world) {
   this.angularDamping = bd.angularDamping;
   this.linearDamping = bd.linearDamping;
   if (bd.bullet) {
-    this.flags |= (8);
+    this.flags = this.flags | (8);
   }
   if (bd.fixedRotation) {
-    this.flags |= (16);
+    this.flags = this.flags | (16);
   }
   if (bd.allowSleep) {
-    this.flags |= (4);
+    this.flags = this.flags | (4);
   }
   if (bd.awake) {
-    this.flags |= (2);
+    this.flags = this.flags | (2);
   }
   if (bd.active) {
-    this.flags |= (32);
+    this.flags = this.flags | (32);
   }
   this.originTransform.position.setFrom(bd.position);
   this.originTransform.rotation.setAngle(bd.angle);
@@ -3721,11 +4284,11 @@ Body.prototype.resetMassData = function() {
       continue;
     }
     f.getMassData(massData);
-    this.mass += massData.mass;
+    this.mass = this.mass + massData.mass;
     var temp = new Vector.copy$ctor(massData.center);
     temp.mulLocal(massData.mass);
     this.tempCenter.addLocal(temp);
-    this._inertia += massData.inertia;
+    this._inertia = this._inertia + massData.inertia;
   }
   if (this.mass > (0)) {
     this.invMass = (1) / this.mass;
@@ -3736,7 +4299,7 @@ Body.prototype.resetMassData = function() {
     this.invMass = (1);
   }
   if (this._inertia > (0) && (this.flags & (16)) == (0)) {
-    this._inertia -= (this.mass * Vector.dot(this.tempCenter, this.tempCenter));
+    this._inertia = this._inertia - (this.mass * Vector.dot(this.tempCenter, this.tempCenter));
     this.invInertia = (1) / this._inertia;
   }
   else {
@@ -3780,12 +4343,12 @@ Body.prototype.get$awake = function() {
 Body.prototype.set$awake = function(flag) {
   if (flag) {
     if ((this.flags & (2)) == (0)) {
-      this.flags |= (2);
+      this.flags = this.flags | (2);
       this.sleepTime = (0);
     }
   }
   else {
-    this.flags &= (-3);
+    this.flags = this.flags & (-3);
     this.sleepTime = (0);
     this._linearVelocity.setZero();
     this._angularVelocity = (0);
@@ -3809,7 +4372,7 @@ Body.prototype.synchronizeFixtures = function() {
   }
 }
 Body.prototype.synchronizeTransform = function() {
-  var $0;
+  var $0, $1, $2, $3;
   var c = Math.cos(this.sweep.angle);
   var s = Math.sin(this.sweep.angle);
   this.originTransform.rotation.col1.x = c;
@@ -3819,9 +4382,9 @@ Body.prototype.synchronizeTransform = function() {
   this.originTransform.position.x = this.originTransform.rotation.col1.x * this.sweep.localCenter.x + this.originTransform.rotation.col2.x * this.sweep.localCenter.y;
   this.originTransform.position.y = this.originTransform.rotation.col1.y * this.sweep.localCenter.x + this.originTransform.rotation.col2.y * this.sweep.localCenter.y;
   ($0 = this.originTransform.position).x = $0.x * (-1);
-  ($0 = this.originTransform.position).y = $0.y * (-1);
-  ($0 = this.originTransform.position).x = $0.x + this.sweep.center.x;
-  ($0 = this.originTransform.position).y = $0.y + this.sweep.center.y;
+  ($1 = this.originTransform.position).y = $1.y * (-1);
+  ($2 = this.originTransform.position).x = $2.x + this.sweep.center.x;
+  ($3 = this.originTransform.position).y = $3.y + this.sweep.center.y;
 }
 Body.prototype.shouldCollide = function(other) {
   if (this._type != (2) && other._type != (2)) {
@@ -3835,9 +4398,6 @@ Body.prototype.advance = function(t) {
   this.sweep.angle = this.sweep.angleZero;
   this.synchronizeTransform();
 }
-Body.prototype.next$0 = function() {
-  return this.next();
-};
 // ********** Code for BodyDef **************
 function BodyDef() {
   this.linearVelocity = new Vector((0), (0));
@@ -3935,7 +4495,7 @@ ContactManager.prototype.destroy = function(c) {
   var bodyA = fixtureA.body;
   var bodyB = fixtureB.body;
   if (this.contactListener != null && c.get$touching()) {
-    this.contactListener.endContact(c);
+    this.contactListener.noSuchMethod("endContact", [c]);
   }
   if (c.prev != null) {
     c.prev.next = c.next;
@@ -4017,7 +4577,6 @@ Filter.prototype.setFrom = function(other) {
   this.maskBits = other.maskBits;
   this.groupIndex = other.groupIndex;
 }
-Filter.prototype.setFrom$1 = Filter.prototype.setFrom;
 // ********** Code for Fixture **************
 function Fixture() {
   this.shape = null;
@@ -4029,6 +4588,10 @@ function Fixture() {
   this.body = null;
   this._poolOne = new AxisAlignedBox();
 }
+Fixture.prototype.get$density = function() { return this.density; };
+Fixture.prototype.set$density = function(value) { return this.density = value; };
+Fixture.prototype.get$shape = function() { return this.shape; };
+Fixture.prototype.set$shape = function(value) { return this.shape = value; };
 Fixture.prototype.create = function(b, def) {
   this.userData = def.userData;
   this.friction = def.friction;
@@ -4065,9 +4628,6 @@ Fixture.prototype.getMassData = function(massData) {
 Fixture.prototype.get$type = function() {
   return this.shape.type;
 }
-Fixture.prototype.next$0 = function() {
-  return this.next();
-};
 // ********** Code for FixtureDef **************
 function FixtureDef() {
   this.shape = null;
@@ -4081,6 +4641,10 @@ function FixtureDef() {
   this.filter.maskBits = (65535);
   this.filter.groupIndex = (0);
 }
+FixtureDef.prototype.get$shape = function() { return this.shape; };
+FixtureDef.prototype.set$shape = function(value) { return this.shape = value; };
+FixtureDef.prototype.get$density = function() { return this.density; };
+FixtureDef.prototype.set$density = function(value) { return this.density = value; };
 // ********** Code for Island **************
 function Island() {
   this._translation = new Vector((0), (0));
@@ -4131,7 +4695,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
   var $0;
   for (var i = (0);
    i < this.bodyCount; ++i) {
-    var b = this.bodies.$index(i);
+    var b = this.bodies[i];
     if (b.get$type() != (2)) {
       continue;
     }
@@ -4149,15 +4713,15 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
   var i1 = (-1);
   for (var i2 = (0);
    i2 < this.contactCount; ++i2) {
-    var fixtureA = this.contacts.$index(i2).get$fixtureA();
-    var fixtureB = this.contacts.$index(i2).get$fixtureB();
+    var fixtureA = this.contacts[i2].fixtureA;
+    var fixtureB = this.contacts[i2].fixtureB;
     var bodyA = fixtureA.body;
     var bodyB = fixtureB.body;
     var nonStatic = bodyA.get$type() != (0) && bodyB.get$type() != (0);
     if (nonStatic) {
       ++i1;
-      var temp = this.contacts.$index(i1);
-      this.contacts.$setindex(i1, this.contacts.$index(i2));
+      var temp = this.contacts[i1];
+      this.contacts.$setindex(i1, this.contacts[i2]);
       this.contacts.$setindex(i2, temp);
     }
   }
@@ -4165,7 +4729,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
   this._contactSolver.warmStart();
   for (var i = (0);
    i < this.jointCount; ++i) {
-    this.joints.$index(i).initVelocityConstraints$1(step);
+    this.joints.$index(i).initVelocityConstraints(step);
   }
   for (var i = (0);
    i < step.velocityIterations; ++i) {
@@ -4179,7 +4743,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
   var temp = new Vector((0), (0));
   for (var i = (0);
    i < this.bodyCount; ++i) {
-    var b = this.bodies.$index(i);
+    var b = this.bodies[i];
     if (b.get$type() == (0)) {
       continue;
     }
@@ -4208,7 +4772,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
     var jointsOkay = true;
     for (var j = (0);
      j < this.jointCount; ++j) {
-      var jointOkay = this.joints.$index(j).solvePositionConstraints$1((0.2));
+      var jointOkay = this.joints.$index(j).solvePositionConstraints((0.2));
       jointsOkay = jointsOkay && jointOkay;
     }
     if (contactsOkay && jointsOkay) {
@@ -4222,7 +4786,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
     var angTolSqr = (0.0012184696791468343);
     for (var i = (0);
      i < this.bodyCount; ++i) {
-      var b = this.bodies.$index(i);
+      var b = this.bodies[i];
       if (b.get$type() == (0)) {
         continue;
       }
@@ -4242,7 +4806,7 @@ Island.prototype.solve = function(step, gravity, allowSleep) {
     if (minSleepTime >= (0.5)) {
       for (var i = (0);
        i < this.bodyCount; ++i) {
-        var b = this.bodies.$index(i);
+        var b = this.bodies[i];
         b.set$awake(false);
       }
     }
@@ -4264,14 +4828,14 @@ Island.prototype.report = function(constraints) {
   }
   for (var i = (0);
    i < this.contactCount; ++i) {
-    var c = this.contacts.$index(i);
-    var cc = constraints.$index(i);
+    var c = this.contacts[i];
+    var cc = constraints[i];
     for (var j = (0);
      j < cc.pointCount; ++j) {
-      this.impulse.normalImpulses.$setindex(j, cc.points.$index(j).get$normalImpulse());
-      this.impulse.tangentImpulses.$setindex(j, cc.points.$index(j).get$tangentImpulse());
+      this.impulse.normalImpulses.$setindex(j, cc.points[j].normalImpulse);
+      this.impulse.tangentImpulses.$setindex(j, cc.points[j].tangentImpulse);
     }
-    this.listener.postSolve(c, this.impulse);
+    this.listener.noSuchMethod("postSolve", [c, this.impulse]);
   }
 }
 // ********** Code for Position **************
@@ -4286,8 +4850,6 @@ function Velocity() {
   this.v = new Vector((0), (0));
   this.a = (0);
 }
-Velocity.prototype.get$v = function() { return this.v; };
-Velocity.prototype.set$v = function(value) { return this.v = value; };
 // ********** Code for TimeStep **************
 function TimeStep() {
   this.dtRatio = (0);
@@ -4339,12 +4901,12 @@ World.prototype._addType = function(creatorStack, type1, type2) {
   var register = new ContactRegister();
   register.creator = creatorStack;
   register.primary = true;
-  this._contactStacks.$index(type1).$setindex(type2, register);
+  this._contactStacks[type1].$setindex(type2, register);
   if (type1 != type2) {
     var register2 = new ContactRegister();
     register2.creator = creatorStack;
     register2.primary = false;
-    this._contactStacks.$index(type2).$setindex(type1, register2);
+    this._contactStacks[type2].$setindex(type1, register2);
   }
 }
 World.prototype._initializeRegisters = function() {
@@ -4355,7 +4917,7 @@ World.prototype._initializeRegisters = function() {
 World.prototype.popContact = function(fixtureA, fixtureB) {
   var type1 = fixtureA.get$type();
   var type2 = fixtureB.get$type();
-  var reg = this._contactStacks.$index(type1).$index(type2);
+  var reg = this._contactStacks[type1][type2];
   var creator = reg.creator;
   if (creator != null) {
     if (creator.isEmpty()) {
@@ -4394,7 +4956,7 @@ World.prototype.pushContact = function(contact) {
   }
   var type1 = contact.fixtureA.get$type();
   var type2 = contact.fixtureB.get$type();
-  var creator = this._contactStacks.$index(type1).$index(type2).get$creator();
+  var creator = this._contactStacks[type1][type2].creator;
   creator.addFirst(contact);
 }
 World.prototype.createBody = function(def) {
@@ -4414,9 +4976,9 @@ World.prototype.createBody = function(def) {
 World.prototype.step = function(dt, velocityIterations, positionIterations) {
   if ((this._flags & (1)) == (1)) {
     this._contactManager.findNewContacts();
-    this._flags &= (-2);
+    this._flags = this._flags & (-2);
   }
-  this._flags |= (2);
+  this._flags = this._flags | (2);
   this.timestep.dt = dt;
   this.timestep.velocityIterations = velocityIterations;
   this.timestep.positionIterations = positionIterations;
@@ -4441,7 +5003,7 @@ World.prototype.step = function(dt, velocityIterations, positionIterations) {
   if ((this._flags & (4)) == (4)) {
     this.clearForces();
   }
-  this._flags &= (-3);
+  this._flags = this._flags & (-3);
 }
 World.prototype.clearForces = function() {
   for (var body = this._bodyList;
@@ -4490,7 +5052,7 @@ World.prototype.solve = function(timeStep) {
     this.stack.$setindex(stackCount++, seed);
     seed.flags = seed.flags | (1);
     while (stackCount > (0)) {
-      var b = this.stack.$index(--stackCount);
+      var b = this.stack[--stackCount];
       this.island.addBody(b);
       b.set$awake(true);
       if (b.get$type() == (0)) {
@@ -4540,7 +5102,7 @@ World.prototype.solve = function(timeStep) {
     this.island.solve(timeStep, this._gravity, this._allowSleep);
     for (var i = (0);
      i < this.island.bodyCount; ++i) {
-      var b = this.island.bodies.$index(i);
+      var b = this.island.bodies[i];
       if (b.get$type() == (0)) {
         b.flags = b.flags & (-2);
       }
@@ -4597,6 +5159,7 @@ World.prototype.solveTimeOfImpact = function() {
   }
 }
 World.prototype.solveTimeOfImpactGivenBody = function(body) {
+  var $0;
   var toiContact = null;
   var toi = (1);
   var toiOther = null;
@@ -4667,7 +5230,7 @@ World.prototype.solveTimeOfImpactGivenBody = function(body) {
     body.sweep.setFrom(this.backup);
     this.solveTimeOfImpactGivenBody(body);
   }
-  ++toiContact.toiCount;
+  ((toiContact.toiCount = ($0 = toiContact.toiCount + (1)), $0));
   if (this.contacts == null || this.contacts.get$length() < (32)) {
     this.contacts = new Array((32));
   }
@@ -4719,7 +5282,7 @@ function WorldQueryWrapper() {
 }
 WorldQueryWrapper.prototype.treeCallback = function(node) {
   var fixture = node.userData;
-  return this.callback.reportFixture(fixture);
+  return this.callback.noSuchMethod("reportFixture", [fixture]);
 }
 // ********** Code for Contact **************
 function Contact(pool) {
@@ -4731,10 +5294,6 @@ function Contact(pool) {
   this.pool = pool;
   this.edge2 = new ContactEdge();
 }
-Contact.prototype.get$fixtureA = function() { return this.fixtureA; };
-Contact.prototype.set$fixtureA = function(value) { return this.fixtureA = value; };
-Contact.prototype.get$fixtureB = function() { return this.fixtureB; };
-Contact.prototype.set$fixtureB = function(value) { return this.fixtureB = value; };
 Contact.prototype.init = function(fixA, fixB) {
   this.flags = (0);
   this.fixtureA = fixA;
@@ -4763,7 +5322,7 @@ Contact.prototype.evaluate = function(argManifold, xfA, xfB) {
 }
 Contact.prototype.update = function(listener) {
   this._oldManifold.setFrom(this.manifold);
-  this.flags |= (4);
+  this.flags = this.flags | (4);
   var touching = false;
   var wasTouching = (this.flags & (2)) == (2);
   var sensorA = this.fixtureA.isSensor;
@@ -4784,13 +5343,13 @@ Contact.prototype.update = function(listener) {
     touching = this.manifold.pointCount > (0);
     for (var i = (0);
      i < this.manifold.pointCount; ++i) {
-      var mp2 = this.manifold.points.$index(i);
+      var mp2 = this.manifold.points[i];
       mp2.normalImpulse = (0);
       mp2.tangentImpulse = (0);
       var id2 = mp2.id;
       for (var j = (0);
        j < this._oldManifold.pointCount; ++j) {
-        var mp1 = this._oldManifold.points.$index(j);
+        var mp1 = this._oldManifold.points[j];
         if (mp1.id.isEqual(id2)) {
           mp2.normalImpulse = mp1.normalImpulse;
           mp2.tangentImpulse = mp1.tangentImpulse;
@@ -4804,27 +5363,24 @@ Contact.prototype.update = function(listener) {
     }
   }
   if (touching) {
-    this.flags |= (2);
+    this.flags = this.flags | (2);
   }
   else {
-    this.flags &= (-3);
+    this.flags = this.flags & (-3);
   }
   if (listener == null) {
     return;
   }
   if ($eq(wasTouching, false) && $eq(touching, true)) {
-    listener.beginContact(this);
+    listener.noSuchMethod("beginContact", [this]);
   }
   if ($eq(wasTouching, true) && $eq(touching, false)) {
-    listener.endContact(this);
+    listener.noSuchMethod("endContact", [this]);
   }
   if ($eq(sensor, false) && touching) {
-    listener.preSolve(this, this._oldManifold);
+    listener.noSuchMethod("preSolve", [this, this._oldManifold]);
   }
 }
-Contact.prototype.next$0 = function() {
-  return this.next();
-};
 // ********** Code for ContactConstraint **************
 function ContactConstraint() {
   this.localPoint = new Vector((0), (0));
@@ -4840,36 +5396,14 @@ function ContactConstraint() {
     this.points.$setindex(i, new ContactConstraintPoint());
   }
 }
-ContactConstraint.prototype.get$localPoint = function() { return this.localPoint; };
 ContactConstraint.prototype.get$type = function() { return this.type; };
 ContactConstraint.prototype.set$type = function(value) { return this.type = value; };
 ContactConstraint.prototype.get$radius = function() { return this.radius; };
 ContactConstraint.prototype.set$radius = function(value) { return this.radius = value; };
-ContactConstraint.prototype.setFrom = function(cp) {
-  this.pointCount = cp.pointCount;
-  this.localNormal.setFrom(cp.localNormal);
-  this.localPoint.setFrom(cp.localPoint);
-  this.normal.setFrom(cp.normal);
-  this.normalMass.setFrom(cp.normalMass);
-  this.K.setFrom(cp.K);
-  this.bodyA = cp.bodyA;
-  this.bodyB = cp.bodyB;
-  this.type = cp.type;
-  this.radius = cp.radius;
-  this.friction = cp.friction;
-  this.restitution = cp.restitution;
-  this.manifold = cp.manifold;
-  for (var i = (0);
-   i < cp.pointCount; i++) {
-    this.points.$index(i).setFrom$1(cp.points.$index(i));
-  }
-}
 ContactConstraint.prototype.toString = function() {
-  var result = ("localNormal: \"" + this.localNormal + "\", localPoint: \"" + this.localPoint + "\" ") + ("normal: \"" + this.normal + "\", radius: \"" + this.radius + "\" friction: \"" + this.friction + "\" ") + ("restitution: \"" + this.restitution + "\", pointCount: \"" + this.pointCount + "\"");
+  var result = $add($add(("localNormal: \"" + this.localNormal + "\", localPoint: \"" + this.localPoint + "\" "), ("normal: \"" + this.normal + "\", radius: \"" + this.radius + "\" friction: \"" + this.friction + "\" ")), ("restitution: \"" + this.restitution + "\", pointCount: \"" + this.pointCount + "\""));
   return result;
 }
-ContactConstraint.prototype.setFrom$1 = ContactConstraint.prototype.setFrom;
-ContactConstraint.prototype.toString$0 = ContactConstraint.prototype.toString;
 // ********** Code for ContactConstraintPoint **************
 function ContactConstraintPoint() {
   this.tangentMass = (0);
@@ -4881,26 +5415,9 @@ function ContactConstraintPoint() {
   this.normalMass = (0);
   this.normalImpulse = (0);
 }
-ContactConstraintPoint.prototype.get$localPoint = function() { return this.localPoint; };
-ContactConstraintPoint.prototype.get$normalImpulse = function() { return this.normalImpulse; };
-ContactConstraintPoint.prototype.set$normalImpulse = function(value) { return this.normalImpulse = value; };
-ContactConstraintPoint.prototype.get$tangentImpulse = function() { return this.tangentImpulse; };
-ContactConstraintPoint.prototype.set$tangentImpulse = function(value) { return this.tangentImpulse = value; };
-ContactConstraintPoint.prototype.setFrom = function(cp) {
-  this.localPoint.setFrom(cp.localPoint);
-  this.rA.setFrom(cp.rA);
-  this.rB.setFrom(cp.rB);
-  this.normalImpulse = cp.normalImpulse;
-  this.tangentImpulse = cp.tangentImpulse;
-  this.normalMass = cp.normalMass;
-  this.tangentMass = cp.tangentMass;
-  this.velocityBias = cp.velocityBias;
-}
 ContactConstraintPoint.prototype.toString = function() {
-  return "normal impulse: " + this.normalImpulse + ", tangentImpulse: " + this.tangentImpulse + ", normalMass: " + this.normalMass + ", tangentMass: " + this.tangentMass + ", velocityBias: " + this.velocityBias + ", localPoint " + this.localPoint + ", rA: " + this.rA + ", rB: " + this.rB;
+  return $add($add($add($add($add($add($add($add($add($add("normal impulse: " + this.normalImpulse, ", tangentImpulse: ") + this.tangentImpulse, ", normalMass: ") + this.normalMass, ", tangentMass: ") + this.tangentMass, ", velocityBias: ") + this.velocityBias, ", localPoint "), this.localPoint), ", rA: "), this.rA), ", rB: "), this.rB);
 }
-ContactConstraintPoint.prototype.setFrom$1 = ContactConstraintPoint.prototype.setFrom;
-ContactConstraintPoint.prototype.toString$0 = ContactConstraintPoint.prototype.toString;
 // ********** Code for ContactEdge **************
 function ContactEdge() {
   this.other = null;
@@ -4908,9 +5425,6 @@ function ContactEdge() {
   this.prev = null;
   this.next = null;
 }
-ContactEdge.prototype.next$0 = function() {
-  return this.next();
-};
 // ********** Code for CircleContact **************
 $inherits(CircleContact, Contact);
 function CircleContact(argPool) {
@@ -4929,8 +5443,6 @@ function ContactRegister() {
   this.primary = false;
   this.creator = null;
 }
-ContactRegister.prototype.get$creator = function() { return this.creator; };
-ContactRegister.prototype.set$creator = function(value) { return this.creator = value; };
 // ********** Code for ContactSolver **************
 function ContactSolver() {
   this.P2 = new Vector((0), (0));
@@ -4969,7 +5481,7 @@ ContactSolver.prototype.init = function(contacts, contactCount, impulseRatio) {
   }
   for (var i = (0);
    i < this.constraintCount; ++i) {
-    var contact = contacts.$index(i);
+    var contact = contacts[i];
     var fixtureA = contact.fixtureA;
     var fixtureB = contact.fixtureB;
     var shapeA = fixtureA.shape;
@@ -4986,7 +5498,7 @@ ContactSolver.prototype.init = function(contacts, contactCount, impulseRatio) {
     var wA = bodyA.get$angularVelocity();
     var wB = bodyB.get$angularVelocity();
     this.worldManifold.initialize(manifold, bodyA.originTransform, radiusA, bodyB.originTransform, radiusB);
-    var cc = this.constraints.$index(i);
+    var cc = this.constraints[i];
     cc.bodyA = bodyA;
     cc.bodyB = bodyB;
     cc.manifold = manifold;
@@ -5003,16 +5515,16 @@ ContactSolver.prototype.init = function(contacts, contactCount, impulseRatio) {
     cc.type = manifold.type;
     for (var j = (0);
      j < cc.pointCount; ++j) {
-      var cp = manifold.points.$index(j);
-      var ccp = cc.points.$index(j);
+      var cp = manifold.points[j];
+      var ccp = cc.points[j];
       ccp.normalImpulse = impulseRatio * cp.normalImpulse;
       ccp.tangentImpulse = impulseRatio * cp.tangentImpulse;
       ccp.localPoint.x = cp.localPoint.x;
       ccp.localPoint.y = cp.localPoint.y;
-      ccp.rA.x = this.worldManifold.points.$index(j).get$x() - bodyA.sweep.center.x;
-      ccp.rA.y = this.worldManifold.points.$index(j).get$y() - bodyA.sweep.center.y;
-      ccp.rB.x = this.worldManifold.points.$index(j).get$x() - bodyB.sweep.center.x;
-      ccp.rB.y = this.worldManifold.points.$index(j).get$y() - bodyB.sweep.center.y;
+      ccp.rA.x = this.worldManifold.points[j].x - bodyA.sweep.center.x;
+      ccp.rA.y = this.worldManifold.points[j].y - bodyA.sweep.center.y;
+      ccp.rB.x = this.worldManifold.points[j].x - bodyB.sweep.center.x;
+      ccp.rB.y = this.worldManifold.points[j].y - bodyB.sweep.center.y;
       var rnA = ccp.rA.x * cc.normal.y - ccp.rA.y * cc.normal.x;
       var rnB = ccp.rB.x * cc.normal.y - ccp.rB.y * cc.normal.x;
       rnA *= rnA;
@@ -5039,8 +5551,8 @@ ContactSolver.prototype.init = function(contacts, contactCount, impulseRatio) {
       }
     }
     if (cc.pointCount == (2)) {
-      var ccp1 = cc.points.$index((0));
-      var ccp2 = cc.points.$index((1));
+      var ccp1 = cc.points[(0)];
+      var ccp2 = cc.points[(1)];
       var invMassA = bodyA.invMass;
       var invIA = bodyA.invInertia;
       var invMassB = bodyB.invMass;
@@ -5070,10 +5582,10 @@ ContactSolver.prototype.init = function(contacts, contactCount, impulseRatio) {
   }
 }
 ContactSolver.prototype.warmStart = function() {
-  var $0;
+  var $0, $1, $2, $3;
   for (var i = (0);
    i < this.constraintCount; ++i) {
-    var c = this.constraints.$index(i);
+    var c = this.constraints[i];
     var bodyA = c.bodyA;
     var bodyB = c.bodyB;
     var invMassA = bodyA.invMass;
@@ -5084,22 +5596,22 @@ ContactSolver.prototype.warmStart = function() {
     Vector.crossVectorAndNumToOut(normal, (1), this.tangent);
     for (var j = (0);
      j < c.pointCount; ++j) {
-      var ccp = c.points.$index(j);
+      var ccp = c.points[j];
       var Px = ccp.normalImpulse * normal.x + ccp.tangentImpulse * this.tangent.x;
       var Py = ccp.normalImpulse * normal.y + ccp.tangentImpulse * this.tangent.y;
       bodyA.set$angularVelocity(bodyA.get$angularVelocity() - (invIA * (ccp.rA.x * Py - ccp.rA.y * Px)));
       ($0 = bodyA.get$linearVelocity()).x = $0.x - (Px * invMassA);
-      ($0 = bodyA.get$linearVelocity()).y = $0.y - (Py * invMassA);
+      ($1 = bodyA.get$linearVelocity()).y = $1.y - (Py * invMassA);
       bodyB.set$angularVelocity(bodyB.get$angularVelocity() + (invIB * (ccp.rB.x * Py - ccp.rB.y * Px)));
-      ($0 = bodyB.get$linearVelocity()).x = $0.x + (Px * invMassB);
-      ($0 = bodyB.get$linearVelocity()).y = $0.y + (Py * invMassB);
+      ($2 = bodyB.get$linearVelocity()).x = $2.x + (Px * invMassB);
+      ($3 = bodyB.get$linearVelocity()).y = $3.y + (Py * invMassB);
     }
   }
 }
 ContactSolver.prototype.solveVelocityConstraints = function() {
   for (var i = (0);
    i < this.constraintCount; ++i) {
-    var c = this.constraints.$index(i);
+    var c = this.constraints[i];
     var bodyA = c.bodyA;
     var bodyB = c.bodyB;
     var wA = bodyA.get$angularVelocity();
@@ -5115,7 +5627,7 @@ ContactSolver.prototype.solveVelocityConstraints = function() {
     var friction = c.friction;
     for (var j = (0);
      j < c.pointCount; ++j) {
-      var ccp = c.points.$index(j);
+      var ccp = c.points[j];
       var a = ccp.rA;
       this.dv.x = -wB * ccp.rB.y + vB.x - vA.x + wA * a.y;
       this.dv.y = wB * ccp.rB.x + vB.y - vA.y - wA * a.x;
@@ -5135,7 +5647,7 @@ ContactSolver.prototype.solveVelocityConstraints = function() {
       ccp.tangentImpulse = newImpulse;
     }
     if (c.pointCount == (1)) {
-      var ccp = c.points.$index((0));
+      var ccp = c.points[(0)];
       var a1 = ccp.rA;
       this.dv.x = -wB * ccp.rB.y + vB.x - vA.x + wA * a1.y;
       this.dv.y = wB * ccp.rB.x + vB.y - vA.y - wA * a1.x;
@@ -5156,8 +5668,8 @@ ContactSolver.prototype.solveVelocityConstraints = function() {
       ccp.normalImpulse = newImpulse;
     }
     else {
-      var cp1 = c.points.$index((0));
-      var cp2 = c.points.$index((1));
+      var cp1 = c.points[(0)];
+      var cp2 = c.points[(1)];
       var a = new Vector(cp1.normalImpulse, cp2.normalImpulse);
       this.dv1.x = -wB * cp1.rB.y + vB.x - vA.x + wA * cp1.rA.y;
       this.dv1.y = wB * cp1.rB.x + vB.y - vA.y - wA * cp1.rA.x;
@@ -5257,21 +5769,21 @@ ContactSolver.prototype.solveVelocityConstraints = function() {
 ContactSolver.prototype.storeImpulses = function() {
   for (var i = (0);
    i < this.constraintCount; i++) {
-    var c = this.constraints.$index(i);
+    var c = this.constraints[i];
     var m = c.manifold;
     for (var j = (0);
      j < c.pointCount; j++) {
-      m.points.$index(j).set$normalImpulse(c.points.$index(j).get$normalImpulse());
-      m.points.$index(j).set$tangentImpulse(c.points.$index(j).get$tangentImpulse());
+      m.points[j].normalImpulse = c.points[j].normalImpulse;
+      m.points[j].tangentImpulse = c.points[j].tangentImpulse;
     }
   }
 }
 ContactSolver.prototype.solvePositionConstraints = function(baumgarte) {
-  var $0;
+  var $0, $1;
   var minSeparation = (0);
   for (var i = (0);
    i < this.constraintCount; ++i) {
-    var c = this.constraints.$index(i);
+    var c = this.constraints[i];
     var bodyA = c.bodyA;
     var bodyB = c.bodyB;
     var invMassA = bodyA.mass * bodyA.invMass;
@@ -5301,13 +5813,12 @@ ContactSolver.prototype.solvePositionConstraints = function(baumgarte) {
       bodyA.synchronizeTransform();
       this.temp1.setFrom(this.P).mulLocal(invMassB);
       bodyB.sweep.center.addLocal(this.temp1);
-      ($0 = bodyB.sweep).angle = $0.angle + (invIB * Vector.crossVectors(this.rB, this.P));
+      ($1 = bodyB.sweep).angle = $1.angle + (invIB * Vector.crossVectors(this.rB, this.P));
       bodyB.synchronizeTransform();
     }
   }
   return minSeparation >= (-0.0075);
 }
-ContactSolver.prototype.solvePositionConstraints$1 = ContactSolver.prototype.solvePositionConstraints;
 // ********** Code for PositionSolverManifold **************
 function PositionSolverManifold() {
   this.normal = new Vector((0), (0));
@@ -5324,7 +5835,7 @@ PositionSolverManifold.prototype.initialize = function(cc, index) {
     case (0):
 
       cc.bodyA.getWorldPointToOut(cc.localPoint, this.pointA);
-      cc.bodyB.getWorldPointToOut(cc.points.$index((0)).get$localPoint(), this.pointB);
+      cc.bodyB.getWorldPointToOut(cc.points[(0)].localPoint, this.pointB);
       if (MathBox.distanceSquared(this.pointA, this.pointB) > (1.4208639999999999e-14)) {
         this.normal.setFrom(this.pointB).subLocal(this.pointA);
         this.normal.normalize();
@@ -5341,7 +5852,7 @@ PositionSolverManifold.prototype.initialize = function(cc, index) {
 
       cc.bodyA.getWorldVectorToOut(cc.localNormal, this.normal);
       cc.bodyA.getWorldPointToOut(cc.localPoint, this.planePoint);
-      cc.bodyB.getWorldPointToOut(cc.points.$index(index).get$localPoint(), this.clipPoint);
+      cc.bodyB.getWorldPointToOut(cc.points[index].localPoint, this.clipPoint);
       this.temp.setFrom(this.clipPoint).subLocal(this.planePoint);
       this.separation = Vector.dot(this.temp, this.normal) - cc.radius;
       this.point.setFrom(this.clipPoint);
@@ -5351,7 +5862,7 @@ PositionSolverManifold.prototype.initialize = function(cc, index) {
 
       cc.bodyB.getWorldVectorToOut(cc.localNormal, this.normal);
       cc.bodyB.getWorldPointToOut(cc.localPoint, this.planePoint);
-      cc.bodyA.getWorldPointToOut(cc.points.$index(index).get$localPoint(), this.clipPoint);
+      cc.bodyA.getWorldPointToOut(cc.points[index].localPoint, this.clipPoint);
       this.temp.setFrom(this.clipPoint).subLocal(this.planePoint);
       this.separation = Vector.dot(this.temp, this.normal) - cc.radius;
       this.point.setFrom(this.clipPoint);
@@ -5415,7 +5926,7 @@ TimeOfImpactSolver.prototype.initialize = function(contacts, argCount, argToiBod
   }
   for (var i = (0);
    i < this.count; i++) {
-    var contact = contacts.$index(i);
+    var contact = contacts[i];
     var fixtureA = contact.fixtureA;
     var fixtureB = contact.fixtureB;
     var shapeA = fixtureA.shape;
@@ -5425,7 +5936,7 @@ TimeOfImpactSolver.prototype.initialize = function(contacts, argCount, argToiBod
     var bodyA = fixtureA.body;
     var bodyB = fixtureB.body;
     var manifold = contact.manifold;
-    var constraint = this.constraints.$index(i);
+    var constraint = this.constraints[i];
     constraint.bodyA = bodyA;
     constraint.bodyB = bodyB;
     constraint.localNormal.setFrom(manifold.localNormal);
@@ -5435,17 +5946,17 @@ TimeOfImpactSolver.prototype.initialize = function(contacts, argCount, argToiBod
     constraint.radius = radiusA + radiusB;
     for (var j = (0);
      j < constraint.pointCount; ++j) {
-      var cp = manifold.points.$index(j);
+      var cp = manifold.points[j];
       constraint.localPoints.$setindex(j, cp.localPoint);
     }
   }
 }
 TimeOfImpactSolver.prototype.solve = function(baumgarte) {
-  var $0;
+  var $0, $1;
   var minSeparation = (0);
   for (var i = (0);
    i < this.count; ++i) {
-    var c = this.constraints.$index(i);
+    var c = this.constraints[i];
     var bodyA = c.bodyA;
     var bodyB = c.bodyB;
     var massA = bodyA.mass;
@@ -5481,7 +5992,7 @@ TimeOfImpactSolver.prototype.solve = function(baumgarte) {
       bodyA.synchronizeTransform();
       this.temp.setFrom(this.P).mulLocal(invMassB);
       bodyB.sweep.center.addLocal(this.temp);
-      ($0 = bodyB.sweep).angle = $0.angle + (invIB * Vector.crossVectors(this.rB, this.P));
+      ($1 = bodyB.sweep).angle = $1.angle + (invIB * Vector.crossVectors(this.rB, this.P));
       bodyB.synchronizeTransform();
     }
   }
@@ -5503,7 +6014,7 @@ TimeOfImpactSolverManifold.prototype.initialize = function(cc, index) {
     case (0):
 
       this.pointA.setFrom(cc.bodyA.getWorldPoint(cc.localPoint));
-      this.pointB.setFrom(cc.bodyB.getWorldPoint(cc.localPoints.$index((0))));
+      this.pointB.setFrom(cc.bodyB.getWorldPoint(cc.localPoints[(0)]));
       if (MathBox.distanceSquared(this.pointA, this.pointB) > (1.4208639999999999e-14)) {
         this.normal.setFrom(this.pointB).subLocal(this.pointA);
         this.normal.normalize();
@@ -5520,7 +6031,7 @@ TimeOfImpactSolverManifold.prototype.initialize = function(cc, index) {
 
       this.normal.setFrom(cc.bodyA.getWorldVector(cc.localNormal));
       this.planePoint.setFrom(cc.bodyA.getWorldPoint(cc.localPoint));
-      this.clipPoint.setFrom(cc.bodyB.getWorldPoint(cc.localPoints.$index(index)));
+      this.clipPoint.setFrom(cc.bodyB.getWorldPoint(cc.localPoints[index]));
       this.temp.setFrom(this.clipPoint).subLocal(this.planePoint);
       this.separation = Vector.dot(this.temp, this.normal) - cc.radius;
       this.point.setFrom(this.clipPoint);
@@ -5530,7 +6041,7 @@ TimeOfImpactSolverManifold.prototype.initialize = function(cc, index) {
 
       this.normal.setFrom(cc.bodyB.getWorldVector(cc.localNormal));
       this.planePoint.setFrom(cc.bodyB.getWorldPoint(cc.localPoint));
-      this.clipPoint.setFrom(cc.bodyA.getWorldPoint(cc.localPoints.$index(index)));
+      this.clipPoint.setFrom(cc.bodyA.getWorldPoint(cc.localPoints[index]));
       this.temp.setFrom(this.clipPoint).subLocal(this.planePoint);
       this.separation = Vector.dot(this.temp, this.normal) - cc.radius;
       this.point.setFrom(this.clipPoint);
@@ -5554,25 +6065,10 @@ function TimeOfImpactConstraint() {
     this.localPoints.$setindex(i, new Vector((0), (0)));
   }
 }
-TimeOfImpactConstraint.prototype.get$localPoint = function() { return this.localPoint; };
 TimeOfImpactConstraint.prototype.get$type = function() { return this.type; };
 TimeOfImpactConstraint.prototype.set$type = function(value) { return this.type = value; };
 TimeOfImpactConstraint.prototype.get$radius = function() { return this.radius; };
 TimeOfImpactConstraint.prototype.set$radius = function(value) { return this.radius = value; };
-TimeOfImpactConstraint.prototype.setFrom = function(argOther) {
-  for (var i = (0);
-   i < this.localPoints.get$length(); i++) {
-    this.localPoints.$index(i).setFrom$1(argOther.localPoints.$index(i));
-  }
-  this.localNormal.setFrom(argOther.localNormal);
-  this.localPoint.setFrom(argOther.localPoint);
-  this.type = argOther.type;
-  this.radius = argOther.radius;
-  this.pointCount = argOther.pointCount;
-  this.bodyA = argOther.bodyA;
-  this.bodyB = argOther.bodyB;
-}
-TimeOfImpactConstraint.prototype.setFrom$1 = TimeOfImpactConstraint.prototype.setFrom;
 // ********** Code for DefaultWorldPool **************
 function DefaultWorldPool() {
   this.distance = new Distance._construct$ctor();
@@ -5580,7 +6076,7 @@ function DefaultWorldPool() {
   this.timeOfImpact = new TimeOfImpact._construct$ctor(this);
 }
 DefaultWorldPool.prototype.getCircleContactStack = function() {
-  var queue = new DoubleLinkedQueue();
+  var queue = new DoubleLinkedQueue_CircleContact();
   for (var i = (0);
    i < (10); i++) {
     queue.addFirst(new CircleContact(this));
@@ -5588,7 +6084,7 @@ DefaultWorldPool.prototype.getCircleContactStack = function() {
   return queue;
 }
 DefaultWorldPool.prototype.getPolyCircleContactStack = function() {
-  var queue = new DoubleLinkedQueue();
+  var queue = new DoubleLinkedQueue_PolygonAndCircleContact();
   for (var i = (0);
    i < (10); i++) {
     queue.addFirst(new PolygonAndCircleContact(this));
@@ -5596,7 +6092,7 @@ DefaultWorldPool.prototype.getPolyCircleContactStack = function() {
   return queue;
 }
 DefaultWorldPool.prototype.getPolyContactStack = function() {
-  var queue = new DoubleLinkedQueue();
+  var queue = new DoubleLinkedQueue_PolygonContact();
   for (var i = (0);
    i < (10); i++) {
     queue.addFirst(new PolygonContact(this));
@@ -5632,7 +6128,7 @@ Matrix22.prototype.set$col1 = function(value) { return this.col1 = value; };
 Matrix22.prototype.get$col2 = function() { return this.col2; };
 Matrix22.prototype.set$col2 = function(value) { return this.col2 = value; };
 Matrix22.prototype.$eq = function(other) {
-  if (other != null && (other instanceof Matrix22)) {
+  if ($ne(other) && (other instanceof Matrix22)) {
     return $eq(this.col1, other.get$col1()) && $eq(this.col2, other.get$col2());
   }
   else {
@@ -5671,20 +6167,9 @@ Matrix22.prototype.invertLocal = function() {
   this.col2.y = det * a;
   return this;
 }
-Matrix22.prototype.addLocal = function(other) {
-  var $0;
-  ($0 = this.col1).x = $0.x + other.col1.x;
-  ($0 = this.col1).y = $0.y + other.col1.y;
-  ($0 = this.col2).x = $0.x + other.col2.x;
-  ($0 = this.col2).y = $0.y + other.col2.y;
-  return this;
-}
 Matrix22.prototype.toString = function() {
-  return this.col1.toString() + ", " + this.col2.toString();
+  return $add($add(this.col1.toString(), ", "), this.col2.toString());
 }
-Matrix22.prototype.addLocal$1 = Matrix22.prototype.addLocal;
-Matrix22.prototype.setFrom$1 = Matrix22.prototype.setFrom;
-Matrix22.prototype.toString$0 = Matrix22.prototype.toString;
 // ********** Code for Settings **************
 function Settings() {}
 Settings.mixFriction = function(friction1, friction2) {
@@ -5720,24 +6205,22 @@ Sweep.prototype.setFrom = function(other) {
 }
 Sweep.prototype.normalize = function() {
   var d = (6.283185307179586) * (this.angleZero / (6.283185307179586)).floor();
-  this.angleZero -= d;
-  this.angle -= d;
+  this.angleZero = this.angleZero - d;
+  this.angle = this.angle - d;
 }
 Sweep.prototype.getTransform = function(xf, alpha) {
-  var $0;
+  var $0, $1;
   xf.position.x = ((1) - alpha) * this.centerZero.x + alpha * this.center.x;
   xf.position.y = ((1) - alpha) * this.centerZero.y + alpha * this.center.y;
   xf.rotation.setAngle(((1) - alpha) * this.angleZero + alpha * this.angle);
   ($0 = xf.position).x = $0.x - (xf.rotation.col1.x * this.localCenter.x + xf.rotation.col2.x * this.localCenter.y);
-  ($0 = xf.position).y = $0.y - (xf.rotation.col1.y * this.localCenter.x + xf.rotation.col2.y * this.localCenter.y);
+  ($1 = xf.position).y = $1.y - (xf.rotation.col1.y * this.localCenter.x + xf.rotation.col2.y * this.localCenter.y);
 }
 Sweep.prototype.advance = function(time) {
   this.centerZero.x = ((1) - time) * this.centerZero.x + time * this.center.x;
   this.centerZero.y = ((1) - time) * this.centerZero.y + time * this.center.y;
   this.angleZero = ((1) - time) * this.angleZero + time * this.angle;
 }
-Sweep.prototype.normalize$0 = Sweep.prototype.normalize;
-Sweep.prototype.setFrom$1 = Sweep.prototype.setFrom;
 // ********** Code for Transform **************
 function Transform() {
   this.position = new Vector((0), (0));
@@ -5746,7 +6229,7 @@ function Transform() {
 Transform.prototype.get$position = function() { return this.position; };
 Transform.prototype.get$rotation = function() { return this.rotation; };
 Transform.prototype.$eq = function(other) {
-  if (other == null) {
+  if ($eq(other)) {
     return false;
   }
   else {
@@ -5771,7 +6254,6 @@ Transform.mulTransToOut = function(T, v, out) {
   out.x = v1x * b.x + v1y * b.y;
   out.y = tempy;
 }
-Transform.prototype.setFrom$1 = Transform.prototype.setFrom;
 // ********** Code for Vector **************
 function Vector(x, y) {
   this.y = y;
@@ -5787,7 +6269,7 @@ Vector.prototype.set$x = function(value) { return this.x = value; };
 Vector.prototype.get$y = function() { return this.y; };
 Vector.prototype.set$y = function(value) { return this.y = value; };
 Vector.prototype.$eq = function(other) {
-  if (other == null) {
+  if ($eq(other)) {
     return false;
   }
   else {
@@ -5795,13 +6277,13 @@ Vector.prototype.$eq = function(other) {
   }
 }
 Vector.prototype.addLocal = function(v) {
-  this.x += v.x;
-  this.y += v.y;
+  this.x = this.x + v.x;
+  this.y = this.y + v.y;
   return this;
 }
 Vector.prototype.subLocal = function(other) {
-  this.x -= other.x;
-  this.y -= other.y;
+  this.x = this.x - other.x;
+  this.y = this.y - other.y;
   return this;
 }
 Vector.prototype.setCoords = function(xCoord, yCoord) {
@@ -5830,8 +6312,8 @@ Vector.prototype.setFrom = function(v) {
   return this;
 }
 Vector.prototype.mulLocal = function(d) {
-  this.x *= d;
-  this.y *= d;
+  this.x = this.x * d;
+  this.y = this.y * d;
   return this;
 }
 Vector.prototype.setZero = function() {
@@ -5862,8 +6344,8 @@ Vector.prototype.normalize = function() {
     return (0);
   }
   var invLength = (1) / len;
-  this.x *= invLength;
-  this.y *= invLength;
+  this.x = this.x * invLength;
+  this.y = this.y * invLength;
   return len;
 }
 Vector.prototype.negateLocal = function() {
@@ -5872,16 +6354,8 @@ Vector.prototype.negateLocal = function() {
   return this;
 }
 Vector.prototype.toString = function() {
-  return "(" + this.x + ", " + this.y + ")";
+  return $add($add("(" + this.x, ", ") + this.y, ")");
 }
-Vector.prototype.addLocal$1 = Vector.prototype.addLocal;
-Vector.prototype.mulLocal$1 = Vector.prototype.mulLocal;
-Vector.prototype.negateLocal$0 = Vector.prototype.negateLocal;
-Vector.prototype.normalize$0 = Vector.prototype.normalize;
-Vector.prototype.setCoords$2 = Vector.prototype.setCoords;
-Vector.prototype.setFrom$1 = Vector.prototype.setFrom;
-Vector.prototype.subLocal$1 = Vector.prototype.subLocal;
-Vector.prototype.toString$0 = Vector.prototype.toString;
 // ********** Code for top level **************
 //  ********** Library Bench2d **************
 // ********** Code for Bench2d **************
@@ -5897,8 +6371,8 @@ Bench2d.prototype.initialize = function() {
     var shape = new PolygonShape();
     shape.setAsEdge(new Vector((-40), (0)), new Vector((40), (0)));
     var fixDef = new FixtureDef();
-    fixDef.shape = shape;
-    fixDef.density = (0);
+    fixDef.set$shape(shape);
+    fixDef.set$density((0));
     ground.createFixture(fixDef);
   }
   {
@@ -5906,8 +6380,8 @@ Bench2d.prototype.initialize = function() {
     var shape = new PolygonShape();
     shape.setAsBox(a, a);
     var fixDef = new FixtureDef();
-    fixDef.shape = shape;
-    fixDef.density = (5);
+    fixDef.set$shape(shape);
+    fixDef.set$density((5));
     var x = new Vector((-7), (0.75));
     var y = new Vector((0), (0));
     var deltaX = new Vector((0.5625), (1));
@@ -5936,60 +6410,43 @@ Bench2d.prototype.warmup = function() {
    i < (64); ++i) this.step();
 }
 Bench2d.prototype.bench = function() {
-  var bench2d = new Bench2d();
   var times = new Array((256));
   for (var i = (0);
    i < (256); ++i) {
     var watch = new StopwatchImplementation();
-    watch.start();
-    bench2d.step();
+    watch.start$0();
+    this.step();
     watch.stop();
-    times.$setindex(i, watch.elapsed() / watch.frequency());
-    dart_core_print(times.$index(i));
+    times.$setindex(i, (1000) * watch.elapsed() / watch.frequency());
+    dart_core_print(("" + i + ": " + times.$index(i)));
   }
   var total = (0);
   for (var i = (0);
-   i < (256); ++i) total = total + times.$index(i);
+   i < (256); ++i) total = $add(total, times.$index(i));
   dart_core_print(("Average: " + (total / (256))));
 }
+Bench2d.prototype.initialize$0 = Bench2d.prototype.initialize;
 // ********** Code for top level **************
 function main() {
   var bench2d = new Bench2d();
-  bench2d.initialize();
+  bench2d.initialize$0();
   bench2d.warmup();
   bench2d.bench();
 }
-// ********** Generic Type Inheritance **************
-/** Implements extends for generic types. */
-function $inheritsMembers(child, parent) {
-  child = child.prototype;
-  parent = parent.prototype;
-  Object.getOwnPropertyNames(parent).forEach(function(name) {
-    if (typeof(child[name]) == 'undefined') child[name] = parent[name];
-  });
-}
-$inheritsMembers(_DoubleLinkedQueueEntrySentinel_E, DoubleLinkedQueueEntry_E);
-// 120 dynamic types.
-// 276 types
-// 21 !leaf
+// 113 dynamic types.
+// 164 types
+// 11 !leaf
 (function(){
-  var v0/*HTMLInputElement*/ = 'HTMLInputElement|HTMLIsIndexElement';
-  var v1/*SVGComponentTransferFunctionElement*/ = 'SVGComponentTransferFunctionElement|SVGFEFuncAElement|SVGFEFuncBElement|SVGFEFuncGElement|SVGFEFuncRElement';
-  var v2/*SVGTextPositioningElement*/ = 'SVGTextPositioningElement|SVGAltGlyphElement|SVGTRefElement|SVGTSpanElement|SVGTextElement';
-  var v3/*HTMLElement*/ = [v0/*HTMLInputElement*/,'HTMLElement|HTMLAnchorElement|HTMLAppletElement|HTMLAreaElement|HTMLBRElement|HTMLBaseElement|HTMLBaseFontElement|HTMLBodyElement|HTMLButtonElement|HTMLCanvasElement|HTMLDListElement|HTMLDataListElement|HTMLDetailsElement|HTMLDirectoryElement|HTMLDivElement|HTMLEmbedElement|HTMLFieldSetElement|HTMLFontElement|HTMLFormElement|HTMLFrameElement|HTMLFrameSetElement|HTMLHRElement|HTMLHeadElement|HTMLHeadingElement|HTMLHtmlElement|HTMLIFrameElement|HTMLImageElement|HTMLKeygenElement|HTMLLIElement|HTMLLabelElement|HTMLLegendElement|HTMLLinkElement|HTMLMapElement|HTMLMarqueeElement|HTMLMediaElement|HTMLAudioElement|HTMLVideoElement|HTMLMenuElement|HTMLMetaElement|HTMLMeterElement|HTMLModElement|HTMLOListElement|HTMLObjectElement|HTMLOptGroupElement|HTMLOptionElement|HTMLOutputElement|HTMLParagraphElement|HTMLParamElement|HTMLPreElement|HTMLProgressElement|HTMLQuoteElement|HTMLScriptElement|HTMLSelectElement|HTMLSourceElement|HTMLSpanElement|HTMLStyleElement|HTMLTableCaptionElement|HTMLTableCellElement|HTMLTableColElement|HTMLTableElement|HTMLTableRowElement|HTMLTableSectionElement|HTMLTextAreaElement|HTMLTitleElement|HTMLTrackElement|HTMLUListElement|HTMLUnknownElement'].join('|');
-  var v4/*SVGElement*/ = [v1/*SVGComponentTransferFunctionElement*/,v2/*SVGTextPositioningElement*/,'SVGElement|SVGAElement|SVGAltGlyphDefElement|SVGAltGlyphItemElement|SVGAnimationElement|SVGAnimateColorElement|SVGAnimateElement|SVGAnimateMotionElement|SVGAnimateTransformElement|SVGSetElement|SVGCircleElement|SVGClipPathElement|SVGCursorElement|SVGDefsElement|SVGDescElement|SVGEllipseElement|SVGFEBlendElement|SVGFEColorMatrixElement|SVGFEComponentTransferElement|SVGFECompositeElement|SVGFEConvolveMatrixElement|SVGFEDiffuseLightingElement|SVGFEDisplacementMapElement|SVGFEDistantLightElement|SVGFEDropShadowElement|SVGFEFloodElement|SVGFEGaussianBlurElement|SVGFEImageElement|SVGFEMergeElement|SVGFEMergeNodeElement|SVGFEMorphologyElement|SVGFEOffsetElement|SVGFEPointLightElement|SVGFESpecularLightingElement|SVGFESpotLightElement|SVGFETileElement|SVGFETurbulenceElement|SVGFilterElement|SVGFontElement|SVGFontFaceElement|SVGFontFaceFormatElement|SVGFontFaceNameElement|SVGFontFaceSrcElement|SVGFontFaceUriElement|SVGForeignObjectElement|SVGGElement|SVGGlyphElement|SVGGlyphRefElement|SVGGradientElement|SVGLinearGradientElement|SVGRadialGradientElement|SVGHKernElement|SVGImageElement|SVGLineElement|SVGMPathElement|SVGMarkerElement|SVGMaskElement|SVGMetadataElement|SVGMissingGlyphElement|SVGPathElement|SVGPatternElement|SVGPolygonElement|SVGPolylineElement|SVGRectElement|SVGSVGElement|SVGScriptElement|SVGStopElement|SVGStyleElement|SVGSwitchElement|SVGSymbolElement|SVGTextContentElement|SVGTextPathElement|SVGTitleElement|SVGUseElement|SVGVKernElement|SVGViewElement'].join('|');
   var table = [
     // [dynamic-dispatch-tag, tags of classes implementing dynamic-dispatch-tag]
     ['Blob', 'Blob|File'],
     ['CSSRule', 'CSSRule|CSSCharsetRule|CSSFontFaceRule|CSSImportRule|CSSMediaRule|CSSPageRule|CSSStyleRule|CSSUnknownRule|WebKitCSSKeyframeRule|WebKitCSSKeyframesRule'],
     ['DOMTokenList', 'DOMTokenList|DOMSettableTokenList'],
     ['Event', 'Event|AudioProcessingEvent|BeforeLoadEvent|CloseEvent|CustomEvent|DeviceMotionEvent|DeviceOrientationEvent|ErrorEvent|HashChangeEvent|IDBVersionChangeEvent|MessageEvent|MutationEvent|OfflineAudioCompletionEvent|OverflowEvent|PageTransitionEvent|PopStateEvent|ProgressEvent|XMLHttpRequestProgressEvent|SpeechInputEvent|StorageEvent|TrackEvent|UIEvent|CompositionEvent|KeyboardEvent|MouseEvent|SVGZoomEvent|TextEvent|TouchEvent|WheelEvent|WebGLContextEvent|WebKitAnimationEvent|WebKitTransitionEvent'],
-    ['HTMLInputElement', v0/*HTMLInputElement*/],
-    ['HTMLElement', v3/*HTMLElement*/],
-    ['SVGComponentTransferFunctionElement', v1/*SVGComponentTransferFunctionElement*/],
-    ['SVGTextPositioningElement', v2/*SVGTextPositioningElement*/],
-    ['SVGElement', v4/*SVGElement*/],
-    ['Node', [v3/*HTMLElement*/,v4/*SVGElement*/,'Node|Attr|CharacterData|Comment|Text|CDATASection|Document|HTMLDocument|SVGDocument|DocumentFragment|DocumentType|Element|Entity|EntityReference|Notation|ProcessingInstruction'].join('|')],
+    ['HTMLCollection', 'HTMLCollection|HTMLOptionsCollection|HTMLPropertiesCollection'],
+    ['HTMLInputElement', 'HTMLInputElement|HTMLIsIndexElement'],
+    ['SVGComponentTransferFunctionElement', 'SVGComponentTransferFunctionElement|SVGFEFuncAElement|SVGFEFuncBElement|SVGFEFuncGElement|SVGFEFuncRElement'],
+    ['SVGTextPositioningElement', 'SVGTextPositioningElement|SVGAltGlyphElement|SVGTRefElement|SVGTSpanElement|SVGTextElement'],
     ['StyleSheet', 'StyleSheet|CSSStyleSheet'],
   ];
   $dynamicSetMetadata(table);

@@ -67,6 +67,8 @@ class Bench2d {
 
     // Have the world draw itself for debugging purposes.
     world.debugDraw = debugDraw;
+
+    initialize();
   }
 
   void initialize() {
@@ -140,16 +142,14 @@ class Bench2d {
   }
 
   void bench() {
-    Bench2d bench2d = new Bench2d();
-
     final times = new List<int>(FRAMES);
     for (int i = 0; i < FRAMES; ++i) {
       final watch = new Stopwatch();
       watch.start();
-      bench2d.step();
+      step();
       watch.stop();
-      times[i] = watch.elapsed() / watch.frequency();
-      print(times[i]);
+      times[i] = 1000 * watch.elapsed() / watch.frequency();
+      print('$i: ${times[i]}');
     }
 
     int total = 0;
@@ -159,6 +159,12 @@ class Bench2d {
 }
 
 void main() {
+  // Render version
+  // final bench2d = new Bench2d();
+  // bench2d.initializeAnimation();
+  // bench2d.runAnimation();
+
+  // Benchmark version
   final bench2d = new Bench2d();
   bench2d.initialize();
   bench2d.warmup();
