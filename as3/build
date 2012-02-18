@@ -1,0 +1,2 @@
+#!/bin/sh
+/opt/flex-sdk-4.6.0/bin/mxmlc -compiler.library-path=./Box2DFlexLib/bin/:/opt/flex-sdk-4.6.0/frameworks/libs/:/opt/flex-sdk-4.6.0/frameworks/locale/en_US/ Bench2d.mxml

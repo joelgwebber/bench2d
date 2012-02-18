@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Box2DFlex library from: https://github.com/codeinvain/Box2DFlex
+-->
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+  xmlns:b2d="Box2D.flex.b2d.*"
+  preinitialize="main(event)"
+  minWidth="300" minHeight="300"
+  frameRate="30">
+
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+      import mx.controls.Alert;
+      import flash.utils.*;
+
+      import Box2D.Common.*;
+      import Box2D.Dynamics.*;
+      import Box2D.Collision.*;
+      import Box2D.Collision.Shapes.*;
+      import Box2D.Dynamics.Joints.*;
+      import Box2D.Dynamics.Contacts.*;
+      import Box2D.Common.Math.*;
+
+      protected const PYRAMID_SIZE:int = 40;
+      protected const WARMUP:int = 64;
+      protected const FRAMES:int = 256;
+
+      protected var world:b2World;
+
+      protected function initWorld():void {
+        var gravity:b2Vec2 = new b2Vec2(0, -10);
+        world = new b2World(gravity, true);
+
+        var shape:b2PolygonShape = new b2PolygonShape();
+        shape.SetAsEdge(new b2Vec2(-40.0, 0), new b2Vec2(40.0, 0));
+
+        var fd:b2FixtureDef = new b2FixtureDef();
+        fd.density = 0.0;
+        fd.shape = shape;
+
+        var bd:b2BodyDef = new b2BodyDef();
+        var ground:b2Body = world.CreateBody(bd);
+        ground.CreateFixture(fd);
+
+
+        var a:Number = .5;
+        shape = new b2PolygonShape();
+        shape.SetAsBox(a, a);
+
+        var x:b2Vec2 = new b2Vec2(-7.0, 0.75);
+        var y:b2Vec2 = new b2Vec2();
+        var deltaX:b2Vec2 = new b2Vec2(0.5625, 1);
+        var deltaY:b2Vec2 = new b2Vec2(1.125, 0.0);
+
+        for (var i:int = 0; i < PYRAMID_SIZE; ++i) {
+          y.Set(x.x, x.y);
+
+          for (var j:int = i; j < PYRAMID_SIZE; ++j) {
+            fd = new b2FixtureDef();
+            fd.density = 5.0;
+            fd.shape = shape;
+
+            bd = new b2BodyDef();
+            bd.type = b2Body.b2_dynamicBody;
+            bd.position.Set(y.x, y.y);
+            var body:b2Body = world.CreateBody(bd);
+            body.CreateFixture(fd);
+            y.Add(deltaY);
+          }
+
+          x.Add(deltaX);
+        }
+      }
+
+      protected function step():void {
+        world.Step(1 / 60, 3, 3);
+      }
+
+      protected function warmup():void {
+        for (var i:int = 0; i < WARMUP; ++i) {
+          step();
+        }
+      }
+
+      protected function run():void {
+        var start:int = getTimer();
+        for (var i:int = 0; i < FRAMES; i++) {
+          step();
+        }
+        var end:int = getTimer();
+        Alert.show('' + ((end - start) / FRAMES) + ' ms/frame');
+      }
+
+			protected function main(event:FlexEvent):void {
+        initWorld();
+        warmup();
+        run();
+			}
+		]]>
+	</fx:Script>
+
+  <s:TextArea id="echo" color="black" text='wtf?!' width='100%' height='480'/>
+</s:Application>
+

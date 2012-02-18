@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" version="3">
+  <includeClasses>
+    <classEntry path="Box2D.utilities.WorldDefinition"/>
+    <classEntry path="Box2D.utilities.WorldClock"/>
+    <classEntry path="Box2D.utilities.MeterDimensions"/>
+    <classEntry path="Box2D.utilities.ComponenetToBodyMap"/>
+    <classEntry path="Box2D.utilities.Version"/>
+    <classEntry path="Box2D.utilities.EmorphicOutline"/>
+    <classEntry path="Box2D.utilities.ComplexShapeParser"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>
