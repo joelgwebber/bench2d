@@ -4,7 +4,7 @@ function clock() {
   return Date.now();
 }
 
-var DEBUG = 1;
+var DEBUG = 0;
 
 var WARMUP = 64;
 var FRAMES = 256;
