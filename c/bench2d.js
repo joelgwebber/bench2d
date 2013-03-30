@@ -1,11906 +1,2800 @@
-var ba = void 0, ca = !0, da = null, ea = !1;
-
-function ia() {
-  return (function() {});
-}
-
-function na(c) {
-  return (function() {
-    return c;
-  });
-}
-
-var qa = [], ra = "object" === typeof process, sa = "object" === typeof window, ta = "function" === typeof importScripts, wa = !sa && !ra && !ta;
-
-if (ra) {
-  print = (function(c) {
-    process.stdout.write(c + "\n");
-  });
-  printErr = (function(c) {
-    process.stderr.write(c + "\n");
-  });
-  var xa = require("fs");
-  read = (function(c) {
-    var f = xa.readFileSync(c).toString();
-    !f && "/" != c[0] && (c = __dirname.split("/").slice(0, -1).join("/") + "/src/" + c, f = xa.readFileSync(c).toString());
-    return f;
-  });
-  qa = process.argv.slice(2);
-} else if (wa) this.read || (read = (function(c) {
-  snarf(c);
-})), qa = this.arguments ? arguments : scriptArgs; else if (sa) printErr = (function(c) {
-  console.log(c);
-}), read = (function(c) {
-  var f = new XMLHttpRequest;
-  f.open("GET", c, ea);
-  f.send(da);
-  return f.responseText;
-}), this.arguments && (qa = arguments); else if (ta) load = importScripts; else throw "Unknown runtime environment. Where are we?";
-
-function Ca(c) {
-  eval.call(da, c);
-}
-
-"undefined" == typeof load && "undefined" != typeof read && (load = (function(c) {
-  Ca(read(c));
-}));
-
-"undefined" === typeof printErr && (printErr = ia());
-
-"undefined" === typeof print && (print = printErr);
-
+// Note: For maximum-speed code, see "Optimizing Code" on the Emscripten wiki, https://github.com/kripken/emscripten/wiki/Optimizing-Code
+// Note: Some Emscripten settings may limit the speed of the generated code.
 try {
-  this.Module = Module;
-} catch (Ha) {
-  this.Module = Module = {};
+  this['Module'] = Module;
+} catch(e) {
+  this['Module'] = Module = {};
 }
-
-if (!Module.arguments) Module.arguments = qa;
-
-var Ma = {
-  W: (function() {
-    return a;
-  }),
-  V: (function(c) {
-    a = c;
-  }),
-  aa: (function(c, f) {
-    f = f || 1;
-    return isNumber(c) && isNumber(f) ? Math.ceil(c / f) * f : "Math.ceil((" + c + ")/" + f + ")*" + f;
-  }),
-  O: (function(c) {
-    return c in Ma.H || c in Ma.G;
-  }),
-  P: (function(c) {
-    return "*" == c[c.length - 1];
-  }),
-  R: (function(c) {
-    return isPointerType(c) ? ea : /^\[\d+\ x\ (.*)\]/.test(c) || /<?{ [^}]* }>?/.test(c) ? ca : "%" == c[0];
-  }),
-  H: {
-    i1: 0,
-    i8: 0,
-    i16: 0,
-    i32: 0,
-    i64: 0
+// The environment setup code below is customized to use Module.
+// *** Environment setup code ***
+var ENVIRONMENT_IS_NODE = typeof process === 'object' && typeof require === 'function';
+var ENVIRONMENT_IS_WEB = typeof window === 'object';
+var ENVIRONMENT_IS_WORKER = typeof importScripts === 'function';
+var ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER;
+if (ENVIRONMENT_IS_NODE) {
+  // Expose functionality in the same simple way that the shells work
+  // Note that we pollute the global namespace here, otherwise we break in node
+  Module['print'] = function(x) {
+    process['stdout'].write(x + '\n');
+  };
+  Module['printErr'] = function(x) {
+    process['stderr'].write(x + '\n');
+  };
+  var nodeFS = require('fs');
+  var nodePath = require('path');
+  Module['read'] = function(filename) {
+    filename = nodePath['normalize'](filename);
+    var ret = nodeFS['readFileSync'](filename).toString();
+    // The path is absolute if the normalized version is the same as the resolved.
+    if (!ret && filename != nodePath['resolve'](filename)) {
+      filename = path.join(__dirname, '..', 'src', filename);
+      ret = nodeFS['readFileSync'](filename).toString();
+    }
+    return ret;
+  };
+  Module['load'] = function(f) {
+    globalEval(read(f));
+  };
+  if (!Module['arguments']) {
+    Module['arguments'] = process['argv'].slice(2);
+  }
+}
+if (ENVIRONMENT_IS_SHELL) {
+  Module['print'] = print;
+  if (typeof printErr != 'undefined') Module['printErr'] = printErr; // not present in v8 or older sm
+  // Polyfill over SpiderMonkey/V8 differences
+  if (typeof read != 'undefined') {
+    Module['read'] = read;
+  } else {
+    Module['read'] = function(f) { snarf(f) };
+  }
+  if (!Module['arguments']) {
+    if (typeof scriptArgs != 'undefined') {
+      Module['arguments'] = scriptArgs;
+    } else if (typeof arguments != 'undefined') {
+      Module['arguments'] = arguments;
+    }
+  }
+}
+if (ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER) {
+  if (!Module['print']) {
+    Module['print'] = function(x) {
+      console.log(x);
+    };
+  }
+  if (!Module['printErr']) {
+    Module['printErr'] = function(x) {
+      console.log(x);
+    };
+  }
+}
+if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
+  Module['read'] = function(url) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, false);
+    xhr.send(null);
+    return xhr.responseText;
+  };
+  if (!Module['arguments']) {
+    if (typeof arguments != 'undefined') {
+      Module['arguments'] = arguments;
+    }
+  }
+}
+if (ENVIRONMENT_IS_WORKER) {
+  // We can do very little here...
+  var TRY_USE_DUMP = false;
+  if (!Module['print']) {
+    Module['print'] = (TRY_USE_DUMP && (typeof(dump) !== "undefined") ? (function(x) {
+      dump(x);
+    }) : (function(x) {
+      // self.postMessage(x); // enable this if you want stdout to be sent as messages
+    }));
+  }
+  Module['load'] = importScripts;
+}
+if (!ENVIRONMENT_IS_WORKER && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_SHELL) {
+  // Unreachable because SHELL is dependant on the others
+  throw 'Unknown runtime environment. Where are we?';
+}
+function globalEval(x) {
+  eval.call(null, x);
+}
+if (!Module['load'] == 'undefined' && Module['read']) {
+  Module['load'] = function(f) {
+    globalEval(Module['read'](f));
+  };
+}
+if (!Module['print']) {
+  Module['print'] = function(){};
+}
+if (!Module['printErr']) {
+  Module['printErr'] = Module['print'];
+}
+if (!Module['arguments']) {
+  Module['arguments'] = [];
+}
+// *** Environment setup code ***
+// Closure helpers
+Module.print = Module['print'];
+Module.printErr = Module['printErr'];
+// Callbacks
+if (!Module['preRun']) Module['preRun'] = [];
+if (!Module['postRun']) Module['postRun'] = [];
+// === Auto-generated preamble library stuff ===
+//========================================
+// Runtime code shared with compiler
+//========================================
+var Runtime = {
+  stackSave: function () {
+    return STACKTOP;
   },
-  G: {
-    "float": 0,
-    "double": 0
+  stackRestore: function (stackTop) {
+    STACKTOP = stackTop;
   },
-  da: (function(c, f) {
-    return (c | 0 | f | 0) + 4294967296 * (Math.round(c / 4294967296) | Math.round(f / 4294967296));
-  }),
-  $: (function(c, f) {
-    return ((c | 0) & (f | 0)) + 4294967296 * (Math.round(c / 4294967296) & Math.round(f / 4294967296));
-  }),
-  ia: (function(c, f) {
-    return ((c | 0) ^ (f | 0)) + 4294967296 * (Math.round(c / 4294967296) ^ Math.round(f / 4294967296));
-  }),
-  o: (function(c) {
-    if (1 == Ma.e) return 1;
-    var f = {
-      "%i1": 1,
-      "%i8": 1,
-      "%i16": 2,
-      "%i32": 4,
-      "%i64": 8,
+  forceAlign: function (target, quantum) {
+    quantum = quantum || 4;
+    if (quantum == 1) return target;
+    if (isNumber(target) && isNumber(quantum)) {
+      return Math.ceil(target/quantum)*quantum;
+    } else if (isNumber(quantum) && isPowerOfTwo(quantum)) {
+      var logg = log2(quantum);
+      return '((((' +target + ')+' + (quantum-1) + ')>>' + logg + ')<<' + logg + ')';
+    }
+    return 'Math.ceil((' + target + ')/' + quantum + ')*' + quantum;
+  },
+  isNumberType: function (type) {
+    return type in Runtime.INT_TYPES || type in Runtime.FLOAT_TYPES;
+  },
+  isPointerType: function isPointerType(type) {
+  return type[type.length-1] == '*';
+},
+  isStructType: function isStructType(type) {
+  if (isPointerType(type)) return false;
+  if (/^\[\d+\ x\ (.*)\]/.test(type)) return true; // [15 x ?] blocks. Like structs
+  if (/<?{ ?[^}]* ?}>?/.test(type)) return true; // { i32, i8 } etc. - anonymous struct types
+  // See comment in isStructPointerType()
+  return type[0] == '%';
+},
+  INT_TYPES: {"i1":0,"i8":0,"i16":0,"i32":0,"i64":0},
+  FLOAT_TYPES: {"float":0,"double":0},
+  or64: function (x, y) {
+    var l = (x | 0) | (y | 0);
+    var h = (Math.round(x / 4294967296) | Math.round(y / 4294967296)) * 4294967296;
+    return l + h;
+  },
+  and64: function (x, y) {
+    var l = (x | 0) & (y | 0);
+    var h = (Math.round(x / 4294967296) & Math.round(y / 4294967296)) * 4294967296;
+    return l + h;
+  },
+  xor64: function (x, y) {
+    var l = (x | 0) ^ (y | 0);
+    var h = (Math.round(x / 4294967296) ^ Math.round(y / 4294967296)) * 4294967296;
+    return l + h;
+  },
+  getNativeTypeSize: function (type, quantumSize) {
+    if (Runtime.QUANTUM_SIZE == 1) return 1;
+    var size = {
+      '%i1': 1,
+      '%i8': 1,
+      '%i16': 2,
+      '%i32': 4,
+      '%i64': 8,
       "%float": 4,
       "%double": 8
-    }["%" + c];
-    if (!f && "*" == c[c.length - 1]) f = Ma.e;
-    return f;
-  }),
-  M: (function(c) {
-    return Math.max(Ma.o(c), Ma.e);
-  }),
-  J: (function(c, f) {
-    var d = {};
-    return f ? c.filter((function(c) {
-      return d[c[f]] ? ea : d[c[f]] = ca;
-    })) : c.filter((function(c) {
-      return d[c] ? ea : d[c] = ca;
-    }));
-  }),
-  set: (function() {
-    for (var c = "object" === typeof arguments[0] ? arguments[0] : arguments, f = {}, d = 0; d < c.length; d++) f[c[d]] = 0;
-    return f;
-  }),
-  q: (function(c) {
-    c.b = 0;
-    c.f = 0;
-    var f = [], d = -1;
-    c.t = c.g.map((function(e) {
-      var g;
-      if (Ma.O(e) || Ma.P(e)) e = g = Ma.o(e); else if (Ma.R(e)) g = Types.types[e].b, e = Types.types[e].f; else throw "Unclear type in struct: " + e + ", in " + c.S + " :: " + dump(Types.types[c.S]);
-      e = c.ea ? 1 : Math.min(e, Ma.e);
-      c.f = Math.max(c.f, e);
-      e = Ma.p(c.b, e);
-      c.b = e + g;
-      0 <= d && f.push(e - d);
-      return d = e;
-    }));
-    c.b = Ma.p(c.b, c.f);
-    if (0 == f.length) c.s = c.b; else if (1 == Ma.J(f).length) c.s = f[0];
-    c.ca = 1 != c.s;
-    return c.t;
-  }),
-  L: (function(c, f, d) {
-    var e, g;
-    if (f) {
-      d = d || 0;
-      e = ("undefined" === typeof Types ? Ma.ha : Types.types)[f];
-      if (!e) return da;
-      c || (c = ("undefined" === typeof Types ? Ma : Types).fa[f.replace(/.*\./, "")]);
-      if (!c) return da;
-      e.g.length === c.length || Qa("Assertion failed: " + ("Number of named fields must match the type for " + f + ". Perhaps due to inheritance, which is not supported yet?"));
-      g = e.t;
-    } else e = {
-      g: c.map((function(c) {
-        return c[0];
-      }))
-    }, g = Ma.q(e);
-    var i = {
-      Z: e.b
+    }['%'+type]; // add '%' since float and double confuse Closure compiler as keys, and also spidermonkey as a compiler will remove 's from '_i8' etc
+    if (!size) {
+      if (type.charAt(type.length-1) == '*') {
+        size = Runtime.QUANTUM_SIZE; // A pointer
+      } else if (type[0] == 'i') {
+        var bits = parseInt(type.substr(1));
+        assert(bits % 8 == 0);
+        size = bits/8;
+      }
+    }
+    return size;
+  },
+  getNativeFieldSize: function (type) {
+    return Math.max(Runtime.getNativeTypeSize(type), Runtime.QUANTUM_SIZE);
+  },
+  dedup: function dedup(items, ident) {
+  var seen = {};
+  if (ident) {
+    return items.filter(function(item) {
+      if (seen[item[ident]]) return false;
+      seen[item[ident]] = true;
+      return true;
+    });
+  } else {
+    return items.filter(function(item) {
+      if (seen[item]) return false;
+      seen[item] = true;
+      return true;
+    });
+  }
+},
+  set: function set() {
+  var args = typeof arguments[0] === 'object' ? arguments[0] : arguments;
+  var ret = {};
+  for (var i = 0; i < args.length; i++) {
+    ret[args[i]] = 0;
+  }
+  return ret;
+},
+  calculateStructAlignment: function calculateStructAlignment(type) {
+    type.flatSize = 0;
+    type.alignSize = 0;
+    var diffs = [];
+    var prev = -1;
+    type.flatIndexes = type.fields.map(function(field) {
+      var size, alignSize;
+      if (Runtime.isNumberType(field) || Runtime.isPointerType(field)) {
+        size = Runtime.getNativeTypeSize(field); // pack char; char; in structs, also char[X]s.
+        alignSize = size;
+      } else if (Runtime.isStructType(field)) {
+        size = Types.types[field].flatSize;
+        alignSize = Types.types[field].alignSize;
+      } else if (field[0] == 'b') {
+        // bN, large number field, like a [N x i8]
+        size = field.substr(1)|0;
+        alignSize = 1;
+      } else {
+        throw 'Unclear type in struct: ' + field + ', in ' + type.name_ + ' :: ' + dump(Types.types[type.name_]);
+      }
+      alignSize = type.packed ? 1 : Math.min(alignSize, Runtime.QUANTUM_SIZE);
+      type.alignSize = Math.max(type.alignSize, alignSize);
+      var curr = Runtime.alignMemory(type.flatSize, alignSize); // if necessary, place this on aligned memory
+      type.flatSize = curr + size;
+      if (prev >= 0) {
+        diffs.push(curr-prev);
+      }
+      prev = curr;
+      return curr;
+    });
+    type.flatSize = Runtime.alignMemory(type.flatSize, type.alignSize);
+    if (diffs.length == 0) {
+      type.flatFactor = type.flatSize;
+    } else if (Runtime.dedup(diffs).length == 1) {
+      type.flatFactor = diffs[0];
+    }
+    type.needsFlattening = (type.flatFactor != 1);
+    return type.flatIndexes;
+  },
+  generateStructInfo: function (struct, typeName, offset) {
+    var type, alignment;
+    if (typeName) {
+      offset = offset || 0;
+      type = (typeof Types === 'undefined' ? Runtime.typeInfo : Types.types)[typeName];
+      if (!type) return null;
+      if (type.fields.length != struct.length) {
+        printErr('Number of named fields must match the type for ' + typeName + ': possibly duplicate struct names. Cannot return structInfo');
+        return null;
+      }
+      alignment = type.flatIndexes;
+    } else {
+      var type = { fields: struct.map(function(item) { return item[0] }) };
+      alignment = Runtime.calculateStructAlignment(type);
+    }
+    var ret = {
+      __size__: type.flatSize
     };
-    f ? c.forEach((function(c, f) {
-      if ("string" === typeof c) i[c] = g[f] + d; else {
-        var k, l;
-        for (l in c) k = l;
-        i[k] = Ma.L(c[k], e.g[f], g[f]);
-      }
-    })) : c.forEach((function(c, d) {
-      i[c[1]] = g[d];
-    }));
-    return i;
-  }),
-  U: (function(c) {
-    var f = a;
-    a += c;
-    return f;
-  }),
-  D: (function(c) {
-    var f = Ra;
-    Ra += c;
-    if (Ra >= Sa) {
-      for (; Sa <= Ra; ) Sa = Math.ceil(1.25 * Sa / Ua) * Ua;
-      c = b;
-      Ya = b = new Int32Array(Sa);
-      b.set(c);
-      Za = new Uint32Array(b.buffer);
-      c = o;
-      o = new Float64Array(Sa);
-      o.set(c);
+    if (typeName) {
+      struct.forEach(function(item, i) {
+        if (typeof item === 'string') {
+          ret[item] = alignment[i] + offset;
+        } else {
+          // embedded struct
+          var key;
+          for (var k in item) key = k;
+          ret[key] = Runtime.generateStructInfo(item[key], type.fields[i], alignment[i]);
+        }
+      });
+    } else {
+      struct.forEach(function(item, i) {
+        ret[item[1]] = alignment[i];
+      });
     }
-    return f;
-  }),
-  p: (function(c, f) {
-    return Math.ceil(c / (f ? f : 1)) * (f ? f : 1);
-  }),
-  e: 1,
-  Y: 0
+    return ret;
+  },
+  dynCall: function (sig, ptr, args) {
+    if (args && args.length) {
+      if (!args.splice) args = Array.prototype.slice.call(args);
+      args.splice(0, 0, ptr);
+      return Module['dynCall_' + sig].apply(null, args);
+    } else {
+      return Module['dynCall_' + sig].call(null, ptr);
+    }
+  },
+  addFunction: function (func, sig) {
+    //assert(sig); // TODO: support asm
+    var table = FUNCTION_TABLE; // TODO: support asm
+    var ret = table.length;
+    table.push(func);
+    table.push(0);
+    return ret;
+  },
+  removeFunction: function (index) {
+    var table = FUNCTION_TABLE; // TODO: support asm
+    table[index] = null;
+  },
+  warnOnce: function (text) {
+    if (!Runtime.warnOnce.shown) Runtime.warnOnce.shown = {};
+    if (!Runtime.warnOnce.shown[text]) {
+      Runtime.warnOnce.shown[text] = 1;
+      Module.printErr(text);
+    }
+  },
+  funcWrappers: {},
+  getFuncWrapper: function (func, sig) {
+    assert(sig);
+    if (!Runtime.funcWrappers[func]) {
+      Runtime.funcWrappers[func] = function() {
+        Runtime.dynCall(sig, func, arguments);
+      };
+    }
+    return Runtime.funcWrappers[func];
+  },
+  UTF8Processor: function () {
+    var buffer = [];
+    var needed = 0;
+    this.processCChar = function (code) {
+      code = code & 0xff;
+      if (needed) {
+        buffer.push(code);
+        needed--;
+      }
+      if (buffer.length == 0) {
+        if (code < 128) return String.fromCharCode(code);
+        buffer.push(code);
+        if (code > 191 && code < 224) {
+          needed = 1;
+        } else {
+          needed = 2;
+        }
+        return '';
+      }
+      if (needed > 0) return '';
+      var c1 = buffer[0];
+      var c2 = buffer[1];
+      var c3 = buffer[2];
+      var ret;
+      if (c1 > 191 && c1 < 224) {
+        ret = String.fromCharCode(((c1 & 31) << 6) | (c2 & 63));
+      } else {
+        ret = String.fromCharCode(((c1 & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+      }
+      buffer.length = 0;
+      return ret;
+    }
+    this.processJSString = function(string) {
+      string = unescape(encodeURIComponent(string));
+      var ret = [];
+      for (var i = 0; i < string.length; i++) {
+        ret.push(string.charCodeAt(i));
+      }
+      return ret;
+    }
+  },
+  stackAlloc: function (size) { var ret = STACKTOP;STACKTOP = (STACKTOP + size)|0;STACKTOP = ((((STACKTOP)+3)>>2)<<2); return ret; },
+  staticAlloc: function (size) { var ret = STATICTOP;STATICTOP = (STATICTOP + size)|0;STATICTOP = ((((STATICTOP)+3)>>2)<<2); if (STATICTOP >= TOTAL_MEMORY) enlargeMemory();; return ret; },
+  alignMemory: function (size,quantum) { var ret = size = Math.ceil((size)/(quantum ? quantum : 4))*(quantum ? quantum : 4); return ret; },
+  makeBigInt: function (low,high,unsigned) { var ret = (unsigned ? ((+(((low)>>>(0))))+((+(((high)>>>(0))))*(+(4294967296)))) : ((+(((low)>>>(0))))+((+(((high)|(0))))*(+(4294967296))))); return ret; },
+  QUANTUM_SIZE: 4,
+  __dummy__: 0
+}
+//========================================
+// Runtime essentials
+//========================================
+var __THREW__ = 0; // Used in checking for thrown exceptions.
+var setjmpId = 1; // Used in setjmp/longjmp
+var setjmpLabels = {};
+var ABORT = false;
+var undef = 0;
+// tempInt is used for 32-bit signed values or smaller. tempBigInt is used
+// for 32-bit unsigned values or more than 32 bits. TODO: audit all uses of tempInt
+var tempValue, tempInt, tempBigInt, tempInt2, tempBigInt2, tempPair, tempBigIntI, tempBigIntR, tempBigIntS, tempBigIntP, tempBigIntD;
+var tempI64, tempI64b;
+var tempRet0, tempRet1, tempRet2, tempRet3, tempRet4, tempRet5, tempRet6, tempRet7, tempRet8, tempRet9;
+function abort(text) {
+  Module.print(text + ':\n' + (new Error).stack);
+  ABORT = true;
+  throw "Assertion: " + text;
+}
+function assert(condition, text) {
+  if (!condition) {
+    abort('Assertion failed: ' + text);
+  }
+}
+var globalScope = this;
+// C calling interface. A convenient way to call C functions (in C files, or
+// defined with extern "C").
+//
+// Note: LLVM optimizations can inline and remove functions, after which you will not be
+//       able to call them. Closure can also do so. To avoid that, add your function to
+//       the exports using something like
+//
+//         -s EXPORTED_FUNCTIONS='["_main", "_myfunc"]'
+//
+// @param ident      The name of the C function (note that C++ functions will be name-mangled - use extern "C")
+// @param returnType The return type of the function, one of the JS types 'number', 'string' or 'array' (use 'number' for any C pointer, and
+//                   'array' for JavaScript arrays and typed arrays).
+// @param argTypes   An array of the types of arguments for the function (if there are no arguments, this can be ommitted). Types are as in returnType,
+//                   except that 'array' is not possible (there is no way for us to know the length of the array)
+// @param args       An array of the arguments to the function, as native JS values (as in returnType)
+//                   Note that string arguments will be stored on the stack (the JS string will become a C string on the stack).
+// @return           The return value, as a native JS value (as in returnType)
+function ccall(ident, returnType, argTypes, args) {
+  return ccallFunc(getCFunc(ident), returnType, argTypes, args);
+}
+Module["ccall"] = ccall;
+// Returns the C function with a specified identifier (for C++, you need to do manual name mangling)
+function getCFunc(ident) {
+  try {
+    var func = globalScope['Module']['_' + ident]; // closure exported function
+    if (!func) func = eval('_' + ident); // explicit lookup
+  } catch(e) {
+  }
+  assert(func, 'Cannot call unknown function ' + ident + ' (perhaps LLVM optimizations or closure removed it?)');
+  return func;
+}
+// Internal function that does a C call using a function, not an identifier
+function ccallFunc(func, returnType, argTypes, args) {
+  var stack = 0;
+  function toC(value, type) {
+    if (type == 'string') {
+      if (value === null || value === undefined || value === 0) return 0; // null string
+      if (!stack) stack = Runtime.stackSave();
+      var ret = Runtime.stackAlloc(value.length+1);
+      writeStringToMemory(value, ret);
+      return ret;
+    } else if (type == 'array') {
+      if (!stack) stack = Runtime.stackSave();
+      var ret = Runtime.stackAlloc(value.length);
+      writeArrayToMemory(value, ret);
+      return ret;
+    }
+    return value;
+  }
+  function fromC(value, type) {
+    if (type == 'string') {
+      return Pointer_stringify(value);
+    }
+    assert(type != 'array');
+    return value;
+  }
+  var i = 0;
+  var cArgs = args ? args.map(function(arg) {
+    return toC(arg, argTypes[i++]);
+  }) : [];
+  var ret = fromC(func.apply(null, cArgs), returnType);
+  if (stack) Runtime.stackRestore(stack);
+  return ret;
+}
+// Returns a native JS wrapper for a C function. This is similar to ccall, but
+// returns a function you can call repeatedly in a normal way. For example:
+//
+//   var my_function = cwrap('my_c_function', 'number', ['number', 'number']);
+//   alert(my_function(5, 22));
+//   alert(my_function(99, 12));
+//
+function cwrap(ident, returnType, argTypes) {
+  var func = getCFunc(ident);
+  return function() {
+    return ccallFunc(func, returnType, argTypes, Array.prototype.slice.call(arguments));
+  }
+}
+Module["cwrap"] = cwrap;
+// Sets a value in memory in a dynamic way at run-time. Uses the
+// type data. This is the same as makeSetValue, except that
+// makeSetValue is done at compile-time and generates the needed
+// code then, whereas this function picks the right code at
+// run-time.
+// Note that setValue and getValue only do *aligned* writes and reads!
+// Note that ccall uses JS types as for defining types, while setValue and
+// getValue need LLVM types ('i8', 'i32') - this is a lower-level operation
+function setValue(ptr, value, type, noSafe) {
+  type = type || 'i8';
+  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
+    switch(type) {
+      case 'i1': HEAP8[(ptr)]=value; break;
+      case 'i8': HEAP8[(ptr)]=value; break;
+      case 'i16': HEAP16[((ptr)>>1)]=value; break;
+      case 'i32': HEAP32[((ptr)>>2)]=value; break;
+      case 'i64': (tempI64 = [value>>>0,Math.min(Math.floor((value)/(+(4294967296))), (+(4294967295)))>>>0],HEAP32[((ptr)>>2)]=tempI64[0],HEAP32[(((ptr)+(4))>>2)]=tempI64[1]); break;
+      case 'float': HEAPF32[((ptr)>>2)]=value; break;
+      case 'double': (HEAPF64[(tempDoublePtr)>>3]=value,HEAP32[((ptr)>>2)]=((HEAP32[((tempDoublePtr)>>2)])|0),HEAP32[(((ptr)+(4))>>2)]=((HEAP32[(((tempDoublePtr)+(4))>>2)])|0)); break;
+      default: abort('invalid type for setValue: ' + type);
+    }
+}
+Module['setValue'] = setValue;
+// Parallel to setValue.
+function getValue(ptr, type, noSafe) {
+  type = type || 'i8';
+  if (type.charAt(type.length-1) === '*') type = 'i32'; // pointers are 32-bit
+    switch(type) {
+      case 'i1': return HEAP8[(ptr)];
+      case 'i8': return HEAP8[(ptr)];
+      case 'i16': return HEAP16[((ptr)>>1)];
+      case 'i32': return HEAP32[((ptr)>>2)];
+      case 'i64': return HEAP32[((ptr)>>2)];
+      case 'float': return HEAPF32[((ptr)>>2)];
+      case 'double': return (HEAP32[((tempDoublePtr)>>2)]=HEAP32[((ptr)>>2)],HEAP32[(((tempDoublePtr)+(4))>>2)]=HEAP32[(((ptr)+(4))>>2)],(+(HEAPF64[(tempDoublePtr)>>3])));
+      default: abort('invalid type for setValue: ' + type);
+    }
+  return null;
+}
+Module['getValue'] = getValue;
+var ALLOC_NORMAL = 0; // Tries to use _malloc()
+var ALLOC_STACK = 1; // Lives for the duration of the current function call
+var ALLOC_STATIC = 2; // Cannot be freed
+var ALLOC_NONE = 3; // Do not allocate
+Module['ALLOC_NORMAL'] = ALLOC_NORMAL;
+Module['ALLOC_STACK'] = ALLOC_STACK;
+Module['ALLOC_STATIC'] = ALLOC_STATIC;
+Module['ALLOC_NONE'] = ALLOC_NONE;
+// allocate(): This is for internal use. You can use it yourself as well, but the interface
+//             is a little tricky (see docs right below). The reason is that it is optimized
+//             for multiple syntaxes to save space in generated code. So you should
+//             normally not use allocate(), and instead allocate memory using _malloc(),
+//             initialize it with setValue(), and so forth.
+// @slab: An array of data, or a number. If a number, then the size of the block to allocate,
+//        in *bytes* (note that this is sometimes confusing: the next parameter does not
+//        affect this!)
+// @types: Either an array of types, one for each byte (or 0 if no type at that position),
+//         or a single type which is used for the entire block. This only matters if there
+//         is initial data - if @slab is a number, then this does not matter at all and is
+//         ignored.
+// @allocator: How to allocate memory, see ALLOC_*
+function allocate(slab, types, allocator, ptr) {
+  var zeroinit, size;
+  if (typeof slab === 'number') {
+    zeroinit = true;
+    size = slab;
+  } else {
+    zeroinit = false;
+    size = slab.length;
+  }
+  var singleType = typeof types === 'string' ? types : null;
+  var ret;
+  if (allocator == ALLOC_NONE) {
+    ret = ptr;
+  } else {
+    ret = [_malloc, Runtime.stackAlloc, Runtime.staticAlloc][allocator === undefined ? ALLOC_STATIC : allocator](Math.max(size, singleType ? 1 : types.length));
+  }
+  if (zeroinit) {
+    var ptr = ret, stop;
+    assert((ret & 3) == 0);
+    stop = ret + (size & ~3);
+    for (; ptr < stop; ptr += 4) {
+      HEAP32[((ptr)>>2)]=0;
+    }
+    stop = ret + size;
+    while (ptr < stop) {
+      HEAP8[((ptr++)|0)]=0;
+    }
+    return ret;
+  }
+  if (singleType === 'i8') {
+    HEAPU8.set(new Uint8Array(slab), ret);
+    return ret;
+  }
+  var i = 0, type, typeSize, previousType;
+  while (i < size) {
+    var curr = slab[i];
+    if (typeof curr === 'function') {
+      curr = Runtime.getFunctionIndex(curr);
+    }
+    type = singleType || types[i];
+    if (type === 0) {
+      i++;
+      continue;
+    }
+    if (type == 'i64') type = 'i32'; // special case: we have one i32 here, and one i32 later
+    setValue(ret+i, curr, type);
+    // no need to look up size unless type changes, so cache it
+    if (previousType !== type) {
+      typeSize = Runtime.getNativeTypeSize(type);
+      previousType = type;
+    }
+    i += typeSize;
+  }
+  return ret;
+}
+Module['allocate'] = allocate;
+function Pointer_stringify(ptr, /* optional */ length) {
+  // Find the length, and check for UTF while doing so
+  var hasUtf = false;
+  var t;
+  var i = 0;
+  while (1) {
+    t = HEAPU8[(((ptr)+(i))|0)];
+    if (t >= 128) hasUtf = true;
+    else if (t == 0 && !length) break;
+    i++;
+    if (length && i == length) break;
+  }
+  if (!length) length = i;
+  var ret = '';
+  if (!hasUtf) {
+    var MAX_CHUNK = 1024; // split up into chunks, because .apply on a huge string can overflow the stack
+    var curr;
+    while (length > 0) {
+      curr = String.fromCharCode.apply(String, HEAPU8.subarray(ptr, ptr + Math.min(length, MAX_CHUNK)));
+      ret = ret ? ret + curr : curr;
+      ptr += MAX_CHUNK;
+      length -= MAX_CHUNK;
+    }
+    return ret;
+  }
+  var utf8 = new Runtime.UTF8Processor();
+  for (i = 0; i < length; i++) {
+    t = HEAPU8[(((ptr)+(i))|0)];
+    ret += utf8.processCChar(t);
+  }
+  return ret;
+}
+Module['Pointer_stringify'] = Pointer_stringify;
+// Memory management
+var PAGE_SIZE = 4096;
+function alignMemoryPage(x) {
+  return ((x+4095)>>12)<<12;
+}
+var HEAP;
+var HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+var STACK_ROOT, STACKTOP, STACK_MAX;
+var STATICTOP;
+function enlargeMemory() {
+  abort('Cannot enlarge memory arrays in asm.js. Either (1) compile with -s TOTAL_MEMORY=X with X higher than the current value, or (2) set Module.TOTAL_MEMORY before the program runs.');
+}
+var TOTAL_STACK = Module['TOTAL_STACK'] || 5242880;
+var TOTAL_MEMORY = Module['TOTAL_MEMORY'] || 67108864;
+var FAST_MEMORY = Module['FAST_MEMORY'] || 2097152;
+// Initialize the runtime's memory
+// check for full engine support (use string 'subarray' to avoid closure compiler confusion)
+assert(!!Int32Array && !!Float64Array && !!(new Int32Array(1)['subarray']) && !!(new Int32Array(1)['set']),
+       'Cannot fallback to non-typed array case: Code is too specialized');
+var buffer = new ArrayBuffer(TOTAL_MEMORY);
+HEAP8 = new Int8Array(buffer);
+HEAP16 = new Int16Array(buffer);
+HEAP32 = new Int32Array(buffer);
+HEAPU8 = new Uint8Array(buffer);
+HEAPU16 = new Uint16Array(buffer);
+HEAPU32 = new Uint32Array(buffer);
+HEAPF32 = new Float32Array(buffer);
+HEAPF64 = new Float64Array(buffer);
+// Endianness check (note: assumes compiler arch was little-endian)
+HEAP32[0] = 255;
+assert(HEAPU8[0] === 255 && HEAPU8[3] === 0, 'Typed arrays 2 must be run on a little-endian system');
+Module['HEAP'] = HEAP;
+Module['HEAP8'] = HEAP8;
+Module['HEAP16'] = HEAP16;
+Module['HEAP32'] = HEAP32;
+Module['HEAPU8'] = HEAPU8;
+Module['HEAPU16'] = HEAPU16;
+Module['HEAPU32'] = HEAPU32;
+Module['HEAPF32'] = HEAPF32;
+Module['HEAPF64'] = HEAPF64;
+STACK_ROOT = STACKTOP = Runtime.alignMemory(1);
+STACK_MAX = TOTAL_STACK; // we lose a little stack here, but TOTAL_STACK is nice and round so use that as the max
+var tempDoublePtr = Runtime.alignMemory(allocate(12, 'i8', ALLOC_STACK), 8);
+assert(tempDoublePtr % 8 == 0);
+function copyTempFloat(ptr) { // functions, because inlining this code increases code size too much
+  HEAP8[tempDoublePtr] = HEAP8[ptr];
+  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
+  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
+  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
+}
+function copyTempDouble(ptr) {
+  HEAP8[tempDoublePtr] = HEAP8[ptr];
+  HEAP8[tempDoublePtr+1] = HEAP8[ptr+1];
+  HEAP8[tempDoublePtr+2] = HEAP8[ptr+2];
+  HEAP8[tempDoublePtr+3] = HEAP8[ptr+3];
+  HEAP8[tempDoublePtr+4] = HEAP8[ptr+4];
+  HEAP8[tempDoublePtr+5] = HEAP8[ptr+5];
+  HEAP8[tempDoublePtr+6] = HEAP8[ptr+6];
+  HEAP8[tempDoublePtr+7] = HEAP8[ptr+7];
+}
+STATICTOP = STACK_MAX;
+assert(STATICTOP < TOTAL_MEMORY); // Stack must fit in TOTAL_MEMORY; allocations from here on may enlarge TOTAL_MEMORY
+var nullString = allocate(intArrayFromString('(null)'), 'i8', ALLOC_STACK);
+function callRuntimeCallbacks(callbacks) {
+  while(callbacks.length > 0) {
+    var callback = callbacks.shift();
+    var func = callback.func;
+    if (typeof func === 'number') {
+      if (callback.arg === undefined) {
+        Runtime.dynCall('v', func);
+      } else {
+        Runtime.dynCall('vi', func, [callback.arg]);
+      }
+    } else {
+      func(callback.arg === undefined ? null : callback.arg);
+    }
+  }
+}
+var __ATINIT__ = []; // functions called during startup
+var __ATMAIN__ = []; // functions called when main() is to be run
+var __ATEXIT__ = []; // functions called during shutdown
+function initRuntime() {
+  callRuntimeCallbacks(__ATINIT__);
+}
+function preMain() {
+  callRuntimeCallbacks(__ATMAIN__);
+}
+function exitRuntime() {
+  callRuntimeCallbacks(__ATEXIT__);
+}
+// Tools
+// This processes a JS string into a C-line array of numbers, 0-terminated.
+// For LLVM-originating strings, see parser.js:parseLLVMString function
+function intArrayFromString(stringy, dontAddNull, length /* optional */) {
+  var ret = (new Runtime.UTF8Processor()).processJSString(stringy);
+  if (length) {
+    ret.length = length;
+  }
+  if (!dontAddNull) {
+    ret.push(0);
+  }
+  return ret;
+}
+Module['intArrayFromString'] = intArrayFromString;
+function intArrayToString(array) {
+  var ret = [];
+  for (var i = 0; i < array.length; i++) {
+    var chr = array[i];
+    if (chr > 0xFF) {
+      chr &= 0xFF;
+    }
+    ret.push(String.fromCharCode(chr));
+  }
+  return ret.join('');
+}
+Module['intArrayToString'] = intArrayToString;
+// Write a Javascript array to somewhere in the heap
+function writeStringToMemory(string, buffer, dontAddNull) {
+  var array = intArrayFromString(string, dontAddNull);
+  var i = 0;
+  while (i < array.length) {
+    var chr = array[i];
+    HEAP8[(((buffer)+(i))|0)]=chr
+    i = i + 1;
+  }
+}
+Module['writeStringToMemory'] = writeStringToMemory;
+function writeArrayToMemory(array, buffer) {
+  for (var i = 0; i < array.length; i++) {
+    HEAP8[(((buffer)+(i))|0)]=array[i];
+  }
+}
+Module['writeArrayToMemory'] = writeArrayToMemory;
+function unSign(value, bits, ignore, sig) {
+  if (value >= 0) {
+    return value;
+  }
+  return bits <= 32 ? 2*Math.abs(1 << (bits-1)) + value // Need some trickery, since if bits == 32, we are right at the limit of the bits JS uses in bitshifts
+                    : Math.pow(2, bits)         + value;
+}
+function reSign(value, bits, ignore, sig) {
+  if (value <= 0) {
+    return value;
+  }
+  var half = bits <= 32 ? Math.abs(1 << (bits-1)) // abs is needed if bits == 32
+                        : Math.pow(2, bits-1);
+  if (value >= half && (bits <= 32 || value > half)) { // for huge values, we can hit the precision limit and always get true here. so don't do that
+                                                       // but, in general there is no perfect solution here. With 64-bit ints, we get rounding and errors
+                                                       // TODO: In i64 mode 1, resign the two parts separately and safely
+    value = -2*half + value; // Cannot bitshift half, as it may be at the limit of the bits JS uses in bitshifts
+  }
+  return value;
+}
+if (!Math.imul) Math.imul = function(a, b) {
+  var ah  = a >>> 16;
+  var al = a & 0xffff;
+  var bh  = b >>> 16;
+  var bl = b & 0xffff;
+  return (al*bl + ((ah*bl + al*bh) << 16))|0;
 };
-
-function $a() {
-  var c = [], f;
-  for (f in this.j) c.push({
-    T: f,
-    K: this.j[f][0],
-    ga: this.j[f][1],
-    total: this.j[f][0] + this.j[f][1]
-  });
-  c.sort((function(c, d) {
-    return d.total - c.total;
-  }));
-  for (f = 0; f < c.length; f++) {
-    var d = c[f];
-    print(d.T + " : " + d.total + " hits, %" + Math.ceil(100 * d.K / d.total) + " failures");
+// A counter of dependencies for calling run(). If we need to
+// do asynchronous work before running, increment this and
+// decrement it. Incrementing must happen in a place like
+// PRE_RUN_ADDITIONS (used by emcc to add file preloading).
+// Note that you can add dependencies in preRun, even though
+// it happens right before run - run will be postponed until
+// the dependencies are met.
+var runDependencies = 0;
+var runDependencyTracking = {};
+var calledRun = false;
+var runDependencyWatcher = null;
+function addRunDependency(id) {
+  runDependencies++;
+  if (Module['monitorRunDependencies']) {
+    Module['monitorRunDependencies'](runDependencies);
   }
-}
-
-function ab() {}
-
-var bb = [];
-
-function Qa(c) {
-  print(c + ":\n" + Error().stack);
-  throw "Assertion: " + c;
-}
-
-function cb(c, f, d) {
-  d = d || "i8";
-  "*" === d[d.length - 1] && (d = "i32");
-  switch (d) {
-   case "i1":
-    b[c] = f;
-    break;
-   case "i8":
-    b[c] = f;
-    break;
-   case "i16":
-    b[c] = f;
-    break;
-   case "i32":
-    b[c] = f;
-    break;
-   case "i64":
-    b[c] = f;
-    break;
-   case "float":
-    o[c] = f;
-    break;
-   case "double":
-    o[c] = f;
-    break;
-   default:
-    Qa("invalid type for setValue: " + d);
-  }
-}
-
-Module.setValue = cb;
-
-Module.getValue = (function(c, f) {
-  f = f || "i8";
-  "*" === f[f.length - 1] && (f = "i32");
-  switch (f) {
-   case "i1":
-    return b[c];
-   case "i8":
-    return b[c];
-   case "i16":
-    return b[c];
-   case "i32":
-    return b[c];
-   case "i64":
-    return b[c];
-   case "float":
-    return o[c];
-   case "double":
-    return o[c];
-   default:
-    Qa("invalid type for setValue: " + f);
-  }
-  return da;
-});
-
-var s = 1, t = 2;
-
-Module.ALLOC_NORMAL = 0;
-
-Module.ALLOC_STACK = s;
-
-Module.ALLOC_STATIC = t;
-
-function A(c, f, d) {
-  var e, g;
-  "number" === typeof c ? (e = ca, g = c) : (e = ea, g = c.length);
-  for (var d = [ kb, Ma.U, Ma.D ][d === ba ? t : d](Math.max(g, 1)), i = "string" === typeof f ? f : da, h = 0, j; h < g; ) {
-    var k = e ? 0 : c[h];
-    "function" === typeof k && (k = Ma.ba(k));
-    j = i || f[h];
-    0 === j ? h++ : (cb(d + h, k, j), h += Ma.o(j));
-  }
-  return d;
-}
-
-Module.allocate = A;
-
-function lb(c) {
-  for (var f = "", d = 0, e, g = String.fromCharCode(0); ; ) {
-    e = String.fromCharCode(Za[c + d]);
-    if (e == g) break;
-    f += e;
-    d += 1;
-  }
-  return f;
-}
-
-Module.Pointer_stringify = lb;
-
-Module.Array_stringify = (function(c) {
-  for (var f = "", d = 0; d < c.length; d++) f += String.fromCharCode(c[d]);
-  return f;
-});
-
-var mb, Ua = 4096, Ya, b, Za, o, a, nb, Ra, Sa = Module.TOTAL_MEMORY || 15e7;
-
-Int32Array && Float64Array && (new Int32Array(1)).subarray && (new Int32Array(1)).set || Qa("Assertion failed: Cannot fallback to non-typed array case: Code is too specialized");
-
-Ya = b = new Int32Array(Sa);
-
-Za = new Uint32Array(b.buffer);
-
-o = new Float64Array(Sa);
-
-for (var ub = ob("(null)"), vb = 0; vb < ub.length; vb++) b[vb] = ub[vb];
-
-Module.HEAP = Ya;
-
-Module.IHEAP = b;
-
-Module.FHEAP = o;
-
-nb = (a = Math.ceil(10 / Ua) * Ua) + 1048576;
-
-Ra = Math.ceil(nb / Ua) * Ua;
-
-function yb(c, f) {
-  return Array.prototype.slice.call(b.subarray(c, c + f));
-}
-
-Module.Array_copy = yb;
-
-function zb(c) {
-  for (var f = 0; b[c + f]; ) f++;
-  return f;
-}
-
-Module.String_len = zb;
-
-function Fb(c, f) {
-  var d = zb(c);
-  f && d++;
-  var e = yb(c, d);
-  f && (e[d - 1] = 0);
-  return e;
-}
-
-Module.String_copy = Fb;
-
-function ob(c, f) {
-  for (var d = [], e = 0; e < c.length; ) {
-    var g = c.charCodeAt(e);
-    255 < g && (g &= 255);
-    d.push(g);
-    e += 1;
-  }
-  f || d.push(0);
-  return d;
-}
-
-Module.intArrayFromString = ob;
-
-Module.intArrayToString = (function(c) {
-  for (var f = [], d = 0; d < c.length; d++) {
-    var e = c[d];
-    255 < e && (e &= 255);
-    f.push(String.fromCharCode(e));
-  }
-  return f.join("");
-});
-
-function Jb(c, f) {
-  return 0 <= c ? c : 32 >= f ? 2 * Math.abs(1 << f - 1) + c : Math.pow(2, f) + c;
-}
-
-function Kb(c, f) {
-  if (0 >= c) return c;
-  var d = 32 >= f ? Math.abs(1 << f - 1) : Math.pow(2, f - 1);
-  if (c >= d && (32 >= f || c > d)) c = -2 * d + c;
-  return c;
-}
-
-function Lb() {
-  Mb();
-  return 0;
-}
-
-Module._main = Lb;
-
-function Nb(c, f) {
-  o[c] += o[f];
-  o[c + 1] += o[f + 1];
-}
-
-function Vb(c) {
-  b[c] = Wb + 2;
-  b[c] = bc + 2;
-  b[c + 1] = 2;
-  o[c + 2] = .009999999776482582;
-  b[c + 37] = 0;
-  cc(c + 3);
-}
-
-Vb.X = 1;
-
-function cc(c) {
-  o[c] = 0;
-  o[c + 1] = 0;
-}
-
-function dc(c) {
-  b[c] = Wb + 2;
-  b[c] = lc + 2;
-  b[c + 1] = 1;
-  o[c + 2] = .009999999776482582;
-  o[c + 7] = 0;
-  o[c + 8] = 0;
-  o[c + 9] = 0;
-  o[c + 10] = 0;
-  b[c + 11] = 0;
-  b[c + 12] = 0;
-}
-
-function mc(c) {
-  b[c + 14] = 0;
-  nc(c + 1, 0, 0);
-  o[c + 3] = 0;
-  nc(c + 4, 0, 0);
-  o[c + 6] = 0;
-  o[c + 7] = 0;
-  o[c + 8] = 0;
-  b[c + 9] = 1;
-  b[c + 10] = 1;
-  b[c + 11] = 0;
-  b[c + 12] = 0;
-  b[c] = 0;
-  b[c + 13] = 1;
-  o[c + 15] = 1;
-}
-
-function nc(c, f, d) {
-  o[c] = f;
-  o[c + 1] = d;
-}
-
-function oc(c, f, d) {
-  o[c] = f;
-  o[c + 1] = d;
-}
-
-function Mb() {
-  var c = a;
-  a += 102913;
-  var f = c + 2, d = c + 102562, e = c + 102578, g = c + 102591, i = c + 102593, h = c + 102595, j = c + 102633, k = c + 102635, l = c + 102637, m = c + 102639, n = c + 102641, p = c + 102657;
-  oc(c, 0, -10);
-  pc(f, c);
-  var u, r;
-  u = 0 == (b[f + 102544] & 1) ? 4 : 1;
-  a : do if (1 == u) if (b[f + 102544] = 0, 0 != (b[f + 102544] & 1)) u = 4; else if (r = b[f + 102538], 0 == b[f + 102538]) u = 4; else for (;;) {
-    qc(r, 1);
-    var q = b[r + 24];
-    r = q;
-    if (0 == q) break a;
-  } while (0);
-  mc(d);
-  d = rc(f, d);
-  dc(e);
-  oc(g, -40, 0);
-  oc(i, 40, 0);
-  u = e + 3;
-  b[u] = b[g];
-  o[u] = o[g];
-  b[u + 1] = b[g + 1];
-  o[u + 1] = o[g + 1];
-  g = e + 5;
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  b[e + 11] = 0;
-  b[e + 12] = 0;
-  uc(d, e, 0);
-  Vb(h);
-  b[h + 37] = 4;
-  nc(h + 5, -.5, -.5);
-  nc(h + 7, .5, -.5);
-  nc(h + 9, .5, .5);
-  nc(h + 11, -.5, .5);
-  nc(h + 21, 0, -1);
-  nc(h + 23, 1, 0);
-  nc(h + 25, 0, 1);
-  nc(h + 27, -1, 0);
-  cc(h + 3);
-  oc(j, -7, .75);
-  oc(l, .5625, 1);
-  oc(m, 1.125, 0);
-  e = 0;
-  i = n + 1;
-  for (g = 0; 40 > g; ) {
-    b[k] = b[j];
-    o[k] = o[j];
-    b[k + 1] = b[j + 1];
-    o[k + 1] = o[j + 1];
-    for (d = g = e; 40 > d; ) {
-      mc(n);
-      b[n] = 2;
-      b[i] = b[k];
-      o[i] = o[k];
-      b[i + 1] = b[k + 1];
-      o[i + 1] = o[k + 1];
-      d = rc(f, n);
-      uc(d, h, 5);
-      Nb(k, m);
-      g = d = g + 1;
-    }
-    Nb(j, l);
-    e = g = e + 1;
-  }
-  for (j = h = 0; 64 > j; ) {
-    vc(f, .01666666753590107, 3, 3);
-    h = j = h + 1;
-  }
-  for (j = h = 0; 256 > j; ) {
-    j = wc();
-    vc(f, .01666666753590107, 3, 3);
-    k = wc();
-    b[p + h] = k - j;
-    xc(yc, A([ 1e3 * ((k - j) / 1e3) ], "double", s));
-    h = j = h + 1;
-  }
-  h = b[zc];
-  b[Hc] = Jb(10);
-  if (-1 == Ic(h, Hc, 1) && h in Jc) Jc[h].error = ca;
-  for (j = h = 0; !(h += b[p + j], j = k = j + 1, 256 <= k); ) ;
-  xc(yc, A([ 1e3 * (h / 256 / 1e3) ], "double", s));
-  Kc(f);
-  a = c;
-}
-
-Mb.X = 1;
-
-function Lc(c) {
-  Mc(c);
-  b[c + 7] = 0;
-  b[c + 12] = 16;
-  b[c + 13] = 0;
-  var f = kb(12 * b[c + 12]);
-  b[c + 11] = f;
-  b[c + 9] = 16;
-  b[c + 10] = 0;
-  f = kb(b[c + 9] << 2);
-  b[c + 8] = f;
-}
-
-function Nc(c, f) {
-  var d;
-  if (1 == (b[c + 10] == b[c + 9] ? 1 : 2)) {
-    d = b[c + 8];
-    b[c + 9] <<= 1;
-    var e = kb(b[c + 9] << 2);
-    b[c + 8] = e;
-    e = d;
-    d += 1 * ((b[c + 10] << 2) / 4);
-    for (var g = b[c + 8]; e < d; e++, g++) b[g] = b[e], o[g] = o[e];
-  }
-  b[b[c + 8] + b[c + 10]] = f;
-  b[c + 10] += 1;
-}
-
-Nc.X = 1;
-
-function Oc(c, f) {
-  var d, e;
-  d = f == b[c + 14] ? 1 : 2;
-  if (1 == d) e = 1; else if (2 == d) {
-    d = b[c + 13] == b[c + 12] ? 3 : 4;
-    if (3 == d) {
-      e = b[c + 11];
-      b[c + 12] <<= 1;
-      d = kb(12 * b[c + 12]);
-      b[c + 11] = d;
-      d = e;
-      e += 3 * (12 * b[c + 13] / 12);
-      for (var g = b[c + 11]; d < e; d++, g++) b[g] = b[d], o[g] = o[d];
-    }
-    b[b[c + 11] + 3 * b[c + 13]] = f < b[c + 14] ? f : b[c + 14];
-    b[b[c + 11] + 3 * b[c + 13] + 1] = f > b[c + 14] ? f : b[c + 14];
-    b[c + 13] += 1;
-    e = 1;
-  }
-  return e;
-}
-
-Oc.X = 1;
-
-function Pc(c, f, d) {
-  oc(c, o[f + 3] * o[d] - o[f + 2] * o[d + 1] + o[f], o[f + 2] * o[d] + o[f + 3] * o[d + 1] + o[f + 1]);
-}
-
-Pc.X = 1;
-
-function C(c, f, d) {
-  oc(c, o[f] - o[d], o[f + 1] - o[d + 1]);
-}
-
-function J(c, f) {
-  return o[c] * o[f] + o[c + 1] * o[f + 1];
-}
-
-function Tc(c, f, d) {
-  var e;
-  e = o[d] - o[f];
-  d = o[d + 1] - o[f + 1];
-  oc(c, o[f + 3] * e + o[f + 2] * d, -o[f + 2] * e + o[f + 3] * d);
-}
-
-Tc.X = 1;
-
-function K(c, f, d) {
-  oc(c, f * o[d], f * o[d + 1]);
-}
-
-function N(c, f, d) {
-  oc(c, o[f] + o[d], o[f + 1] + o[d + 1]);
-}
-
-function Uc(c, f, d, e, g) {
-  var i = a;
-  a += 6;
-  var h = i + 2, j = i + 4;
-  b[c + 15] = 0;
-  Pc(i, d, f + 3);
-  Pc(h, g, e + 3);
-  C(j, h, i);
-  d = J(j, j);
-  g = o[f + 2] + o[e + 2];
-  if (1 == (d > g * g ? 2 : 1)) b[c + 14] = 0, d = c + 12, f += 3, b[d] = b[f], o[d] = o[f], b[d + 1] = b[f + 1], o[d + 1] = o[f + 1], cc(c + 10), b[c + 15] = 1, e += 3, b[c] = b[e], o[c] = o[e], b[c + 1] = b[e + 1], o[c + 1] = o[e + 1], b[c + 4] = 0;
-  a = i;
-}
-
-Uc.X = 1;
-
-function Vc(c, f, d, e, g) {
-  var i = a;
-  a += 32;
-  var h, j = i + 2, k, l, m, n, p, u = i + 4, r = i + 6, q = i + 8, v = i + 10, x = i + 12, w = i + 14, y = i + 16, z = i + 18, B = i + 20, E = i + 22, D = i + 24, H = i + 26, I = i + 28, M = i + 30;
-  b[c + 15] = 0;
-  Pc(i, g, e + 3);
-  Tc(j, d, i);
-  d = 0;
-  g = -3.4028234663852886e+38;
-  k = o[f + 2] + o[e + 2];
-  l = b[f + 37];
-  m = f + 5;
-  f += 21;
-  for (n = 0; ; ) {
-    if (n >= l) {
-      h = 6;
-      break;
-    }
-    h = f + (n << 1);
-    C(u, j, m + (n << 1));
-    p = J(h, u);
-    if (p > k) {
-      h = 18;
-      break;
-    }
-    h = p > g ? 4 : 5;
-    4 == h && (g = p, d = n);
-    n += 1;
-  }
-  a : do if (6 == h) {
-    u = d;
-    if (u + 1 < l) h = 7; else {
-      var G = 0;
-      h = 8;
-    }
-    7 == h && (G = u + 1);
-    h = G;
-    n = r;
-    p = m + (u << 1);
-    b[n] = b[p];
-    o[n] = o[p];
-    b[n + 1] = b[p + 1];
-    o[n + 1] = o[p + 1];
-    n = q;
-    h = m + (h << 1);
-    b[n] = b[h];
-    o[n] = o[h];
-    b[n + 1] = b[h + 1];
-    o[n + 1] = o[h + 1];
-    h = 1.1920928955078125e-7 > g ? 9 : 10;
-    if (9 == h) b[c + 15] = 1, b[c + 14] = 1, u = c + 10, n = f + (d << 1), b[u] = b[n], o[u] = o[n], b[u + 1] = b[n + 1], o[u + 1] = o[n + 1], u = c + 12, N(x, r, q), K(v, .5, x), n = v, b[u] = b[n], o[u] = o[n], b[u + 1] = b[n + 1], o[u + 1] = o[n + 1], u = c, n = e + 3, b[u] = b[n], o[u] = o[n], b[u + 1] = b[n + 1], o[u + 1] = o[n + 1], b[c + 4] = 0; else if (10 == h) if (C(w, j, r), C(y, q, r), h = J(w, y), C(z, j, q), C(B, r, q), n = J(z, B), h = 0 >= h ? 11 : 13, 11 == h) {
-      if (Wc(j, r) > k * k) break a;
-      b[c + 15] = 1;
-      b[c + 14] = 1;
-      u = c + 10;
-      C(E, j, r);
-      n = E;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      Xc(c + 10);
-      u = c + 12;
-      n = r;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      u = c;
-      n = e + 3;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      b[c + 4] = 0;
-    } else if (13 == h) if (h = 0 >= n ? 14 : 16, 14 == h) {
-      if (Wc(j, q) > k * k) break a;
-      b[c + 15] = 1;
-      b[c + 14] = 1;
-      u = c + 10;
-      C(D, j, q);
-      n = D;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      Xc(c + 10);
-      u = c + 12;
-      n = q;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      u = c;
-      n = e + 3;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      b[c + 4] = 0;
-    } else if (16 == h) {
-      N(I, r, q);
-      K(H, .5, I);
-      C(M, j, H);
-      n = J(M, f + (u << 1));
-      if (n > k) break a;
-      b[c + 15] = 1;
-      b[c + 14] = 1;
-      n = c + 10;
-      u = f + (u << 1);
-      b[n] = b[u];
-      o[n] = o[u];
-      b[n + 1] = b[u + 1];
-      o[n + 1] = o[u + 1];
-      u = c + 12;
-      n = H;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      u = c;
-      n = e + 3;
-      b[u] = b[n];
-      o[u] = o[n];
-      b[u + 1] = b[n + 1];
-      o[u + 1] = o[n + 1];
-      b[c + 4] = 0;
-    }
-  } while (0);
-  a = i;
-}
-
-Vc.X = 1;
-
-function Wc(c, f) {
-  var d = a;
-  a += 2;
-  C(d, c, f);
-  var e = J(d, d);
-  a = d;
-  return e;
-}
-
-function Xc(c) {
-  var f, d, e;
-  e = Yc(c);
-  f = 1.1920928955078125e-7 > e ? 1 : 2;
-  1 == f ? d = 0 : 2 == f && (f = 1 / e, o[c] *= f, o[c + 1] *= f, d = e);
-  return d;
-}
-
-function Yc(c) {
-  return Zc(o[c] * o[c] + o[c + 1] * o[c + 1]);
-}
-
-function $c(c, f, d, e, g) {
-  var i = a;
-  a += 56;
-  var h = i + 2, j = i + 4, k = i + 6, l = i + 8, m;
-  m = i + 10;
-  var n;
-  n = i + 12;
-  var p = i + 14, u = i + 18, r = i + 20, q = i + 22, v = i + 24, x = i + 26, w = i + 28, y = i + 30, z = i + 32, B = i + 34, E = i + 36, D = i + 38, H = i + 40, I = i + 42, M = i + 44, G = i + 46, R = i + 48, P = i + 50, L = i + 52, T = i + 54;
-  b[c + 15] = 0;
-  Pc(h, g, e + 3);
-  Tc(i, d, h);
-  d = f + 3;
-  b[j] = b[d];
-  o[j] = o[d];
-  b[j + 1] = b[d + 1];
-  o[j + 1] = o[d + 1];
-  d = f + 5;
-  b[k] = b[d];
-  o[k] = o[d];
-  b[k + 1] = b[d + 1];
-  o[k + 1] = o[d + 1];
-  C(l, k, j);
-  C(m, k, i);
-  m = J(l, m);
-  C(n, i, j);
-  n = J(l, n);
-  d = o[f + 2] + o[e + 2];
-  b[p + 1] = 0;
-  b[p + 3] = 0;
-  g = 0 >= n ? 1 : 5;
-  a : do if (1 == g) if (g = u, h = j, b[g] = b[h], o[g] = o[h], b[g + 1] = b[h + 1], o[g + 1] = o[h + 1], C(r, i, u), g = J(r, r), g > d * d) g = 16; else {
-    g = b[f + 11] & 1 ? 3 : 4;
-    if (3 == g) {
-      var h = q, F = f + 7;
-      b[h] = b[F];
-      o[h] = o[F];
-      b[h + 1] = b[F + 1];
-      o[h + 1] = o[F + 1];
-      h = v;
-      F = j;
-      b[h] = b[F];
-      o[h] = o[F];
-      b[h + 1] = b[F + 1];
-      o[h + 1] = o[F + 1];
-      C(x, v, q);
-      C(w, v, i);
-      h = J(x, w);
-      if (0 < h) break a;
-    }
-    b[p] = 0;
-    b[p + 2] = 0;
-    b[c + 15] = 1;
-    b[c + 14] = 0;
-    cc(c + 10);
-    h = c + 12;
-    F = u;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[c + 4] = 0;
-    h = c + 4;
-    F = p;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[h + 2] = b[F + 2];
-    o[h + 2] = o[F + 2];
-    b[h + 3] = b[F + 3];
-    o[h + 3] = o[F + 3];
-    h = c;
-    F = e + 3;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-  } else if (5 == g) if (g = 0 >= m ? 6 : 10, 6 == g) {
-    g = y;
-    h = k;
-    b[g] = b[h];
-    o[g] = o[h];
-    b[g + 1] = b[h + 1];
-    o[g + 1] = o[h + 1];
-    C(z, i, y);
-    g = J(z, z);
-    if (g > d * d) break a;
-    g = b[f + 12] & 1 ? 8 : 9;
-    if (8 == g && (h = B, F = f + 9, b[h] = b[F], o[h] = o[F], b[h + 1] = b[F + 1], o[h + 1] = o[F + 1], h = E, F = k, b[h] = b[F], o[h] = o[F], b[h + 1] = b[F + 1], o[h + 1] = o[F + 1], C(D, B, E), C(H, i, E), h = J(D, H), 0 < h)) break a;
-    b[p] = 1;
-    b[p + 2] = 0;
-    b[c + 15] = 1;
-    b[c + 14] = 0;
-    cc(c + 10);
-    h = c + 12;
-    F = y;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[c + 4] = 0;
-    h = c + 4;
-    F = p;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[h + 2] = b[F + 2];
-    o[h + 2] = o[F + 2];
-    b[h + 3] = b[F + 3];
-    o[h + 3] = o[F + 3];
-    h = c;
-    F = e + 3;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-  } else if (10 == g) {
-    h = J(l, l);
-    g = 0 < h ? 12 : 11;
-    11 == g && O(ad, 127, bd, cd);
-    g = 1 / h;
-    K(G, m, j);
-    K(R, n, k);
-    N(M, G, R);
-    K(I, g, M);
-    C(P, i, I);
-    g = J(P, P);
-    if (g > d * d) break a;
-    oc(L, -o[l + 1], o[l]);
-    C(T, i, j);
-    g = 0 > J(L, T) ? 14 : 15;
-    14 == g && nc(L, -o[L], -o[L + 1]);
-    Xc(L);
-    b[p] = 0;
-    b[p + 2] = 1;
-    b[c + 15] = 1;
-    b[c + 14] = 1;
-    h = c + 10;
-    F = L;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    h = c + 12;
-    F = j;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[c + 4] = 0;
-    h = c + 4;
-    F = p;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-    b[h + 2] = b[F + 2];
-    o[h + 2] = o[F + 2];
-    b[h + 3] = b[F + 3];
-    o[h + 3] = o[F + 3];
-    h = c;
-    F = e + 3;
-    b[h] = b[F];
-    o[h] = o[F];
-    b[h + 1] = b[F + 1];
-    o[h + 1] = o[F + 1];
-  } while (0);
-  a = i;
-}
-
-$c.X = 1;
-
-function dd(c, f, d, e, g, i) {
-  var h = a;
-  a += 125;
-  var j, k = h + 4, l, m, n = h + 6, p, u = h + 8, r, q, v, x, w = h + 10, y = h + 12, z = h + 14, B = h + 16, E = h + 18, D = h + 20, H = h + 22, I = h + 24, M = h + 26, G = h + 28, R = h + 30, P = h + 32, L = h + 34, T = h + 36, F = h + 38, X = h + 40, Z = h + 42, V = h + 44, aa = h + 46, ja = h + 48, Y = h + 50, W = h + 52, $ = h + 54, ga = h + 56, la = h + 58, fa = h + 60, ka = h + 62, oa = h + 64, ua = h + 66, Da = h + 68, Ja = h + 70, Aa, Ta = h + 72, pb = h + 74, Fa = h + 76, Va = h + 79, Na = h + 82, pa = h + 85, ha = h + 91, Ba, za, va, Ka, ma, La, Ga = h + 105, ya = h + 107, Oa = h + 109, Ea = h + 115, Gb, Ob, Pa, ec, Pb = h + 121, Wa, fc = h + 123, wb = c + 33, Xa = a;
-  a += 6;
-  var Qb = Xa + 2, Hb = Xa + 4, Ab = h + 2, Bb = e + 2, db = i + 2;
-  o[Xa] = o[Bb + 1] * o[db] - o[Bb] * o[db + 1];
-  o[Xa + 1] = o[Bb + 1] * o[db + 1] + o[Bb] * o[db];
-  b[Ab] = b[Xa];
-  o[Ab] = o[Xa];
-  b[Ab + 1] = b[Xa + 1];
-  o[Ab + 1] = o[Xa + 1];
-  var Xb = e + 2;
-  C(Hb, i, e);
-  Od(Qb, Xb, Hb);
-  b[h] = b[Qb];
-  o[h] = o[Qb];
-  b[h + 1] = b[Qb + 1];
-  o[h + 1] = o[Qb + 1];
-  a = Xa;
-  b[wb] = b[h];
-  o[wb] = o[h];
-  b[wb + 1] = b[h + 1];
-  o[wb + 1] = o[h + 1];
-  b[wb + 2] = b[h + 2];
-  o[wb + 2] = o[h + 2];
-  b[wb + 3] = b[h + 3];
-  o[wb + 3] = o[h + 3];
-  var Yb = c + 37;
-  Pc(k, c + 33, g + 3);
-  b[Yb] = b[k];
-  o[Yb] = o[k];
-  b[Yb + 1] = b[k + 1];
-  o[Yb + 1] = o[k + 1];
-  var eb = c + 39, xb = d + 7;
-  b[eb] = b[xb];
-  o[eb] = o[xb];
-  b[eb + 1] = b[xb + 1];
-  o[eb + 1] = o[xb + 1];
-  var fb = c + 41, Ia = d + 3;
-  b[fb] = b[Ia];
-  o[fb] = o[Ia];
-  b[fb + 1] = b[Ia + 1];
-  o[fb + 1] = o[Ia + 1];
-  var Zb = c + 43, gb = d + 5;
-  b[Zb] = b[gb];
-  o[Zb] = o[gb];
-  b[Zb + 1] = b[gb + 1];
-  o[Zb + 1] = o[gb + 1];
-  var Cb = c + 45, hb = d + 9;
-  b[Cb] = b[hb];
-  o[Cb] = o[hb];
-  b[Cb + 1] = b[hb + 1];
-  o[Cb + 1] = o[hb + 1];
-  l = b[d + 11] & 1;
-  m = b[d + 12] & 1;
-  C(n, c + 43, c + 41);
-  Xc(n);
-  nc(c + 49, o[n + 1], -o[n]);
-  var Db = c + 49;
-  C(u, c + 37, c + 41);
-  p = J(Db, u);
-  x = v = q = r = 0;
-  j = l & 1 ? 1 : 2;
-  if (1 == j) {
-    C(w, c + 41, c + 39);
-    Xc(w);
-    nc(c + 47, o[w + 1], -o[w]);
-    v = 0 <= Q(w, n);
-    var gc = c + 47;
-    C(y, c + 37, c + 39);
-    r = J(gc, y);
-  }
-  j = m & 1 ? 3 : 4;
-  if (3 == j) {
-    C(z, c + 45, c + 43);
-    Xc(z);
-    nc(c + 51, o[z + 1], -o[z]);
-    x = 0 < Q(n, z);
-    var hc = c + 51;
-    C(B, c + 37, c + 43);
-    q = J(hc, B);
-  }
-  j = l & 1 ? 5 : 34;
-  a : do if (5 == j) if (m & 1) {
-    j = v & 1 ? 7 : 14;
-    do if (7 == j) if (x & 1) {
-      if (0 <= r) {
-        var qb = 1;
-        j = 11;
-      } else j = 9;
-      9 == j && (0 <= p ? (qb = 1, j = 11) : qb = 0 <= q);
-      b[c + 62] = qb;
-      var Rb = c + 53, Sb = c + 49;
-      j = b[c + 62] & 1 ? 12 : 13;
-      if (12 == j) {
-        var rb = Rb, $b = Sb;
-        b[rb] = b[$b];
-        o[rb] = o[$b];
-        b[rb + 1] = b[$b + 1];
-        o[rb + 1] = o[$b + 1];
-        var Eb = c + 57, ic = c + 47;
-        b[Eb] = b[ic];
-        o[Eb] = o[ic];
-        b[Eb + 1] = b[ic + 1];
-        o[Eb + 1] = o[ic + 1];
-        var sb = c + 59, Ib = c + 51;
-        b[sb] = b[Ib];
-        o[sb] = o[Ib];
-        b[sb + 1] = b[Ib + 1];
-        o[sb + 1] = o[Ib + 1];
-        j = 61;
-        break a;
-      } else if (13 == j) {
-        Pd(E, Sb);
-        var tb = Rb, ib = E;
-        b[tb] = b[ib];
-        o[tb] = o[ib];
-        b[tb + 1] = b[ib + 1];
-        o[tb + 1] = o[ib + 1];
-        var ac = c + 57;
-        Pd(D, c + 49);
-        var jc = ac, Tb = D;
-        b[jc] = b[Tb];
-        o[jc] = o[Tb];
-        b[jc + 1] = b[Tb + 1];
-        o[jc + 1] = o[Tb + 1];
-        var Ac = c + 59;
-        Pd(H, c + 49);
-        var kc = Ac, jb = H;
-        b[kc] = b[jb];
-        o[kc] = o[jb];
-        b[kc + 1] = b[jb + 1];
-        o[kc + 1] = o[jb + 1];
-        j = 61;
-        break a;
-      }
-    } else j = 14; while (0);
-    j = v & 1 ? 15 : 21;
-    if (15 == j) {
-      if (0 <= r) {
-        var $d = 1;
-        j = 18;
-      } else j = 16;
-      16 == j && (0 <= p ? $d = 0 <= q : ($d = 0, j = 18));
-      b[c + 62] = $d;
-      var Ue = c + 53, Ve = c + 49;
-      j = b[c + 62] & 1 ? 19 : 20;
-      if (19 == j) {
-        var ed = Ue, fd = Ve;
-        b[ed] = b[fd];
-        o[ed] = o[fd];
-        b[ed + 1] = b[fd + 1];
-        o[ed + 1] = o[fd + 1];
-        var gd = c + 57, hd = c + 47;
-        b[gd] = b[hd];
-        o[gd] = o[hd];
-        b[gd + 1] = b[hd + 1];
-        o[gd + 1] = o[hd + 1];
-        var id = c + 59, jd = c + 49;
-        b[id] = b[jd];
-        o[id] = o[jd];
-        b[id + 1] = b[jd + 1];
-        o[id + 1] = o[jd + 1];
-        j = 61;
-        break a;
-      } else if (20 == j) {
-        Pd(I, Ve);
-        var kd = Ue, ld = I;
-        b[kd] = b[ld];
-        o[kd] = o[ld];
-        b[kd + 1] = b[ld + 1];
-        o[kd + 1] = o[ld + 1];
-        var Ah = c + 57;
-        Pd(M, c + 51);
-        var md = Ah, nd = M;
-        b[md] = b[nd];
-        o[md] = o[nd];
-        b[md + 1] = b[nd + 1];
-        o[md + 1] = o[nd + 1];
-        var Bh = c + 59;
-        Pd(G, c + 49);
-        var od = Bh, pd = G;
-        b[od] = b[pd];
-        o[od] = o[pd];
-        b[od + 1] = b[pd + 1];
-        o[od + 1] = o[pd + 1];
-        j = 61;
-        break a;
-      }
-    } else if (21 == j) if (j = x & 1 ? 22 : 28, 22 == j) {
-      if (0 <= q) {
-        var ae = 1;
-        j = 25;
-      } else j = 23;
-      23 == j && (0 <= r ? ae = 0 <= p : (ae = 0, j = 25));
-      b[c + 62] = ae;
-      var We = c + 53, Xe = c + 49;
-      j = b[c + 62] & 1 ? 26 : 27;
-      if (26 == j) {
-        var qd = We, rd = Xe;
-        b[qd] = b[rd];
-        o[qd] = o[rd];
-        b[qd + 1] = b[rd + 1];
-        o[qd + 1] = o[rd + 1];
-        var sd = c + 57, td = c + 49;
-        b[sd] = b[td];
-        o[sd] = o[td];
-        b[sd + 1] = b[td + 1];
-        o[sd + 1] = o[td + 1];
-        var ud = c + 59, vd = c + 51;
-        b[ud] = b[vd];
-        o[ud] = o[vd];
-        b[ud + 1] = b[vd + 1];
-        o[ud + 1] = o[vd + 1];
-        j = 61;
-        break a;
-      } else if (27 == j) {
-        Pd(R, Xe);
-        var wd = We, xd = R;
-        b[wd] = b[xd];
-        o[wd] = o[xd];
-        b[wd + 1] = b[xd + 1];
-        o[wd + 1] = o[xd + 1];
-        var Ch = c + 57;
-        Pd(P, c + 49);
-        var yd = Ch, zd = P;
-        b[yd] = b[zd];
-        o[yd] = o[zd];
-        b[yd + 1] = b[zd + 1];
-        o[yd + 1] = o[zd + 1];
-        var Dh = c + 59;
-        Pd(L, c + 47);
-        var Ad = Dh, sc = L;
-        b[Ad] = b[sc];
-        o[Ad] = o[sc];
-        b[Ad + 1] = b[sc + 1];
-        o[Ad + 1] = o[sc + 1];
-        j = 61;
-        break a;
-      }
-    } else if (28 == j) {
-      if (0 <= r) j = 29; else {
-        var Bc = 0;
-        j = 31;
-      }
-      29 == j && (0 <= p ? Bc = 0 <= q : (Bc = 0, j = 31));
-      b[c + 62] = Bc;
-      var Qc = c + 53, be = c + 49;
-      j = b[c + 62] & 1 ? 32 : 33;
-      if (32 == j) {
-        var Rc = Qc, Sc = be;
-        b[Rc] = b[Sc];
-        o[Rc] = o[Sc];
-        b[Rc + 1] = b[Sc + 1];
-        o[Rc + 1] = o[Sc + 1];
-        var Bd = c + 57, Cd = c + 49;
-        b[Bd] = b[Cd];
-        o[Bd] = o[Cd];
-        b[Bd + 1] = b[Cd + 1];
-        o[Bd + 1] = o[Cd + 1];
-        var Dd = c + 59, Ed = c + 49;
-        b[Dd] = b[Ed];
-        o[Dd] = o[Ed];
-        b[Dd + 1] = b[Ed + 1];
-        o[Dd + 1] = o[Ed + 1];
-        j = 61;
-        break a;
-      } else if (33 == j) {
-        Pd(T, be);
-        var Fd = Qc, Gd = T;
-        b[Fd] = b[Gd];
-        o[Fd] = o[Gd];
-        b[Fd + 1] = b[Gd + 1];
-        o[Fd + 1] = o[Gd + 1];
-        var Ye = c + 57;
-        Pd(F, c + 51);
-        var Hd = Ye, Id = F;
-        b[Hd] = b[Id];
-        o[Hd] = o[Id];
-        b[Hd + 1] = b[Id + 1];
-        o[Hd + 1] = o[Id + 1];
-        var Jd = c + 59;
-        Pd(X, c + 47);
-        var tc = Jd, Ze = X;
-        b[tc] = b[Ze];
-        o[tc] = o[Ze];
-        b[tc + 1] = b[Ze + 1];
-        o[tc + 1] = o[Ze + 1];
-        j = 61;
-        break a;
-      }
-    }
-  } else j = 34; while (0);
-  if (34 == j) if (j = l & 1 ? 35 : 46, 35 == j) {
-    var qk = 0 <= r;
-    j = v & 1 ? 36 : 41;
-    if (36 == j) {
-      if (qk) {
-        var rk = 1;
-        j = 38;
-      } else j = 37;
-      37 == j && (rk = 0 <= p);
-      b[c + 62] = rk;
-      var Cc = c + 53, ce = c + 49;
-      j = b[c + 62] & 1 ? 39 : 40;
-      if (39 == j) {
-        b[Cc] = b[ce];
-        o[Cc] = o[ce];
-        b[Cc + 1] = b[ce + 1];
-        o[Cc + 1] = o[ce + 1];
-        var $e = c + 57, af = c + 47;
-        b[$e] = b[af];
-        o[$e] = o[af];
-        b[$e + 1] = b[af + 1];
-        o[$e + 1] = o[af + 1];
-        var bf = c + 59;
-        Pd(Z, c + 49);
-        b[bf] = b[Z];
-        o[bf] = o[Z];
-        b[bf + 1] = b[Z + 1];
-        o[bf + 1] = o[Z + 1];
-      } else if (40 == j) {
-        Pd(V, ce);
-        b[Cc] = b[V];
-        o[Cc] = o[V];
-        b[Cc + 1] = b[V + 1];
-        o[Cc + 1] = o[V + 1];
-        var cf = c + 57, df = c + 49;
-        b[cf] = b[df];
-        o[cf] = o[df];
-        b[cf + 1] = b[df + 1];
-        o[cf + 1] = o[df + 1];
-        var ef = c + 59;
-        Pd(aa, c + 49);
-        b[ef] = b[aa];
-        o[ef] = o[aa];
-        b[ef + 1] = b[aa + 1];
-        o[ef + 1] = o[aa + 1];
-      }
-    } else if (41 == j) {
-      if (qk) j = 42; else {
-        var sk = 0;
-        j = 43;
-      }
-      42 == j && (sk = 0 <= p);
-      b[c + 62] = sk;
-      var Dc = c + 53, de = c + 49;
-      j = b[c + 62] & 1 ? 44 : 45;
-      if (44 == j) {
-        b[Dc] = b[de];
-        o[Dc] = o[de];
-        b[Dc + 1] = b[de + 1];
-        o[Dc + 1] = o[de + 1];
-        var ff = c + 57, gf = c + 49;
-        b[ff] = b[gf];
-        o[ff] = o[gf];
-        b[ff + 1] = b[gf + 1];
-        o[ff + 1] = o[gf + 1];
-        var hf = c + 59;
-        Pd(ja, c + 49);
-        b[hf] = b[ja];
-        o[hf] = o[ja];
-        b[hf + 1] = b[ja + 1];
-        o[hf + 1] = o[ja + 1];
-      } else if (45 == j) {
-        Pd(Y, de);
-        b[Dc] = b[Y];
-        o[Dc] = o[Y];
-        b[Dc + 1] = b[Y + 1];
-        o[Dc + 1] = o[Y + 1];
-        var jf = c + 57, kf = c + 49;
-        b[jf] = b[kf];
-        o[jf] = o[kf];
-        b[jf + 1] = b[kf + 1];
-        o[jf + 1] = o[kf + 1];
-        var lf = c + 59;
-        Pd(W, c + 47);
-        b[lf] = b[W];
-        o[lf] = o[W];
-        b[lf + 1] = b[W + 1];
-        o[lf + 1] = o[W + 1];
-      }
-    }
-  } else if (46 == j) if (j = m & 1 ? 47 : 58, 47 == j) {
-    var tk = 0 <= p;
-    j = x & 1 ? 48 : 53;
-    if (48 == j) {
-      if (tk) {
-        var uk = 1;
-        j = 50;
-      } else j = 49;
-      49 == j && (uk = 0 <= q);
-      b[c + 62] = uk;
-      var Ec = c + 53, ee = c + 49;
-      j = b[c + 62] & 1 ? 51 : 52;
-      if (51 == j) {
-        b[Ec] = b[ee];
-        o[Ec] = o[ee];
-        b[Ec + 1] = b[ee + 1];
-        o[Ec + 1] = o[ee + 1];
-        var mf = c + 57;
-        Pd($, c + 49);
-        b[mf] = b[$];
-        o[mf] = o[$];
-        b[mf + 1] = b[$ + 1];
-        o[mf + 1] = o[$ + 1];
-        var nf = c + 59, of = c + 51;
-        b[nf] = b[of];
-        o[nf] = o[of];
-        b[nf + 1] = b[of + 1];
-        o[nf + 1] = o[of + 1];
-      } else if (52 == j) {
-        Pd(ga, ee);
-        b[Ec] = b[ga];
-        o[Ec] = o[ga];
-        b[Ec + 1] = b[ga + 1];
-        o[Ec + 1] = o[ga + 1];
-        var pf = c + 57;
-        Pd(la, c + 49);
-        b[pf] = b[la];
-        o[pf] = o[la];
-        b[pf + 1] = b[la + 1];
-        o[pf + 1] = o[la + 1];
-        var qf = c + 59, rf = c + 49;
-        b[qf] = b[rf];
-        o[qf] = o[rf];
-        b[qf + 1] = b[rf + 1];
-        o[qf + 1] = o[rf + 1];
-      }
-    } else if (53 == j) {
-      if (tk) j = 54; else {
-        var vk = 0;
-        j = 55;
-      }
-      54 == j && (vk = 0 <= q);
-      b[c + 62] = vk;
-      var Fc = c + 53, fe = c + 49;
-      j = b[c + 62] & 1 ? 56 : 57;
-      if (56 == j) {
-        b[Fc] = b[fe];
-        o[Fc] = o[fe];
-        b[Fc + 1] = b[fe + 1];
-        o[Fc + 1] = o[fe + 1];
-        var sf = c + 57;
-        Pd(fa, c + 49);
-        b[sf] = b[fa];
-        o[sf] = o[fa];
-        b[sf + 1] = b[fa + 1];
-        o[sf + 1] = o[fa + 1];
-        var tf = c + 59, uf = c + 49;
-        b[tf] = b[uf];
-        o[tf] = o[uf];
-        b[tf + 1] = b[uf + 1];
-        o[tf + 1] = o[uf + 1];
-      } else if (57 == j) {
-        Pd(ka, fe);
-        b[Fc] = b[ka];
-        o[Fc] = o[ka];
-        b[Fc + 1] = b[ka + 1];
-        o[Fc + 1] = o[ka + 1];
-        var vf = c + 57;
-        Pd(oa, c + 51);
-        b[vf] = b[oa];
-        o[vf] = o[oa];
-        b[vf + 1] = b[oa + 1];
-        o[vf + 1] = o[oa + 1];
-        var wf = c + 59, xf = c + 49;
-        b[wf] = b[xf];
-        o[wf] = o[xf];
-        b[wf + 1] = b[xf + 1];
-        o[wf + 1] = o[xf + 1];
-      }
-    }
-  } else if (58 == j) {
-    b[c + 62] = 0 <= p;
-    var Gc = c + 53, ge = c + 49;
-    j = b[c + 62] & 1 ? 59 : 60;
-    if (59 == j) {
-      b[Gc] = b[ge];
-      o[Gc] = o[ge];
-      b[Gc + 1] = b[ge + 1];
-      o[Gc + 1] = o[ge + 1];
-      var yf = c + 57;
-      Pd(ua, c + 49);
-      b[yf] = b[ua];
-      o[yf] = o[ua];
-      b[yf + 1] = b[ua + 1];
-      o[yf + 1] = o[ua + 1];
-      var zf = c + 59;
-      Pd(Da, c + 49);
-      b[zf] = b[Da];
-      o[zf] = o[Da];
-      b[zf + 1] = b[Da + 1];
-      o[zf + 1] = o[Da + 1];
-    } else if (60 == j) {
-      Pd(Ja, ge);
-      b[Gc] = b[Ja];
-      o[Gc] = o[Ja];
-      b[Gc + 1] = b[Ja + 1];
-      o[Gc + 1] = o[Ja + 1];
-      var Af = c + 57, Bf = c + 49;
-      b[Af] = b[Bf];
-      o[Af] = o[Bf];
-      b[Af + 1] = b[Bf + 1];
-      o[Af + 1] = o[Bf + 1];
-      var Cf = c + 59, Df = c + 49;
-      b[Cf] = b[Df];
-      o[Cf] = o[Df];
-      b[Cf + 1] = b[Df + 1];
-      o[Cf + 1] = o[Df + 1];
-    }
-  }
-  b[c + 32] = b[g + 37];
-  Aa = 0;
-  j = Aa < b[g + 37] ? 62 : 64;
-  a : do if (62 == j) for (var iq = c, jq = c + 33, Ef = Ta, kq = c + 16, lq = c + 35, Ff = pb; ; ) {
-    var mq = iq + (Aa << 1);
-    Pc(Ta, jq, g + 5 + (Aa << 1));
-    var Gf = mq;
-    b[Gf] = b[Ef];
-    o[Gf] = o[Ef];
-    b[Gf + 1] = b[Ef + 1];
-    o[Gf + 1] = o[Ef + 1];
-    var nq = kq + (Aa << 1);
-    S(pb, lq, g + 21 + (Aa << 1));
-    var Hf = nq;
-    b[Hf] = b[Ff];
-    o[Hf] = o[Ff];
-    b[Hf + 1] = b[Ff + 1];
-    o[Hf + 1] = o[Ff + 1];
-    Aa += 1;
-    if (Aa >= b[g + 37]) {
-      j = 64;
-      break a;
-    }
-  } while (0);
-  o[c + 61] = .019999999552965164;
-  b[f + 15] = 0;
-  Qd(Fa, c);
-  j = 0 == b[Fa] ? 100 : 65;
-  a : do if (65 == j) if (o[Fa + 2] > o[c + 61]) j = 100; else {
-    Rd(Va, c);
-    j = 0 != b[Va] ? 67 : 68;
-    if (67 == j && o[Va + 2] > o[c + 61]) {
-      j = 100;
-      break a;
-    }
-    j = 0 == b[Va] ? 69 : 70;
-    if (69 == j) {
-      var Kd = Na, Ld = Fa;
-      b[Kd] = b[Ld];
-      o[Kd] = o[Ld];
-      b[Kd + 1] = b[Ld + 1];
-      o[Kd + 1] = o[Ld + 1];
-      b[Kd + 2] = b[Ld + 2];
-      o[Kd + 2] = o[Ld + 2];
-    } else if (70 == j) {
-      var Ub = Na;
-      j = o[Va + 2] > .9800000190734863 * o[Fa + 2] + .0010000000474974513 ? 71 : 72;
-      if (71 == j) {
-        var Md = Va;
-        b[Ub] = b[Md];
-        o[Ub] = o[Md];
-        b[Ub + 1] = b[Md + 1];
-        o[Ub + 1] = o[Md + 1];
-        b[Ub + 2] = b[Md + 2];
-        o[Ub + 2] = o[Md + 2];
-      } else if (72 == j) {
-        var Nd = Fa;
-        b[Ub] = b[Nd];
-        o[Ub] = o[Nd];
-        b[Ub + 1] = b[Nd + 1];
-        o[Ub + 1] = o[Nd + 1];
-        b[Ub + 2] = b[Nd + 2];
-        o[Ub + 2] = o[Nd + 2];
-      }
-    }
-    var yk = f + 14;
-    j = 1 == b[Na] ? 74 : 84;
-    if (74 == j) {
-      b[yk] = 1;
-      Ba = 0;
-      za = J(c + 53, c + 16);
-      va = 1;
-      var zk = c + 32;
-      j = va < b[zk] ? 75 : 79;
-      b : do if (75 == j) for (var oq = c + 53, pq = c + 16; ; ) if (Ka = J(oq, pq + (va << 1)), j = Ka < za ? 77 : 78, 77 == j && (za = Ka, Ba = va), va += 1, va >= b[zk]) {
-        j = 79;
-        break b;
-      } while (0);
-      ma = Ba;
-      if (ma + 1 < b[c + 32]) j = 80; else {
-        var Ak = 0;
-        j = 81;
-      }
-      80 == j && (Ak = ma + 1);
-      La = Ak;
-      var If = pa, Jf = c + (ma << 1);
-      b[If] = b[Jf];
-      o[If] = o[Jf];
-      b[If + 1] = b[Jf + 1];
-      o[If + 1] = o[Jf + 1];
-      b[pa + 2] = 0;
-      b[pa + 3] = ma & 255;
-      b[pa + 4] = 1;
-      b[pa + 5] = 0;
-      var Kf = pa + 3, Lf = c + (La << 1);
-      b[Kf] = b[Lf];
-      o[Kf] = o[Lf];
-      b[Kf + 1] = b[Lf + 1];
-      o[Kf + 1] = o[Lf + 1];
-      b[pa + 5] = 0;
-      b[pa + 6] = La & 255;
-      b[pa + 7] = 1;
-      b[pa + 8] = 0;
-      var Bk = ha;
-      j = b[c + 62] & 1 ? 82 : 83;
-      if (82 == j) {
-        b[Bk] = 0;
-        b[ha + 1] = 1;
-        var Mf = ha + 2, Nf = c + 41;
-        b[Mf] = b[Nf];
-        o[Mf] = o[Nf];
-        b[Mf + 1] = b[Nf + 1];
-        o[Mf + 1] = o[Nf + 1];
-        var Of = ha + 4, Pf = c + 43;
-        b[Of] = b[Pf];
-        o[Of] = o[Pf];
-        b[Of + 1] = b[Pf + 1];
-        o[Of + 1] = o[Pf + 1];
-        var Qf = ha + 6, Rf = c + 49;
-        b[Qf] = b[Rf];
-        o[Qf] = o[Rf];
-        b[Qf + 1] = b[Rf + 1];
-        o[Qf + 1] = o[Rf + 1];
-      } else if (83 == j) {
-        b[Bk] = 1;
-        b[ha + 1] = 0;
-        var Sf = ha + 2, Tf = c + 43;
-        b[Sf] = b[Tf];
-        o[Sf] = o[Tf];
-        b[Sf + 1] = b[Tf + 1];
-        o[Sf + 1] = o[Tf + 1];
-        var Uf = ha + 4, Vf = c + 41;
-        b[Uf] = b[Vf];
-        o[Uf] = o[Vf];
-        b[Uf + 1] = b[Vf + 1];
-        o[Uf + 1] = o[Vf + 1];
-        var qq = ha + 6;
-        Pd(Ga, c + 49);
-        var Wf = qq, Xf = Ga;
-        b[Wf] = b[Xf];
-        o[Wf] = o[Xf];
-        b[Wf + 1] = b[Xf + 1];
-        o[Wf + 1] = o[Xf + 1];
-      }
-    } else if (84 == j) {
-      b[yk] = 2;
-      var Yf = pa, Zf = c + 41;
-      b[Yf] = b[Zf];
-      o[Yf] = o[Zf];
-      b[Yf + 1] = b[Zf + 1];
-      o[Yf + 1] = o[Zf + 1];
-      b[pa + 2] = 0;
-      b[pa + 3] = b[Na + 1] & 255;
-      b[pa + 4] = 0;
-      b[pa + 5] = 1;
-      var $f = pa + 3, ag = c + 43;
-      b[$f] = b[ag];
-      o[$f] = o[ag];
-      b[$f + 1] = b[ag + 1];
-      o[$f + 1] = o[ag + 1];
-      b[pa + 5] = 0;
-      b[pa + 6] = b[Na + 1] & 255;
-      b[pa + 7] = 0;
-      b[pa + 8] = 1;
-      b[ha] = b[Na + 1];
-      if (b[ha] + 1 < b[c + 32]) j = 85; else {
-        var Ck = 0;
-        j = 86;
-      }
-      85 == j && (Ck = b[ha] + 1);
-      b[ha + 1] = Ck;
-      var bg = ha + 2, cg = c + (b[ha] << 1);
-      b[bg] = b[cg];
-      o[bg] = o[cg];
-      b[bg + 1] = b[cg + 1];
-      o[bg + 1] = o[cg + 1];
-      var dg = ha + 4, eg = c + (b[ha + 1] << 1);
-      b[dg] = b[eg];
-      o[dg] = o[eg];
-      b[dg + 1] = b[eg + 1];
-      o[dg + 1] = o[eg + 1];
-      var fg = ha + 6, gg = c + 16 + (b[ha] << 1);
-      b[fg] = b[gg];
-      o[fg] = o[gg];
-      b[fg + 1] = b[gg + 1];
-      o[fg + 1] = o[gg + 1];
-    }
-    nc(ha + 8, o[ha + 7], -o[ha + 6]);
-    var rq = ha + 11;
-    Pd(ya, ha + 8);
-    var hg = rq, ig = ya;
-    b[hg] = b[ig];
-    o[hg] = o[ig];
-    b[hg + 1] = b[ig + 1];
-    o[hg + 1] = o[ig + 1];
-    o[ha + 10] = J(ha + 8, ha + 2);
-    o[ha + 13] = J(ha + 11, ha + 4);
-    var Dk = Sd(Oa, pa, ha + 8, o[ha + 10], b[ha]);
-    Gb = Dk;
-    if (2 > Dk) j = 100; else if (Gb = Sd(Ea, Oa, ha + 11, o[ha + 13], b[ha + 1]), 2 > Gb) j = 100; else {
-      j = 1 == b[Na] ? 90 : 91;
-      if (90 == j) {
-        var jg = f + 10, kg = ha + 6;
-        b[jg] = b[kg];
-        o[jg] = o[kg];
-        b[jg + 1] = b[kg + 1];
-        o[jg + 1] = o[kg + 1];
-        var lg = f + 12, mg = ha + 2;
-        b[lg] = b[mg];
-        o[lg] = o[mg];
-        b[lg + 1] = b[mg + 1];
-        o[lg + 1] = o[mg + 1];
-      } else if (91 == j) {
-        var ng = f + 10, og = g + 21 + (b[ha] << 1);
-        b[ng] = b[og];
-        o[ng] = o[og];
-        b[ng + 1] = b[og + 1];
-        o[ng + 1] = o[og + 1];
-        var pg = f + 12, qg = g + 5 + (b[ha] << 1);
-        b[pg] = b[qg];
-        o[pg] = o[qg];
-        b[pg + 1] = b[qg + 1];
-        o[pg + 1] = o[qg + 1];
-      }
-      Pa = Ob = 0;
-      for (var sq = ha + 6, tq = ha + 2, uq = c + 61, vq = Na, wq = c + 33, rg = fc; ; ) {
-        C(Pb, Ea + 3 * Pa, tq);
-        ec = J(sq, Pb);
-        j = ec <= o[uq] ? 94 : 98;
-        if (94 == j) {
-          var Ek = Wa = f + 5 * Ob, Fk = Ea + 3 * Pa;
-          j = 1 == b[vq] ? 95 : 96;
-          if (95 == j) {
-            Tc(fc, wq, Fk);
-            var sg = Ek;
-            b[sg] = b[rg];
-            o[sg] = o[rg];
-            b[sg + 1] = b[rg + 1];
-            o[sg + 1] = o[rg + 1];
-            b[Wa + 4] = b[Ea + 3 * Pa + 2];
-            o[Wa + 4] = o[Ea + 3 * Pa + 2];
-          } else if (96 == j) {
-            var tg = Ek, ug = Fk;
-            b[tg] = b[ug];
-            o[tg] = o[ug];
-            b[tg + 1] = b[ug + 1];
-            o[tg + 1] = o[ug + 1];
-            b[Wa + 6] = b[Ea + 3 * Pa + 5];
-            b[Wa + 7] = b[Ea + 3 * Pa + 4];
-            b[Wa + 4] = b[Ea + 3 * Pa + 3];
-            b[Wa + 5] = b[Ea + 3 * Pa + 2];
+  if (id) {
+    assert(!runDependencyTracking[id]);
+    runDependencyTracking[id] = 1;
+    if (runDependencyWatcher === null && typeof setInterval !== 'undefined') {
+      // Check for missing dependencies every few seconds
+      runDependencyWatcher = setInterval(function() {
+        var shown = false;
+        for (var dep in runDependencyTracking) {
+          if (!shown) {
+            shown = true;
+            Module.printErr('still waiting on run dependencies:');
           }
-          Ob += 1;
+          Module.printErr('dependency: ' + dep);
         }
-        var Gk = Pa + 1;
-        Pa = Gk;
-        if (2 <= Gk) {
-          j = 99;
-          break;
+        if (shown) {
+          Module.printErr('(end of list)');
         }
-      }
-      b[f + 15] = Ob;
+      }, 6000);
     }
-  } while (0);
-  a = h;
-}
-
-dd.X = 1;
-
-function Q(c, f) {
-  return o[c] * o[f + 1] - o[c + 1] * o[f];
-}
-
-function Pd(c, f) {
-  nc(c, -o[f], -o[f + 1]);
-}
-
-function S(c, f, d) {
-  oc(c, o[f + 1] * o[d] - o[f] * o[d + 1], o[f] * o[d] + o[f + 1] * o[d + 1]);
-}
-
-function Od(c, f, d) {
-  oc(c, o[f + 1] * o[d] + o[f] * o[d + 1], -o[f] * o[d] + o[f + 1] * o[d + 1]);
-}
-
-function Qd(c, f) {
-  var d = a;
-  a += 2;
-  var e, g, i;
-  b[c] = 1;
-  b[c + 1] = b[f + 62] & 1 ? 0 : 1;
-  o[c + 2] = 3.4028234663852886e+38;
-  g = 0;
-  var h = f + 32;
-  e = g < b[h] ? 1 : 5;
-  a : do if (1 == e) for (var j = f + 53, k = f, l = f + 41, m = c + 2, n = c + 2; ; ) if (C(d, k + (g << 1), l), i = J(j, d), e = i < o[m] ? 3 : 4, 3 == e && (o[n] = i), g += 1, g >= b[h]) break a; while (0);
-  a = d;
-}
-
-Qd.X = 1;
-
-function Rd(c, f) {
-  var d = a;
-  a += 12;
-  var e, g, i = d + 2, h = d + 4, j, k = d + 6, l = d + 8, m = d + 10;
-  b[c] = 0;
-  b[c + 1] = -1;
-  o[c + 2] = -3.4028234663852886e+38;
-  oc(d, -o[f + 54], o[f + 53]);
-  g = 0;
-  for (var n = f + 32, p = f + 16, u = f + 41, r = f + 43, q = f + 61, v = f + 59, x = f + 53, w = c + 2, y = c + 1, z = c + 2, B = f + 57, E = f + 53; ; ) {
-    if (g >= b[n]) {
-      e = 10;
-      break;
-    }
-    Pd(i, p + (g << 1));
-    C(h, f + (g << 1), u);
-    e = J(i, h);
-    C(k, f + (g << 1), r);
-    j = J(i, k);
-    j = e < j ? e : j;
-    if (j > o[q]) {
-      e = 3;
-      break;
-    }
-    e = 0 <= J(i, d) ? 5 : 6;
-    5 == e ? (C(l, i, v), e = -.03490658849477768 > J(l, x) ? 9 : 7) : 6 == e && (C(m, i, B), e = -.03490658849477768 > J(m, E) ? 9 : 7);
-    7 == e && (j > o[w] ? (b[c] = 2, b[y] = g, o[z] = j) : e = 9);
-    g += 1;
+  } else {
+    Module.printErr('warning: run dependency added without ID');
   }
-  3 == e && (b[c] = 2, b[c + 1] = g, o[c + 2] = j);
-  a = d;
 }
-
-Rd.X = 1;
-
-function Td(c, f, d, e, g) {
-  var i = a;
-  a += 56;
-  var h, j, k, l = i + 1, m, n, p = i + 2, u = i + 6, r, q, v = i + 10, x, w, y, z = i + 16, B = i + 18, E = i + 20, D = i + 22, H = i + 24, I = i + 26, M = i + 28, G = i + 30, R = i + 32, P = i + 34, L, T, F = i + 36, X = i + 42, Z = i + 48, V, aa = i + 50, ja = i + 52;
-  b[c + 15] = 0;
-  j = o[f + 2] + o[e + 2];
-  b[i] = 0;
-  k = Ud(i, f, d, e, g);
-  h = k > j ? 16 : 1;
-  do if (1 == h) if (b[l] = 0, h = Ud(l, e, g, f, d), h > j) h = 16; else {
-    h = h > .9800000190734863 * k + .0010000000474974513 ? 3 : 4;
-    3 == h ? (m = e, n = f, r = p, q = g, b[r] = b[q], o[r] = o[q], b[r + 1] = b[q + 1], o[r + 1] = o[q + 1], b[r + 2] = b[q + 2], o[r + 2] = o[q + 2], b[r + 3] = b[q + 3], o[r + 3] = o[q + 3], r = u, q = d, b[r] = b[q], o[r] = o[q], b[r + 1] = b[q + 1], o[r + 1] = o[q + 1], b[r + 2] = b[q + 2], o[r + 2] = o[q + 2], b[r + 3] = b[q + 3], o[r + 3] = o[q + 3], r = b[l], b[c + 14] = 2, q = 1) : 4 == h && (m = f, n = e, r = p, q = d, b[r] = b[q], o[r] = o[q], b[r + 1] = b[q + 1], o[r + 1] = o[q + 1], b[r + 2] = b[q + 2], o[r + 2] = o[q + 2], b[r + 3] = b[q + 3], o[r + 3] = o[q + 3], r = u, q = g, b[r] = b[q], o[r] = o[q], b[r + 1] = b[q + 1], o[r + 1] = o[q + 1], b[r + 2] = b[q + 2], o[r + 2] = o[q + 2], b[r + 3] = b[q + 3], o[r + 3] = o[q + 3], r = b[i], b[c + 14] = 1, q = 0);
-    Vd(v, m, p, r, n, u);
-    h = b[m + 37];
-    x = m + 5;
-    w = r;
-    if (r + 1 < h) h = 6; else {
-      var Y = 0;
-      h = 7;
+Module['addRunDependency'] = addRunDependency;
+function removeRunDependency(id) {
+  runDependencies--;
+  if (Module['monitorRunDependencies']) {
+    Module['monitorRunDependencies'](runDependencies);
+  }
+  if (id) {
+    assert(runDependencyTracking[id]);
+    delete runDependencyTracking[id];
+  } else {
+    Module.printErr('warning: run dependency removed without ID');
+  }
+  if (runDependencies == 0) {
+    if (runDependencyWatcher !== null) {
+      clearInterval(runDependencyWatcher);
+      runDependencyWatcher = null;
+    } 
+    // If run has never been called, and we should call run (INVOKE_RUN is true, and Module.noInitialRun is not false)
+    if (!calledRun && shouldRunNow) run();
+  }
+}
+Module['removeRunDependency'] = removeRunDependency;
+Module["preloadedImages"] = {}; // maps url to image data
+Module["preloadedAudios"] = {}; // maps url to audio data
+// === Body ===
+assert(STATICTOP == STACK_MAX); assert(STACK_MAX == TOTAL_STACK);
+STATICTOP += 9476;
+assert(STATICTOP < TOTAL_MEMORY);
+__ATINIT__ = __ATINIT__.concat([
+]);
+var __ZTVN10__cxxabiv120__si_class_type_infoE;
+var __ZTVN10__cxxabiv117__class_type_infoE;
+allocate(24, "i8", ALLOC_NONE, 5242880);
+allocate(4, "i8", ALLOC_NONE, 5242904);
+allocate(4, "i8", ALLOC_NONE, 5242908);
+allocate(4, "i8", ALLOC_NONE, 5242912);
+allocate(4, "i8", ALLOC_NONE, 5242916);
+allocate(4, "i8", ALLOC_NONE, 5242920);
+allocate(4, "i8", ALLOC_NONE, 5242924);
+allocate(4, "i8", ALLOC_NONE, 5242928);
+allocate(4, "i8", ALLOC_NONE, 5242932);
+allocate(4, "i8", ALLOC_NONE, 5242936);
+allocate(4, "i8", ALLOC_NONE, 5242940);
+allocate(8, "i8", ALLOC_NONE, 5242944);
+allocate([48,32,60,61,32,105,66,32,38,38,32,105,66,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iB && iB _ m_no */, "i8", ALLOC_NONE, 5242952);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,68,105,115,116,97,110,99,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5242984);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,98,50,66,111,100,121,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5243028);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,109,109,111,110,47,98,50,83,116,97,99,107,65,108,108,111,99,97,116,111,114,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5243068);
+allocate([105,65,32,33,61,32,40,45,49,41,0] /* iA != (-1)\00 */, "i8", ALLOC_NONE, 5243116);
+allocate([109,95,119,111,114,108,100,45,62,73,115,76,111,99,107,101,100,40,41,32,61,61,32,102,97,108,115,101,0] /* m_world-_IsLocked()  */, "i8", ALLOC_NONE, 5243128);
+allocate([97,108,112,104,97,48,32,60,32,49,46,48,102,0] /* alpha0 _ 1.0f\00 */, "i8", ALLOC_NONE, 5243160);
+allocate([99,104,105,108,100,50,32,33,61,32,40,45,49,41,0] /* child2 != (-1)\00 */, "i8", ALLOC_NONE, 5243176);
+allocate([98,50,73,115,86,97,108,105,100,40,98,100,45,62,108,105,110,101,97,114,68,97,109,112,105,110,103,41,32,38,38,32,98,100,45,62,108,105,110,101,97,114,68,97,109,112,105,110,103,32,62,61,32,48,46,48,102,0] /* b2IsValid(bd-_linear */, "i8", ALLOC_NONE, 5243192);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,109,109,111,110,47,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5243252);
+allocate([116,121,112,101,65,32,61,61,32,98,50,95,100,121,110,97,109,105,99,66,111,100,121,32,124,124,32,116,121,112,101,66,32,61,61,32,98,50,95,100,121,110,97,109,105,99,66,111,100,121,0] /* typeA == b2_dynamicB */, "i8", ALLOC_NONE, 5243300);
+allocate([99,104,105,108,100,49,32,33,61,32,40,45,49,41,0] /* child1 != (-1)\00 */, "i8", ALLOC_NONE, 5243352);
+allocate([98,50,73,115,86,97,108,105,100,40,98,100,45,62,97,110,103,117,108,97,114,68,97,109,112,105,110,103,41,32,38,38,32,98,100,45,62,97,110,103,117,108,97,114,68,97,109,112,105,110,103,32,62,61,32,48,46,48,102,0] /* b2IsValid(bd-_angula */, "i8", ALLOC_NONE, 5243368);
+allocate([112,32,61,61,32,101,110,116,114,121,45,62,100,97,116,97,0] /* p == entry-_data\00 */, "i8", ALLOC_NONE, 5243428);
+allocate([97,114,101,97,32,62,32,49,46,49,57,50,48,57,50,57,48,69,45,48,55,70,0] /* area _ 1.19209290E-0 */, "i8", ALLOC_NONE, 5243448);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,83,104,97,112,101,115,47,98,50,80,111,108,121,103,111,110,83,104,97,112,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5243472);
+allocate([48,32,60,32,99,111,117,110,116,32,38,38,32,99,111,117,110,116,32,60,32,51,0] /* 0 _ count && count _ */, "i8", ALLOC_NONE, 5243528);
+allocate([112,99,45,62,112,111,105,110,116,67,111,117,110,116,32,62,32,48,0] /* pc-_pointCount _ 0\0 */, "i8", ALLOC_NONE, 5243552);
+allocate([109,95,110,111,100,101,115,91,112,114,111,120,121,73,100,93,46,73,115,76,101,97,102,40,41,0] /* m_nodes[proxyId].IsL */, "i8", ALLOC_NONE, 5243572);
+allocate([115,116,97,99,107,67,111,117,110,116,32,60,32,115,116,97,99,107,83,105,122,101,0] /* stackCount _ stackSi */, "i8", ALLOC_NONE, 5243600);
+allocate([99,97,99,104,101,45,62,99,111,117,110,116,32,60,61,32,51,0] /* cache-_count _= 3\00 */, "i8", ALLOC_NONE, 5243624);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,67,111,108,108,105,100,101,80,111,108,121,103,111,110,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5243644);
+allocate([98,50,73,115,86,97,108,105,100,40,98,100,45,62,97,110,103,117,108,97,114,86,101,108,111,99,105,116,121,41,0] /* b2IsValid(bd-_angula */, "i8", ALLOC_NONE, 5243696);
+allocate([109,95,101,110,116,114,121,67,111,117,110,116,32,62,32,48,0] /* m_entryCount _ 0\00 */, "i8", ALLOC_NONE, 5243728);
+allocate([98,108,111,99,107,67,111,117,110,116,32,42,32,98,108,111,99,107,83,105,122,101,32,60,61,32,98,50,95,99,104,117,110,107,83,105,122,101,0] /* blockCount _ blockSi */, "i8", ALLOC_NONE, 5243748);
+allocate([109,95,118,101,114,116,101,120,67,111,117,110,116,32,62,61,32,51,0] /* m_vertexCount _= 3\0 */, "i8", ALLOC_NONE, 5243788);
+allocate([48,32,60,61,32,105,110,100,101,120,32,38,38,32,105,110,100,101,120,32,60,32,109,95,99,111,117,110,116,32,45,32,49,0] /* 0 _= index && index  */, "i8", ALLOC_NONE, 5243808);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,83,104,97,112,101,115,47,98,50,67,104,97,105,110,83,104,97,112,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5243844);
+allocate([97,46,120,32,62,61,32,48,46,48,102,32,38,38,32,97,46,121,32,62,61,32,48,46,48,102,0] /* a.x _= 0.0f && a.y _ */, "i8", ALLOC_NONE, 5243900);
+allocate([48,32,60,61,32,116,121,112,101,65,32,38,38,32,116,121,112,101,66,32,60,32,98,50,83,104,97,112,101,58,58,101,95,116,121,112,101,67,111,117,110,116,0] /* 0 _= typeA && typeB  */, "i8", ALLOC_NONE, 5243928);
+allocate([98,45,62,73,115,65,99,116,105,118,101,40,41,32,61,61,32,116,114,117,101,0] /* b-_IsActive() == tru */, "i8", ALLOC_NONE, 5243972);
+allocate([48,32,60,61,32,105,110,100,101,120,32,38,38,32,105,110,100,101,120,32,60,32,109,95,99,111,117,110,116,0] /* 0 _= index && index  */, "i8", ALLOC_NONE, 5243996);
+allocate([98,50,73,115,86,97,108,105,100,40,98,100,45,62,97,110,103,108,101,41,0] /* b2IsValid(bd-_angle) */, "i8", ALLOC_NONE, 5244028);
+allocate([109,95,101,110,116,114,121,67,111,117,110,116,32,60,32,98,50,95,109,97,120,83,116,97,99,107,69,110,116,114,105,101,115,0] /* m_entryCount _ b2_ma */, "i8", ALLOC_NONE, 5244052);
+allocate([48,32,60,61,32,105,110,100,101,120,32,38,38,32,105,110,100,101,120,32,60,32,98,50,95,98,108,111,99,107,83,105,122,101,115,0] /* 0 _= index && index  */, "i8", ALLOC_NONE, 5244088);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,84,105,109,101,79,102,73,109,112,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5244124);
+allocate([48,46,48,102,32,60,61,32,108,111,119,101,114,32,38,38,32,108,111,119,101,114,32,60,61,32,105,110,112,117,116,46,109,97,120,70,114,97,99,116,105,111,110,0] /* 0.0f _= lower && low */, "i8", ALLOC_NONE, 5244172);
+allocate([112,111,105,110,116,67,111,117,110,116,32,61,61,32,49,32,124,124,32,112,111,105,110,116,67,111,117,110,116,32,61,61,32,50,0] /* pointCount == 1 || p */, "i8", ALLOC_NONE, 5244216);
+allocate([115,95,105,110,105,116,105,97,108,105,122,101,100,32,61,61,32,116,114,117,101,0] /* s_initialized == tru */, "i8", ALLOC_NONE, 5244252);
+allocate([48,32,60,32,109,95,110,111,100,101,67,111,117,110,116,0] /* 0 _ m_nodeCount\00 */, "i8", ALLOC_NONE, 5244276);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,68,105,115,116,97,110,99,101,46,104,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5244292);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,67,111,108,108,105,100,101,69,100,103,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5244336);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,80,111,108,121,103,111,110,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244384);
+allocate([98,100,45,62,108,105,110,101,97,114,86,101,108,111,99,105,116,121,46,73,115,86,97,108,105,100,40,41,0] /* bd-_linearVelocity.I */, "i8", ALLOC_NONE, 5244444);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,80,111,108,121,103,111,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244476);
+allocate([109,95,98,111,100,121,67,111,117,110,116,32,60,32,109,95,98,111,100,121,67,97,112,97,99,105,116,121,0] /* m_bodyCount _ m_body */, "i8", ALLOC_NONE, 5244544);
+allocate([109,95,101,110,116,114,121,67,111,117,110,116,32,61,61,32,48,0] /* m_entryCount == 0\00 */, "i8", ALLOC_NONE, 5244576);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,69,100,103,101,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244596);
+allocate([109,95,99,111,110,116,97,99,116,67,111,117,110,116,32,60,32,109,95,99,111,110,116,97,99,116,67,97,112,97,99,105,116,121,0] /* m_contactCount _ m_c */, "i8", ALLOC_NONE, 5244664);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,69,100,103,101,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244700);
+allocate([48,32,60,32,115,105,122,101,0] /* 0 _ size\00 */, "i8", ALLOC_NONE, 5244764);
+allocate([109,95,106,111,105,110,116,67,111,117,110,116,32,60,32,109,95,106,111,105,110,116,67,97,112,97,99,105,116,121,0] /* m_jointCount _ m_joi */, "i8", ALLOC_NONE, 5244776);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,98,50,73,115,108,97,110,100,46,104,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244808);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244848);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,109,109,111,110,47,98,50,77,97,116,104,46,104,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5244908);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244944);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,67,105,114,99,108,101,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5244996);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,67,104,97,105,110,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5245056);
+allocate([109,95,102,105,120,116,117,114,101,66,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,112,111,108,121,103,111,110,0] /* m_fixtureB-_GetType( */, "i8", ALLOC_NONE, 5245124);
+allocate([109,95,102,105,120,116,117,114,101,66,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,99,105,114,99,108,101,0] /* m_fixtureB-_GetType( */, "i8", ALLOC_NONE, 5245168);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,67,111,110,116,97,99,116,115,47,98,50,67,104,97,105,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5245212);
+allocate([109,97,110,105,102,111,108,100,45,62,112,111,105,110,116,67,111,117,110,116,32,62,32,48,0] /* manifold-_pointCount */, "i8", ALLOC_NONE, 5245280);
+allocate([48,32,60,61,32,116,121,112,101,50,32,38,38,32,116,121,112,101,50,32,60,32,98,50,83,104,97,112,101,58,58,101,95,116,121,112,101,67,111,117,110,116,0] /* 0 _= type2 && type2  */, "i8", ALLOC_NONE, 5245308);
+allocate([48,32,60,61,32,110,111,100,101,73,100,32,38,38,32,110,111,100,101,73,100,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= nodeId && nodeI */, "i8", ALLOC_NONE, 5245352);
+allocate([116,111,105,73,110,100,101,120,66,32,60,32,109,95,98,111,100,121,67,111,117,110,116,0] /* toiIndexB _ m_bodyCo */, "i8", ALLOC_NONE, 5245392);
+allocate([48,32,60,61,32,112,114,111,120,121,73,100,32,38,38,32,112,114,111,120,121,73,100,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= proxyId && prox */, "i8", ALLOC_NONE, 5245416);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,68,121,110,97,109,105,99,84,114,101,101,46,104,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5245460);
+allocate([98,100,45,62,112,111,115,105,116,105,111,110,46,73,115,86,97,108,105,100,40,41,0] /* bd-_position.IsValid */, "i8", ALLOC_NONE, 5245508);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,98,50,87,111,114,108,100,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5245532);
+allocate([109,95,105,110,100,101,120,32,61,61,32,48,0] /* m_index == 0\00 */, "i8", ALLOC_NONE, 5245572);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,98,50,73,115,108,97,110,100,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5245588);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,67,111,108,108,105,115,105,111,110,47,98,50,68,121,110,97,109,105,99,84,114,101,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/C */, "i8", ALLOC_NONE, 5245632);
+allocate([106,32,60,32,98,50,95,98,108,111,99,107,83,105,122,101,115,0] /* j _ b2_blockSizes\00 */, "i8", ALLOC_NONE, 5245680);
+allocate([109,95,110,111,100,101,115,91,66,45,62,112,97,114,101,110,116,93,46,99,104,105,108,100,50,32,61,61,32,105,65,0] /* m_nodes[B-_parent].c */, "i8", ALLOC_NONE, 5245700);
+allocate([48,32,60,61,32,101,100,103,101,49,32,38,38,32,101,100,103,101,49,32,60,32,112,111,108,121,49,45,62,109,95,118,101,114,116,101,120,67,111,117,110,116,0] /* 0 _= edge1 && edge1  */, "i8", ALLOC_NONE, 5245732);
+allocate([48,32,60,61,32,105,69,32,38,38,32,105,69,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iE && iE _ m_no */, "i8", ALLOC_NONE, 5245776);
+allocate([48,32,60,61,32,105,68,32,38,38,32,105,68,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iD && iD _ m_no */, "i8", ALLOC_NONE, 5245808);
+allocate([100,101,110,32,62,32,48,46,48,102,0] /* den _ 0.0f\00 */, "i8", ALLOC_NONE, 5245840);
+allocate([116,97,114,103,101,116,32,62,32,116,111,108,101,114,97,110,99,101,0] /* target _ tolerance\0 */, "i8", ALLOC_NONE, 5245852);
+allocate([102,97,108,115,101,0] /* false\00 */, "i8", ALLOC_NONE, 5245872);
+allocate([66,111,120,50,68,95,118,50,46,50,46,49,47,66,111,120,50,68,47,68,121,110,97,109,105,99,115,47,98,50,70,105,120,116,117,114,101,46,99,112,112,0] /* Box2D_v2.2.1/Box2D/D */, "i8", ALLOC_NONE, 5245880);
+allocate([109,95,110,111,100,101,115,91,67,45,62,112,97,114,101,110,116,93,46,99,104,105,108,100,50,32,61,61,32,105,65,0] /* m_nodes[C-_parent].c */, "i8", ALLOC_NONE, 5245924);
+allocate([109,95,73,32,62,32,48,46,48,102,0] /* m_I _ 0.0f\00 */, "i8", ALLOC_NONE, 5245956);
+allocate([109,95,102,105,120,116,117,114,101,65,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,112,111,108,121,103,111,110,0] /* m_fixtureA-_GetType( */, "i8", ALLOC_NONE, 5245968);
+allocate([109,95,102,105,120,116,117,114,101,65,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,101,100,103,101,0] /* m_fixtureA-_GetType( */, "i8", ALLOC_NONE, 5246012);
+allocate([112,111,105,110,116,67,111,117,110,116,32,62,32,48,0] /* pointCount _ 0\00 */, "i8", ALLOC_NONE, 5246056);
+allocate([48,32,60,61,32,116,121,112,101,49,32,38,38,32,116,121,112,101,49,32,60,32,98,50,83,104,97,112,101,58,58,101,95,116,121,112,101,67,111,117,110,116,0] /* 0 _= type1 && type1  */, "i8", ALLOC_NONE, 5246072);
+allocate([109,95,102,105,120,116,117,114,101,65,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,99,105,114,99,108,101,0] /* m_fixtureA-_GetType( */, "i8", ALLOC_NONE, 5246116);
+allocate([109,95,102,105,120,116,117,114,101,65,45,62,71,101,116,84,121,112,101,40,41,32,61,61,32,98,50,83,104,97,112,101,58,58,101,95,99,104,97,105,110,0] /* m_fixtureA-_GetType( */, "i8", ALLOC_NONE, 5246160);
+allocate([48,32,60,61,32,105,71,32,38,38,32,105,71,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iG && iG _ m_no */, "i8", ALLOC_NONE, 5246204);
+allocate([109,95,116,121,112,101,32,61,61,32,98,50,95,100,121,110,97,109,105,99,66,111,100,121,0] /* m_type == b2_dynamic */, "i8", ALLOC_NONE, 5246236);
+allocate([73,115,76,111,99,107,101,100,40,41,32,61,61,32,102,97,108,115,101,0] /* IsLocked() == false\ */, "i8", ALLOC_NONE, 5246264);
+allocate([116,111,105,73,110,100,101,120,65,32,60,32,109,95,98,111,100,121,67,111,117,110,116,0] /* toiIndexA _ m_bodyCo */, "i8", ALLOC_NONE, 5246284);
+allocate([109,95,110,111,100,101,67,111,117,110,116,32,61,61,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* m_nodeCount == m_nod */, "i8", ALLOC_NONE, 5246308);
+allocate([109,95,112,114,111,120,121,67,111,117,110,116,32,61,61,32,48,0] /* m_proxyCount == 0\00 */, "i8", ALLOC_NONE, 5246340);
+allocate([48,32,60,61,32,105,110,100,101,120,32,38,38,32,105,110,100,101,120,32,60,32,99,104,97,105,110,45,62,109,95,99,111,117,110,116,0] /* 0 _= index && index  */, "i8", ALLOC_NONE, 5246360);
+allocate([48,32,60,61,32,105,70,32,38,38,32,105,70,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iF && iF _ m_no */, "i8", ALLOC_NONE, 5246400);
+allocate([48,32,60,61,32,105,67,32,38,38,32,105,67,32,60,32,109,95,110,111,100,101,67,97,112,97,99,105,116,121,0] /* 0 _= iC && iC _ m_no */, "i8", ALLOC_NONE, 5246432);
+allocate([37,102,10,0] /* %f\0A\00 */, "i8", ALLOC_NONE, 5246464);
+allocate(472, "i8", ALLOC_NONE, 5246468);
+allocate([102,108,111,97,116,51,50,32,98,50,83,105,109,112,108,101,120,58,58,71,101,116,77,101,116,114,105,99,40,41,32,99,111,110,115,116,0] /* float32 b2Simplex::G */, "i8", ALLOC_NONE, 5246940);
+allocate([98,50,86,101,99,50,32,98,50,83,105,109,112,108,101,120,58,58,71,101,116,83,101,97,114,99,104,68,105,114,101,99,116,105,111,110,40,41,32,99,111,110,115,116,0] /* b2Vec2 b2Simplex::Ge */, "i8", ALLOC_NONE, 5246980);
+allocate([118,111,105,100,32,98,50,83,105,109,112,108,101,120,58,58,71,101,116,87,105,116,110,101,115,115,80,111,105,110,116,115,40,98,50,86,101,99,50,32,42,44,32,98,50,86,101,99,50,32,42,41,32,99,111,110,115,116,0] /* void b2Simplex::GetW */, "i8", ALLOC_NONE, 5247028);
+allocate([98,50,86,101,99,50,32,98,50,83,105,109,112,108,101,120,58,58,71,101,116,67,108,111,115,101,115,116,80,111,105,110,116,40,41,32,99,111,110,115,116,0] /* b2Vec2 b2Simplex::Ge */, "i8", ALLOC_NONE, 5247088);
+allocate([102,108,111,97,116,51,50,32,98,50,83,101,112,97,114,97,116,105,111,110,70,117,110,99,116,105,111,110,58,58,69,118,97,108,117,97,116,101,40,105,110,116,51,50,44,32,105,110,116,51,50,44,32,102,108,111,97,116,51,50,41,32,99,111,110,115,116,0] /* float32 b2Separation */, "i8", ALLOC_NONE, 5247132);
+allocate([102,108,111,97,116,51,50,32,98,50,83,101,112,97,114,97,116,105,111,110,70,117,110,99,116,105,111,110,58,58,70,105,110,100,77,105,110,83,101,112,97,114,97,116,105,111,110,40,105,110,116,51,50,32,42,44,32,105,110,116,51,50,32,42,44,32,102,108,111,97,116,51,50,41,32,99,111,110,115,116,0] /* float32 b2Separation */, "i8", ALLOC_NONE, 5247200);
+allocate([99,111,110,115,116,32,98,50,86,101,99,50,32,38,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,58,58,71,101,116,86,101,114,116,101,120,40,105,110,116,51,50,41,32,99,111,110,115,116,0] /* const b2Vec2 &b2Dist */, "i8", ALLOC_NONE, 5247284);
+allocate([118,105,114,116,117,97,108,32,98,111,111,108,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,58,58,82,97,121,67,97,115,116,40,98,50,82,97,121,67,97,115,116,79,117,116,112,117,116,32,42,44,32,99,111,110,115,116,32,98,50,82,97,121,67,97,115,116,73,110,112,117,116,32,38,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,105,110,116,51,50,41,32,99,111,110,115,116,0] /* virtual bool b2Polyg */, "i8", ALLOC_NONE, 5247340);
+allocate([118,105,114,116,117,97,108,32,118,111,105,100,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,58,58,67,111,109,112,117,116,101,77,97,115,115,40,98,50,77,97,115,115,68,97,116,97,32,42,44,32,102,108,111,97,116,51,50,41,32,99,111,110,115,116,0] /* virtual void b2Polyg */, "i8", ALLOC_NONE, 5247456);
+allocate([118,111,105,100,32,42,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,71,101,116,85,115,101,114,68,97,116,97,40,105,110,116,51,50,41,32,99,111,110,115,116,0] /* void _b2DynamicTree: */, "i8", ALLOC_NONE, 5247528);
+allocate([99,111,110,115,116,32,98,50,65,65,66,66,32,38,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,71,101,116,70,97,116,65,65,66,66,40,105,110,116,51,50,41,32,99,111,110,115,116,0] /* const b2AABB &b2Dyna */, "i8", ALLOC_NONE, 5247576);
+allocate([118,111,105,100,32,98,50,67,104,97,105,110,83,104,97,112,101,58,58,71,101,116,67,104,105,108,100,69,100,103,101,40,98,50,69,100,103,101,83,104,97,112,101,32,42,44,32,105,110,116,51,50,41,32,99,111,110,115,116,0] /* void b2ChainShape::G */, "i8", ALLOC_NONE, 5247632);
+allocate([118,111,105,100,32,98,50,83,105,109,112,108,101,120,58,58,82,101,97,100,67,97,99,104,101,40,99,111,110,115,116,32,98,50,83,105,109,112,108,101,120,67,97,99,104,101,32,42,44,32,99,111,110,115,116,32,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,99,111,110,115,116,32,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,41,0] /* void b2Simplex::Read */, "i8", ALLOC_NONE, 5247692);
+allocate([118,111,105,100,32,98,50,70,105,120,116,117,114,101,58,58,68,101,115,116,114,111,121,40,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,32,42,41,0] /* void b2Fixture::Dest */, "i8", ALLOC_NONE, 5247836);
+allocate([115,116,97,116,105,99,32,118,111,105,100,32,98,50,67,111,110,116,97,99,116,58,58,68,101,115,116,114,111,121,40,98,50,67,111,110,116,97,99,116,32,42,44,32,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,32,42,41,0] /* static void b2Contac */, "i8", ALLOC_NONE, 5247880);
+allocate([115,116,97,116,105,99,32,98,50,67,111,110,116,97,99,116,32,42,98,50,67,111,110,116,97,99,116,58,58,67,114,101,97,116,101,40,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,44,32,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,44,32,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,32,42,41,0] /* static b2Contact _b2 */, "i8", ALLOC_NONE, 5247944);
+allocate([118,111,105,100,32,98,50,73,115,108,97,110,100,58,58,83,111,108,118,101,84,79,73,40,99,111,110,115,116,32,98,50,84,105,109,101,83,116,101,112,32,38,44,32,105,110,116,51,50,44,32,105,110,116,51,50,41,0] /* void b2Island::Solve */, "i8", ALLOC_NONE, 5248040);
+allocate([118,111,105,100,32,98,50,73,115,108,97,110,100,58,58,65,100,100,40,98,50,67,111,110,116,97,99,116,32,42,41,0] /* void b2Island::Add(b */, "i8", ALLOC_NONE, 5248100);
+allocate([118,111,105,100,32,98,50,73,115,108,97,110,100,58,58,65,100,100,40,98,50,74,111,105,110,116,32,42,41,0] /* void b2Island::Add(b */, "i8", ALLOC_NONE, 5248132);
+allocate([118,111,105,100,32,98,50,73,115,108,97,110,100,58,58,65,100,100,40,98,50,66,111,100,121,32,42,41,0] /* void b2Island::Add(b */, "i8", ALLOC_NONE, 5248164);
+allocate([118,111,105,100,32,98,50,87,111,114,108,100,58,58,83,111,108,118,101,84,79,73,40,99,111,110,115,116,32,98,50,84,105,109,101,83,116,101,112,32,38,41,0] /* void b2World::SolveT */, "i8", ALLOC_NONE, 5248196);
+allocate([118,111,105,100,32,98,50,87,111,114,108,100,58,58,83,111,108,118,101,40,99,111,110,115,116,32,98,50,84,105,109,101,83,116,101,112,32,38,41,0] /* void b2World::Solve( */, "i8", ALLOC_NONE, 5248240);
+allocate([98,50,66,111,100,121,32,42,98,50,87,111,114,108,100,58,58,67,114,101,97,116,101,66,111,100,121,40,99,111,110,115,116,32,98,50,66,111,100,121,68,101,102,32,42,41,0] /* b2Body _b2World::Cre */, "i8", ALLOC_NONE, 5248280);
+allocate([118,111,105,100,32,98,50,83,119,101,101,112,58,58,65,100,118,97,110,99,101,40,102,108,111,97,116,51,50,41,0] /* void b2Sweep::Advanc */, "i8", ALLOC_NONE, 5248328);
+allocate([98,50,66,111,100,121,58,58,98,50,66,111,100,121,40,99,111,110,115,116,32,98,50,66,111,100,121,68,101,102,32,42,44,32,98,50,87,111,114,108,100,32,42,41,0] /* b2Body::b2Body(const */, "i8", ALLOC_NONE, 5248360);
+allocate([118,111,105,100,32,98,50,66,111,100,121,58,58,82,101,115,101,116,77,97,115,115,68,97,116,97,40,41,0] /* void b2Body::ResetMa */, "i8", ALLOC_NONE, 5248408);
+allocate([98,50,70,105,120,116,117,114,101,32,42,98,50,66,111,100,121,58,58,67,114,101,97,116,101,70,105,120,116,117,114,101,40,99,111,110,115,116,32,98,50,70,105,120,116,117,114,101,68,101,102,32,42,41,0] /* b2Fixture _b2Body::C */, "i8", ALLOC_NONE, 5248440);
+allocate([98,50,80,111,108,121,103,111,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,58,58,98,50,80,111,108,121,103,111,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,98,50,70,105,120,116,117,114,101,32,42,41,0] /* b2PolygonAndCircleCo */, "i8", ALLOC_NONE, 5248496);
+allocate([118,111,105,100,32,98,50,80,111,115,105,116,105,111,110,83,111,108,118,101,114,77,97,110,105,102,111,108,100,58,58,73,110,105,116,105,97,108,105,122,101,40,98,50,67,111,110,116,97,99,116,80,111,115,105,116,105,111,110,67,111,110,115,116,114,97,105,110,116,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,105,110,116,51,50,41,0] /* void b2PositionSolve */, "i8", ALLOC_NONE, 5248576);
+allocate([98,50,67,104,97,105,110,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,58,58,98,50,67,104,97,105,110,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,44,32,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,41,0] /* b2ChainAndPolygonCon */, "i8", ALLOC_NONE, 5248700);
+allocate([98,50,69,100,103,101,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,58,58,98,50,69,100,103,101,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,98,50,70,105,120,116,117,114,101,32,42,41,0] /* b2EdgeAndPolygonCont */, "i8", ALLOC_NONE, 5248792);
+allocate([98,50,67,104,97,105,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,58,58,98,50,67,104,97,105,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,44,32,98,50,70,105,120,116,117,114,101,32,42,44,32,105,110,116,51,50,41,0] /* b2ChainAndCircleCont */, "i8", ALLOC_NONE, 5248868);
+allocate([98,50,69,100,103,101,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,58,58,98,50,69,100,103,101,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,98,50,70,105,120,116,117,114,101,32,42,41,0] /* b2EdgeAndCircleConta */, "i8", ALLOC_NONE, 5248960);
+allocate([102,108,111,97,116,51,50,32,98,50,83,101,112,97,114,97,116,105,111,110,70,117,110,99,116,105,111,110,58,58,73,110,105,116,105,97,108,105,122,101,40,99,111,110,115,116,32,98,50,83,105,109,112,108,101,120,67,97,99,104,101,32,42,44,32,99,111,110,115,116,32,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,32,42,44,32,99,111,110,115,116,32,98,50,83,119,101,101,112,32,38,44,32,99,111,110,115,116,32,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,32,42,44,32,99,111,110,115,116,32,98,50,83,119,101,101,112,32,38,44,32,102,108,111,97,116,51,50,41,0] /* float32 b2Separation */, "i8", ALLOC_NONE, 5249036);
+allocate([98,50,83,116,97,99,107,65,108,108,111,99,97,116,111,114,58,58,126,98,50,83,116,97,99,107,65,108,108,111,99,97,116,111,114,40,41,0] /* b2StackAllocator::~b */, "i8", ALLOC_NONE, 5249196);
+allocate([118,111,105,100,32,42,98,50,83,116,97,99,107,65,108,108,111,99,97,116,111,114,58,58,65,108,108,111,99,97,116,101,40,105,110,116,51,50,41,0] /* void _b2StackAllocat */, "i8", ALLOC_NONE, 5249236);
+allocate([118,111,105,100,32,98,50,83,116,97,99,107,65,108,108,111,99,97,116,111,114,58,58,70,114,101,101,40,118,111,105,100,32,42,41,0] /* void b2StackAllocato */, "i8", ALLOC_NONE, 5249276);
+allocate([98,50,80,111,108,121,103,111,110,67,111,110,116,97,99,116,58,58,98,50,80,111,108,121,103,111,110,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,98,50,70,105,120,116,117,114,101,32,42,41,0] /* b2PolygonContact::b2 */, "i8", ALLOC_NONE, 5249312);
+allocate([98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,58,58,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,40,41,0] /* b2BlockAllocator::b2 */, "i8", ALLOC_NONE, 5249376);
+allocate([118,111,105,100,32,42,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,58,58,65,108,108,111,99,97,116,101,40,105,110,116,51,50,41,0] /* void _b2BlockAllocat */, "i8", ALLOC_NONE, 5249416);
+allocate([118,111,105,100,32,98,50,66,108,111,99,107,65,108,108,111,99,97,116,111,114,58,58,70,114,101,101,40,118,111,105,100,32,42,44,32,105,110,116,51,50,41,0] /* void b2BlockAllocato */, "i8", ALLOC_NONE, 5249456);
+allocate([118,111,105,100,32,98,50,68,105,115,116,97,110,99,101,80,114,111,120,121,58,58,83,101,116,40,99,111,110,115,116,32,98,50,83,104,97,112,101,32,42,44,32,105,110,116,51,50,41,0] /* void b2DistanceProxy */, "i8", ALLOC_NONE, 5249500);
+allocate([98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,58,58,98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,40,98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,68,101,102,32,42,41,0] /* b2ContactSolver::b2C */, "i8", ALLOC_NONE, 5249552);
+allocate([118,111,105,100,32,98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,58,58,73,110,105,116,105,97,108,105,122,101,86,101,108,111,99,105,116,121,67,111,110,115,116,114,97,105,110,116,115,40,41,0] /* void b2ContactSolver */, "i8", ALLOC_NONE, 5249608);
+allocate([118,111,105,100,32,98,50,67,111,110,116,97,99,116,83,111,108,118,101,114,58,58,83,111,108,118,101,86,101,108,111,99,105,116,121,67,111,110,115,116,114,97,105,110,116,115,40,41,0] /* void b2ContactSolver */, "i8", ALLOC_NONE, 5249664);
+allocate([98,50,67,105,114,99,108,101,67,111,110,116,97,99,116,58,58,98,50,67,105,114,99,108,101,67,111,110,116,97,99,116,40,98,50,70,105,120,116,117,114,101,32,42,44,32,98,50,70,105,120,116,117,114,101,32,42,41,0] /* b2CircleContact::b2C */, "i8", ALLOC_NONE, 5249716);
+allocate([98,111,111,108,32,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,77,111,118,101,80,114,111,120,121,40,105,110,116,51,50,44,32,99,111,110,115,116,32,98,50,65,65,66,66,32,38,44,32,99,111,110,115,116,32,98,50,86,101,99,50,32,38,41,0] /* bool b2DynamicTree:: */, "i8", ALLOC_NONE, 5249776);
+allocate([118,111,105,100,32,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,70,114,101,101,78,111,100,101,40,105,110,116,51,50,41,0] /* void b2DynamicTree:: */, "i8", ALLOC_NONE, 5249848);
+allocate([105,110,116,51,50,32,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,66,97,108,97,110,99,101,40,105,110,116,51,50,41,0] /* int32 b2DynamicTree: */, "i8", ALLOC_NONE, 5249884);
+allocate([105,110,116,51,50,32,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,65,108,108,111,99,97,116,101,78,111,100,101,40,41,0] /* int32 b2DynamicTree: */, "i8", ALLOC_NONE, 5249920);
+allocate([118,111,105,100,32,98,50,68,121,110,97,109,105,99,84,114,101,101,58,58,73,110,115,101,114,116,76,101,97,102,40,105,110,116,51,50,41,0] /* void b2DynamicTree:: */, "i8", ALLOC_NONE, 5249956);
+allocate([118,111,105,100,32,98,50,70,105,110,100,73,110,99,105,100,101,110,116,69,100,103,101,40,98,50,67,108,105,112,86,101,114,116,101,120,32,42,44,32,99,111,110,115,116,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,105,110,116,51,50,44,32,99,111,110,115,116,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,41,0] /* void b2FindIncidentE */, "i8", ALLOC_NONE, 5249996);
+allocate([102,108,111,97,116,51,50,32,98,50,69,100,103,101,83,101,112,97,114,97,116,105,111,110,40,99,111,110,115,116,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,105,110,116,51,50,44,32,99,111,110,115,116,32,98,50,80,111,108,121,103,111,110,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,41,0] /* float32 b2EdgeSepara */, "i8", ALLOC_NONE, 5250136);
+allocate([118,111,105,100,32,98,50,67,111,108,108,105,100,101,69,100,103,101,65,110,100,67,105,114,99,108,101,40,98,50,77,97,110,105,102,111,108,100,32,42,44,32,99,111,110,115,116,32,98,50,69,100,103,101,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,44,32,99,111,110,115,116,32,98,50,67,105,114,99,108,101,83,104,97,112,101,32,42,44,32,99,111,110,115,116,32,98,50,84,114,97,110,115,102,111,114,109,32,38,41,0] /* void b2CollideEdgeAn */, "i8", ALLOC_NONE, 5250260);
+allocate([118,111,105,100,32,98,50,84,105,109,101,79,102,73,109,112,97,99,116,40,98,50,84,79,73,79,117,116,112,117,116,32,42,44,32,99,111,110,115,116,32,98,50,84,79,73,73,110,112,117,116,32,42,41,0] /* void b2TimeOfImpact( */, "i8", ALLOC_NONE, 5250388);
+allocate([118,111,105,100,32,98,50,68,105,115,116,97,110,99,101,40,98,50,68,105,115,116,97,110,99,101,79,117,116,112,117,116,32,42,44,32,98,50,83,105,109,112,108,101,120,67,97,99,104,101,32,42,44,32,99,111,110,115,116,32,98,50,68,105,115,116,97,110,99,101,73,110,112,117,116,32,42,41,0] /* void b2Distance(b2Di */, "i8", ALLOC_NONE, 5250444);
+__ZTVN10__cxxabiv120__si_class_type_infoE=allocate([0,0,0,0,208,32,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_STATIC);
+allocate(1, "i8", ALLOC_STATIC);
+__ZTVN10__cxxabiv117__class_type_infoE=allocate([0,0,0,0,220,32,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_STATIC);
+allocate(1, "i8", ALLOC_STATIC);
+allocate([0,0,0,0,244,32,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250524);
+allocate(1, "i8", ALLOC_NONE, 5250544);
+allocate([0,0,0,0,4,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250548);
+allocate(1, "i8", ALLOC_NONE, 5250568);
+allocate([0,0,0,0,16,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250572);
+allocate(1, "i8", ALLOC_NONE, 5250592);
+allocate([0,0,0,0,28,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250596);
+allocate(1, "i8", ALLOC_NONE, 5250616);
+allocate([0,0,0,0,40,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250620);
+allocate(1, "i8", ALLOC_NONE, 5250640);
+allocate([0,0,0,0,52,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250644);
+allocate(1, "i8", ALLOC_NONE, 5250664);
+allocate([0,0,0,0,64,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250668);
+allocate(1, "i8", ALLOC_NONE, 5250700);
+allocate([0,0,0,0,72,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250704);
+allocate(1, "i8", ALLOC_NONE, 5250724);
+allocate([0,0,0,0,84,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250728);
+allocate(1, "i8", ALLOC_NONE, 5250748);
+allocate([0,0,0,0,92,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250752);
+allocate(1, "i8", ALLOC_NONE, 5250772);
+allocate([0,0,0,0,104,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250776);
+allocate(1, "i8", ALLOC_NONE, 5250816);
+allocate([0,0,0,0,116,33,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], "i8", ALLOC_NONE, 5250820);
+allocate(1, "i8", ALLOC_NONE, 5250860);
+allocate([83,116,57,116,121,112,101,95,105,110,102,111,0] /* St9type_info\00 */, "i8", ALLOC_NONE, 5250864);
+allocate([78,49,48,95,95,99,120,120,97,98,105,118,49,50,48,95,95,115,105,95,99,108,97,115,115,95,116,121,112,101,95,105,110,102,111,69,0] /* N10__cxxabiv120__si_ */, "i8", ALLOC_NONE, 5250880);
+allocate([78,49,48,95,95,99,120,120,97,98,105,118,49,49,55,95,95,99,108,97,115,115,95,116,121,112,101,95,105,110,102,111,69,0] /* N10__cxxabiv117__cla */, "i8", ALLOC_NONE, 5250920);
+allocate([78,49,48,95,95,99,120,120,97,98,105,118,49,49,54,95,95,115,104,105,109,95,116,121,112,101,95,105,110,102,111,69,0] /* N10__cxxabiv116__shi */, "i8", ALLOC_NONE, 5250956);
+allocate([57,98,50,67,111,110,116,97,99,116,0] /* 9b2Contact\00 */, "i8", ALLOC_NONE, 5250992);
+allocate([55,98,50,83,104,97,112,101,0] /* 7b2Shape\00 */, "i8", ALLOC_NONE, 5251004);
+allocate([50,53,98,50,80,111,108,121,103,111,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,0] /* 25b2PolygonAndCircle */, "i8", ALLOC_NONE, 5251016);
+allocate([50,52,98,50,67,104,97,105,110,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,0] /* 24b2ChainAndPolygonC */, "i8", ALLOC_NONE, 5251044);
+allocate([50,51,98,50,69,100,103,101,65,110,100,80,111,108,121,103,111,110,67,111,110,116,97,99,116,0] /* 23b2EdgeAndPolygonCo */, "i8", ALLOC_NONE, 5251072);
+allocate([50,51,98,50,67,104,97,105,110,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,0] /* 23b2ChainAndCircleCo */, "i8", ALLOC_NONE, 5251100);
+allocate([50,50,98,50,69,100,103,101,65,110,100,67,105,114,99,108,101,67,111,110,116,97,99,116,0] /* 22b2EdgeAndCircleCon */, "i8", ALLOC_NONE, 5251128);
+allocate([49,55,98,50,67,111,110,116,97,99,116,76,105,115,116,101,110,101,114,0] /* 17b2ContactListener\ */, "i8", ALLOC_NONE, 5251156);
+allocate([49,54,98,50,80,111,108,121,103,111,110,67,111,110,116,97,99,116,0] /* 16b2PolygonContact\0 */, "i8", ALLOC_NONE, 5251176);
+allocate([49,53,98,50,67,111,110,116,97,99,116,70,105,108,116,101,114,0] /* 15b2ContactFilter\00 */, "i8", ALLOC_NONE, 5251196);
+allocate([49,53,98,50,67,105,114,99,108,101,67,111,110,116,97,99,116,0] /* 15b2CircleContact\00 */, "i8", ALLOC_NONE, 5251216);
+allocate([49,52,98,50,80,111,108,121,103,111,110,83,104,97,112,101,0] /* 14b2PolygonShape\00 */, "i8", ALLOC_NONE, 5251236);
+allocate([49,49,98,50,69,100,103,101,83,104,97,112,101,0] /* 11b2EdgeShape\00 */, "i8", ALLOC_NONE, 5251256);
+allocate(8, "i8", ALLOC_NONE, 5251272);
+allocate([0,0,0,0,0,0,0,0,220,32,80,0], "i8", ALLOC_NONE, 5251280);
+allocate([0,0,0,0,0,0,0,0,232,32,80,0], "i8", ALLOC_NONE, 5251292);
+allocate([0,0,0,0,0,0,0,0,200,32,80,0], "i8", ALLOC_NONE, 5251304);
+allocate(8, "i8", ALLOC_NONE, 5251316);
+allocate(8, "i8", ALLOC_NONE, 5251324);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251332);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251344);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251356);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251368);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251380);
+allocate(8, "i8", ALLOC_NONE, 5251392);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251400);
+allocate(8, "i8", ALLOC_NONE, 5251412);
+allocate([0,0,0,0,0,0,0,0,244,32,80,0], "i8", ALLOC_NONE, 5251420);
+allocate([0,0,0,0,0,0,0,0,252,32,80,0], "i8", ALLOC_NONE, 5251432);
+allocate([0,0,0,0,0,0,0,0,252,32,80,0], "i8", ALLOC_NONE, 5251444);
+allocate(4, "i8", ALLOC_NONE, 5251456);
+allocate(192, "i8", ALLOC_NONE, 5251460);
+allocate(4, "i8", ALLOC_NONE, 5251652);
+allocate(641, "i8", ALLOC_NONE, 5251656);
+allocate([16,0,0,0,32,0,0,0,64,0,0,0,96,0,0,0,128,0,0,0,160,0,0,0,192,0,0,0,224,0,0,0,0,1,0,0,64,1,0,0,128,1,0,0,192,1,0,0,0,2,0,0,128,2,0,0], "i8", ALLOC_NONE, 5252300);
+HEAP32[((5242936)>>2)]=(((5250676)|0));
+HEAP32[((5242940)>>2)]=(((5250736)|0));
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(8))>>2)]=(142);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(12))>>2)]=(68);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(16))>>2)]=(98);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(20))>>2)]=(140);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(24))>>2)]=(76);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(28))>>2)]=(78);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(32))>>2)]=(144);
+HEAP32[(((__ZTVN10__cxxabiv120__si_class_type_infoE)+(36))>>2)]=(92);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(8))>>2)]=(10);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(12))>>2)]=(32);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(16))>>2)]=(98);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(20))>>2)]=(140);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(24))>>2)]=(76);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(28))>>2)]=(12);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(32))>>2)]=(80);
+HEAP32[(((__ZTVN10__cxxabiv117__class_type_infoE)+(36))>>2)]=(44);
+HEAP32[((5250532)>>2)]=(112);
+HEAP32[((5250536)>>2)]=(118);
+HEAP32[((5250540)>>2)]=(46);
+HEAP32[((5250556)>>2)]=(148);
+HEAP32[((5250560)>>2)]=(70);
+HEAP32[((5250564)>>2)]=(38);
+HEAP32[((5250580)>>2)]=(108);
+HEAP32[((5250584)>>2)]=(26);
+HEAP32[((5250588)>>2)]=(6);
+HEAP32[((5250604)>>2)]=(22);
+HEAP32[((5250608)>>2)]=(2);
+HEAP32[((5250612)>>2)]=(16);
+HEAP32[((5250628)>>2)]=(154);
+HEAP32[((5250632)>>2)]=(152);
+HEAP32[((5250636)>>2)]=(150);
+HEAP32[((5250652)>>2)]=(96);
+HEAP32[((5250656)>>2)]=(20);
+HEAP32[((5250660)>>2)]=(24);
+HEAP32[((5250676)>>2)]=(56);
+HEAP32[((5250680)>>2)]=(72);
+HEAP32[((5250684)>>2)]=(116);
+HEAP32[((5250688)>>2)]=(88);
+HEAP32[((5250692)>>2)]=(146);
+HEAP32[((5250696)>>2)]=(30);
+HEAP32[((5250712)>>2)]=(58);
+HEAP32[((5250716)>>2)]=(128);
+HEAP32[((5250720)>>2)]=(64);
+HEAP32[((5250736)>>2)]=(136);
+HEAP32[((5250740)>>2)]=(18);
+HEAP32[((5250744)>>2)]=(90);
+HEAP32[((5250760)>>2)]=(14);
+HEAP32[((5250764)>>2)]=(100);
+HEAP32[((5250768)>>2)]=(62);
+HEAP32[((5250784)>>2)]=(54);
+HEAP32[((5250788)>>2)]=(122);
+HEAP32[((5250792)>>2)]=(82);
+HEAP32[((5250796)>>2)]=(48);
+HEAP32[((5250800)>>2)]=(4);
+HEAP32[((5250804)>>2)]=(84);
+HEAP32[((5250808)>>2)]=(50);
+HEAP32[((5250812)>>2)]=(106);
+HEAP32[((5250828)>>2)]=(120);
+HEAP32[((5250832)>>2)]=(110);
+HEAP32[((5250836)>>2)]=(52);
+HEAP32[((5250840)>>2)]=(40);
+HEAP32[((5250844)>>2)]=(66);
+HEAP32[((5250848)>>2)]=(74);
+HEAP32[((5250852)>>2)]=(36);
+HEAP32[((5250856)>>2)]=(42);
+HEAP32[((5251272)>>2)]=(((__ZTVN10__cxxabiv117__class_type_infoE+8)|0));
+HEAP32[((5251276)>>2)]=((5250864)|0);
+HEAP32[((5251280)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251284)>>2)]=((5250880)|0);
+HEAP32[((5251292)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251296)>>2)]=((5250920)|0);
+HEAP32[((5251304)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251308)>>2)]=((5250956)|0);
+HEAP32[((5251316)>>2)]=(((__ZTVN10__cxxabiv117__class_type_infoE+8)|0));
+HEAP32[((5251320)>>2)]=((5250992)|0);
+HEAP32[((5251324)>>2)]=(((__ZTVN10__cxxabiv117__class_type_infoE+8)|0));
+HEAP32[((5251328)>>2)]=((5251004)|0);
+HEAP32[((5251332)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251336)>>2)]=((5251016)|0);
+HEAP32[((5251344)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251348)>>2)]=((5251044)|0);
+HEAP32[((5251356)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251360)>>2)]=((5251072)|0);
+HEAP32[((5251368)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251372)>>2)]=((5251100)|0);
+HEAP32[((5251380)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251384)>>2)]=((5251128)|0);
+HEAP32[((5251392)>>2)]=(((__ZTVN10__cxxabiv117__class_type_infoE+8)|0));
+HEAP32[((5251396)>>2)]=((5251156)|0);
+HEAP32[((5251400)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251404)>>2)]=((5251176)|0);
+HEAP32[((5251412)>>2)]=(((__ZTVN10__cxxabiv117__class_type_infoE+8)|0));
+HEAP32[((5251416)>>2)]=((5251196)|0);
+HEAP32[((5251420)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251424)>>2)]=((5251216)|0);
+HEAP32[((5251432)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251436)>>2)]=((5251236)|0);
+HEAP32[((5251444)>>2)]=(((__ZTVN10__cxxabiv120__si_class_type_infoE+8)|0));
+HEAP32[((5251448)>>2)]=((5251256)|0);
+  function ___gxx_personality_v0() {
     }
-    6 == h && (Y = r + 1);
-    y = Y;
-    L = z;
-    T = x + (w << 1);
-    b[L] = b[T];
-    o[L] = o[T];
-    b[L + 1] = b[T + 1];
-    o[L + 1] = o[T + 1];
-    L = B;
-    x += y << 1;
-    b[L] = b[x];
-    o[L] = o[x];
-    b[L + 1] = b[x + 1];
-    o[L + 1] = o[x + 1];
-    C(E, B, z);
-    Xc(E);
-    Wd(D, E);
-    N(I, z, B);
-    K(H, .5, I);
-    S(M, p + 2, E);
-    Wd(G, M);
-    Pc(R, p, z);
-    x = z;
-    L = R;
-    b[x] = b[L];
-    o[x] = o[L];
-    b[x + 1] = b[L + 1];
-    o[x + 1] = o[L + 1];
-    Pc(P, p, B);
-    x = B;
-    L = P;
-    b[x] = b[L];
-    o[x] = o[L];
-    b[x + 1] = b[L + 1];
-    o[x + 1] = o[L + 1];
-    x = J(G, z);
-    L = -J(M, z) + j;
-    T = J(M, B) + j;
-    var W = F, $ = v;
-    Pd(Z, M);
-    if (2 > Sd(W, $, Z, L, w)) h = 16; else if (w = Sd(X, F, M, T, y), 2 > w) h = 16; else {
-      w = c + 10;
-      y = D;
-      b[w] = b[y];
-      o[w] = o[y];
-      b[w + 1] = b[y + 1];
-      o[w + 1] = o[y + 1];
-      w = c + 12;
-      y = H;
-      b[w] = b[y];
-      o[w] = o[y];
-      b[w + 1] = b[y + 1];
-      o[w + 1] = o[y + 1];
-      y = w = 0;
-      L = aa;
-      T = ja;
-      for (var W = ja + 1, $ = ja, ga = ja + 3, la = ja + 2; ; ) {
-        h = J(G, X + 3 * y) - x;
-        h = h <= j ? 11 : 14;
-        if (11 == h) {
-          h = V = c + 5 * w;
-          Tc(aa, u, X + 3 * y);
-          b[h] = b[L];
-          o[h] = o[L];
-          b[h + 1] = b[L + 1];
-          o[h + 1] = o[L + 1];
-          b[V + 4] = b[X + 3 * y + 2];
-          o[V + 4] = o[X + 3 * y + 2];
-          h = 0 != q ? 12 : 13;
-          if (12 == h) {
-            var fa = V + 4;
-            b[T] = b[fa];
-            o[T] = o[fa];
-            b[T + 1] = b[fa + 1];
-            o[T + 1] = o[fa + 1];
-            b[T + 2] = b[fa + 2];
-            o[T + 2] = o[fa + 2];
-            b[T + 3] = b[fa + 3];
-            o[T + 3] = o[fa + 3];
-            b[V + 4] = b[W];
-            b[V + 5] = b[$];
-            b[V + 6] = b[ga];
-            b[V + 7] = b[la];
+  function __exit(status) {
+      // void _exit(int status);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/exit.html
+      function ExitStatus() {
+        this.name = "ExitStatus";
+        this.message = "Program terminated with exit(" + status + ")";
+        this.status = status;
+        Module.print('Exit Status: ' + status);
+      };
+      ExitStatus.prototype = new Error();
+      ExitStatus.prototype.constructor = ExitStatus;
+      exitRuntime();
+      ABORT = true;
+      throw new ExitStatus();
+    }function _exit(status) {
+      __exit(status);
+    }function __ZSt9terminatev() {
+      _exit(-1234);
+    }
+  Module["_memcpy"] = _memcpy;var _llvm_memcpy_p0i8_p0i8_i32=_memcpy;
+  function _clock() {
+      if (_clock.start === undefined) _clock.start = Date.now();
+      return Math.floor((Date.now() - _clock.start) * (1000/1000));
+    }
+  var ERRNO_CODES={E2BIG:7,EACCES:13,EADDRINUSE:98,EADDRNOTAVAIL:99,EAFNOSUPPORT:97,EAGAIN:11,EALREADY:114,EBADF:9,EBADMSG:74,EBUSY:16,ECANCELED:125,ECHILD:10,ECONNABORTED:103,ECONNREFUSED:111,ECONNRESET:104,EDEADLK:35,EDESTADDRREQ:89,EDOM:33,EDQUOT:122,EEXIST:17,EFAULT:14,EFBIG:27,EHOSTUNREACH:113,EIDRM:43,EILSEQ:84,EINPROGRESS:115,EINTR:4,EINVAL:22,EIO:5,EISCONN:106,EISDIR:21,ELOOP:40,EMFILE:24,EMLINK:31,EMSGSIZE:90,EMULTIHOP:72,ENAMETOOLONG:36,ENETDOWN:100,ENETRESET:102,ENETUNREACH:101,ENFILE:23,ENOBUFS:105,ENODATA:61,ENODEV:19,ENOENT:2,ENOEXEC:8,ENOLCK:37,ENOLINK:67,ENOMEM:12,ENOMSG:42,ENOPROTOOPT:92,ENOSPC:28,ENOSR:63,ENOSTR:60,ENOSYS:38,ENOTCONN:107,ENOTDIR:20,ENOTEMPTY:39,ENOTRECOVERABLE:131,ENOTSOCK:88,ENOTSUP:95,ENOTTY:25,ENXIO:6,EOVERFLOW:75,EOWNERDEAD:130,EPERM:1,EPIPE:32,EPROTO:71,EPROTONOSUPPORT:93,EPROTOTYPE:91,ERANGE:34,EROFS:30,ESPIPE:29,ESRCH:3,ESTALE:116,ETIME:62,ETIMEDOUT:110,ETXTBSY:26,EWOULDBLOCK:11,EXDEV:18};
+  function ___setErrNo(value) {
+      // For convenient setting and returning of errno.
+      if (!___setErrNo.ret) ___setErrNo.ret = allocate([0], 'i32', ALLOC_STATIC);
+      HEAP32[((___setErrNo.ret)>>2)]=value
+      return value;
+    }
+  var _stdin=allocate(1, "i32*", ALLOC_STACK);
+  var _stdout=allocate(1, "i32*", ALLOC_STACK);
+  var _stderr=allocate(1, "i32*", ALLOC_STACK);
+  var __impure_ptr=allocate(1, "i32*", ALLOC_STACK);var FS={currentPath:"/",nextInode:2,streams:[null],ignorePermissions:true,joinPath:function (parts, forceRelative) {
+        var ret = parts[0];
+        for (var i = 1; i < parts.length; i++) {
+          if (ret[ret.length-1] != '/') ret += '/';
+          ret += parts[i];
+        }
+        if (forceRelative && ret[0] == '/') ret = ret.substr(1);
+        return ret;
+      },absolutePath:function (relative, base) {
+        if (typeof relative !== 'string') return null;
+        if (base === undefined) base = FS.currentPath;
+        if (relative && relative[0] == '/') base = '';
+        var full = base + '/' + relative;
+        var parts = full.split('/').reverse();
+        var absolute = [''];
+        while (parts.length) {
+          var part = parts.pop();
+          if (part == '' || part == '.') {
+            // Nothing.
+          } else if (part == '..') {
+            if (absolute.length > 1) absolute.pop();
+          } else {
+            absolute.push(part);
           }
-          w += 1;
         }
-        y = V = y + 1;
-        if (2 <= V) {
-          h = 15;
-          break;
-        }
-      }
-      b[c + 15] = w;
-    }
-  } while (0);
-  a = i;
-}
-
-Td.X = 1;
-
-function Wd(c, f) {
-  oc(c, 1 * o[f + 1], -1 * o[f]);
-}
-
-function Ud(c, f, d, e, g) {
-  var i = a;
-  a += 8;
-  var h, j, k, l;
-  h = i + 2;
-  var m = i + 4, n = i + 6, p, u, r, q, v, x, w, y;
-  k = b[f + 37];
-  l = f + 21;
-  Pc(h, g, e + 3);
-  Pc(m, d, f + 3);
-  C(i, h, m);
-  Od(n, d + 2, i);
-  m = 0;
-  p = -3.4028234663852886e+38;
-  u = 0;
-  h = u < k ? 1 : 4;
-  a : do if (1 == h) for (;;) if (r = J(l + (u << 1), n), h = r > p ? 2 : 3, 2 == h && (p = r, m = u), u += 1, u >= k) break a; while (0);
-  l = Xd(f, d, m, e, g);
-  h = 0 <= m - 1 ? 5 : 6;
-  5 == h ? q = m - 1 : 6 == h && (q = k - 1);
-  n = Xd(f, d, q, e, g);
-  m + 1 < k ? h = 8 : (v = 0, h = 9);
-  8 == h && (v = m + 1);
-  p = Xd(f, d, v, e, g);
-  h = n > l ? 10 : 12;
-  if (10 == h) if (n > p) {
-    y = -1;
-    x = q;
-    w = n;
-    var z = -1;
-    h = 15;
-  } else h = 12;
-  a : do if (12 == h) if (h = p > l ? 13 : 14, 13 == h) {
-    y = 1;
-    x = v;
-    w = p;
-    z = 1;
-    h = 15;
-    break a;
-  } else if (14 == h) {
-    b[c] = m;
-    j = l;
-    h = 26;
-    break a;
-  } while (0);
-  if (15 == h) {
-    for (;;) {
-      h = -1 == z ? 16 : 20;
-      if (16 == h) {
-        h = 0 <= x - 1 ? 17 : 18;
-        if (17 == h) var B = x - 1; else 18 == h && (B = k - 1);
-        m = B;
-      } else if (20 == h) {
-        if (x + 1 < k) h = 21; else {
-          var E = 0;
-          h = 22;
-        }
-        21 == h && (E = x + 1);
-        m = E;
-      }
-      l = Xd(f, d, m, e, g);
-      if (l <= w) break;
-      x = m;
-      w = l;
-      z = y;
-    }
-    b[c] = x;
-    j = w;
-  }
-  a = i;
-  return j;
-}
-
-Ud.X = 1;
-
-function Vd(c, f, d, e, g, i) {
-  var h = a;
-  a += 8;
-  var j, k, l, m, n = h + 2, p = h + 4, u = h + 6;
-  j = f + 21;
-  k = b[g + 37];
-  l = g + 5;
-  m = g + 21;
-  g = 0 <= e ? 1 : 2;
-  1 == g && (g = e < b[f + 37] ? 3 : 2);
-  2 == g && O(Yd, 151, Zd, he);
-  g = i + 2;
-  S(n, d + 2, j + (e << 1));
-  Od(h, g, n);
-  d = 0;
-  j = 3.4028234663852886e+38;
-  n = 0;
-  g = n < k ? 4 : 7;
-  a : do if (4 == g) for (;;) if (f = J(h, m + (n << 1)), g = f < j ? 5 : 6, 5 == g && (j = f, d = n), n += 1, n >= k) break a; while (0);
-  m = d;
-  if (m + 1 < k) g = 8; else var r = 0, g = 9;
-  8 == g && (r = m + 1);
-  k = r;
-  Pc(p, i, l + (m << 1));
-  b[c] = b[p];
-  o[c] = o[p];
-  b[c + 1] = b[p + 1];
-  o[c + 1] = o[p + 1];
-  b[c + 2] = e & 255;
-  b[c + 3] = m & 255;
-  b[c + 4] = 1;
-  b[c + 5] = 0;
-  p = c + 3;
-  Pc(u, i, l + (k << 1));
-  b[p] = b[u];
-  o[p] = o[u];
-  b[p + 1] = b[u + 1];
-  o[p + 1] = o[u + 1];
-  b[c + 5] = e & 255;
-  b[c + 6] = k & 255;
-  b[c + 7] = 1;
-  b[c + 8] = 0;
-  a = h;
-}
-
-Vd.X = 1;
-
-function Xd(c, f, d, e, g) {
-  var i = a;
-  a += 10;
-  var h, j, k, l, m = i + 2, n, p, u = i + 4, r = i + 6, q = i + 8;
-  h = c + 5;
-  j = c + 21;
-  k = b[e + 37];
-  l = e + 5;
-  e = 0 <= d ? 1 : 2;
-  1 == e && (e = d < b[c + 37] ? 3 : 2);
-  2 == e && O(Yd, 32, ie, he);
-  S(i, f + 2, j + (d << 1));
-  Od(m, g + 2, i);
-  c = 0;
-  j = 3.4028234663852886e+38;
-  n = 0;
-  e = n < k ? 4 : 7;
-  a : do if (4 == e) for (;;) if (p = J(l + (n << 1), m), e = p < j ? 5 : 6, 5 == e && (j = p, c = n), n += 1, n >= k) break a; while (0);
-  Pc(u, f, h + (d << 1));
-  Pc(r, g, l + (c << 1));
-  C(q, r, u);
-  f = J(q, i);
-  a = i;
-  return f;
-}
-
-Xd.X = 1;
-
-function je(c, f, d, e, g, i) {
-  var h = a;
-  a += 60;
-  var j, k = h + 2, l = h + 4, m = h + 6, n = h + 8, p = h + 10, u = h + 12, r = h + 14, q = h + 16, v = h + 18, x = h + 20, w, y = h + 22, z = h + 24, B = h + 26, E = h + 28, D = h + 30, H = h + 32, I = h + 34, M = h + 36, G = h + 38, R = h + 40, P = h + 42, L = h + 44, T = h + 46, F = h + 48, X = h + 50, Z = h + 52, V = h + 54, aa = h + 56, ja = h + 58;
-  j = 0 == b[f + 15] ? 12 : 1;
-  a : do if (1 == j) {
-    j = b[f + 14];
-    if (0 == j) j = 2; else if (1 == j) j = 5; else if (2 == j) j = 8; else break;
-    if (2 == j) {
-      nc(c, 1, 0);
-      Pc(h, d, f + 12);
-      Pc(k, g, f);
-      j = 1.4210854715202004e-14 < Wc(h, k) ? 3 : 4;
-      if (3 == j) {
-        w = c;
-        C(l, k, h);
-        var Y = l;
-        b[w] = b[Y];
-        o[w] = o[Y];
-        b[w + 1] = b[Y + 1];
-        o[w + 1] = o[Y + 1];
-        Xc(c);
-      }
-      K(n, e, c);
-      N(m, h, n);
-      K(u, i, c);
-      C(p, k, u);
-      w = c + 2;
-      N(q, m, p);
-      K(r, .5, q);
-      Y = r;
-      b[w] = b[Y];
-      o[w] = o[Y];
-      b[w + 1] = b[Y + 1];
-      o[w + 1] = o[Y + 1];
-    } else if (5 == j) {
-      w = c;
-      S(v, d + 2, f + 10);
-      Y = v;
-      b[w] = b[Y];
-      o[w] = o[Y];
-      b[w + 1] = b[Y + 1];
-      o[w + 1] = o[Y + 1];
-      Pc(x, d, f + 12);
-      w = 0;
-      if (w >= b[f + 15]) break a;
-      for (var W = Y = c, $ = c, ga = c + 2, la = I; ; ) {
-        Pc(y, g, f + 5 * w);
-        var fa = e;
-        C(E, y, x);
-        K(B, fa - J(E, Y), W);
-        N(z, y, B);
-        K(H, i, $);
-        C(D, y, H);
-        fa = ga + (w << 1);
-        N(M, z, D);
-        K(I, .5, M);
-        b[fa] = b[la];
-        o[fa] = o[la];
-        b[fa + 1] = b[la + 1];
-        o[fa + 1] = o[la + 1];
-        w += 1;
-        if (w >= b[f + 15]) break a;
-      }
-    } else if (8 == j) {
-      j = c;
-      S(G, g + 2, f + 10);
-      w = G;
-      b[j] = b[w];
-      o[j] = o[w];
-      b[j + 1] = b[w + 1];
-      o[j + 1] = o[w + 1];
-      Pc(R, g, f + 12);
-      w = 0;
-      j = w < b[f + 15] ? 9 : 11;
-      b : do if (9 == j) {
-        $ = W = Y = c;
-        ga = c + 2;
-        for (la = V; ; ) if (Pc(P, d, f + 5 * w), fa = i, C(F, P, R), K(T, fa - J(F, Y), W), N(L, P, T), K(Z, e, $), C(X, P, Z), fa = ga + (w << 1), N(aa, X, L), K(V, .5, aa), b[fa] = b[la], o[fa] = o[la], b[fa + 1] = b[la + 1], o[fa + 1] = o[la + 1], w += 1, w >= b[f + 15]) {
-          j = 11;
-          break b;
-        }
-      } while (0);
-      w = c;
-      Pd(ja, c);
-      Y = ja;
-      b[w] = b[Y];
-      o[w] = o[Y];
-      b[w + 1] = b[Y + 1];
-      o[w + 1] = o[Y + 1];
-    }
-  } while (0);
-  a = h;
-}
-
-je.X = 1;
-
-function ke(c) {
-  var f;
-  if (0 < c) {
-    var d = c;
-    f = 2;
-  } else f = 1;
-  1 == f && (d = -c);
-  return d;
-}
-
-function le(c) {
-  b[c + 4] = 0;
-  b[c + 5] = 0;
-  o[c + 6] = 0;
-}
-
-function Sd(c, f, d, e, g) {
-  var i = a;
-  a += 6;
-  var h, j, k = i + 2, l = i + 4;
-  h = 0;
-  j = J(d, f) - e;
-  d = J(d, f + 3) - e;
-  if (0 >= j) e = 1; else var m = d, e = 2;
-  1 == e && (m = h, h = m + 1, m = c + 3 * m, b[m] = b[f], o[m] = o[f], b[m + 1] = b[f + 1], o[m + 1] = o[f + 1], b[m + 2] = b[f + 2], o[m + 2] = o[f + 2], m = d);
-  if (3 == (0 >= m ? 3 : 4)) m = h, h = m + 1, m = c + 3 * m, e = f + 3, b[m] = b[e], o[m] = o[e], b[m + 1] = b[e + 1], o[m + 1] = o[e + 1], b[m + 2] = b[e + 2], o[m + 2] = o[e + 2];
-  if (5 == (0 > j * d ? 5 : 6)) j /= j - d, d = c + 3 * h, C(l, f + 3, f), K(k, j, l), N(i, f, k), b[d] = b[i], o[d] = o[i], b[d + 1] = b[i + 1], o[d + 1] = o[i + 1], b[c + 3 * h + 2] = g & 255, b[c + 3 * h + 3] = b[f + 3], b[c + 3 * h + 4] = 0, b[c + 3 * h + 5] = 1, h += 1;
-  a = i;
-  return h;
-}
-
-Sd.X = 1;
-
-function me(c, f, d) {
-  var e;
-  e = b[f + 1];
-  e = 0 == e ? 1 : 2 == e ? 2 : 3 == e ? 3 : 1 == e ? 10 : 11;
-  11 == e ? O(ne, 81, oe, pe) : 1 == e ? (b[c + 4] = f + 3, b[c + 5] = 1, o[c + 6] = o[f + 2]) : 2 == e ? (b[c + 4] = f + 5, b[c + 5] = b[f + 37], o[c + 6] = o[f + 2]) : 3 == e ? (e = 0 <= d ? 4 : 5, 4 == e && (e = d < b[f + 4] ? 6 : 5), 5 == e && O(ne, 53, oe, qe), e = b[f + 3] + (d << 1), b[c] = b[e], o[c] = o[e], b[c + 1] = b[e + 1], o[c + 1] = o[e + 1], e = d + 1 < b[f + 4] ? 7 : 8, 7 == e ? (e = c + 2, d = b[f + 3] + (d + 1 << 1), b[e] = b[d], o[e] = o[d], b[e + 1] = b[d + 1], o[e + 1] = o[d + 1]) : 8 == e && (d = c + 2, e = b[f + 3], b[d] = b[e], o[d] = o[e], b[d + 1] = b[e + 1], o[d + 1] = o[e + 1]), b[c + 4] = c, b[c + 5] = 2, o[c + 6] = o[f + 2]) : 10 == e && (b[c + 4] = f + 3, b[c + 5] = 2, o[c + 6] = o[f + 2]);
-}
-
-me.X = 1;
-
-function re(c) {
-  var f = a;
-  a += 6;
-  var d, e = f + 2, g = f + 4, i;
-  i = c + 4;
-  b[f] = b[i];
-  o[f] = o[i];
-  b[f + 1] = b[i + 1];
-  o[f + 1] = o[i + 1];
-  i = c + 13;
-  b[e] = b[i];
-  o[e] = o[i];
-  b[e + 1] = b[i + 1];
-  o[e + 1] = o[i + 1];
-  C(g, e, f);
-  i = -J(f, g);
-  d = 0 >= i ? 1 : 2;
-  if (1 == d) o[c + 6] = 1, b[c + 27] = 1; else if (2 == d) if (e = J(e, g), d = 0 >= e ? 3 : 4, 3 == d) {
-    o[c + 15] = 1;
-    b[c + 27] = 1;
-    e = g = c + 9;
-    for (g += 9; e < g; e++, c++) b[c] = b[e], o[c] = o[e];
-  } else 4 == d && (g = 1 / (e + i), o[c + 6] = e * g, o[c + 15] = i * g, b[c + 27] = 2);
-  a = f;
-}
-
-re.X = 1;
-
-function se(c, f) {
-  var d = a;
-  a += 4;
-  var e, g = d + 2;
-  e = b[f + 27];
-  e = 0 == e ? 1 : 1 == e ? 2 : 2 == e ? 3 : 3 == e ? 4 : 5;
-  5 == e ? (O(ne, 207, te, pe), b[c] = b[ue], o[c] = o[ue], b[c + 1] = b[ue + 1], o[c + 1] = o[ue + 1]) : 1 == e ? (O(ne, 194, te, pe), b[c] = b[ue], o[c] = o[ue], b[c + 1] = b[ue + 1], o[c + 1] = o[ue + 1]) : 2 == e ? (g = f + 4, b[c] = b[g], o[c] = o[g], b[c + 1] = b[g + 1], o[c + 1] = o[g + 1]) : 3 == e ? (K(d, o[f + 6], f + 4), K(g, o[f + 15], f + 13), N(c, d, g)) : 4 == e && (b[c] = b[ue], o[c] = o[ue], b[c + 1] = b[ue + 1], o[c + 1] = o[ue + 1]);
-  a = d;
-}
-
-function ve(c) {
-  return o[c] * o[c] + o[c + 1] * o[c + 1];
-}
-
-function we(c) {
-  var f = a;
-  a += 12;
-  var d, e = f + 2, g = f + 4, i = f + 6, h, j;
-  d = f + 8;
-  var k, l, m = f + 10, n, p;
-  j = c + 4;
-  b[f] = b[j];
-  o[f] = o[j];
-  b[f + 1] = b[j + 1];
-  o[f + 1] = o[j + 1];
-  j = c + 13;
-  b[e] = b[j];
-  o[e] = o[j];
-  b[e + 1] = b[j + 1];
-  o[e + 1] = o[j + 1];
-  j = c + 22;
-  b[g] = b[j];
-  o[g] = o[j];
-  b[g + 1] = b[j + 1];
-  o[g + 1] = o[j + 1];
-  C(i, e, f);
-  h = J(f, i);
-  j = J(e, i);
-  h = -h;
-  C(d, g, f);
-  k = J(f, d);
-  l = J(g, d);
-  k = -k;
-  C(m, g, e);
-  n = J(e, m);
-  m = J(g, m);
-  n = -n;
-  d = Q(i, d);
-  i = d * Q(e, g);
-  g = d * Q(g, f);
-  p = d * Q(f, e);
-  d = 0 >= h ? 1 : 3;
-  1 == d && (0 >= k ? (o[c + 6] = 1, b[c + 27] = 1, d = 21) : d = 3);
-  a : do if (3 == d) {
-    d = 0 < j ? 4 : 7;
-    do if (4 == d) if (0 < h) if (0 >= p) {
-      l = 1 / (j + h);
-      o[c + 6] = j * l;
-      o[c + 15] = h * l;
-      b[c + 27] = 2;
-      break a;
-    } else d = 7; else d = 7; while (0);
-    d = 0 < l ? 8 : 11;
-    do if (8 == d) if (0 < k) if (0 >= g) {
-      j = 1 / (l + k);
-      o[c + 6] = l * j;
-      o[c + 24] = k * j;
-      b[c + 27] = 2;
-      for (var e = j = c + 18, u = j + 9, r = c + 9; e < u; e++, r++) b[r] = b[e], o[r] = o[e];
-      break a;
-    } else d = 11; else d = 11; while (0);
-    d = 0 >= j ? 12 : 14;
-    do if (12 == d) if (0 >= n) {
-      o[c + 15] = 1;
-      b[c + 27] = 1;
-      j = c;
-      e = c += 9;
-      u = c + 9;
-      for (r = j; e < u; e++, r++) b[r] = b[e], o[r] = o[e];
-      break a;
-    } else d = 14; while (0);
-    d = 0 >= l & 0 >= m ? 15 : 16;
-    if (15 == d) {
-      o[c + 24] = 1;
-      b[c + 27] = 1;
-      r = c;
-      e = u = c + 18;
-      for (u += 9; e < u; e++, r++) b[r] = b[e], o[r] = o[e];
-    } else if (16 == d) {
-      d = 0 < m ? 17 : 20;
-      do if (17 == d) if (0 < n) if (0 >= i) {
-        j = 1 / (m + n);
-        o[c + 15] = m * j;
-        o[c + 24] = n * j;
-        b[c + 27] = 2;
-        j = c;
-        e = c += 18;
-        u = c + 9;
-        for (r = j; e < u; e++, r++) b[r] = b[e], o[r] = o[e];
-        break a;
-      } else d = 20; else d = 20; while (0);
-      e = 1 / (i + g + p);
-      o[c + 6] = i * e;
-      o[c + 15] = g * e;
-      o[c + 24] = p * e;
-      b[c + 27] = 3;
-    }
-  } while (0);
-  a = f;
-}
-
-we.X = 1;
-
-function xe(c, f, d) {
-  var e = a;
-  a += 72;
-  var g, i, h = e + 4, j = e + 8, k = e + 36, l = e + 39, m;
-  g = e + 42;
-  var n, p, u = e + 44, r = e + 46, q = e + 48, v = e + 50, x = e + 52, w = e + 56, y = e + 58, z = e + 60, B, E, D = e + 62, H = e + 64, I = e + 66, M = e + 68, G = e + 70;
-  b[ye] += 1;
-  i = d + 7;
-  n = d + 14;
-  b[e] = b[n];
-  o[e] = o[n];
-  b[e + 1] = b[n + 1];
-  o[e + 1] = o[n + 1];
-  b[e + 2] = b[n + 2];
-  o[e + 2] = o[n + 2];
-  b[e + 3] = b[n + 3];
-  o[e + 3] = o[n + 3];
-  n = d + 18;
-  b[h] = b[n];
-  o[h] = o[n];
-  b[h + 1] = b[n + 1];
-  o[h + 1] = o[n + 1];
-  b[h + 2] = b[n + 2];
-  o[h + 2] = o[n + 2];
-  b[h + 3] = b[n + 3];
-  o[h + 3] = o[n + 3];
-  ze(j, f, d, e, i, h);
-  se(g, j);
-  n = 0;
-  var R = j + 27, P = j + 27, L = j + 27, T = j + 27, F = e + 2, X = h + 2, Z = j + 27;
-  g = 0;
-  a : for (; 20 > g; ) {
-    m = b[R];
-    p = 0;
-    g = p < m ? 3 : 4;
-    b : do if (3 == g) for (;;) if (b[k + p] = b[j + 9 * p + 7], b[l + p] = b[j + 9 * p + 8], p += 1, p >= m) break b; while (0);
-    g = b[P];
-    g = 1 == g ? 9 : 2 == g ? 5 : 3 == g ? 6 : 7;
-    7 == g ? (O(ne, 498, Ae, pe), g = 8) : 5 == g ? (re(j), g = 8) : 6 == g && (we(j), g = 8);
-    if (8 == g && 3 == b[L]) break a;
-    se(u, j);
-    p = r;
-    B = j;
-    E = a;
-    a += 4;
-    var V = ba, aa = ba, aa = E + 2, V = b[B + 27], V = 1 == V ? 1 : 2 == V ? 2 : 5;
-    5 == V ? (O(ne, 184, Be, pe), b[p] = b[ue], o[p] = o[ue], b[p + 1] = b[ue + 1], o[p + 1] = o[ue + 1]) : 1 == V ? Pd(p, B + 4) : 2 == V && (C(E, B + 13, B + 4), Pd(aa, B + 4), aa = Q(E, aa), V = 0 < aa ? 3 : 4, 3 == V ? Ce(p, 1, E) : 4 == V && Wd(p, E));
-    a = E;
-    if (1.4210854715202004e-14 > ve(r)) break;
-    p = j + 9 * b[T];
-    B = d;
-    Pd(v, r);
-    Od(q, F, v);
-    b[p + 7] = De(B, q);
-    B = p;
-    E = Ee(d, b[p + 7]);
-    Pc(x, e, E);
-    b[B] = b[x];
-    o[B] = o[x];
-    b[B + 1] = b[x + 1];
-    o[B + 1] = o[x + 1];
-    B = i;
-    Od(w, X, r);
-    b[p + 8] = De(B, w);
-    B = p + 2;
-    E = Ee(i, b[p + 8]);
-    Pc(y, h, E);
-    b[B] = b[y];
-    o[B] = o[y];
-    b[B + 1] = b[y + 1];
-    o[B + 1] = o[y + 1];
-    B = p + 4;
-    C(z, p + 2, p);
-    b[B] = b[z];
-    o[B] = o[z];
-    b[B + 1] = b[z + 1];
-    o[B + 1] = o[z + 1];
-    n += 1;
-    b[Fe] += 1;
-    E = B = 0;
-    b : for (;;) {
-      if (E >= m) {
-        g = 16;
-        break;
-      }
-      g = b[p + 7] == b[k + E] ? 13 : 15;
-      if (13 == g && b[p + 8] == b[l + E]) {
-        g = 14;
-        break b;
-      }
-      E += 1;
-    }
-    14 == g && (B = 1);
-    if (B & 1) break;
-    b[Z] += 1;
-    g = n;
-  }
-  b[Ge] = b[Ge] > n ? b[Ge] : n;
-  He(j, c, c + 2);
-  g = Ie(c, c + 2);
-  o[c + 4] = g;
-  b[c + 5] = n;
-  Je(j, f);
-  g = b[d + 22] & 1 ? 19 : 23;
-  a : do if (19 == g) {
-    j = o[d + 6];
-    f = o[i + 6];
-    g = o[c + 4] > j + f ? 20 : 22;
-    do if (20 == g) if (1.1920928955078125e-7 < o[c + 4]) {
-      o[c + 4] -= j + f;
-      C(D, c + 2, c);
-      Xc(D);
-      d = c;
-      K(H, j, D);
-      Nb(d, H);
-      c += 2;
-      K(I, f, D);
-      Ke(c, I);
-      break a;
-    } else g = 22; while (0);
-    N(G, c, c + 2);
-    K(M, .5, G);
-    f = c;
-    j = M;
-    b[f] = b[j];
-    o[f] = o[j];
-    b[f + 1] = b[j + 1];
-    o[f + 1] = o[j + 1];
-    f = c + 2;
-    j = M;
-    b[f] = b[j];
-    o[f] = o[j];
-    b[f + 1] = b[j + 1];
-    o[f + 1] = o[j + 1];
-    o[c + 4] = 0;
-  } while (0);
-  a = e;
-}
-
-xe.X = 1;
-
-function ze(c, f, d, e, g, i) {
-  var h = a;
-  a += 20;
-  var j, k, l, m = h + 2, n = h + 4, p = h + 6, u = h + 8, r = h + 10, q = h + 12, v = h + 14, x = h + 16, w = h + 18;
-  j = 3 >= b[f + 1] ? 2 : 1;
-  1 == j && O(ne, 102, Le, Me);
-  b[c + 27] = b[f + 1];
-  k = 0;
-  var y = c + 27;
-  j = k < b[y] ? 3 : 5;
-  a : do if (3 == j) for (var z = h, B = m, E = n, D = p, H = u; ; ) {
-    l = c + 9 * k;
-    b[l + 7] = b[k + (f + 2)];
-    b[l + 8] = b[k + (f + 5)];
-    var I = Ee(d, b[l + 7]);
-    b[z] = b[I];
-    o[z] = o[I];
-    b[z + 1] = b[I + 1];
-    o[z + 1] = o[I + 1];
-    I = Ee(g, b[l + 8]);
-    b[B] = b[I];
-    o[B] = o[I];
-    b[B + 1] = b[I + 1];
-    o[B + 1] = o[I + 1];
-    I = l;
-    Pc(n, e, h);
-    b[I] = b[E];
-    o[I] = o[E];
-    b[I + 1] = b[E + 1];
-    o[I + 1] = o[E + 1];
-    I = l + 2;
-    Pc(p, i, m);
-    b[I] = b[D];
-    o[I] = o[D];
-    b[I + 1] = b[D + 1];
-    o[I + 1] = o[D + 1];
-    I = l + 4;
-    C(u, l + 2, l);
-    b[I] = b[H];
-    o[I] = o[H];
-    b[I + 1] = b[H + 1];
-    o[I + 1] = o[H + 1];
-    o[l + 6] = 0;
-    k += 1;
-    if (k >= b[y]) break a;
-  } while (0);
-  j = 1 < b[c + 27] ? 6 : 9;
-  a : do if (6 == j) {
-    k = o[f];
-    l = Ne(c);
-    j = l < .5 * k ? 8 : 7;
-    if (7 == j && !(2 * k < l | 1.1920928955078125e-7 > l)) break a;
-    b[c + 27] = 0;
-  } while (0);
-  j = 0 == b[c + 27] ? 10 : 11;
-  10 == j && (b[c + 7] = 0, b[c + 8] = 0, f = Ee(d, 0), b[r] = b[f], o[r] = o[f], b[r + 1] = b[f + 1], o[r + 1] = o[f + 1], g = Ee(g, 0), b[q] = b[g], o[q] = o[g], b[q + 1] = b[g + 1], o[q + 1] = o[g + 1], Pc(v, e, r), b[c] = b[v], o[c] = o[v], b[c + 1] = b[v + 1], o[c + 1] = o[v + 1], e = c + 2, Pc(x, i, q), b[e] = b[x], o[e] = o[x], b[e + 1] = b[x + 1], o[e + 1] = o[x + 1], i = c + 4, C(w, c + 2, c), b[i] = b[w], o[i] = o[w], b[i + 1] = b[w + 1], o[i + 1] = o[w + 1], b[c + 27] = 1);
-  a = h;
-}
-
-ze.X = 1;
-
-function Ee(c, f) {
-  var d;
-  d = 0 <= f ? 1 : 2;
-  1 == d && (d = f < b[c + 5] ? 3 : 2);
-  2 == d && O(Oe, 103, Pe, Qe);
-  return b[c + 4] + (f << 1);
-}
-
-function He(c, f, d) {
-  var e = a;
-  a += 22;
-  var g, i = e + 2, h = e + 4, j = e + 6, k = e + 8, l = e + 10, m = e + 12, n = e + 14, p = e + 16, u = e + 18, r = e + 20;
-  g = b[c + 27];
-  g = 0 == g ? 1 : 1 == g ? 2 : 2 == g ? 3 : 3 == g ? 4 : 5;
-  5 == g ? O(ne, 236, Re, pe) : 1 == g ? O(ne, 217, Re, pe) : 2 == g ? (b[f] = b[c], o[f] = o[c], b[f + 1] = b[c + 1], o[f + 1] = o[c + 1], c += 2, b[d] = b[c], o[d] = o[c], b[d + 1] = b[c + 1], o[d + 1] = o[c + 1]) : 3 == g ? (K(i, o[c + 6], c), K(h, o[c + 15], c + 9), N(e, i, h), b[f] = b[e], o[f] = o[e], b[f + 1] = b[e + 1], o[f + 1] = o[e + 1], K(k, o[c + 6], c + 2), K(l, o[c + 15], c + 11), N(j, k, l), b[d] = b[j], o[d] = o[j], b[d + 1] = b[j + 1], o[d + 1] = o[j + 1]) : 4 == g && (K(p, o[c + 6], c), K(u, o[c + 15], c + 9), N(n, p, u), K(r, o[c + 24], c + 18), N(m, n, r), b[f] = b[m], o[f] = o[m], b[f + 1] = b[m + 1], o[f + 1] = o[m + 1], b[d] = b[f], o[d] = o[f], b[d + 1] = b[f + 1], o[d + 1] = o[f + 1]);
-  a = e;
-}
-
-He.X = 1;
-
-function Ke(c, f) {
-  o[c] -= o[f];
-  o[c + 1] -= o[f + 1];
-}
-
-function Ce(c, f, d) {
-  oc(c, -f * o[d + 1], f * o[d]);
-}
-
-function Se(c, f) {
-  var d;
-  d = 0 <= f ? 1 : 2;
-  1 == d && (d = f < b[c + 3] ? 3 : 2);
-  2 == d && O(Te, 97, vg, wg);
-  d = 0 < b[c + 2] ? 5 : 4;
-  4 == d && O(Te, 98, vg, xg);
-  b[b[c + 1] + 9 * f + 5] = b[c + 4];
-  b[b[c + 1] + 9 * f + 8] = -1;
-  b[c + 4] = f;
-  b[c + 2] -= 1;
-}
-
-function De(c, f) {
-  var d, e, g, i, h;
-  e = 0;
-  g = J(b[c + 4], f);
-  i = 1;
-  var j = c + 5;
-  d = i < b[j] ? 1 : 5;
-  a : do if (1 == d) for (var k = c + 4; ; ) if (h = J(b[k] + (i << 1), f), d = h > g ? 3 : 4, 3 == d && (e = i, g = h), i += 1, i >= b[j]) break a; while (0);
-  return e;
-}
-
-function Ie(c, f) {
-  var d = a;
-  a += 2;
-  C(d, c, f);
-  var e = Yc(d);
-  a = d;
-  return e;
-}
-
-function Je(c, f) {
-  var d, e;
-  d = Ne(c);
-  o[f] = d;
-  b[f + 1] = b[c + 27] & 65535;
-  e = 0;
-  var g = c + 27;
-  d = e < b[g] ? 1 : 2;
-  a : do if (1 == d) for (;;) if (b[e + (f + 2)] = b[c + 9 * e + 7] & 255, b[e + (f + 5)] = b[c + 9 * e + 8] & 255, e += 1, e >= b[g]) break a; while (0);
-}
-
-Je.X = 1;
-
-function Ne(c) {
-  var f = a;
-  a += 4;
-  var d, e, g = f + 2;
-  d = b[c + 27];
-  d = 0 == d ? 1 : 1 == d ? 2 : 2 == d ? 3 : 3 == d ? 4 : 5;
-  5 == d ? (O(ne, 259, yg, pe), e = 0) : 1 == d ? (O(ne, 246, yg, pe), e = 0) : 2 == d ? e = 0 : 3 == d ? e = Ie(c + 4, c + 13) : 4 == d && (C(f, c + 13, c + 4), C(g, c + 22, c + 4), e = Q(f, g));
-  a = f;
-  return e;
-}
-
-function Mc(c) {
-  var f, d;
-  b[c] = -1;
-  b[c + 3] = 16;
-  b[c + 2] = 0;
-  f = kb(36 * b[c + 3]);
-  b[c + 1] = f;
-  f = b[c + 1];
-  d = 36 * b[c + 3];
-  for (var e = 0; e < 9 * (d / 36); e++) b[f + e] = 0, o[f + e] = 0;
-  d = 0;
-  e = c + 3;
-  f = d < b[e] - 1 ? 1 : 3;
-  a : do if (1 == f) for (var g = c + 1, i = c + 1; ; ) if (b[b[g] + 9 * d + 5] = d + 1, b[b[i] + 9 * d + 8] = -1, d += 1, d >= b[e] - 1) break a; while (0);
-  b[b[c + 1] + 9 * (b[c + 3] - 1) + 5] = -1;
-  b[b[c + 1] + 9 * (b[c + 3] - 1) + 8] = -1;
-  b[c + 4] = 0;
-  b[c + 5] = 0;
-  b[c + 6] = 0;
-}
-
-Mc.X = 1;
-
-function zg(c) {
-  var f, d;
-  f = -1 == b[c + 4] ? 1 : 7;
-  if (1 == f) {
-    f = b[c + 2] == b[c + 3] ? 3 : 2;
-    2 == f && O(Te, 61, Ag, Bg);
-    d = b[c + 1];
-    b[c + 3] <<= 1;
-    f = kb(36 * b[c + 3]);
-    b[c + 1] = f;
-    f = d;
-    d += 9 * (36 * b[c + 2] / 36);
-    for (var e = b[c + 1]; f < d; f++, e++) b[e] = b[f], o[e] = o[f];
-    d = b[c + 2];
-    e = c + 3;
-    f = d < b[e] - 1 ? 4 : 6;
-    a : do if (4 == f) for (var g = c + 1, i = c + 1; ; ) if (b[b[g] + 9 * d + 5] = d + 1, b[b[i] + 9 * d + 8] = -1, d += 1, d >= b[e] - 1) break a; while (0);
-    b[b[c + 1] + 9 * (b[c + 3] - 1) + 5] = -1;
-    b[b[c + 1] + 9 * (b[c + 3] - 1) + 8] = -1;
-    b[c + 4] = b[c + 2];
-  }
-  f = b[c + 4];
-  b[c + 4] = b[b[c + 1] + 9 * f + 5];
-  b[b[c + 1] + 9 * f + 5] = -1;
-  b[b[c + 1] + 9 * f + 6] = -1;
-  b[b[c + 1] + 9 * f + 7] = -1;
-  b[b[c + 1] + 9 * f + 8] = 0;
-  b[b[c + 1] + 9 * f + 4] = 0;
-  b[c + 2] += 1;
-  return f;
-}
-
-zg.X = 1;
-
-function Cg(c, f, d) {
-  var e = a;
-  a += 6;
-  var g, i = e + 2, h = e + 4;
-  g = zg(c);
-  oc(e, .10000000149011612, .10000000149011612);
-  var j = b[c + 1] + 9 * g;
-  C(i, f, e);
-  b[j] = b[i];
-  o[j] = o[i];
-  b[j + 1] = b[i + 1];
-  o[j + 1] = o[i + 1];
-  i = b[c + 1] + 9 * g + 2;
-  N(h, f + 2, e);
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  b[b[c + 1] + 9 * g + 4] = d;
-  b[b[c + 1] + 9 * g + 8] = 0;
-  Dg(c, g);
-  a = e;
-  return g;
-}
-
-Cg.X = 1;
-
-function Eg(c, f) {
-  var d, e;
-  e = 1;
-  1 == e && (d = o[c] <= o[f]);
-  if (d & 1) e = 3; else {
-    var g = 0;
-    e = 4;
-  }
-  3 == e && (g = o[c + 1] <= o[f + 1]);
-  if (g & 1) e = 5; else {
-    var i = 0;
-    e = 6;
-  }
-  5 == e && (i = o[f + 2] <= o[c + 2]);
-  if (i & 1) e = 7; else {
-    var h = 0;
-    e = 8;
-  }
-  7 == e && (h = o[f + 3] <= o[c + 3]);
-  return h & 1;
-}
-
-Eg.X = 1;
-
-function Dg(c, f) {
-  var d = a;
-  a += 24;
-  var e, g, i, h, j = d + 4, k, l, m, n = d + 8, p = d + 12, u, r = d + 16, q = d + 20, v, x;
-  b[c + 6] += 1;
-  e = -1 == b[c] ? 1 : 2;
-  a : do if (1 == e) b[c] = f, b[b[c + 1] + 9 * b[c] + 5] = -1; else if (2 == e) {
-    g = d;
-    e = b[c + 1] + 9 * f;
-    b[g] = b[e];
-    o[g] = o[e];
-    b[g + 1] = b[e + 1];
-    o[g + 1] = o[e + 1];
-    b[g + 2] = b[e + 2];
-    o[g + 2] = o[e + 2];
-    b[g + 3] = b[e + 3];
-    o[g + 3] = o[e + 3];
-    g = b[c];
-    var w = c + 1, y = c + 1, z = c + 1, B = c + 1, E = c + 1, D = c + 1;
-    v = c + 1;
-    x = c + 1;
-    var H = c + 1, I = c + 1, M = c + 1, G = c + 1, R = c + 1;
-    b : for (; 0 == (-1 == b[b[w] + 9 * g + 6]); ) {
-      i = b[b[y] + 9 * g + 6];
-      h = b[b[z] + 9 * g + 7];
-      e = Fg(b[B] + 9 * g);
-      Gg(j, b[E] + 9 * g, d);
-      k = Fg(j);
-      l = 2 * k;
-      k = 2 * (k - e);
-      e = -1 == b[b[D] + 9 * i + 6] ? 5 : 6;
-      5 == e ? (Gg(n, d, b[v] + 9 * i), m = Fg(n) + k) : 6 == e && (Gg(p, d, b[G] + 9 * i), m = Fg(b[R] + 9 * i), e = Fg(p), m = e - m + k);
-      e = -1 == b[b[x] + 9 * h + 6] ? 8 : 9;
-      8 == e ? (Gg(r, d, b[H] + 9 * h), u = Fg(r) + k) : 9 == e && (Gg(q, d, b[I] + 9 * h), u = Fg(b[M] + 9 * h), e = Fg(q), u = e - u + k);
-      e = l < m ? 11 : 12;
-      if (11 == e && l < u) break b;
-      e = m < u ? 13 : 14;
-      13 == e ? g = i : 14 == e && (g = h);
-    }
-    i = b[b[c + 1] + 9 * g + 5];
-    h = zg(c);
-    b[b[c + 1] + 9 * h + 5] = i;
-    b[b[c + 1] + 9 * h + 4] = 0;
-    Gg(b[c + 1] + 9 * h, d, b[c + 1] + 9 * g);
-    b[b[c + 1] + 9 * h + 8] = b[b[c + 1] + 9 * g + 8] + 1;
-    e = -1 != i ? 16 : 20;
-    16 == e ? (l = b[c + 1] + 9 * i, e = b[b[c + 1] + 9 * i + 6] == g ? 17 : 18, 17 == e ? b[l + 6] = h : 18 == e && (b[l + 7] = h), b[b[c + 1] + 9 * h + 6] = g, b[b[c + 1] + 9 * h + 7] = f, b[b[c + 1] + 9 * g + 5] = h, b[b[c + 1] + 9 * f + 5] = h) : 20 == e && (b[b[c + 1] + 9 * h + 6] = g, b[b[c + 1] + 9 * h + 7] = f, b[b[c + 1] + 9 * g + 5] = h, b[b[c + 1] + 9 * f + 5] = h, b[c] = h);
-    g = b[b[c + 1] + 9 * f + 5];
-    if (-1 == b[b[c + 1] + 9 * f + 5]) e = 28; else {
-      i = c + 1;
-      h = c + 1;
-      l = c + 1;
-      w = c + 1;
-      y = c + 1;
-      z = c + 1;
-      B = c + 1;
-      E = c + 1;
-      for (D = c + 1; ; ) {
-        g = Hg(c, g);
-        v = b[b[i] + 9 * g + 6];
-        x = b[b[h] + 9 * g + 7];
-        if (-1 != v) {
-          var P = b[b[h] + 9 * g + 7];
-          e = 25;
-        } else e = 24;
-        24 == e && (O(Te, 307, Ig, Jg), P = x);
-        e = -1 != P ? 27 : 26;
-        26 == e && O(Te, 308, Ig, Kg);
-        b[b[y] + 9 * g + 8] = (b[b[l] + 9 * v + 8] > b[b[w] + 9 * x + 8] ? b[b[l] + 9 * v + 8] : b[b[w] + 9 * x + 8]) + 1;
-        Gg(b[z] + 9 * g, b[B] + 9 * v, b[E] + 9 * x);
-        g = v = b[b[D] + 9 * g + 5];
-        if (-1 == v) break a;
-      }
-    }
-  } while (0);
-  a = d;
-}
-
-Dg.X = 1;
-
-function Lg(c, f) {
-  var d, e, g, i, h, j;
-  d = f == b[c] ? 1 : 2;
-  a : do if (1 == d) b[c] = -1; else if (2 == d) {
-    e = b[b[c + 1] + 9 * f + 5];
-    g = b[b[c + 1] + 9 * e + 5];
-    var k = b[c + 1] + 9 * e;
-    d = b[b[c + 1] + 9 * e + 6] == f ? 3 : 4;
-    3 == d ? i = b[k + 7] : 4 == d && (i = b[k + 6]);
-    d = -1 != g ? 6 : 12;
-    if (6 == d) {
-      k = b[c + 1] + 9 * g;
-      d = b[b[c + 1] + 9 * g + 6] == e ? 7 : 8;
-      7 == d ? b[k + 6] = i : 8 == d && (b[k + 7] = i);
-      b[b[c + 1] + 9 * i + 5] = g;
-      Se(c, e);
-      e = g;
-      if (-1 == g) break a;
-      g = c + 1;
-      for (var k = c + 1, l = c + 1, m = c + 1, n = c + 1, p = c + 1, u = c + 1, r = c + 1, q = c + 1; ; ) if (e = Hg(c, e), h = b[b[g] + 9 * e + 6], j = b[b[k] + 9 * e + 7], Gg(b[l] + 9 * e, b[m] + 9 * h, b[n] + 9 * j), b[b[r] + 9 * e + 8] = (b[b[p] + 9 * h + 8] > b[b[u] + 9 * j + 8] ? b[b[p] + 9 * h + 8] : b[b[u] + 9 * j + 8]) + 1, e = h = b[b[q] + 9 * e + 5], -1 == h) break a;
-    } else 12 == d && (b[c] = i, b[b[c + 1] + 9 * i + 5] = -1, Se(c, e));
-  } while (0);
-}
-
-Lg.X = 1;
-
-function Mg(c, f, d, e) {
-  var g = a;
-  a += 12;
-  var i, h, j = g + 4, k = g + 6, l = g + 8, m = g + 10;
-  i = 0 <= f ? 1 : 2;
-  1 == i && (i = f < b[c + 3] ? 3 : 2);
-  2 == i && O(Te, 135, Ng, Og);
-  i = -1 == b[b[c + 1] + 9 * f + 6] ? 5 : 4;
-  4 == i && O(Te, 137, Ng, Pg);
-  i = Eg(b[c + 1] + 9 * f, d) ? 6 : 7;
-  6 == i ? h = 0 : 7 == i && (Lg(c, f), b[g] = b[d], o[g] = o[d], b[g + 1] = b[d + 1], o[g + 1] = o[d + 1], b[g + 2] = b[d + 2], o[g + 2] = o[d + 2], b[g + 3] = b[d + 3], o[g + 3] = o[d + 3], oc(j, .10000000149011612, .10000000149011612), C(k, g, j), b[g] = b[k], o[g] = o[k], b[g + 1] = b[k + 1], o[g + 1] = o[k + 1], i = g + 2, N(l, g + 2, j), b[i] = b[l], o[i] = o[l], b[i + 1] = b[l + 1], o[i + 1] = o[l + 1], K(m, 2, e), e = o[m], i = 0 > o[m] ? 8 : 9, 8 == i ? o[g] += e : 9 == i && (o[g + 2] += e), e = o[m + 1], i = 0 > o[m + 1] ? 11 : 12, 11 == i ? o[g + 1] += e : 12 == i && (o[g + 3] += e), m = b[c + 1] + 9 * f, b[m] = b[g], o[m] = o[g], b[m + 1] = b[g + 1], o[m + 1] = o[g + 1], b[m + 2] = b[g + 2], o[m + 2] = o[g + 2], b[m + 3] = b[g + 3], o[m + 3] = o[g + 3], Dg(c, f), h = 1);
-  a = g;
-  return h;
-}
-
-Mg.X = 1;
-
-function Fg(c) {
-  return 2 * (o[c + 2] - o[c] + (o[c + 3] - o[c + 1]));
-}
-
-function Gg(c, f, d) {
-  var e = a;
-  a += 4;
-  var g = e + 2;
-  Qg(e, f, d);
-  b[c] = b[e];
-  o[c] = o[e];
-  b[c + 1] = b[e + 1];
-  o[c + 1] = o[e + 1];
-  c += 2;
-  Rg(g, f + 2, d + 2);
-  b[c] = b[g];
-  o[c] = o[g];
-  b[c + 1] = b[g + 1];
-  o[c + 1] = o[g + 1];
-  a = e;
-}
-
-function Hg(c, f) {
-  var d, e, g, i, h, j, k, l, m;
-  1 == (-1 != f ? 2 : 1) && O(Te, 382, Sg, Tg);
-  g = b[c + 1] + 9 * f;
-  d = -1 == b[g + 6] ? 4 : 3;
-  a : do if (3 == d) if (2 > b[g + 8]) d = 4; else if (i = b[g + 6], h = b[g + 7], d = 0 <= i ? 6 : 7, 6 == d && (d = i < b[c + 3] ? 8 : 7), 7 == d && O(Te, 392, Sg, Ug), d = 0 <= h ? 9 : 10, 9 == d && (d = h < b[c + 3] ? 11 : 10), 10 == d && O(Te, 393, Sg, Vg), j = b[c + 1] + 9 * i, k = b[c + 1] + 9 * h, l = b[k + 8] - b[j + 8], d = 1 < b[k + 8] - b[j + 8] ? 12 : 29, 12 == d) {
-    i = b[k + 6];
-    e = b[k + 7];
-    l = b[c + 1] + 9 * i;
-    m = b[c + 1] + 9 * e;
-    d = 0 <= i ? 13 : 14;
-    13 == d && (d = i < b[c + 3] ? 15 : 14);
-    14 == d && O(Te, 407, Sg, Wg);
-    d = 0 <= e ? 16 : 17;
-    16 == d && (d = e < b[c + 3] ? 18 : 17);
-    17 == d && O(Te, 408, Sg, Xg);
-    b[k + 6] = f;
-    b[k + 5] = b[g + 5];
-    b[g + 5] = h;
-    d = -1 != b[k + 5] ? 19 : 24;
-    19 == d ? (d = b[b[c + 1] + 9 * b[k + 5] + 6] == f ? 20 : 21, 20 == d ? b[b[c + 1] + 9 * b[k + 5] + 6] = h : 21 == d && (d = b[b[c + 1] + 9 * b[k + 5] + 7] == f ? 23 : 22, 22 == d && O(Te, 424, Sg, Yg), b[b[c + 1] + 9 * b[k + 5] + 7] = h)) : 24 == d && (b[c] = h);
-    d = b[l + 8] > b[m + 8] ? 26 : 27;
-    26 == d ? (b[k + 7] = i, b[g + 7] = e, b[m + 5] = f, Gg(g, j, m), Gg(k, g, l), b[g + 8] = (b[j + 8] > b[m + 8] ? b[j + 8] : b[m + 8]) + 1, b[k + 8] = (b[g + 8] > b[l + 8] ? b[g + 8] : b[l + 8]) + 1) : 27 == d && (b[k + 7] = e, b[g + 7] = i, b[l + 5] = f, Gg(g, j, l), Gg(k, g, m), b[g + 8] = (b[j + 8] > b[l + 8] ? b[j + 8] : b[l + 8]) + 1, b[k + 8] = (b[g + 8] > b[m + 8] ? b[g + 8] : b[m + 8]) + 1);
-    e = h;
-    d = 48;
-    break a;
-  } else if (29 == d) if (d = -1 > l ? 30 : 47, 30 == d) {
-    h = b[j + 6];
-    e = b[j + 7];
-    l = b[c + 1] + 9 * h;
-    m = b[c + 1] + 9 * e;
-    d = 0 <= h ? 31 : 32;
-    31 == d && (d = h < b[c + 3] ? 33 : 32);
-    32 == d && O(Te, 467, Sg, Zg);
-    d = 0 <= e ? 34 : 35;
-    34 == d && (d = e < b[c + 3] ? 36 : 35);
-    35 == d && O(Te, 468, Sg, $g);
-    b[j + 6] = f;
-    b[j + 5] = b[g + 5];
-    b[g + 5] = i;
-    d = -1 != b[j + 5] ? 37 : 42;
-    37 == d ? (d = b[b[c + 1] + 9 * b[j + 5] + 6] == f ? 38 : 39, 38 == d ? b[b[c + 1] + 9 * b[j + 5] + 6] = i : 39 == d && (d = b[b[c + 1] + 9 * b[j + 5] + 7] == f ? 41 : 40, 40 == d && O(Te, 484, Sg, ah), b[b[c + 1] + 9 * b[j + 5] + 7] = i)) : 42 == d && (b[c] = i);
-    d = b[l + 8] > b[m + 8] ? 44 : 45;
-    44 == d ? (b[j + 7] = h, b[g + 6] = e, b[m + 5] = f, Gg(g, k, m), Gg(j, g, l), b[g + 8] = (b[k + 8] > b[m + 8] ? b[k + 8] : b[m + 8]) + 1, b[j + 8] = (b[g + 8] > b[l + 8] ? b[g + 8] : b[l + 8]) + 1) : 45 == d && (b[j + 7] = e, b[g + 6] = h, b[l + 5] = f, Gg(g, k, l), Gg(j, g, m), b[g + 8] = (b[k + 8] > b[l + 8] ? b[k + 8] : b[l + 8]) + 1, b[j + 8] = (b[g + 8] > b[m + 8] ? b[g + 8] : b[m + 8]) + 1);
-    e = i;
-    d = 48;
-    break a;
-  } else if (47 == d) {
-    e = f;
-    d = 48;
-    break a;
-  } while (0);
-  4 == d && (e = f);
-  return e;
-}
-
-Hg.X = 1;
-
-function Qg(c, f, d) {
-  oc(c, o[f] < o[d] ? o[f] : o[d], o[f + 1] < o[d + 1] ? o[f + 1] : o[d + 1]);
-}
-
-function Rg(c, f, d) {
-  oc(c, o[f] > o[d] ? o[f] : o[d], o[f + 1] > o[d + 1] ? o[f + 1] : o[d + 1]);
-}
-
-function bh(c, f, d) {
-  var e = a;
-  a += 8;
-  var g = e + 2, i = e + 4, h = e + 6;
-  K(g, 1 - d, c + 2);
-  K(i, d, c + 4);
-  N(e, g, i);
-  b[f] = b[e];
-  o[f] = o[e];
-  b[f + 1] = b[e + 1];
-  o[f + 1] = o[e + 1];
-  ch(f + 2, (1 - d) * o[c + 6] + d * o[c + 7]);
-  S(h, f + 2, c);
-  Ke(f, h);
-  a = e;
-}
-
-function dh(c, f) {
-  var d = a;
-  a += 90;
-  var e, g, i = d + 9, h, j, k, l, m = d + 18, n = d + 26, p = d + 49, u = d + 53, r = d + 57, q = d + 63, v, x, w, y = d + 88, z = d + 89, B, E, D, H, I, M, G;
-  b[eh] += 1;
-  b[c] = 0;
-  o[c + 1] = o[f + 32];
-  g = f + 7;
-  v = e = f + 14;
-  x = e + 9;
-  for (w = d; v < x; v++, w++) b[w] = b[v], o[w] = o[v];
-  v = e = f + 23;
-  x = e + 9;
-  for (w = i; v < x; v++, w++) b[w] = b[v], o[w] = o[v];
-  fh(d);
-  fh(i);
-  h = o[f + 32];
-  j = .004999999888241291 > o[f + 6] + o[g + 6] - .014999999664723873 ? .004999999888241291 : o[f + 6] + o[g + 6] - .014999999664723873;
-  e = .0012499999720603228 < j ? 2 : 1;
-  1 == e && O(gh, 280, hh, ih);
-  l = k = 0;
-  b[m + 1] = 0;
-  le(n);
-  le(n + 7);
-  v = f;
-  x = f + 7;
-  for (w = n; v < x; v++, w++) b[w] = b[v], o[w] = o[v];
-  v = x = f + 7;
-  x += 7;
-  for (w = n + 7; v < x; v++, w++) b[w] = b[v], o[w] = o[v];
-  b[n + 22] = 0;
-  for (var R = n + 14, P = n + 18, L = r + 4, T = r + 4; ; ) {
-    bh(d, p, k);
-    bh(i, u, k);
-    b[R] = b[p];
-    o[R] = o[p];
-    b[R + 1] = b[p + 1];
-    o[R + 1] = o[p + 1];
-    b[R + 2] = b[p + 2];
-    o[R + 2] = o[p + 2];
-    b[R + 3] = b[p + 3];
-    o[R + 3] = o[p + 3];
-    b[P] = b[u];
-    o[P] = o[u];
-    b[P + 1] = b[u + 1];
-    o[P + 1] = o[u + 1];
-    b[P + 2] = b[u + 2];
-    o[P + 2] = o[u + 2];
-    b[P + 3] = b[u + 3];
-    o[P + 3] = o[u + 3];
-    xe(r, m, n);
-    if (0 >= o[L]) {
-      e = 4;
-      break;
-    }
-    if (o[T] < j + .0012499999720603228) {
-      e = 6;
-      break;
-    }
-    jh(q, m, f, d, g, i, k);
-    v = 0;
-    x = h;
-    for (w = 0; ; ) {
-      B = kh(q, y, z, x);
-      if (B > j + .0012499999720603228) {
-        e = 9;
-        break;
-      }
-      if (B > j - .0012499999720603228) {
-        e = 11;
-        break;
-      }
-      E = lh(q, b[y], b[z], k);
-      if (E < j - .0012499999720603228) {
-        e = 13;
-        break;
-      }
-      if (E <= j + .0012499999720603228) {
-        e = 15;
-        break;
-      }
-      D = 0;
-      H = k;
-      for (I = x; ; ) {
-        e = 0 != (D & 1) ? 18 : 19;
-        18 == e ? M = H + (j - E) * (I - H) / (B - E) : 19 == e && (M = .5 * (H + I));
-        G = lh(q, b[y], b[z], M);
-        if (.0012499999720603228 > ke(G - j)) {
-          e = 21;
-          break;
-        }
-        e = G > j ? 23 : 24;
-        23 == e ? (H = M, E = G) : 24 == e && (I = M, B = G);
-        D = G = D + 1;
-        b[mh] += 1;
-        if (50 == G) {
-          e = 26;
-          break;
-        }
-      }
-      21 == e && (x = M);
-      b[nh] = b[nh] > D ? b[nh] : D;
-      w = B = w + 1;
-      if (8 == B) {
-        e = 27;
-        break;
-      }
-    }
-    9 == e ? (b[c] = 4, o[c + 1] = h, v = 1) : 11 == e ? k = x : 13 == e ? (b[c] = 1, o[c + 1] = k, v = 1) : 15 == e && (b[c] = 3, o[c + 1] = k, v = 1);
-    l += 1;
-    b[oh] += 1;
-    if (v & 1) {
-      e = 30;
-      break;
-    }
-    if (20 == l) {
-      e = 29;
-      break;
-    }
-  }
-  4 == e ? (b[c] = 2, o[c + 1] = 0) : 6 == e ? (b[c] = 3, o[c + 1] = k) : 29 == e && (b[c] = 1, o[c + 1] = k);
-  b[ph] = b[ph] > l ? b[ph] : l;
-  a = d;
-}
-
-dh.X = 1;
-
-function fh(c) {
-  var f;
-  f = 6.2831854820251465 * qh(o[c + 6] / 6.2831854820251465);
-  o[c + 6] -= f;
-  o[c + 7] -= f;
-}
-
-function jh(c, f, d, e, g, i, h) {
-  var j = a;
-  a += 66;
-  var k, l, m = j + 4, n = j + 8, p = j + 10, u = j + 12, r = j + 14, q = j + 16, v = j + 18, x = j + 20, w = j + 22, y = j + 24, z = j + 26, B = j + 28, E = j + 30, D = j + 32, H = j + 34, I = j + 36, M = j + 38, G = j + 40, R = j + 42, P = j + 44, L = j + 46, T = j + 48, F = j + 50, X = j + 52, Z = j + 54, V = j + 56, aa = j + 58, ja = j + 60, Y = j + 62, W = j + 64;
-  b[c] = d;
-  b[c + 1] = g;
-  l = b[f + 1];
-  1 == (0 < l & 3 > l ? 2 : 1) && O(gh, 50, rh, sh);
-  for (var $ = e, e = e + 9, ga = c + 2; $ < e; $++, ga++) b[ga] = b[$], o[ga] = o[$];
-  $ = i;
-  e = i + 9;
-  for (ga = c + 11; $ < e; $++, ga++) b[ga] = b[$], o[ga] = o[$];
-  bh(c + 2, j, h);
-  bh(c + 11, m, h);
-  i = 1 == l ? 3 : 4;
-  if (3 == i) b[c + 20] = 0, G = Ee(b[c], b[f + 2]), b[n] = b[G], o[n] = o[G], b[n + 1] = b[G + 1], o[n + 1] = o[G + 1], f = Ee(b[c + 1], b[f + 5]), b[p] = b[f], o[p] = o[f], b[p + 1] = b[f + 1], o[p + 1] = o[f + 1], Pc(u, j, n), Pc(r, m, p), m = c + 23, C(q, r, u), b[m] = b[q], o[m] = o[q], b[m + 1] = b[q + 1], o[m + 1] = o[q + 1], k = c = Xc(c + 23); else if (4 == i) if (u = c + 20, i = b[f + 2] == b[f + 3] ? 5 : 8, 5 == i) {
-    b[u] = 2;
-    W = Ee(g, b[f + 5]);
-    b[v] = b[W];
-    o[v] = o[W];
-    b[v + 1] = b[W + 1];
-    o[v + 1] = o[W + 1];
-    W = Ee(g, b[f + 6]);
-    b[x] = b[W];
-    o[x] = o[W];
-    b[x + 1] = b[W + 1];
-    o[x + 1] = o[W + 1];
-    W = c + 23;
-    C(y, x, v);
-    Wd(w, y);
-    b[W] = b[w];
-    o[W] = o[w];
-    b[W + 1] = b[w + 1];
-    o[W + 1] = o[w + 1];
-    Xc(c + 23);
-    S(z, m + 2, c + 23);
-    W = c + 21;
-    N(E, v, x);
-    K(B, .5, E);
-    b[W] = b[B];
-    o[W] = o[B];
-    b[W + 1] = b[B + 1];
-    o[W + 1] = o[B + 1];
-    Pc(D, m, c + 21);
-    m = Ee(d, b[f + 2]);
-    b[H] = b[m];
-    o[H] = o[m];
-    b[H + 1] = b[m + 1];
-    o[H + 1] = o[m + 1];
-    Pc(I, j, H);
-    C(M, I, D);
-    m = J(M, z);
-    if (6 == (0 > m ? 6 : 7)) f = c + 23, Pd(G, c + 23), b[f] = b[G], o[f] = o[G], b[f + 1] = b[G + 1], o[f + 1] = o[G + 1], m = -m;
-    k = m;
-  } else if (8 == i) {
-    b[u] = 1;
-    G = Ee(b[c], b[f + 2]);
-    b[R] = b[G];
-    o[R] = o[G];
-    b[R + 1] = b[G + 1];
-    o[R + 1] = o[G + 1];
-    G = Ee(b[c], b[f + 3]);
-    b[P] = b[G];
-    o[P] = o[G];
-    b[P + 1] = b[G + 1];
-    o[P + 1] = o[G + 1];
-    G = c + 23;
-    C(T, P, R);
-    Wd(L, T);
-    b[G] = b[L];
-    o[G] = o[L];
-    b[G + 1] = b[L + 1];
-    o[G + 1] = o[L + 1];
-    Xc(c + 23);
-    S(F, j + 2, c + 23);
-    G = c + 21;
-    N(Z, R, P);
-    K(X, .5, Z);
-    b[G] = b[X];
-    o[G] = o[X];
-    b[G + 1] = b[X + 1];
-    o[G + 1] = o[X + 1];
-    Pc(V, j, c + 21);
-    f = Ee(b[c + 1], b[f + 5]);
-    b[aa] = b[f];
-    o[aa] = o[f];
-    b[aa + 1] = b[f + 1];
-    o[aa + 1] = o[f + 1];
-    Pc(ja, m, aa);
-    C(Y, ja, V);
-    m = J(Y, F);
-    if (9 == (0 > m ? 9 : 10)) f = c + 23, Pd(W, c + 23), b[f] = b[W], o[f] = o[W], b[f + 1] = b[W + 1], o[f + 1] = o[W + 1], m = -m;
-    k = m;
-  }
-  a = j;
-  return k;
-}
-
-jh.X = 1;
-
-function kh(c, f, d, e) {
-  var g = a;
-  a += 52;
-  var i, h = g + 4, j = g + 8, k = g + 10, l = g + 12, m = g + 14, n = g + 16, p = g + 18, u = g + 20, r = g + 22, q = g + 24, v = g + 26, x = g + 28, w = g + 30, y = g + 32, z = g + 34, B = g + 36, E = g + 38, D = g + 40, H = g + 42, I = g + 44, M = g + 46, G = g + 48, R = g + 50;
-  bh(c + 2, g, e);
-  bh(c + 11, h, e);
-  e = b[c + 20];
-  e = 0 == e ? 1 : 1 == e ? 2 : 2 == e ? 3 : 4;
-  4 == e ? (O(gh, 183, th, pe), b[f] = -1, b[d] = -1, i = 0) : 1 == e ? (Od(j, g + 2, c + 23), q = h + 2, Pd(l, c + 23), Od(k, q, l), b[f] = De(b[c], j), b[d] = De(b[c + 1], k), f = Ee(b[c], b[f]), b[m] = b[f], o[m] = o[f], b[m + 1] = b[f + 1], o[m + 1] = o[f + 1], d = Ee(b[c + 1], b[d]), b[n] = b[d], o[n] = o[d], b[n + 1] = b[d + 1], o[n + 1] = o[d + 1], Pc(p, g, m), Pc(u, h, n), C(r, u, p), i = c = J(r, c + 23)) : 2 == e ? (S(q, g + 2, c + 23), Pc(v, g, c + 21), m = h + 2, Pd(w, q), Od(x, m, w), b[f] = -1, b[d] = De(b[c + 1], x), c = Ee(b[c + 1], b[d]), b[y] = b[c], o[y] = o[c], b[y + 1] = b[c + 1], o[y + 1] = o[c + 1], Pc(z, h, y), C(B, z, v), i = c = J(B, q)) : 3 == e && (S(E, h + 2, c + 23), Pc(D, h, c + 21), h = g + 2, Pd(I, E), Od(H, h, I), b[d] = -1, b[f] = De(b[c], H), c = Ee(b[c], b[f]), b[M] = b[c], o[M] = o[c], b[M + 1] = b[c + 1], o[M + 1] = o[c + 1], Pc(G, g, M), C(R, G, D), i = c = J(R, E));
-  a = g;
-  return i;
-}
-
-kh.X = 1;
-
-function uh(c) {
-  b[c] = vh + 2;
-  b[c + 3] = 0;
-  b[c + 4] = 0;
-}
-
-function wh(c, f, d) {
-  var e;
-  e = 0 <= d ? 1 : 2;
-  1 == e && (e = d < b[c + 4] - 1 ? 3 : 2);
-  2 == e && O(xh, 89, yh, zh);
-  b[f + 1] = 1;
-  o[f + 2] = o[c + 2];
-  e = f + 3;
-  var g = b[c + 3] + (d << 1);
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = f + 5;
-  g = b[c + 3] + (d + 1 << 1);
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = 0 < d ? 4 : 5;
-  4 == e ? (e = f + 7, g = b[c + 3] + (d - 1 << 1), b[e] = b[g], o[e] = o[g], b[e + 1] = b[g + 1], o[e + 1] = o[g + 1], b[f + 11] = 1) : 5 == e && (e = f + 7, g = c + 5, b[e] = b[g], o[e] = o[g], b[e + 1] = b[g + 1], o[e + 1] = o[g + 1], b[f + 11] = b[c + 9] & 1);
-  e = d < b[c + 4] - 2 ? 7 : 8;
-  7 == e ? (e = f + 9, c = b[c + 3] + (d + 2 << 1), b[e] = b[c], o[e] = o[c], b[e + 1] = b[c + 1], o[e + 1] = o[c + 1], b[f + 12] = 1) : 8 == e && (d = f + 9, e = c + 7, b[d] = b[e], o[d] = o[e], b[d + 1] = b[e + 1], o[d + 1] = o[e + 1], b[f + 12] = b[c + 10] & 1);
-}
-
-wh.X = 1;
-
-function Eh(c, f, d, e) {
-  var g = a;
-  a += 8;
-  var i, h, j = g + 2, k = g + 4, l = g + 6;
-  i = e < b[c + 4] ? 2 : 1;
-  1 == i && O(xh, 148, Fh, Gh);
-  h = e + 1;
-  i = h == b[c + 4] ? 3 : 4;
-  3 == i && (h = 0);
-  Pc(g, d, b[c + 3] + (e << 1));
-  Pc(j, d, b[c + 3] + (h << 1));
-  Qg(k, g, j);
-  b[f] = b[k];
-  o[f] = o[k];
-  b[f + 1] = b[k + 1];
-  o[f + 1] = o[k + 1];
-  c = f + 2;
-  Rg(l, g, j);
-  b[c] = b[l];
-  o[c] = o[l];
-  b[c + 1] = b[l + 1];
-  o[c + 1] = o[l + 1];
-  a = g;
-}
-
-Eh.X = 1;
-
-function lh(c, f, d, e) {
-  var g = a;
-  a += 52;
-  var i, h = g + 4, j = g + 8, k = g + 10, l = g + 12, m = g + 14, n = g + 16, p = g + 18, u = g + 20, r = g + 22, q = g + 24, v = g + 26, x = g + 28, w = g + 30, y = g + 32, z = g + 34, B = g + 36, E = g + 38, D = g + 40, H = g + 42, I = g + 44, M = g + 46, G = g + 48, R = g + 50;
-  bh(c + 2, g, e);
-  bh(c + 11, h, e);
-  e = b[c + 20];
-  e = 0 == e ? 1 : 1 == e ? 2 : 2 == e ? 3 : 4;
-  4 == e ? (O(gh, 242, Hh, pe), i = 0) : 1 == e ? (Od(j, g + 2, c + 23), q = h + 2, Pd(l, c + 23), Od(k, q, l), f = Ee(b[c], f), b[m] = b[f], o[m] = o[f], b[m + 1] = b[f + 1], o[m + 1] = o[f + 1], d = Ee(b[c + 1], d), b[n] = b[d], o[n] = o[d], b[n + 1] = b[d + 1], o[n + 1] = o[d + 1], Pc(p, g, m), Pc(u, h, n), C(r, u, p), i = c = J(r, c + 23)) : 2 == e ? (S(q, g + 2, c + 23), Pc(v, g, c + 21), m = h + 2, Pd(w, q), Od(x, m, w), c = Ee(b[c + 1], d), b[y] = b[c], o[y] = o[c], b[y + 1] = b[c + 1], o[y + 1] = o[c + 1], Pc(z, h, y), C(B, z, v), i = c = J(B, q)) : 3 == e && (S(E, h + 2, c + 23), Pc(D, h, c + 21), h = g + 2, Pd(I, E), Od(H, h, I), c = Ee(b[c], f), b[M] = b[c], o[M] = o[c], b[M + 1] = b[c + 1], o[M + 1] = o[c + 1], Pc(G, g, M), C(R, G, D), i = c = J(R, E));
-  a = g;
-  return i;
-}
-
-lh.X = 1;
-
-function ch(c, f) {
-  var d = Ih(f);
-  o[c] = d;
-  d = Jh(f);
-  o[c + 1] = d;
-}
-
-function Kh(c, f) {
-  var d, e;
-  e = Lh(f, 40);
-  if (0 == e) {
-    var g = 0;
-    d = 2;
-  } else d = 1;
-  1 == d && (b[e] = Wb + 2, b[e] = vh + 2, b[e + 1] = 3, o[e + 2] = .009999999776482582, b[e + 3] = 0, b[e + 4] = 0, b[e + 9] = 0, b[e + 10] = 0, g = e);
-  d = g;
-  e = b[c + 3];
-  var g = b[c + 4], i;
-  i = 0 == b[d + 3] ? 1 : 2;
-  1 == i && (i = 0 == b[d + 4] ? 3 : 2);
-  2 == i && O(xh, 48, Mh, Nh);
-  4 == (2 <= g ? 5 : 4) && O(xh, 49, Mh, Oh);
-  b[d + 4] = g;
-  g = kb(g << 3);
-  b[d + 3] = g;
-  g = e;
-  e += 2 * ((b[d + 4] << 3) / 8);
-  for (i = b[d + 3]; g < e; g++, i++) b[i] = b[g], o[i] = o[g];
-  b[d + 9] = 0;
-  b[d + 10] = 0;
-  e = d + 5;
-  g = c + 5;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = d + 7;
-  g = c + 7;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  b[d + 9] = b[c + 9] & 1;
-  b[d + 10] = b[c + 10] & 1;
-  return d;
-}
-
-Kh.X = 1;
-
-function Ph(c, f, d, e, g) {
-  var i = a;
-  a += 13;
-  var h, j;
-  h = g < b[c + 4] ? 2 : 1;
-  1 == h && O(xh, 129, Qh, Gh);
-  dc(i);
-  j = g + 1;
-  h = j == b[c + 4] ? 3 : 4;
-  3 == h && (j = 0);
-  h = i + 3;
-  g = b[c + 3] + (g << 1);
-  b[h] = b[g];
-  o[h] = o[g];
-  b[h + 1] = b[g + 1];
-  o[h + 1] = o[g + 1];
-  g = i + 5;
-  c = b[c + 3] + (j << 1);
-  b[g] = b[c];
-  o[g] = o[c];
-  b[g + 1] = b[c + 1];
-  o[g + 1] = o[c + 1];
-  f = Rh(i, f, d, e);
-  a = i;
-  return f;
-}
-
-Ph.X = 1;
-
-function Sh(c, f) {
-  b[c + 1] = b[f + 1];
-  o[c + 2] = o[f + 2];
-}
-
-function Th(c, f, d, e) {
-  var g = a;
-  a += 12;
-  var i, h, j = g + 2, k = g + 4, l = g + 6, m = g + 8, n = g + 10;
-  S(j, e + 2, c + 3);
-  N(g, e, j);
-  C(k, d, g);
-  j = J(k, k) - o[c + 2] * o[c + 2];
-  C(l, d + 2, d);
-  c = J(k, l);
-  e = J(l, l);
-  j = c * c - e * j;
-  i = 0 > j ? 2 : 1;
-  a : do if (1 == i) if (1.1920928955078125e-7 > e) i = 2; else {
-    h = c;
-    i = j;
-    i = Zc(i);
-    h = -(h + i);
-    i = 0 <= h ? 4 : 6;
-    do if (4 == i) if (h <= o[d + 4] * e) {
-      h /= e;
-      o[f + 2] = h;
-      d = f;
-      K(n, h, l);
-      N(m, k, n);
-      k = d;
-      b[k] = b[m];
-      o[k] = o[m];
-      b[k + 1] = b[m + 1];
-      o[k + 1] = o[m + 1];
-      Xc(f);
-      h = 1;
-      i = 7;
-      break a;
-    } else i = 6; while (0);
-    h = 0;
-    i = 7;
-  } while (0);
-  2 == i && (h = 0);
-  a = g;
-  return h;
-}
-
-Th.X = 1;
-
-function Rh(c, f, d, e) {
-  var g = a;
-  a += 30;
-  var i, h, j = g + 2, k = g + 4, l = g + 6, m = g + 8, n = g + 10, p = g + 12, u = g + 14, r = g + 16;
-  i = g + 18;
-  var q = g + 20, v = g + 22, x = g + 24, w = g + 26, y = g + 28, z = e + 2;
-  C(j, d, e);
-  Od(g, z, j);
-  j = e + 2;
-  C(l, d + 2, e);
-  Od(k, j, l);
-  C(m, k, g);
-  e = c + 3;
-  b[n] = b[e];
-  o[n] = o[e];
-  b[n + 1] = b[e + 1];
-  o[n + 1] = o[e + 1];
-  c += 5;
-  b[p] = b[c];
-  o[p] = o[c];
-  b[p + 1] = b[c + 1];
-  o[p + 1] = o[c + 1];
-  C(u, p, n);
-  oc(r, o[u + 1], -o[u]);
-  Xc(r);
-  C(i, n, g);
-  u = J(r, i);
-  c = J(r, m);
-  i = 0 == c ? 1 : 2;
-  a : do if (1 == i) h = 0; else if (2 == i) {
-    h = u / c;
-    i = 0 > h ? 4 : 3;
-    do if (3 == i) if (o[d + 4] < h) i = 4; else if (K(v, h, m), N(q, g, v), C(x, p, n), e = J(x, x), i = 0 == e ? 6 : 7, 6 == i) {
-      h = 0;
-      break a;
-    } else if (7 == i) if (C(w, q, n), i = J(w, x) / e, i = 0 > i | 1 < i ? 8 : 9, 8 == i) {
-      h = 0;
-      break a;
-    } else if (9 == i) {
-      o[f + 2] = h;
-      i = 0 < u ? 10 : 11;
-      10 == i ? (Pd(y, r), r = f, b[r] = b[y], o[r] = o[y], b[r + 1] = b[y + 1], o[r + 1] = o[y + 1]) : 11 == i && (y = f, b[y] = b[r], o[y] = o[r], b[y + 1] = b[r + 1], o[y + 1] = o[r + 1]);
-      h = 1;
-      break a;
-    } while (0);
-    h = 0;
-  } while (0);
-  a = g;
-  return h;
-}
-
-Rh.X = 1;
-
-function Uh(c, f, d) {
-  var e = a;
-  a += 16;
-  var g, i = e + 2, h, j = e + 4, k = e + 6, l = e + 8, m = e + 10, n = e + 12, p = e + 14;
-  Pc(e, d, c + 5);
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  h = 1;
-  var u = c + 37;
-  g = h < b[u] ? 1 : 3;
-  a : do if (1 == g) for (var r = c + 5, q = e, v = k, x = i, w = l; ; ) if (Pc(j, d, r + (h << 1)), Qg(k, e, j), b[q] = b[v], o[q] = o[v], b[q + 1] = b[v + 1], o[q + 1] = o[v + 1], Rg(l, i, j), b[x] = b[w], o[x] = o[w], b[x + 1] = b[w + 1], o[x + 1] = o[w + 1], h += 1, h >= b[u]) break a; while (0);
-  oc(m, o[c + 2], o[c + 2]);
-  C(n, e, m);
-  b[f] = b[n];
-  o[f] = o[n];
-  b[f + 1] = b[n + 1];
-  o[f + 1] = o[n + 1];
-  c = f + 2;
-  N(p, i, m);
-  b[c] = b[p];
-  o[c] = o[p];
-  b[c + 1] = b[p + 1];
-  o[c + 1] = o[p + 1];
-  a = e;
-}
-
-Uh.X = 1;
-
-function Vh(c, f) {
-  o[c] *= f;
-  o[c + 1] *= f;
-}
-
-function Wh(c, f, d, e) {
-  var g = a;
-  a += 14;
-  var i, h, j = g + 2, k = g + 4, l = g + 6, m = g + 8, n, p, u = g + 10, r, q = g + 12;
-  n = e + 2;
-  C(j, d, e);
-  Od(g, n, j);
-  j = e + 2;
-  C(l, d + 2, e);
-  Od(k, j, l);
-  C(m, k, g);
-  k = 0;
-  l = o[d + 4];
-  j = -1;
-  n = 0;
-  var v = c + 37, x = c + 21, w = c + 5, y = c + 21;
-  a : for (;;) {
-    if (n >= b[v]) {
-      i = 14;
-      break;
-    }
-    i = x + (n << 1);
-    C(u, w + (n << 1), g);
-    p = J(i, u);
-    r = J(y + (n << 1), m);
-    i = 0 == r ? 3 : 5;
-    b : do if (3 == i) {
-      if (0 > p) {
-        i = 4;
-        break a;
-      }
-    } else if (5 == i) {
-      if (0 > r) i = 6; else {
-        var z = r;
-        i = 8;
-      }
-      do if (6 == i) if (p < k * r) {
-        k = p / r;
-        j = n;
-        i = 11;
-        break b;
-      } else z = r, i = 8; while (0);
-      0 < z ? p < l * r ? l = p / r : i = 11 : i = 11;
-    } while (0);
-    if (l < k) {
-      i = 12;
-      break;
-    }
-    n += 1;
-  }
-  14 == i ? (i = 0 <= k ? 15 : 16, 15 == i && (i = k <= o[d + 4] ? 17 : 16), 16 == i && O(Xh, 249, Yh, Zh), i = 0 <= j ? 18 : 19, 18 == i ? (o[f + 2] = k, S(q, e + 2, c + 21 + (j << 1)), b[f] = b[q], o[f] = o[q], b[f + 1] = b[q + 1], o[f + 1] = o[q + 1], h = 1) : 19 == i && (h = 0)) : 4 == i ? h = 0 : 12 == i && (h = 0);
-  a = g;
-  return h;
-}
-
-Wh.X = 1;
-
-function $h(c, f, d) {
-  var e = a;
-  a += 14;
-  var g, i, h, j = e + 2, k, l = e + 4, m = e + 6, n, p, u = e + 8, r = e + 10, q, v, x, w = e + 12;
-  g = 3 <= b[c + 37] ? 2 : 1;
-  1 == g && O(Xh, 306, ai, bi);
-  nc(e, 0, 0);
-  h = i = 0;
-  oc(j, 0, 0);
-  k = 0;
-  n = c + 37;
-  g = k < b[n] ? 3 : 5;
-  a : do if (3 == g) for (var y = c + 5; ; ) if (Nb(j, y + (k << 1)), k += 1, k >= b[n]) break a; while (0);
-  Vh(j, 1 / b[c + 37]);
-  k = 0;
-  y = c + 37;
-  g = k < b[y] ? 6 : 11;
-  a : do if (6 == g) for (var z = c + 5, B = c + 37, E = c + 5, D = l, H = l + 1, I = m, M = m + 1, G = c + 5; ; ) if (C(l, z + (k << 1), j), g = k + 1 < b[B] ? 8 : 9, 8 == g ? C(m, E + (k + 1 << 1), j) : 9 == g && C(m, G, j), n = Q(l, m), p = .5 * n, i += p, p *= .3333333432674408, N(r, l, m), K(u, p, r), Nb(e, u), q = o[D], p = o[H], v = o[I], x = o[M], q = q * q + v * q + v * v, p = p * p + x * p + x * x, h += .0833333358168602 * n * (q + p), k += 1, k >= b[y]) break a; while (0);
-  o[f] = d * i;
-  12 == (1.1920928955078125e-7 < i ? 13 : 12) && O(Xh, 352, ai, ci);
-  Vh(e, 1 / i);
-  c = f + 1;
-  N(w, e, j);
-  b[c] = b[w];
-  o[c] = o[w];
-  b[c + 1] = b[w + 1];
-  o[c + 1] = o[w + 1];
-  o[f + 3] = d * h;
-  o[f + 3] += o[f] * (J(f + 1, f + 1) - J(e, e));
-  a = e;
-}
-
-$h.X = 1;
-
-function di(c) {
-  var f, d;
-  b[c + 2] = 128;
-  b[c + 1] = 0;
-  d = kb(b[c + 2] << 3);
-  b[c] = d;
-  f = b[c];
-  var e = b[c + 2] << 3;
-  for (d = 0; d < 2 * (e / 8); d++) b[f + d] = 0, o[f + d] = 0;
-  c += 3;
-  for (d = 0; 14 > d; d++) b[c + d] = 0, o[c + d] = 0;
-  f = 0 == (b[ei] & 1) ? 1 : 10;
-  if (1 == f) {
-    c = 0;
-    d = 1;
-    for (f = 0; ; ) {
-      f = 14 > f ? 5 : 4;
-      4 == f && O(fi, 73, gi, hi);
-      f = d <= b[ii + c] ? 6 : 7;
-      6 == f ? b[ji + d] = c & 255 : 7 == f && (c += 1, b[ji + d] = c & 255);
-      d = f = d + 1;
-      if (!(640 >= f)) break;
-      f = c;
-    }
-    b[ei] = 1;
-  }
-}
-
-di.X = 1;
-
-function ki(c, f, d) {
-  var e;
-  if (1 == (0 == d ? 8 : 1)) {
-    if (0 < d) {
-      var g = d;
-      e = 3;
-    } else e = 2;
-    2 == e && (O(fi, 164, li, mi), g = d);
-    e = 640 < g ? 4 : 5;
-    4 != e && 5 == e && (d = b[ji + d], 6 == (0 <= d & 14 > d ? 7 : 6) && O(fi, 173, li, ni), b[f] = b[d + (c + 3)], b[d + (c + 3)] = f);
-  }
-}
-
-ki.X = 1;
-
-function oi(c, f) {
-  return o[c] * o[f] + o[c + 1] * o[f + 1] + o[c + 2] * o[f + 2];
-}
-
-function pi(c, f, d) {
-  qi(c, o[f + 1] * o[d + 2] - o[f + 2] * o[d + 1], o[f + 2] * o[d] - o[f] * o[d + 2], o[f] * o[d + 1] - o[f + 1] * o[d]);
-}
-
-pi.X = 1;
-
-function ri(c, f, d) {
-  var e, g, i, h;
-  e = o[f];
-  g = o[f + 3];
-  i = o[f + 1];
-  f = o[f + 4];
-  h = e * f - g * i;
-  if (1 == (0 != h ? 1 : 2)) h = 1 / h;
-  o[c] = h * (f * o[d] - g * o[d + 1]);
-  o[c + 1] = h * (e * o[d + 1] - i * o[d]);
-}
-
-ri.X = 1;
-
-function si(c, f) {
-  var d, e, g, i, h;
-  d = o[c];
-  e = o[c + 3];
-  g = o[c + 1];
-  i = o[c + 4];
-  h = d * i - e * g;
-  if (1 == (0 != h ? 1 : 2)) h = 1 / h;
-  o[f] = h * i;
-  o[f + 3] = -h * e;
-  o[f + 2] = 0;
-  o[f + 1] = -h * g;
-  o[f + 4] = h * d;
-  o[f + 5] = 0;
-  o[f + 6] = 0;
-  o[f + 7] = 0;
-  o[f + 8] = 0;
-}
-
-si.X = 1;
-
-function qi(c, f, d, e) {
-  o[c] = f;
-  o[c + 1] = d;
-  o[c + 2] = e;
-}
-
-function Lh(c, f) {
-  var d, e, g, i, h, j, k, l, m;
-  d = 0 == f ? 1 : 2;
-  if (1 == d) e = 0; else if (2 == d) if (0 < f ? (g = f, d = 4) : d = 3, 3 == d && (O(fi, 104, ti, mi), g = f), d = 640 < g ? 5 : 6, 5 == d) e = kb(f); else if (6 == d) if (g = b[ji + f], 7 == (0 <= g & 14 > g ? 8 : 7) && O(fi, 112, ti, ni), d = 0 != b[g + (c + 3)] ? 9 : 10, 9 == d) i = b[g + (c + 3)], b[g + (c + 3)] = b[i], e = i; else if (10 == d) {
-    d = b[c + 1] == b[c + 2] ? 11 : 12;
-    if (11 == d) {
-      e = b[c];
-      b[c + 2] += 128;
-      d = kb(b[c + 2] << 3);
-      b[c] = d;
-      d = e;
-      e += 2 * ((b[c + 1] << 3) / 8);
-      for (h = b[c]; d < e; d++, h++) b[h] = b[d], o[h] = o[d];
-      d = b[c] + (b[c + 1] << 1);
-      for (e = 0; 256 > e; e++) b[d + e] = 0, o[d + e] = 0;
-    }
-    e = b[c] + (b[c + 1] << 1);
-    d = kb(16384);
-    b[e + 1] = d;
-    h = b[ii + g];
-    b[e] = h;
-    j = 16384 / h | 0;
-    13 == (16384 >= h * j ? 14 : 13) && O(fi, 140, ti, ui);
-    k = 0;
-    d = b[e + 1];
-    if (k < j - 1) l = d, m = h, d = 15; else {
-      i = d;
-      var n = h;
-      d = 16;
-    }
-    a : do if (15 == d) for (;;) if (l += k * m, m = b[e + 1] + (k + 1) * h, b[l] = m, k += 1, k < j - 1) l = b[e + 1], m = h; else {
-      i = b[e + 1];
-      n = h;
-      break a;
-    } while (0);
-    b[i + (j - 1) * n] = 0;
-    b[g + (c + 3)] = b[b[e + 1]];
-    b[c + 1] += 1;
-    e = b[e + 1];
-  }
-  return e;
-}
-
-Lh.X = 1;
-
-function vi(c, f, d) {
-  var e = a;
-  a += 12;
-  var g, i = e + 3, h = e + 6, j = e + 9;
-  pi(e, f + 3, f + 6);
-  g = oi(f, e);
-  if (1 == (0 != g ? 1 : 2)) g = 1 / g;
-  var k = g;
-  pi(i, f + 3, f + 6);
-  o[c] = k * oi(d, i);
-  i = g;
-  pi(h, d, f + 6);
-  o[c + 1] = i * oi(f, h);
-  pi(j, f + 3, d);
-  o[c + 2] = g * oi(f, j);
-  a = e;
-}
-
-vi.X = 1;
-
-function wi(c, f) {
-  var d = a;
-  a += 3;
-  var e, g, i, h, j, k, l;
-  pi(d, c + 3, c + 6);
-  e = oi(c, d);
-  if (1 == (0 != e ? 1 : 2)) e = 1 / e;
-  g = o[c];
-  i = o[c + 3];
-  h = o[c + 6];
-  j = o[c + 4];
-  k = o[c + 7];
-  l = o[c + 8];
-  o[f] = e * (j * l - k * k);
-  o[f + 1] = e * (h * k - i * l);
-  o[f + 2] = e * (i * k - h * j);
-  o[f + 3] = o[f + 1];
-  o[f + 4] = e * (g * l - h * h);
-  o[f + 5] = e * (h * i - g * k);
-  o[f + 6] = o[f + 2];
-  o[f + 7] = o[f + 5];
-  o[f + 8] = e * (g * j - i * i);
-  a = d;
-}
-
-wi.X = 1;
-
-function xi(c) {
-  var f, d;
-  f = c != c ? 1 : 2;
-  if (1 == f) d = 0; else if (2 == f) {
-    if (-Infinity < c) f = 3; else {
-      var e = 0;
-      f = 4;
-    }
-    3 == f && (e = Infinity > c);
-    d = e;
-  }
-  return d;
-}
-
-function yi(c) {
-  b[c + 102400] = 0;
-  b[c + 102401] = 0;
-  b[c + 102402] = 0;
-  b[c + 102499] = 0;
-}
-
-function zi(c) {
-  var f;
-  f = 0 == b[c + 102400] ? 2 : 1;
-  1 == f && O(Ai, 32, Bi, Ci);
-  f = 0 == b[c + 102499] ? 4 : 3;
-  3 == f && O(Ai, 33, Bi, Di);
-}
-
-function Ei(c, f) {
-  var d, e;
-  d = 0 < b[c + 102499] ? 2 : 1;
-  1 == d && O(Ai, 63, Fi, Gi);
-  e = c + 102403 + 3 * b[c + 102499] - 3;
-  d = f == b[e] ? 4 : 3;
-  3 == d && O(Ai, 65, Fi, Hi);
-  d = b[e + 2] & 1 ? 5 : 6;
-  5 != d && 6 == d && (b[c + 102400] -= b[e + 1]);
-  b[c + 102401] -= b[e + 1];
-  b[c + 102499] -= 1;
-}
-
-Ei.X = 1;
-
-function Ii(c) {
-  return 2 == (b[c + 102517] & 2);
-}
-
-function U(c) {
-  var f = a;
-  a += 1;
-  b[f] = arguments[U.length];
-  Ji(c, b[f]);
-  a = f;
-}
-
-function Ki(c, f) {
-  var d, e;
-  d = 32 > b[c + 102499] ? 2 : 1;
-  1 == d && O(Ai, 38, Li, Mi);
-  e = c + 102403 + 3 * b[c + 102499];
-  b[e + 1] = f;
-  d = 102400 < f + b[c + 102400] ? 3 : 4;
-  3 == d ? (d = kb(f), b[e] = d, b[e + 2] = 1) : 4 == d && (b[e] = c + b[c + 102400], b[e + 2] = 0, b[c + 102400] += f);
-  b[c + 102401] += f;
-  b[c + 102402] = b[c + 102402] > b[c + 102401] ? b[c + 102402] : b[c + 102401];
-  b[c + 102499] += 1;
-  return b[e];
-}
-
-Ki.X = 1;
-
-function Ni(c) {
-  var f = a;
-  a += 2;
-  Oi(f);
-  b[c] = b[f];
-  b[c + 1] = Math.floor(.0010000000474974513 * b[f + 1]);
-  a = f;
-}
-
-function Pi(c) {
-  var f = a;
-  a += 2;
-  Oi(f);
-  c = 1e3 * (b[f] - b[c]) + .0010000000474974513 * b[f + 1] - b[c + 1];
-  a = f;
-  return c;
-}
-
-function Qi(c, f, d) {
-  var e;
-  e = Ri(f + 1) ? 2 : 1;
-  1 == e && O(Si, 27, Ti, Ui);
-  e = Ri(f + 4) ? 4 : 3;
-  3 == e && O(Si, 28, Ti, Vi);
-  e = xi(o[f + 3]) ? 6 : 5;
-  5 == e && O(Si, 29, Ti, Wi);
-  e = xi(o[f + 6]) ? 8 : 7;
-  7 == e && O(Si, 30, Ti, Xi);
-  e = xi(o[f + 8]) ? 9 : 10;
-  9 == e && (e = 0 <= o[f + 8] ? 11 : 10);
-  10 == e && O(Si, 31, Ti, Yi);
-  e = xi(o[f + 7]) ? 12 : 13;
-  12 == e && (e = 0 <= o[f + 7] ? 14 : 13);
-  13 == e && O(Si, 32, Ti, Zi);
-  b[c + 1] = 0;
-  e = b[f + 12] & 1 ? 15 : 16;
-  15 == e && (b[c + 1] = (b[c + 1] | 8) & 65535);
-  e = b[f + 11] & 1 ? 17 : 18;
-  17 == e && (b[c + 1] = (b[c + 1] | 16) & 65535);
-  e = b[f + 9] & 1 ? 19 : 20;
-  19 == e && (b[c + 1] = (b[c + 1] | 4) & 65535);
-  e = b[f + 10] & 1 ? 21 : 22;
-  21 == e && (b[c + 1] = (b[c + 1] | 2) & 65535);
-  e = b[f + 13] & 1 ? 23 : 24;
-  23 == e && (b[c + 1] = (b[c + 1] | 32) & 65535);
-  b[c + 22] = d;
-  d = c + 3;
-  e = f + 1;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  ch(c + 5, o[f + 3]);
-  cc(c + 7);
-  d = c + 9;
-  e = c + 3;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 11;
-  e = c + 3;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 13] = o[f + 3];
-  o[c + 14] = o[f + 3];
-  o[c + 15] = 0;
-  b[c + 27] = 0;
-  b[c + 28] = 0;
-  b[c + 23] = 0;
-  b[c + 24] = 0;
-  d = c + 16;
-  e = f + 4;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 18] = o[f + 6];
-  o[c + 33] = o[f + 7];
-  o[c + 34] = o[f + 8];
-  o[c + 35] = o[f + 15];
-  cc(c + 19);
-  o[c + 21] = 0;
-  o[c + 36] = 0;
-  b[c] = b[f];
-  e = 2 == b[c] ? 25 : 26;
-  25 == e ? (o[c + 29] = 1, o[c + 30] = 1) : 26 == e && (o[c + 29] = 0, o[c + 30] = 0);
-  o[c + 31] = 0;
-  o[c + 32] = 0;
-  b[c + 37] = b[f + 14];
-  b[c + 25] = 0;
-  b[c + 26] = 0;
-}
-
-Qi.X = 1;
-
-function Ri(c) {
-  var f;
-  if (xi(o[c])) f = 1; else {
-    var d = 0;
-    f = 2;
-  }
-  1 == f && (d = xi(o[c + 1]));
-  return d;
-}
-
-function $i(c) {
-  var f = a;
-  a += 16;
-  var d, e, g = f + 2, i = f + 6, h = f + 8, j = f + 10, k = f + 12, l = f + 14;
-  o[c + 29] = 0;
-  o[c + 30] = 0;
-  o[c + 31] = 0;
-  o[c + 32] = 0;
-  cc(c + 7);
-  d = 0 == b[c] ? 2 : 1;
-  do if (1 == d) if (1 == b[c]) d = 2; else {
-    d = 2 == b[c] ? 5 : 4;
-    4 == d && O(Si, 284, aj, bj);
-    d = f;
-    b[d] = b[ue];
-    o[d] = o[ue];
-    b[d + 1] = b[ue + 1];
-    o[d + 1] = o[ue + 1];
-    e = b[c + 25];
-    d = 0 != b[c + 25] ? 6 : 10;
-    a : do if (6 == d) for (var m = g, n = c + 29, p = g, u = g + 1, r = g + 3, q = c + 31; ; ) {
-      d = 0 == o[e] ? 9 : 8;
-      if (8 == d) {
-        var v = b[e + 3];
-        mb[b[b[v] + 7]](v, g, o[e]);
-        o[n] += o[m];
-        K(i, o[p], u);
-        Nb(f, i);
-        o[q] += o[r];
-      }
-      e = v = b[e + 1];
-      if (0 == v) break a;
-    } while (0);
-    e = c + 29;
-    d = 0 < o[c + 29] ? 11 : 12;
-    11 == d ? (o[c + 30] = 1 / o[e], Vh(f, o[c + 30])) : 12 == d && (o[e] = 1, o[c + 30] = 1);
-    d = 0 < o[c + 31] ? 14 : 18;
-    14 == d && (0 != (b[c + 1] & 16) ? d = 18 : (o[c + 31] -= o[c + 29] * J(f, f), d = 0 < o[c + 31] ? 17 : 16, 16 == d && O(Si, 319, aj, cj), o[c + 32] = 1 / o[c + 31], d = 19));
-    18 == d && (o[c + 31] = 0, o[c + 32] = 0);
-    d = h;
-    e = c + 11;
-    b[d] = b[e];
-    o[d] = o[e];
-    b[d + 1] = b[e + 1];
-    o[d + 1] = o[e + 1];
-    d = c + 7;
-    e = f;
-    b[d] = b[e];
-    o[d] = o[e];
-    b[d + 1] = b[e + 1];
-    o[d + 1] = o[e + 1];
-    d = c + 9;
-    e = c + 11;
-    Pc(j, c + 3, c + 7);
-    m = e;
-    e = j;
-    b[m] = b[e];
-    o[m] = o[e];
-    b[m + 1] = b[e + 1];
-    o[m + 1] = o[e + 1];
-    m = kb(2);
-    dj(m, e);
-    dj(d, m);
-    d = c + 16;
-    e = o[c + 18];
-    C(l, c + 11, h);
-    Ce(k, e, l);
-    Nb(d, k);
-    d = 20;
-  } while (0);
-  2 == d && (g = c + 9, i = c + 3, b[g] = b[i], o[g] = o[i], b[g + 1] = b[i + 1], o[g + 1] = o[i + 1], g = c + 11, i = c + 3, b[g] = b[i], o[g] = o[i], b[g + 1] = b[i + 1], o[g + 1] = o[i + 1], o[c + 13] = o[c + 14]);
-  a = f;
-}
-
-$i.X = 1;
-
-function ej(c) {
-  var f = a;
-  a += 8;
-  var d;
-  d = f + 4;
-  var e = f + 6, g;
-  ch(f + 2, o[c + 13]);
-  g = c + 9;
-  S(e, f + 2, c + 7);
-  C(d, g, e);
-  b[f] = b[d];
-  o[f] = o[d];
-  b[f + 1] = b[d + 1];
-  o[f + 1] = o[d + 1];
-  e = b[c + 22] + 102518;
-  g = b[c + 25];
-  d = 0 != b[c + 25] ? 1 : 3;
-  a : do if (1 == d) for (var i = c + 3; ; ) {
-    fj(g, e, f, i);
-    var h = b[g + 1];
-    g = h;
-    if (0 == h) break a;
-  } while (0);
-  a = f;
-}
-
-function qc(c, f) {
-  var d, e = c + 1, g = b[e];
-  d = f & 1 ? 1 : 3;
-  1 == d ? 0 == (g & 2) && (b[c + 1] = (b[c + 1] | 2) & 65535, o[c + 36] = 0) : 3 == d && (b[e] = g & 65533, o[c + 36] = 0, cc(c + 16), o[c + 18] = 0, cc(c + 19), o[c + 21] = 0);
-}
-
-function gj(c, f) {
-  var d, e, g;
-  d = 2 != b[c] ? 1 : 3;
-  1 == d && (2 == b[f] ? d = 3 : (e = 0, d = 10));
-  if (3 == d) {
-    g = b[c + 27];
-    var i = b[c + 27];
-    a : for (;;) {
-      if (0 == i) {
-        d = 9;
-        break;
-      }
-      d = b[g] == f ? 6 : 8;
-      if (6 == d && 0 == (b[b[g + 1] + 16] & 1)) {
-        d = 7;
-        break a;
-      }
-      g = i = b[g + 3];
-    }
-    9 == d ? e = 1 : 7 == d && (e = 0);
-  }
-  return e;
-}
-
-gj.X = 1;
-
-function hj(c, f) {
-  var d, e, g, i;
-  d = 0 == Ii(b[c + 22]) ? 2 : 1;
-  1 == d && O(Si, 153, ij, jj);
-  d = 1 == Ii(b[c + 22]) ? 3 : 4;
-  3 == d ? e = 0 : 4 == d && (e = b[c + 22], g = Lh(e, 44), 0 == g ? (i = 0, d = 6) : d = 5, 5 == d && (kj(g), i = g), lj(i, e, c, f), d = 0 != (b[c + 1] & 32) ? 7 : 8, 7 == d && (d = b[c + 22] + 102518, mj(i, d, c + 3)), b[i + 1] = b[c + 25], b[c + 25] = i, b[c + 26] += 1, b[i + 2] = c, d = 0 < o[i] ? 9 : 10, 9 == d && $i(c), d = b[c + 22] + 102517, b[d] |= 1, e = i);
-  return e;
-}
-
-hj.X = 1;
-
-function uc(c, f, d) {
-  var e = a;
-  a += 9;
-  nj(e + 6);
-  b[e] = 0;
-  b[e + 1] = 0;
-  o[e + 2] = .20000000298023224;
-  o[e + 3] = 0;
-  o[e + 4] = 0;
-  b[e + 5] = 0;
-  b[e] = f;
-  o[e + 4] = d;
-  hj(c, e);
-  a = e;
-}
-
-function nj(c) {
-  b[c] = 1;
-  b[c + 1] = -1;
-  b[c + 2] = 0;
-}
-
-function oj(c) {
-  Lc(c);
-  b[c + 15] = 0;
-  b[c + 16] = 0;
-  b[c + 17] = pj;
-  b[c + 18] = qj;
-  b[c + 19] = 0;
-}
-
-function rj(c) {
-  return b[c + 2];
-}
-
-function sj(c) {
-  return 2 == (b[c + 1] & 2);
-}
-
-function tj(c, f) {
-  var d, e, g;
-  e = b[f + 12];
-  g = b[f + 13];
-  e = rj(e);
-  g = rj(g);
-  d = 0 != b[c + 18] ? 1 : 3;
-  1 == d && 2 == (b[f + 1] & 2) && (d = b[c + 18], mb[b[b[d] + 3]](d, f));
-  d = 0 != b[f + 2] ? 4 : 5;
-  4 == d && (b[b[f + 2] + 3] = b[f + 3]);
-  d = 0 != b[f + 3] ? 6 : 7;
-  6 == d && (b[b[f + 3] + 2] = b[f + 2]);
-  d = f == b[c + 15] ? 8 : 9;
-  8 == d && (b[c + 15] = b[f + 3]);
-  d = 0 != b[f + 6] ? 10 : 11;
-  10 == d && (b[b[f + 6] + 3] = b[f + 7]);
-  d = 0 != b[f + 7] ? 12 : 13;
-  12 == d && (b[b[f + 7] + 2] = b[f + 6]);
-  d = f + 4 == b[e + 28] ? 14 : 15;
-  14 == d && (b[e + 28] = b[f + 7]);
-  d = 0 != b[f + 10] ? 16 : 17;
-  16 == d && (b[b[f + 10] + 3] = b[f + 11]);
-  d = 0 != b[f + 11] ? 18 : 19;
-  18 == d && (b[b[f + 11] + 2] = b[f + 10]);
-  d = f + 8 == b[g + 28] ? 20 : 21;
-  20 == d && (b[g + 28] = b[f + 11]);
-  uj(f, b[c + 19]);
-  b[c + 16] -= 1;
-}
-
-tj.X = 1;
-
-function vj(c) {
-  var f, d, e, g, i, h, j, k, l, m;
-  d = b[c + 15];
-  f = 0 != b[c + 15] ? 1 : 21;
-  a : do if (1 == f) for (var n = c + 17, p = c + 17, u = c, r = c + 18; ; ) {
-    e = b[d + 12];
-    g = b[d + 13];
-    i = b[d + 14];
-    h = b[d + 15];
-    j = rj(e);
-    k = rj(g);
-    f = 0 != (b[d + 1] & 8) ? 4 : 10;
-    b : do if (4 == f) if (f = 0 == gj(k, j) ? 5 : 6, 5 == f) {
-      f = d;
-      d = b[f + 3];
-      tj(c, f);
-      f = 2;
-      break b;
-    } else if (6 == f) {
-      f = 0 != b[n] ? 7 : 9;
-      do if (7 == f) if (f = b[p], 0 != mb[b[b[f] + 2]](f, e, g)) f = 9; else {
-        f = d;
-        d = b[f + 3];
-        tj(c, f);
-        f = 2;
-        break b;
-      } while (0);
-      b[d + 1] &= -9;
-      f = 10;
-      break b;
-    } while (0);
-    b : do if (10 == f) {
-      if (sj(j)) f = 11; else {
-        var q = 0;
-        f = 12;
-      }
-      11 == f && (q = 0 != b[j]);
-      l = q;
-      if (sj(k)) f = 13; else {
-        var v = 0;
-        f = 14;
-      }
-      13 == f && (v = 0 != b[k]);
-      m = v;
-      f = 0 == (l & 1) ? 15 : 18;
-      do if (15 == f) if (0 != (m & 1)) f = 18; else {
-        var x = b[d + 3];
-        d = x;
-        f = 17;
-        break b;
-      } while (0);
-      f = b[b[e + 6] + 7 * i + 6];
-      m = b[b[g + 6] + 7 * h + 6];
-      l = u;
-      var w = m;
-      m = ba;
-      m = wj(l, f);
-      f = wj(l, w);
-      f = xj(m, f);
-      l = d;
-      f = 0 == (f & 1) ? 19 : 20;
-      if (19 == f) {
-        e = l;
-        d = b[e + 3];
-        tj(c, e);
-        f = 2;
-        break b;
-      } else if (20 == f) {
-        yj(l, b[r]);
-        d = x = b[d + 3];
-        f = 17;
-        break b;
-      }
-    } while (0);
-    2 == f && (x = d);
-    if (0 == x) break a;
-  } while (0);
-}
-
-vj.X = 1;
-
-function zj(c, f) {
-  var d = a;
-  a += 1;
-  var e, g, i, h, j, k;
-  g = b[c + 13] = 0;
-  h = c + 10;
-  e = g < b[h] ? 1 : 5;
-  a : do if (1 == e) for (var l = c + 8, m = c + 14, n = c, p = c + 14, u = c; ; ) if (e = b[b[l] + g], b[m] = e, e = -1 == e ? 4 : 3, 3 == e && (i = wj(n, b[p]), Aj(u, c, i)), g += 1, g >= b[h]) break a; while (0);
-  b[c + 10] = 0;
-  g = b[c + 11] + 3 * b[c + 13];
-  e = b[c + 11];
-  b[d] = 2;
-  Bj(e, g, d);
-  g = 0;
-  l = c + 13;
-  e = g < b[l] ? 6 : 13;
-  a : do if (6 == e) {
-    m = c + 11;
-    p = n = c;
-    u = c + 11;
-    for (i = c + 13; ; ) {
-      h = b[m] + 3 * g;
-      j = Cj(n, b[h]);
-      k = Cj(p, b[h + 1]);
-      Dj(f, j, k);
-      for (g += 1; ; ) {
-        if (g >= b[i]) {
-          e = 7;
-          break;
-        }
-        j = b[u] + 3 * g;
-        if (b[j] != b[h]) {
-          e = 7;
-          break;
-        }
-        if (b[j + 1] != b[h + 1]) {
-          e = 7;
-          break;
-        }
-        g += 1;
-      }
-      if (g >= b[l]) break a;
-    }
-  } while (0);
-  a = d;
-}
-
-zj.X = 1;
-
-function wj(c, f) {
-  var d;
-  d = 0 <= f ? 1 : 2;
-  1 == d && (d = f < b[c + 3] ? 3 : 2);
-  2 == d && O(Ej, 159, Fj, Og);
-  return b[c + 1] + 9 * f;
-}
-
-function Cj(c, f) {
-  var d;
-  d = 0 <= f ? 1 : 2;
-  1 == d && (d = f < b[c + 3] ? 3 : 2);
-  2 == d && O(Ej, 153, Gj, Og);
-  return b[b[c + 1] + 9 * f + 4];
-}
-
-function Dj(c, f, d) {
-  var e, g, i, h, j, k, l, m, n, p;
-  g = b[f + 4];
-  i = b[d + 4];
-  f = b[f + 5];
-  d = b[d + 5];
-  h = rj(g);
-  j = rj(i);
-  e = h == j ? 24 : 1;
-  a : do if (1 == e) {
-    for (k = e = b[j + 28]; 0 != e; ) {
-      e = b[k] == h ? 4 : 12;
-      do if (4 == e) {
-        l = b[b[k + 1] + 12];
-        m = b[b[k + 1] + 13];
-        n = b[b[k + 1] + 14];
-        p = b[b[k + 1] + 15];
-        e = l == g ? 5 : 8;
-        do if (5 == e) if (m != i) e = 8; else if (n != f) e = 8; else if (p == d) break a; while (0);
-        if (l != i) e = 12; else if (m != g) e = 12; else if (n != d) e = 12; else if (p == f) break a;
-      } while (0);
-      k = e = b[k + 3];
-    }
-    if (0 == gj(j, h)) e = 24; else {
-      e = 0 != b[c + 17] ? 15 : 16;
-      if (15 == e && (k = b[c + 17], 0 == mb[b[b[k] + 2]](k, g, i))) break a;
-      k = e = Hj(g, f, i, d, b[c + 19]);
-      0 == e ? e = 24 : (g = b[k + 12], i = b[k + 13], f = b[k + 14], d = b[k + 15], h = rj(g), j = rj(i), b[k + 2] = 0, b[k + 3] = b[c + 15], e = 0 != b[c + 15] ? 18 : 19, 18 == e && (b[b[c + 15] + 2] = k), b[c + 15] = k, b[k + 5] = k, b[k + 4] = j, b[k + 6] = 0, b[k + 7] = b[h + 28], e = 0 != b[h + 28] ? 20 : 21, 20 == e && (b[b[h + 28] + 2] = k + 4), b[h + 28] = k + 4, b[k + 9] = k, b[k + 8] = h, b[k + 10] = 0, b[k + 11] = b[j + 28], e = 0 != b[j + 28] ? 22 : 23, 22 == e && (b[b[j + 28] + 2] = k + 8), b[j + 28] = k + 8, qc(h, 1), qc(j, 1), b[c + 16] += 1);
-    }
-  } while (0);
-}
-
-Dj.X = 1;
-
-function Aj(c, f, d) {
-  var e = a;
-  a += 259;
-  var g, i, h;
-  b[e] = e + 1;
-  b[e + 257] = 0;
-  b[e + 258] = 256;
-  Ij(e, c);
-  c += 1;
-  a : for (; 0 < b[e + 257]; ) {
-    g = e;
-    1 == (0 < b[g + 257] ? 2 : 1) && O(Jj, 67, Kj, Lj);
-    b[g + 257] -= 1;
-    i = b[b[g] + b[g + 257]];
-    if (-1 != i && (h = b[c] + 9 * i, xj(h, d))) if (g = -1 == b[h + 6] ? 7 : 9, 7 == g) {
-      if (g = Oc(f, i), 0 == (g & 1)) break a;
-    } else 9 == g && (Ij(e, h + 6), Ij(e, h + 7));
-  }
-  if (1 == (b[e] != e + 1 ? 1 : 2)) b[e] = 0;
-  a = e;
-}
-
-Aj.X = 1;
-
-function Bj(c, f, d) {
-  var e = a;
-  a += 18;
-  var g, i, h, j, k, l, m = e + 3, n = e + 6, p = e + 9, u = e + 12, r = e + 15, q, v;
-  a : for (;;) {
-    q = h = (f - c) / 12 | 0;
-    if (0 == h) {
-      g = 49;
-      break;
-    } else if (1 == h) {
-      g = 49;
-      break;
-    } else if (2 == h) {
-      g = 2;
-      break;
-    } else if (3 == h) {
-      g = 4;
-      break;
-    } else if (4 == h) {
-      g = 5;
-      break;
-    } else if (5 == h) {
-      g = 6;
-      break;
-    }
-    var x = c;
-    if (30 >= q) {
-      g = 8;
-      break;
-    }
-    i = x;
-    h = f;
-    h -= 3;
-    l = q / 2 | 0;
-    i += 3 * l;
-    g = 1e3 <= q ? 10 : 11;
-    10 == g ? (l = l / 2 | 0, v = Mj(c, c + 3 * l, i, i + 3 * l, h, d)) : 11 == g && (v = Nj(c, i, h, d));
-    q = c;
-    g = mb[b[d]](q, i) ? 28 : 13;
-    if (13 == g) {
-      for (;;) {
-        h = l = h - 3;
-        if (q == l) {
-          g = 14;
-          break;
-        }
-        if (mb[b[d]](h, i)) {
-          g = 27;
-          break;
-        }
-      }
-      if (14 == g) {
-        q += 3;
-        h = f;
-        i = b[d];
-        h = g = h - 3;
-        g = mb[i](c, g) ? 19 : 15;
-        if (15 == g) {
-          for (;;) {
-            if (q == h) {
-              g = 49;
-              break a;
+        return absolute.length == 1 ? '/' : absolute.join('/');
+      },analyzePath:function (path, dontResolveLastLink, linksVisited) {
+        var ret = {
+          isRoot: false,
+          exists: false,
+          error: 0,
+          name: null,
+          path: null,
+          object: null,
+          parentExists: false,
+          parentPath: null,
+          parentObject: null
+        };
+        path = FS.absolutePath(path);
+        if (path == '/') {
+          ret.isRoot = true;
+          ret.exists = ret.parentExists = true;
+          ret.name = '/';
+          ret.path = ret.parentPath = '/';
+          ret.object = ret.parentObject = FS.root;
+        } else if (path !== null) {
+          linksVisited = linksVisited || 0;
+          path = path.slice(1).split('/');
+          var current = FS.root;
+          var traversed = [''];
+          while (path.length) {
+            if (path.length == 1 && current.isFolder) {
+              ret.parentExists = true;
+              ret.parentPath = traversed.length == 1 ? '/' : traversed.join('/');
+              ret.parentObject = current;
+              ret.name = path[0];
             }
-            i = mb[b[d]](c, q);
-            var w = q;
-            if (i) break;
-            q = w + 3;
-          }
-          g = w;
-          i = h;
-          l = g;
-          b[u] = b[l];
-          o[u] = o[l];
-          b[u + 1] = b[l + 1];
-          o[u + 1] = o[l + 1];
-          b[u + 2] = b[l + 2];
-          o[u + 2] = o[l + 2];
-          l = i;
-          b[g] = b[l];
-          o[g] = o[l];
-          b[g + 1] = b[l + 1];
-          o[g + 1] = o[l + 1];
-          b[g + 2] = b[l + 2];
-          o[g + 2] = o[l + 2];
-          g = u;
-          b[i] = b[g];
-          o[i] = o[g];
-          b[i + 1] = b[g + 1];
-          o[i + 1] = o[g + 1];
-          b[i + 2] = b[g + 2];
-          o[i + 2] = o[g + 2];
-          v += 1;
-          q += 3;
-        }
-        if (q == h) {
-          g = 49;
-          break a;
-        }
-        b : for (;;) if (g = mb[b[d]](c, q) ^ 1 ? 21 : 22, 21 == g) q += 3; else if (22 == g) {
-          for (;;) {
-            var y = b[d];
-            h = i = h - 3;
-            if (!mb[y](c, i)) break;
-          }
-          y = q;
-          if (q >= h) break b;
-          g = y;
-          i = h;
-          l = g;
-          b[p] = b[l];
-          o[p] = o[l];
-          b[p + 1] = b[l + 1];
-          o[p + 1] = o[l + 1];
-          b[p + 2] = b[l + 2];
-          o[p + 2] = o[l + 2];
-          l = i;
-          b[g] = b[l];
-          o[g] = o[l];
-          b[g + 1] = b[l + 1];
-          o[g + 1] = o[l + 1];
-          b[g + 2] = b[l + 2];
-          o[g + 2] = o[l + 2];
-          g = p;
-          b[i] = b[g];
-          o[i] = o[g];
-          b[i + 1] = b[g + 1];
-          o[i + 1] = o[g + 1];
-          b[i + 2] = b[g + 2];
-          o[i + 2] = o[g + 2];
-          v += 1;
-          q += 3;
-        }
-        c = y;
-        g = 1;
-        continue a;
-      } else 27 == g && (l = q, g = h, k = l, b[n] = b[k], o[n] = o[k], b[n + 1] = b[k + 1], o[n + 1] = o[k + 1], b[n + 2] = b[k + 2], o[n + 2] = o[k + 2], k = g, b[l] = b[k], o[l] = o[k], b[l + 1] = b[k + 1], o[l + 1] = o[k + 1], b[l + 2] = b[k + 2], o[l + 2] = o[k + 2], l = n, b[g] = b[l], o[g] = o[l], b[g + 1] = b[l + 1], o[g + 1] = o[l + 1], b[g + 2] = b[l + 2], o[g + 2] = o[l + 2], v += 1);
-    }
-    q += 3;
-    g = q < h ? 29 : 36;
-    b : do if (29 == g) for (;;) if (g = mb[b[d]](q, i) ? 30 : 31, 30 == g) q += 3; else if (31 == g) {
-      for (; !(g = b[d], h = l = h - 3, !(mb[g](l, i) ^ 1)); ) ;
-      if (q > h) break b;
-      l = q;
-      g = h;
-      k = l;
-      b[m] = b[k];
-      o[m] = o[k];
-      b[m + 1] = b[k + 1];
-      o[m + 1] = o[k + 1];
-      b[m + 2] = b[k + 2];
-      o[m + 2] = o[k + 2];
-      k = g;
-      b[l] = b[k];
-      o[l] = o[k];
-      b[l + 1] = b[k + 1];
-      o[l + 1] = o[k + 1];
-      b[l + 2] = b[k + 2];
-      o[l + 2] = o[k + 2];
-      l = m;
-      b[g] = b[l];
-      o[g] = o[l];
-      b[g + 1] = b[l + 1];
-      o[g + 1] = o[l + 1];
-      b[g + 2] = b[l + 2];
-      o[g + 2] = o[l + 2];
-      v += 1;
-      g = i == q ? 34 : 35;
-      34 == g && (i = h);
-      q += 3;
-    } while (0);
-    g = q != i ? 37 : 39;
-    37 == g && (mb[b[d]](i, q) ? (h = q, j = i, i = h, b[e] = b[i], o[e] = o[i], b[e + 1] = b[i + 1], o[e + 1] = o[i + 1], b[e + 2] = b[i + 2], o[e + 2] = o[i + 2], i = j, b[h] = b[i], o[h] = o[i], b[h + 1] = b[i + 1], o[h + 1] = o[i + 1], b[h + 2] = b[i + 2], o[h + 2] = o[i + 2], h = e, b[j] = b[h], o[j] = o[h], b[j + 1] = b[h + 1], o[j + 1] = o[h + 1], b[j + 2] = b[h + 2], o[j + 2] = o[h + 2], v = j = v + 1, g = 40) : g = 39);
-    39 == g && (j = v);
-    g = 0 == j ? 41 : 46;
-    b : do if (41 == g) if (i = Oj(c, q, d), h = Oj(q + 3, f, d), i &= 1, g = h ? 42 : 44, 42 == g) {
-      if (i) {
-        g = 49;
-        break a;
-      }
-      f = q;
-      g = 1;
-      continue a;
-    } else if (44 == g) {
-      if (!i) break b;
-      c = q + 3;
-      g = 1;
-      continue a;
-    } while (0);
-    g = ((q - c) / 12 | 0) < ((f - q) / 12 | 0) ? 47 : 48;
-    47 == g ? (Bj(c, q, d), c = q + 3) : 48 == g && (Bj(q + 3, f, d), f = q);
-  }
-  2 == g ? (d = b[d], f = m = f - 3, mb[d](m, c) && (b[r] = b[c], o[r] = o[c], b[r + 1] = b[c + 1], o[r + 1] = o[c + 1], b[r + 2] = b[c + 2], o[r + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[r], o[f] = o[r], b[f + 1] = b[r + 1], o[f + 1] = o[r + 1], b[f + 2] = b[r + 2], o[f + 2] = o[r + 2])) : 4 == g ? Nj(c, c + 3, f - 3, d) : 5 == g ? Pj(c, c + 3, c + 6, f - 3, d) : 6 == g ? Mj(c, c + 3, c + 6, c + 9, f - 3, d) : 8 == g && Qj(x, f, d);
-  a = e;
-}
-
-Bj.X = 1;
-
-function Nj(c, f, d, e) {
-  var g = a;
-  a += 15;
-  var i, h = g + 3, j = g + 6, k = g + 9, l = g + 12, m, n;
-  n = 0;
-  i = mb[b[e]](f, c);
-  var p = mb[b[e]](d, f);
-  i = i ? 6 : 1;
-  6 == i ? (i = p ? 7 : 8, 7 == i ? (b[g] = b[c], o[g] = o[c], b[g + 1] = b[c + 1], o[g + 1] = o[c + 1], b[g + 2] = b[c + 2], o[g + 2] = o[c + 2], b[c] = b[d], o[c] = o[d], b[c + 1] = b[d + 1], o[c + 1] = o[d + 1], b[c + 2] = b[d + 2], o[c + 2] = o[d + 2], b[d] = b[g], o[d] = o[g], b[d + 1] = b[g + 1], o[d + 1] = o[g + 1], b[d + 2] = b[g + 2], o[d + 2] = o[g + 2], m = 1) : 8 == i && (b[h] = b[c], o[h] = o[c], b[h + 1] = b[c + 1], o[h + 1] = o[c + 1], b[h + 2] = b[c + 2], o[h + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[h], o[f] = o[h], b[f + 1] = b[h + 1], o[f + 1] = o[h + 1], b[f + 2] = b[h + 2], o[f + 2] = o[h + 2], n = 1, i = mb[b[e]](d, f) ? 9 : 10, 9 == i && (b[k] = b[f], o[k] = o[f], b[k + 1] = b[f + 1], o[k + 1] = o[f + 1], b[k + 2] = b[f + 2], o[k + 2] = o[f + 2], b[f] = b[d], o[f] = o[d], b[f + 1] = b[d + 1], o[f + 1] = o[d + 1], b[f + 2] = b[d + 2], o[f + 2] = o[d + 2], b[d] = b[k], o[d] = o[k], b[d + 1] = b[k + 1], o[d + 1] = o[k + 1], b[d + 2] = b[k + 2], o[d + 2] = o[k + 2], n = 2), m = n)) : 1 == i && (i = p ? 3 : 2, 3 == i ? (b[l] = b[f], o[l] = o[f], b[l + 1] = b[f + 1], o[l + 1] = o[f + 1], b[l + 2] = b[f + 2], o[l + 2] = o[f + 2], b[f] = b[d], o[f] = o[d], b[f + 1] = b[d + 1], o[f + 1] = o[d + 1], b[f + 2] = b[d + 2], o[f + 2] = o[d + 2], b[d] = b[l], o[d] = o[l], b[d + 1] = b[l + 1], o[d + 1] = o[l + 1], b[d + 2] = b[l + 2], o[d + 2] = o[l + 2], n = 1, i = mb[b[e]](f, c) ? 4 : 5, 4 == i && (b[j] = b[c], o[j] = o[c], b[j + 1] = b[c + 1], o[j + 1] = o[c + 1], b[j + 2] = b[c + 2], o[j + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[j], o[f] = o[j], b[f + 1] = b[j + 1], o[f + 1] = o[j + 1], b[f + 2] = b[j + 2], o[f + 2] = o[j + 2], n = 2), m = n) : 2 == i && (m = n));
-  a = g;
-  return m;
-}
-
-Nj.X = 1;
-
-function Pj(c, f, d, e, g) {
-  var i = a;
-  a += 9;
-  var h = i + 3, j = i + 6, k;
-  k = Nj(c, f, d, g);
-  if (1 == (mb[b[g]](e, d) ? 1 : 4)) b[j] = b[d], o[j] = o[d], b[j + 1] = b[d + 1], o[j + 1] = o[d + 1], b[j + 2] = b[d + 2], o[j + 2] = o[d + 2], b[d] = b[e], o[d] = o[e], b[d + 1] = b[e + 1], o[d + 1] = o[e + 1], b[d + 2] = b[e + 2], o[d + 2] = o[e + 2], b[e] = b[j], o[e] = o[j], b[e + 1] = b[j + 1], o[e + 1] = o[j + 1], b[e + 2] = b[j + 2], o[e + 2] = o[j + 2], k += 1, mb[b[g]](d, f) && (b[i] = b[f], o[i] = o[f], b[i + 1] = b[f + 1], o[i + 1] = o[f + 1], b[i + 2] = b[f + 2], o[i + 2] = o[f + 2], b[f] = b[d], o[f] = o[d], b[f + 1] = b[d + 1], o[f + 1] = o[d + 1], b[f + 2] = b[d + 2], o[f + 2] = o[d + 2], b[d] = b[i], o[d] = o[i], b[d + 1] = b[i + 1], o[d + 1] = o[i + 1], b[d + 2] = b[i + 2], o[d + 2] = o[i + 2], k += 1, mb[b[g]](f, c) && (b[h] = b[c], o[h] = o[c], b[h + 1] = b[c + 1], o[h + 1] = o[c + 1], b[h + 2] = b[c + 2], o[h + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[h], o[f] = o[h], b[f + 1] = b[h + 1], o[f + 1] = o[h + 1], b[f + 2] = b[h + 2], o[f + 2] = o[h + 2], k += 1));
-  a = i;
-  return k;
-}
-
-Pj.X = 1;
-
-function Mj(c, f, d, e, g, i) {
-  var h = a;
-  a += 12;
-  var j = h + 3, k = h + 6, l = h + 9, m;
-  m = Pj(c, f, d, e, i);
-  if (1 == (mb[b[i]](g, e) ? 1 : 5)) b[l] = b[e], o[l] = o[e], b[l + 1] = b[e + 1], o[l + 1] = o[e + 1], b[l + 2] = b[e + 2], o[l + 2] = o[e + 2], b[e] = b[g], o[e] = o[g], b[e + 1] = b[g + 1], o[e + 1] = o[g + 1], b[e + 2] = b[g + 2], o[e + 2] = o[g + 2], b[g] = b[l], o[g] = o[l], b[g + 1] = b[l + 1], o[g + 1] = o[l + 1], b[g + 2] = b[l + 2], o[g + 2] = o[l + 2], m += 1, mb[b[i]](e, d) && (b[j] = b[d], o[j] = o[d], b[j + 1] = b[d + 1], o[j + 1] = o[d + 1], b[j + 2] = b[d + 2], o[j + 2] = o[d + 2], b[d] = b[e], o[d] = o[e], b[d + 1] = b[e + 1], o[d + 1] = o[e + 1], b[d + 2] = b[e + 2], o[d + 2] = o[e + 2], b[e] = b[j], o[e] = o[j], b[e + 1] = b[j + 1], o[e + 1] = o[j + 1], b[e + 2] = b[j + 2], o[e + 2] = o[j + 2], m += 1, mb[b[i]](d, f) && (b[h] = b[f], o[h] = o[f], b[h + 1] = b[f + 1], o[h + 1] = o[f + 1], b[h + 2] = b[f + 2], o[h + 2] = o[f + 2], b[f] = b[d], o[f] = o[d], b[f + 1] = b[d + 1], o[f + 1] = o[d + 1], b[f + 2] = b[d + 2], o[f + 2] = o[d + 2], b[d] = b[h], o[d] = o[h], b[d + 1] = b[h + 1], o[d + 1] = o[h + 1], b[d + 2] = b[h + 2], o[d + 2] = o[h + 2], m += 1, mb[b[i]](f, c) && (b[k] = b[c], o[k] = o[c], b[k + 1] = b[c + 1], o[k + 1] = o[c + 1], b[k + 2] = b[c + 2], o[k + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[k], o[f] = o[k], b[f + 1] = b[k + 1], o[f + 1] = o[k + 1], b[f + 2] = b[k + 2], o[f + 2] = o[k + 2], m += 1)));
-  a = h;
-  return m;
-}
-
-Mj.X = 1;
-
-function Qj(c, f, d) {
-  var e = a;
-  a += 3;
-  var g, i, h, j, k;
-  j = c + 6;
-  Nj(c, c + 3, j, d);
-  k = j + 3;
-  g = k != f ? 1 : 8;
-  a : do if (1 == g) for (var l = e; ; ) {
-    g = mb[b[d]](k, j) ? 3 : 7;
-    if (3 == g) {
-      h = k;
-      b[l] = b[h];
-      o[l] = o[h];
-      b[l + 1] = b[h + 1];
-      o[l + 1] = o[h + 1];
-      b[l + 2] = b[h + 2];
-      o[l + 2] = o[h + 2];
-      h = j;
-      for (j = k; ; ) {
-        i = h;
-        b[j] = b[i];
-        o[j] = o[i];
-        b[j + 1] = b[i + 1];
-        o[j + 1] = o[i + 1];
-        b[j + 2] = b[i + 2];
-        o[j + 2] = o[i + 2];
-        j = h;
-        if (j == c) {
-          g = 6;
-          break;
-        }
-        i = b[d];
-        var m = h - 3;
-        h = m;
-        if (!mb[i](e, m)) {
-          g = 6;
-          break;
-        }
-      }
-      h = e;
-      b[j] = b[h];
-      o[j] = o[h];
-      b[j + 1] = b[h + 1];
-      o[j + 1] = o[h + 1];
-      b[j + 2] = b[h + 2];
-      o[j + 2] = o[h + 2];
-    }
-    j = k;
-    k += 3;
-    if (k == f) break a;
-  } while (0);
-  a = e;
-}
-
-Qj.X = 1;
-
-function xj(c, f) {
-  var d = a;
-  a += 8;
-  var e, g, i = d + 2;
-  e = d + 4;
-  var h = d + 6;
-  C(e, f, c + 2);
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  C(h, c, f + 2);
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  e = 0 < o[d] ? 2 : 1;
-  a : do if (1 == e) if (0 < o[d + 1]) e = 2; else {
-    e = 0 < o[i] ? 5 : 4;
-    do if (4 == e) if (0 < o[i + 1]) e = 5; else {
-      g = 1;
-      e = 7;
-      break a;
-    } while (0);
-    g = 0;
-    e = 7;
-  } while (0);
-  2 == e && (g = 0);
-  a = d;
-  return g;
-}
-
-xj.X = 1;
-
-function kj(c) {
-  nj(c + 8);
-  b[c + 12] = 0;
-  b[c + 2] = 0;
-  b[c + 1] = 0;
-  b[c + 6] = 0;
-  b[c + 7] = 0;
-  b[c + 3] = 0;
-  o[c] = 0;
-}
-
-function Oj(c, f, d) {
-  var e = a;
-  a += 6;
-  var g, i, h, j, k, l, m, n = e + 3;
-  g = (f - c) / 12 | 0;
-  g = 0 == g ? 1 : 1 == g ? 1 : 2 == g ? 2 : 3 == g ? 5 : 4 == g ? 6 : 5 == g ? 7 : 8;
-  if (8 == g) {
-    k = c + 6;
-    Nj(c, c + 3, k, d);
-    l = 0;
-    m = k + 3;
-    a : for (;;) {
-      if (m == f) {
-        g = 17;
-        break;
-      }
-      g = mb[b[d]](m, k) ? 11 : 16;
-      if (11 == g) {
-        h = m;
-        b[n] = b[h];
-        o[n] = o[h];
-        b[n + 1] = b[h + 1];
-        o[n + 1] = o[h + 1];
-        b[n + 2] = b[h + 2];
-        o[n + 2] = o[h + 2];
-        h = k;
-        for (k = m; ; ) {
-          i = h;
-          b[k] = b[i];
-          o[k] = o[i];
-          b[k + 1] = b[i + 1];
-          o[k + 1] = o[i + 1];
-          b[k + 2] = b[i + 2];
-          o[k + 2] = o[i + 2];
-          k = h;
-          if (k == c) {
-            g = 14;
-            break;
-          }
-          i = b[d];
-          var p = h - 3;
-          h = p;
-          if (!mb[i](n, p)) {
-            g = 14;
-            break;
-          }
-        }
-        h = n;
-        b[k] = b[h];
-        o[k] = o[h];
-        b[k + 1] = b[h + 1];
-        o[k + 1] = o[h + 1];
-        b[k + 2] = b[h + 2];
-        o[k + 2] = o[h + 2];
-        l = k = l + 1;
-        if (8 == k) {
-          g = 15;
-          break a;
-        }
-      }
-      k = m;
-      m += 3;
-    }
-    17 == g ? j = 1 : 15 == g && (j = m + 3 == f);
-  } else 1 == g ? j = 1 : 2 == g ? (d = b[d], f = j = f - 3, g = mb[d](j, c) ? 3 : 4, 3 == g && (b[e] = b[c], o[e] = o[c], b[e + 1] = b[c + 1], o[e + 1] = o[c + 1], b[e + 2] = b[c + 2], o[e + 2] = o[c + 2], b[c] = b[f], o[c] = o[f], b[c + 1] = b[f + 1], o[c + 1] = o[f + 1], b[c + 2] = b[f + 2], o[c + 2] = o[f + 2], b[f] = b[e], o[f] = o[e], b[f + 1] = b[e + 1], o[f + 1] = o[e + 1], b[f + 2] = b[e + 2], o[f + 2] = o[e + 2]), j = 1) : 5 == g ? (Nj(c, c + 3, f - 3, d), j = 1) : 6 == g ? (Pj(c, c + 3, c + 6, f - 3, d), j = 1) : 7 == g && (Mj(c, c + 3, c + 6, c + 9, f - 3, d), j = 1);
-  a = e;
-  return j;
-}
-
-Oj.X = 1;
-
-function Ij(c, f) {
-  var d;
-  if (1 == (b[c + 257] == b[c + 258] ? 1 : 3)) {
-    d = b[c];
-    b[c + 258] <<= 1;
-    var e = kb(b[c + 258] << 2);
-    b[c] = e;
-    e = d;
-    d += 1 * ((b[c + 257] << 2) / 4);
-    for (var g = b[c]; e < d; e++, g++) b[g] = b[e], o[g] = o[e];
-  }
-  b[b[c] + b[c + 257]] = b[f];
-  b[c + 257] += 1;
-}
-
-Ij.X = 1;
-
-function lj(c, f, d, e) {
-  var g;
-  b[c + 12] = b[e + 1];
-  o[c + 4] = o[e + 2];
-  o[c + 5] = o[e + 3];
-  b[c + 2] = d;
-  b[c + 1] = 0;
-  d = c + 8;
-  g = e + 6;
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  b[d + 2] = b[g + 2];
-  o[d + 2] = o[g + 2];
-  b[c + 11] = b[e + 5] & 1;
-  d = b[e];
-  d = mb[b[b[d] + 2]](d, f);
-  b[c + 3] = d;
-  d = b[c + 3];
-  d = mb[b[b[d] + 3]](d);
-  f = Lh(f, 28 * d);
-  b[c + 6] = f;
-  g = 0;
-  f = g < d ? 1 : 3;
-  a : do if (1 == f) for (var i = c + 6, h = c + 6; ; ) if (b[b[i] + 7 * g + 4] = 0, b[b[h] + 7 * g + 6] = -1, g += 1, g >= d) break a; while (0);
-  b[c + 7] = 0;
-  o[c] = o[e + 4];
-}
-
-lj.X = 1;
-
-function Rj(c, f) {
-  var d;
-  d = 0 == b[c + 7] ? 2 : 1;
-  1 == d && O(Sj, 72, Tj, Uj);
-  d = b[c + 3];
-  d = mb[b[b[d] + 3]](d);
-  ki(f, b[c + 6], 28 * d);
-  b[c + 6] = 0;
-  d = b[b[c + 3] + 1];
-  d = 0 == d ? 3 : 1 == d ? 4 : 2 == d ? 5 : 3 == d ? 6 : 7;
-  7 == d ? O(Sj, 115, Tj, pe) : 3 == d ? (d = b[c + 3], mb[b[b[d]]](d), ki(f, d, 20)) : 4 == d ? (d = b[c + 3], mb[b[b[d]]](d), ki(f, d, 48)) : 5 == d ? (d = b[c + 3], mb[b[b[d]]](d), ki(f, d, 152)) : 6 == d && (d = b[c + 3], mb[b[b[d]]](d), ki(f, d, 40));
-  b[c + 3] = 0;
-}
-
-Rj.X = 1;
-
-function mj(c, f, d) {
-  var e, g, i;
-  e = 0 == b[c + 7] ? 2 : 1;
-  1 == e && O(Sj, 124, Vj, Uj);
-  e = b[c + 3];
-  e = mb[b[b[e] + 3]](e);
-  b[c + 7] = e;
-  g = 0;
-  var h = c + 7;
-  e = g < b[h] ? 3 : 5;
-  a : do if (3 == e) for (var j = c + 6, k = c + 3; ; ) {
-    i = b[j] + 7 * g;
-    var l = b[k];
-    mb[b[b[l] + 6]](l, i, d, g);
-    var l = f, m = ba, m = Cg(l, i, i);
-    b[l + 7] += 1;
-    Nc(l, m);
-    b[i + 6] = m;
-    b[i + 4] = c;
-    b[i + 5] = g;
-    g += 1;
-    if (g >= b[h]) break a;
-  } while (0);
-}
-
-mj.X = 1;
-
-function fj(c, f, d, e) {
-  var g = a;
-  a += 10;
-  var i, h, j, k = g + 4, l = g + 8;
-  i = 0 == b[c + 7] ? 4 : 1;
-  a : do if (1 == i) {
-    h = 0;
-    var m = c + 7;
-    if (h < b[m]) for (var n = c + 6, p = c + 3, u = c + 3; ; ) {
-      j = b[n] + 7 * h;
-      var r = b[p];
-      mb[b[b[r] + 6]](r, g, d, b[j + 5]);
-      r = b[u];
-      mb[b[b[r] + 6]](r, k, e, b[j + 5]);
-      Gg(j, g, k);
-      C(l, e, d);
-      var r = f, q = b[j + 6];
-      1 == (Mg(r, q, j, l) & 1 ? 1 : 2) && Nc(r, q);
-      h += 1;
-      if (h >= b[m]) break a;
-    } else i = 4;
-  } while (0);
-  a = g;
-}
-
-fj.X = 1;
-
-function Wj(c) {
-  Ei(b[c], b[c + 5]);
-  Ei(b[c], b[c + 6]);
-  Ei(b[c], b[c + 4]);
-  Ei(b[c], b[c + 3]);
-  Ei(b[c], b[c + 2]);
-}
-
-function Xj(c, f, d, e, g, i) {
-  b[c + 10] = f;
-  b[c + 11] = d;
-  b[c + 12] = e;
-  b[c + 7] = 0;
-  b[c + 9] = 0;
-  b[c + 8] = 0;
-  b[c] = g;
-  b[c + 1] = i;
-  f = Ki(b[c], f << 2);
-  b[c + 2] = f;
-  d = Ki(b[c], d << 2);
-  b[c + 3] = d;
-  e = Ki(b[c], e << 2);
-  b[c + 4] = e;
-  e = Ki(b[c], 12 * b[c + 10]);
-  b[c + 6] = e;
-  e = Ki(b[c], 12 * b[c + 10]);
-  b[c + 5] = e;
-}
-
-Xj.X = 1;
-
-function Yj(c) {
-  var f = a;
-  a += 4;
-  var d = f + 2;
-  ch(c + 5, o[c + 14]);
-  var e = c + 3, g = c + 11;
-  S(d, c + 5, c + 7);
-  C(f, g, d);
-  b[e] = b[f];
-  o[e] = o[f];
-  b[e + 1] = b[f + 1];
-  o[e + 1] = o[f + 1];
-  a = f;
-}
-
-function Zj(c, f, d, e, g) {
-  var i = a;
-  a += 54;
-  var h, j, k, l, m = i + 2, n, p = i + 4, u, r = i + 6, q = i + 8, v = i + 10, x = i + 12, w = i + 14, y = i + 22, z = i + 33, B, E, D, H, I = i + 46, M, G = i + 48, R, P = i + 50, L, T, F, X = i + 52, Z, V, aa, ja, Y, W, $, ga, la, fa, ka, oa, ua;
-  Ni(i);
-  j = o[d];
-  k = 0;
-  var Da = c + 7;
-  h = k < b[Da] ? 1 : 5;
-  a : do if (1 == h) for (var Ja = c + 2, Aa = m, Ta = p, pb = c + 5, Fa = m, Va = c + 5, Na = c + 6, pa = p, ha = c + 6; ; ) {
-    l = b[b[Ja] + k];
-    var Ba = l + 11;
-    b[Aa] = b[Ba];
-    o[Aa] = o[Ba];
-    b[Aa + 1] = b[Ba + 1];
-    o[Aa + 1] = o[Ba + 1];
-    n = o[l + 14];
-    var za = l + 16;
-    b[Ta] = b[za];
-    o[Ta] = o[za];
-    b[Ta + 1] = b[za + 1];
-    o[Ta + 1] = o[za + 1];
-    u = o[l + 18];
-    var va = l + 9, Ka = l + 11;
-    b[va] = b[Ka];
-    o[va] = o[Ka];
-    b[va + 1] = b[Ka + 1];
-    o[va + 1] = o[Ka + 1];
-    o[l + 13] = o[l + 14];
-    h = 2 == b[l] ? 3 : 4;
-    if (3 == h) {
-      var ma = j;
-      K(v, o[l + 35], e);
-      K(x, o[l + 30], l + 19);
-      N(q, v, x);
-      K(r, ma, q);
-      Nb(p, r);
-      u += j * o[l + 32] * o[l + 21];
-      Vh(p, $j(1 - j * o[l + 33], 0, 1));
-      u *= $j(1 - j * o[l + 34], 0, 1);
-    }
-    var La = b[pb] + 3 * k;
-    b[La] = b[Fa];
-    o[La] = o[Fa];
-    b[La + 1] = b[Fa + 1];
-    o[La + 1] = o[Fa + 1];
-    o[b[Va] + 3 * k + 2] = n;
-    var Ga = b[Na] + 3 * k;
-    b[Ga] = b[pa];
-    o[Ga] = o[pa];
-    b[Ga + 1] = b[pa + 1];
-    o[Ga + 1] = o[pa + 1];
-    o[b[ha] + 3 * k + 2] = u;
-    k += 1;
-    if (k >= b[Da]) {
-      h = 5;
-      break a;
-    }
-  } while (0);
-  Ni(i);
-  for (var ya = d, Oa = d + 6, Ea = w; ya < Oa; ya++, Ea++) b[Ea] = b[ya], o[Ea] = o[ya];
-  b[w + 6] = b[c + 5];
-  b[w + 7] = b[c + 6];
-  ya = d;
-  Oa = d + 6;
-  for (Ea = y; ya < Oa; ya++, Ea++) b[Ea] = b[ya], o[Ea] = o[ya];
-  b[y + 6] = b[c + 3];
-  b[y + 7] = b[c + 9];
-  b[y + 8] = b[c + 5];
-  b[y + 9] = b[c + 6];
-  b[y + 10] = b[c];
-  ak(z, y);
-  bk(z);
-  h = b[d + 5] & 1 ? 7 : 16;
-  7 == h && ck(z);
-  B = 0;
-  for (var Gb = c + 8, Ob = c + 4; ; ) {
-    if (B >= b[Gb]) {
-      h = 20;
-      break;
-    }
-    var Pa = b[b[Ob] + B];
-    mb[b[b[Pa] + 7]](Pa, w);
-    B += 1;
-  }
-  var ec = Pi(i);
-  o[f + 3] = ec;
-  Ni(i);
-  E = 0;
-  for (var Pb = c + 8, Wa = c + 4; ; ) {
-    if (E >= b[d + 3]) {
-      h = 30;
-      break;
-    }
-    for (D = 0; ; ) {
-      if (D >= b[Pb]) {
-        h = 28;
-        break;
-      }
-      var fc = b[b[Wa] + D];
-      mb[b[b[fc] + 8]](fc, w);
-      D += 1;
-    }
-    dk(z);
-    E += 1;
-  }
-  ek(z);
-  var wb = Pi(i);
-  o[f + 4] = wb;
-  H = 0;
-  var Xa = c + 7;
-  h = H < b[Xa] ? 33 : 39;
-  a : do if (33 == h) for (var Qb = c + 5, Hb = I, Ab = c + 5, Bb = c + 6, db = G, Xb = c + 6, Yb = c + 5, eb = I, xb = c + 5, fb = c + 6, Ia = G, Zb = c + 6; ; ) {
-    var gb = b[Qb] + 3 * H;
-    b[Hb] = b[gb];
-    o[Hb] = o[gb];
-    b[Hb + 1] = b[gb + 1];
-    o[Hb + 1] = o[gb + 1];
-    M = o[b[Ab] + 3 * H + 2];
-    var Cb = b[Bb] + 3 * H;
-    b[db] = b[Cb];
-    o[db] = o[Cb];
-    b[db + 1] = b[Cb + 1];
-    o[db + 1] = o[Cb + 1];
-    R = o[b[Xb] + 3 * H + 2];
-    K(P, j, G);
-    h = 4 < J(P, P) ? 35 : 36;
-    35 == h && (L = 2 / Yc(P), Vh(G, L));
-    T = j * R;
-    h = 2.4674012660980225 < T * T ? 37 : 38;
-    37 == h && (F = 1.5707963705062866 / ke(T), R *= F);
-    K(X, j, G);
-    Nb(I, X);
-    M += j * R;
-    var hb = b[Yb] + 3 * H;
-    b[hb] = b[eb];
-    o[hb] = o[eb];
-    b[hb + 1] = b[eb + 1];
-    o[hb + 1] = o[eb + 1];
-    o[b[xb] + 3 * H + 2] = M;
-    var Db = b[fb] + 3 * H;
-    b[Db] = b[Ia];
-    o[Db] = o[Ia];
-    b[Db + 1] = b[Ia + 1];
-    o[Db + 1] = o[Ia + 1];
-    o[b[Zb] + 3 * H + 2] = R;
-    H += 1;
-    if (H >= b[Xa]) {
-      h = 39;
-      break a;
-    }
-  } while (0);
-  Ni(i);
-  V = Z = 0;
-  var gc = c + 8, hc = c + 4;
-  a : for (;;) {
-    if (V >= b[d + 4]) {
-      h = 53;
-      break;
-    }
-    aa = fk(z);
-    ja = 1;
-    for (Y = 0; ; ) {
-      if (Y >= b[gc]) {
-        h = 49;
-        break;
-      }
-      var qb = b[b[hc] + Y];
-      W = mb[b[b[qb] + 9]](qb, w);
-      if (ja & 1) h = 47; else {
-        var Rb = 0;
-        h = 48;
-      }
-      47 == h && (Rb = W & 1);
-      ja = Rb;
-      Y += 1;
-    }
-    h = aa & 1 ? 50 : 52;
-    if (50 == h && ja & 1) {
-      h = 51;
-      break a;
-    }
-    V += 1;
-  }
-  51 == h && (Z = 1);
-  $ = 0;
-  var Sb = c + 7;
-  h = $ < b[Sb] ? 54 : 56;
-  a : do if (54 == h) for (var rb = c + 2, $b = c + 5, Eb = c + 5, ic = c + 6, sb = c + 6; ; ) {
-    ga = b[b[rb] + $];
-    var Ib = ga + 11, tb = b[$b] + 3 * $;
-    b[Ib] = b[tb];
-    o[Ib] = o[tb];
-    b[Ib + 1] = b[tb + 1];
-    o[Ib + 1] = o[tb + 1];
-    o[ga + 14] = o[b[Eb] + 3 * $ + 2];
-    var ib = ga + 16, ac = b[ic] + 3 * $;
-    b[ib] = b[ac];
-    o[ib] = o[ac];
-    b[ib + 1] = b[ac + 1];
-    o[ib + 1] = o[ac + 1];
-    o[ga + 18] = o[b[sb] + 3 * $ + 2];
-    Yj(ga);
-    $ += 1;
-    if ($ >= b[Sb]) {
-      h = 56;
-      break a;
-    }
-  } while (0);
-  var jc = Pi(i);
-  o[f + 5] = jc;
-  gk(c, b[z + 10]);
-  h = g & 1 ? 59 : 74;
-  a : do if (59 == h) {
-    la = 3.4028234663852886e+38;
-    fa = 0;
-    var Tb = c + 7;
-    h = fa < b[Tb] ? 60 : 68;
-    b : do if (60 == h) for (var Ac = c + 2; ; ) {
-      ka = b[b[Ac] + fa];
-      h = 0 == b[ka] ? 67 : 62;
-      c : do if (62 == h) {
-        h = 0 == (b[ka + 1] & 4) ? 65 : 63;
-        do if (63 == h) if (.001218469929881394 < o[ka + 18] * o[ka + 18]) h = 65; else if (9999999747378752e-20 < J(ka + 16, ka + 16)) h = 65; else {
-          o[ka + 36] += j;
-          la = la < o[ka + 36] ? la : o[ka + 36];
-          h = 67;
-          break c;
-        } while (0);
-        la = o[ka + 36] = 0;
-      } while (0);
-      fa += 1;
-      if (fa >= b[Tb]) {
-        h = 68;
-        break b;
-      }
-    } while (0);
-    if (.5 <= la) if (Z & 1) {
-      oa = 0;
-      for (var kc = c + 7, jb = c + 2; ; ) {
-        if (oa >= b[kc]) {
-          h = 74;
-          break a;
-        }
-        ua = b[b[jb] + oa];
-        qc(ua, 0);
-        oa += 1;
-      }
-    } else h = 74; else h = 74;
-  } while (0);
-  hk(z);
-  a = i;
-}
-
-Zj.X = 1;
-
-function $j(c, f, d) {
-  return f > (c < d ? c : d) ? f : c < d ? c : d;
-}
-
-function gk(c, f) {
-  var d = a;
-  a += 5;
-  var e, g, i, h, j;
-  e = 0 == b[c + 1] ? 6 : 1;
-  a : do if (1 == e) {
-    g = 0;
-    var k = c + 9;
-    if (g < b[k]) for (var l = c + 3, m = d + 4, n = c + 1, p = d, u = d + 2; ; ) {
-      i = b[b[l] + g];
-      h = f + 38 * g;
-      b[m] = b[h + 36];
-      j = 0;
-      e = j < b[h + 36] ? 4 : 5;
-      b : do if (4 == e) for (;;) if (o[p + j] = o[h + 9 * j + 4], o[u + j] = o[h + 9 * j + 5], j += 1, j >= b[h + 36]) {
-        e = 5;
-        break b;
-      } while (0);
-      h = b[n];
-      mb[b[b[h] + 5]](h, i, d);
-      g += 1;
-      if (g >= b[k]) break a;
-    } else e = 6;
-  } while (0);
-  a = d;
-}
-
-gk.X = 1;
-
-function pc(c, f) {
-  di(c);
-  yi(c + 17);
-  oj(c + 102518);
-  b[c + 102545] = 0;
-  b[c + 102546] = 0;
-  b[c + 102538] = 0;
-  b[c + 102539] = 0;
-  b[c + 102540] = 0;
-  b[c + 102541] = 0;
-  b[c + 102548] = 1;
-  b[c + 102549] = 1;
-  b[c + 102550] = 0;
-  b[c + 102551] = 1;
-  b[c + 102544] = 1;
-  var d = c + 102542;
-  b[d] = b[f];
-  o[d] = o[f];
-  b[d + 1] = b[f + 1];
-  o[d + 1] = o[f + 1];
-  b[c + 102517] = 4;
-  o[c + 102547] = 0;
-  b[c + 102537] = c;
-  for (var d = c + 102552, e = 0; 8 > e; e++) b[d + e] = 0, o[d + e] = 0;
-}
-
-pc.X = 1;
-
-function Kc(c) {
-  var f, d, e;
-  f = b[c + 102538];
-  for (d = b[c + 102538]; 0 != d; ) {
-    d = b[f + 24];
-    e = b[f + 25];
-    for (f = b[f + 25]; 0 != f; ) {
-      f = b[e + 1];
-      b[e + 7] = 0;
-      Rj(e, c);
-      e = f;
-    }
-    f = d;
-  }
-  zi(c + 17);
-}
-
-Kc.X = 1;
-
-function ik(c, f, d, e) {
-  var g = a;
-  a += 32;
-  var i, h, j, k = g + 11, l = g + 24, m, n = g + 26, p, u = g + 28, r, q = g + 30;
-  i = d < b[c + 7] ? 2 : 1;
-  1 == i && O(jk, 386, kk, lk);
-  i = e < b[c + 7] ? 4 : 3;
-  3 == i && O(jk, 387, kk, mk);
-  h = 0;
-  var v = c + 7;
-  i = h < b[v] ? 5 : 7;
-  a : do if (5 == i) for (var x = c + 2, w = c + 5, y = c + 5, z = c + 6, B = c + 6; ; ) {
-    j = b[b[x] + h];
-    var E = b[w] + 3 * h, D = j + 11;
-    b[E] = b[D];
-    o[E] = o[D];
-    b[E + 1] = b[D + 1];
-    o[E + 1] = o[D + 1];
-    o[b[y] + 3 * h + 2] = o[j + 14];
-    E = b[z] + 3 * h;
-    D = j + 16;
-    b[E] = b[D];
-    o[E] = o[D];
-    b[E + 1] = b[D + 1];
-    o[E + 1] = o[D + 1];
-    o[b[B] + 3 * h + 2] = o[j + 18];
-    h += 1;
-    if (h >= b[v]) break a;
-  } while (0);
-  b[g + 6] = b[c + 3];
-  b[g + 7] = b[c + 9];
-  b[g + 10] = b[c];
-  i = f;
-  h = f + 6;
-  for (j = g; i < h; i++, j++) b[j] = b[i], o[j] = o[i];
-  b[g + 8] = b[c + 5];
-  b[g + 9] = b[c + 6];
-  ak(k, g);
-  for (i = 0; i < b[f + 4]; ) {
-    h = nk(k, d, e);
-    if (h & 1) break;
-    i += 1;
-  }
-  i = b[b[c + 2] + d] + 9;
-  h = b[c + 5] + 3 * d;
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  o[b[b[c + 2] + d] + 13] = o[b[c + 5] + 3 * d + 2];
-  i = b[b[c + 2] + e] + 9;
-  d = b[c + 5] + 3 * e;
-  b[i] = b[d];
-  o[i] = o[d];
-  b[i + 1] = b[d + 1];
-  o[i + 1] = o[d + 1];
-  o[b[b[c + 2] + e] + 13] = o[b[c + 5] + 3 * e + 2];
-  bk(k);
-  for (i = 0; i < b[f + 3]; ) {
-    dk(k);
-    i += 1;
-  }
-  f = o[f];
-  e = 0;
-  d = c + 7;
-  i = e < b[d] ? 22 : 28;
-  a : do if (22 == i) {
-    h = c + 5;
-    j = l;
-    for (var v = c + 5, x = c + 6, w = n, y = c + 6, z = c + 5, B = l, E = c + 5, D = c + 6, H = n, I = c + 6, M = c + 2, G = l, R = n; ; ) {
-      i = b[h] + 3 * e;
-      b[j] = b[i];
-      o[j] = o[i];
-      b[j + 1] = b[i + 1];
-      o[j + 1] = o[i + 1];
-      m = o[b[v] + 3 * e + 2];
-      i = b[x] + 3 * e;
-      b[w] = b[i];
-      o[w] = o[i];
-      b[w + 1] = b[i + 1];
-      o[w + 1] = o[i + 1];
-      p = o[b[y] + 3 * e + 2];
-      K(u, f, n);
-      i = 4 < J(u, u) ? 24 : 25;
-      24 == i && (i = 2 / Yc(u), Vh(n, i));
-      r = f * p;
-      i = 2.4674012660980225 < r * r ? 26 : 27;
-      26 == i && (r = 1.5707963705062866 / ke(r), p *= r);
-      K(q, f, n);
-      Nb(l, q);
-      m += f * p;
-      r = b[z] + 3 * e;
-      b[r] = b[B];
-      o[r] = o[B];
-      b[r + 1] = b[B + 1];
-      o[r + 1] = o[B + 1];
-      o[b[E] + 3 * e + 2] = m;
-      r = b[D] + 3 * e;
-      b[r] = b[H];
-      o[r] = o[H];
-      b[r + 1] = b[H + 1];
-      o[r + 1] = o[H + 1];
-      o[b[I] + 3 * e + 2] = p;
-      r = b[b[M] + e];
-      var P = r + 11;
-      b[P] = b[G];
-      o[P] = o[G];
-      b[P + 1] = b[G + 1];
-      o[P + 1] = o[G + 1];
-      o[r + 14] = m;
-      m = r + 16;
-      b[m] = b[R];
-      o[m] = o[R];
-      b[m + 1] = b[R + 1];
-      o[m + 1] = o[R + 1];
-      o[r + 18] = p;
-      Yj(r);
-      e += 1;
-      if (e >= b[d]) break a;
-    }
-  } while (0);
-  gk(c, b[k + 10]);
-  hk(k);
-  a = g;
-}
-
-ik.X = 1;
-
-function rc(c, f) {
-  var d, e, g;
-  d = 0 == Ii(c) ? 2 : 1;
-  1 == d && O(ok, 109, pk, wk);
-  d = Ii(c) ? 3 : 4;
-  3 == d ? e = 0 : 4 == d && (e = Lh(c, 152), 0 == e ? (g = 0, d = 6) : d = 5, 5 == d && (Qi(e, f, c), g = e), b[g + 23] = 0, b[g + 24] = b[c + 102538], d = 0 != b[c + 102538] ? 7 : 8, 7 == d && (b[b[c + 102538] + 23] = g), b[c + 102538] = g, b[c + 102540] += 1, e = g);
-  return e;
-}
-
-rc.X = 1;
-
-function xk(c) {
-  b[c + 7] = 0;
-  b[c + 9] = 0;
-  b[c + 8] = 0;
-}
-
-function Hk(c, f) {
-  1 == (b[c + 7] < b[c + 10] ? 2 : 1) && O(Ik, 54, Jk, Kk);
-  b[f + 2] = b[c + 7];
-  b[b[c + 2] + b[c + 7]] = f;
-  b[c + 7] += 1;
-}
-
-function Lk(c, f) {
-  1 == (b[c + 9] < b[c + 11] ? 2 : 1) && O(Ik, 62, Mk, Nk);
-  var d = b[c + 9];
-  b[c + 9] = d + 1;
-  b[b[c + 3] + d] = f;
-}
-
-function Ok(c, f) {
-  var d = a;
-  a += 23;
-  var e, g, i, h, j, k, l, m, n, p = d + 13, u = d + 21;
-  o[c + 102555] = 0;
-  o[c + 102556] = 0;
-  o[c + 102557] = 0;
-  Xj(d, b[c + 102540], b[c + 102534], b[c + 102541], c + 17, b[c + 102536]);
-  g = b[c + 102538];
-  e = 0 != b[c + 102538] ? 1 : 2;
-  a : do if (1 == e) for (;;) if (b[g + 1] &= 65534, g = i = b[g + 24], 0 == i) break a; while (0);
-  g = b[c + 102533];
-  e = 0 != b[c + 102533] ? 3 : 4;
-  a : do if (3 == e) for (;;) if (b[g + 1] &= -2, g = i = b[g + 3], 0 == i) break a; while (0);
-  g = b[c + 102539];
-  e = 0 != b[c + 102539] ? 5 : 6;
-  a : do if (5 == e) for (;;) if (b[g + 15] = 0, g = i = b[g + 3], 0 == i) break a; while (0);
-  g = b[c + 102540];
-  i = Ki(c + 17, g << 2);
-  h = b[c + 102538];
-  var r = c + 102542, q = c + 102544, v = p + 3, x = c + 102555, w = p + 4, y = c + 102556, z = p + 5, B = c + 102557, E = d + 7, D = d + 2;
-  for (e = b[c + 102538]; 0 != e; ) {
-    e = 0 != (b[h + 1] & 1) ? 65 : 18;
-    a : do if (18 == e) if (0 == sj(h)) e = 65; else if (0 == (32 == (b[h + 1] & 32))) e = 65; else if (0 == b[h]) e = 65; else {
-      xk(d);
-      k = j = 0;
-      j = k + 1;
-      b[i + k] = h;
-      b[h + 1] = (b[h + 1] | 1) & 65535;
-      b : for (;;) {
-        if (0 >= j) {
-          e = 58;
-          break;
-        }
-        j = e = j - 1;
-        k = b[i + e];
-        e = 1 == (32 == (b[k + 1] & 32)) ? 29 : 28;
-        28 == e && O(ok, 445, Pk, Qk);
-        Hk(d, k);
-        qc(k, 1);
-        if (0 == b[k]) e = 25; else {
-          l = b[k + 28];
-          for (m = b[k + 28]; ; ) {
-            if (0 == m) {
-              e = 47;
+            var target = path.shift();
+            if (!current.isFolder) {
+              ret.error = ERRNO_CODES.ENOTDIR;
+              break;
+            } else if (!current.read) {
+              ret.error = ERRNO_CODES.EACCES;
+              break;
+            } else if (!current.contents.hasOwnProperty(target)) {
+              ret.error = ERRNO_CODES.ENOENT;
               break;
             }
-            m = b[l + 1];
-            e = 0 != (b[m + 1] & 1) ? 46 : 36;
-            36 == e && (0 == (4 == (b[m + 1] & 4)) ? e = 46 : 0 == (2 == (b[m + 1] & 2)) ? e = 46 : (e = b[b[m + 12] + 11] & 1, n = b[b[m + 13] + 11] & 1, e & 1 ? e = 46 : n & 1 ? e = 46 : (Lk(d, m), b[m + 1] |= 1, m = b[l], 0 != (b[m + 1] & 1) ? e = 46 : (e = j < g ? 45 : 44, 44 == e && O(ok, 495, Pk, Rk), n = j, j = n + 1, b[i + n] = m, b[m + 1] = (b[m + 1] | 1) & 65535))));
-            l = m = b[l + 3];
-          }
-          l = b[k + 27];
-          for (k = b[k + 27]; ; ) {
-            if (0 == k) {
-              e = 25;
-              continue b;
+            current = current.contents[target];
+            if (current.link && !(dontResolveLastLink && path.length == 0)) {
+              if (linksVisited > 40) { // Usual Linux SYMLOOP_MAX.
+                ret.error = ERRNO_CODES.ELOOP;
+                break;
+              }
+              var link = FS.absolutePath(current.link, traversed.join('/'));
+              ret = FS.analyzePath([link].concat(path).join('/'),
+                                   dontResolveLastLink, linksVisited + 1);
+              return ret;
             }
-            e = 1 == (b[b[l + 1] + 15] & 1) ? 57 : 50;
-            50 == e && (k = b[l], 0 == (32 == (b[k + 1] & 32)) ? e = 57 : (e = d, m = b[l + 1], 1 == (b[e + 8] < b[e + 12] ? 2 : 1) && O(Ik, 68, Sk, Tk), n = b[e + 8], b[e + 8] = n + 1, b[b[e + 4] + n] = m, b[b[l + 1] + 15] = 1, 0 != (b[k + 1] & 1) ? e = 57 : (e = j < g ? 56 : 55, 55 == e && O(ok, 524, Pk, Rk), m = j, j = m + 1, b[i + m] = k, b[k + 1] = (b[k + 1] | 1) & 65535)));
-            l = k = b[l + 3];
+            traversed.push(target);
+            if (path.length == 0) {
+              ret.exists = true;
+              ret.path = traversed.join('/');
+              ret.object = current;
+            }
           }
         }
-      }
-      Zj(d, p, f, r, b[q] & 1);
-      o[x] += o[v];
-      o[y] += o[w];
-      o[B] += o[z];
-      for (j = 0; ; ) {
-        if (j >= b[E]) break a;
-        k = b[b[D] + j];
-        e = 0 == b[k] ? 63 : 64;
-        63 == e && (b[k + 1] &= 65534);
-        j += 1;
-      }
-    } while (0);
-    h = e = b[h + 24];
-  }
-  Ei(c + 17, i);
-  Ni(u);
-  p = b[c + 102538];
-  for (g = b[c + 102538]; 0 != g; ) {
-    e = 0 == (b[p + 1] & 1) ? 74 : 71;
-    71 == e && (0 == b[p] || ej(p));
-    p = g = b[p + 24];
-  }
-  p = c + 102518;
-  zj(p, p);
-  u = Pi(u);
-  o[c + 102558] = u;
-  Wj(d);
-  a = d;
-}
-
-Ok.X = 1;
-
-function Uk(c, f) {
-  var d = a;
-  a += 83;
-  var e, g, i, h, j, k, l, m, n, p, u, r, q, v, x = d + 13, w = d + 46, y = d + 48, z = d + 57, B = d + 66, E = d + 68, D = d + 77;
-  Xj(d, 64, 32, 0, c + 17, b[c + 102536]);
-  e = b[c + 102551] & 1 ? 2 : 1;
-  a : do if (2 == e) {
-    g = b[c + 102538];
-    e = 0 != b[c + 102538] ? 3 : 4;
-    b : do if (3 == e) for (;;) {
-      b[g + 1] &= 65534;
-      o[g + 15] = 0;
-      var H = b[g + 24];
-      g = H;
-      if (0 == H) {
-        e = 4;
-        break b;
-      }
-    } while (0);
-    g = b[c + 102533];
-    if (0 == b[c + 102533]) e = 1; else for (;;) if (b[g + 1] &= -34, b[g + 32] = 0, o[g + 33] = 1, g = H = b[g + 3], 0 == H) {
-      e = 1;
-      break a;
-    }
-  } while (0);
-  g = c + 102533;
-  var H = x + 7, I = x + 14, M = x + 23, G = x + 32, R = w + 1, P = c + 102536, L = B + 1, T = d + 7, F = d + 10, X = d + 9, Z = d + 11, V = c + 102536, aa = D + 1, ja = D + 2, Y = D + 4, W = D + 3, $ = D + 5, ga = d + 7, la = d + 2, fa = c + 102518, ka = c + 102550;
-  a : for (;;) {
-    i = 0;
-    h = 1;
-    j = b[g];
-    for (e = b[g]; 0 != e; ) {
-      e = 0 == (4 == (b[j + 1] & 4)) ? 57 : 14;
-      b : do if (14 == e) if (8 < b[j + 32]) e = 57; else {
-        k = 1;
-        e = 0 != (b[j + 1] & 32) ? 16 : 17;
-        if (16 == e) k = o[j + 33]; else if (17 == e) {
-          l = b[j + 12];
-          m = b[j + 13];
-          if (b[l + 11] & 1) break b;
-          if (b[m + 11] & 1) break b;
-          n = rj(l);
-          p = rj(m);
-          u = b[n];
-          r = b[p];
-          e = 2 == u ? 26 : 24;
-          24 == e && (2 == r || O(ok, 641, Vk, Wk));
-          if (sj(n)) e = 28; else {
-            var oa = 0;
-            e = 29;
-          }
-          28 == e && (oa = 0 != u);
-          q = oa;
-          if (sj(p)) e = 31; else {
-            var ua = 0;
-            e = 32;
-          }
-          31 == e && (ua = 0 != r);
-          v = ua;
-          e = 0 == (q & 1) ? 33 : 34;
-          if (33 == e && 0 == (v & 1)) break b;
-          if (8 == (b[n + 1] & 8)) {
-            var Da = 1;
-            e = 36;
-          } else e = 35;
-          35 == e && (Da = 2 != u);
-          u = Da;
-          if (8 == (b[p + 1] & 8)) {
-            var Ja = 1;
-            e = 38;
-          } else e = 37;
-          37 == e && (Ja = 2 != r);
-          r = Ja;
-          e = 0 == (u & 1) ? 39 : 40;
-          if (39 == e && 0 == (r & 1)) break b;
-          r = o[n + 15];
-          u = o[p + 15];
-          e = o[n + 15] < o[p + 15] ? 41 : 42;
-          41 == e ? (r = u, Xk(n + 7, r)) : 42 == e && u < o[n + 15] && (r = o[n + 15], Xk(p + 7, r));
-          e = 1 > r ? 46 : 45;
-          45 == e && O(ok, 676, Vk, Yk);
-          e = b[j + 14];
-          u = b[j + 15];
-          q = x;
-          le(q);
-          le(q + 7);
-          me(x, Zk(l), e);
-          me(H, Zk(m), u);
-          l = e = n + 7;
-          m = e + 9;
-          for (q = I; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-          l = e = p + 7;
-          m = e + 9;
-          for (q = M; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-          o[G] = 1;
-          dh(w, x);
-          l = o[R];
-          e = 3 == b[w] ? 52 : 53;
-          52 == e ? k = 1 > r + (1 - r) * l ? r + (1 - r) * l : 1 : 53 == e && (k = 1);
-          o[j + 33] = k;
-          b[j + 1] |= 32;
+        return ret;
+      },findObject:function (path, dontResolveLastLink) {
+        FS.ensureRoot();
+        var ret = FS.analyzePath(path, dontResolveLastLink);
+        if (ret.exists) {
+          return ret.object;
+        } else {
+          ___setErrNo(ret.error);
+          return null;
         }
-        k < h ? (i = j, h = k) : e = 57;
-      } while (0);
-      j = e = b[j + 3];
+      },createObject:function (parent, name, properties, canRead, canWrite) {
+        if (!parent) parent = '/';
+        if (typeof parent === 'string') parent = FS.findObject(parent);
+        if (!parent) {
+          ___setErrNo(ERRNO_CODES.EACCES);
+          throw new Error('Parent path must exist.');
+        }
+        if (!parent.isFolder) {
+          ___setErrNo(ERRNO_CODES.ENOTDIR);
+          throw new Error('Parent must be a folder.');
+        }
+        if (!parent.write && !FS.ignorePermissions) {
+          ___setErrNo(ERRNO_CODES.EACCES);
+          throw new Error('Parent folder must be writeable.');
+        }
+        if (!name || name == '.' || name == '..') {
+          ___setErrNo(ERRNO_CODES.ENOENT);
+          throw new Error('Name must not be empty.');
+        }
+        if (parent.contents.hasOwnProperty(name)) {
+          ___setErrNo(ERRNO_CODES.EEXIST);
+          throw new Error("Can't overwrite object.");
+        }
+        parent.contents[name] = {
+          read: canRead === undefined ? true : canRead,
+          write: canWrite === undefined ? false : canWrite,
+          timestamp: Date.now(),
+          inodeNumber: FS.nextInode++
+        };
+        for (var key in properties) {
+          if (properties.hasOwnProperty(key)) {
+            parent.contents[name][key] = properties[key];
+          }
+        }
+        return parent.contents[name];
+      },createFolder:function (parent, name, canRead, canWrite) {
+        var properties = {isFolder: true, isDevice: false, contents: {}};
+        return FS.createObject(parent, name, properties, canRead, canWrite);
+      },createPath:function (parent, path, canRead, canWrite) {
+        var current = FS.findObject(parent);
+        if (current === null) throw new Error('Invalid parent.');
+        path = path.split('/').reverse();
+        while (path.length) {
+          var part = path.pop();
+          if (!part) continue;
+          if (!current.contents.hasOwnProperty(part)) {
+            FS.createFolder(current, part, canRead, canWrite);
+          }
+          current = current.contents[part];
+        }
+        return current;
+      },createFile:function (parent, name, properties, canRead, canWrite) {
+        properties.isFolder = false;
+        return FS.createObject(parent, name, properties, canRead, canWrite);
+      },createDataFile:function (parent, name, data, canRead, canWrite) {
+        if (typeof data === 'string') {
+          var dataArray = new Array(data.length);
+          for (var i = 0, len = data.length; i < len; ++i) dataArray[i] = data.charCodeAt(i);
+          data = dataArray;
+        }
+        var properties = {
+          isDevice: false,
+          contents: data.subarray ? data.subarray(0) : data // as an optimization, create a new array wrapper (not buffer) here, to help JS engines understand this object
+        };
+        return FS.createFile(parent, name, properties, canRead, canWrite);
+      },createLazyFile:function (parent, name, url, canRead, canWrite) {
+        if (typeof XMLHttpRequest !== 'undefined') {
+          if (!ENVIRONMENT_IS_WORKER) throw 'Cannot do synchronous binary XHRs outside webworkers in modern browsers. Use --embed-file or --preload-file in emcc';
+          // Lazy chunked Uint8Array (implements get and length from Uint8Array). Actual getting is abstracted away for eventual reuse.
+          var LazyUint8Array = function(chunkSize, length) {
+            this.length = length;
+            this.chunkSize = chunkSize;
+            this.chunks = []; // Loaded chunks. Index is the chunk number
+          }
+          LazyUint8Array.prototype.get = function(idx) {
+            if (idx > this.length-1 || idx < 0) {
+              return undefined;
+            }
+            var chunkOffset = idx % chunkSize;
+            var chunkNum = Math.floor(idx / chunkSize);
+            return this.getter(chunkNum)[chunkOffset];
+          }
+          LazyUint8Array.prototype.setDataGetter = function(getter) {
+            this.getter = getter;
+          }
+          // Find length
+          var xhr = new XMLHttpRequest();
+          xhr.open('HEAD', url, false);
+          xhr.send(null);
+          if (!(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304)) throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
+          var datalength = Number(xhr.getResponseHeader("Content-length"));
+          var header;
+          var hasByteServing = (header = xhr.getResponseHeader("Accept-Ranges")) && header === "bytes";
+          var chunkSize = 1024*1024; // Chunk size in bytes
+          if (!hasByteServing) chunkSize = datalength;
+          // Function to get a range from the remote URL.
+          var doXHR = (function(from, to) {
+            if (from > to) throw new Error("invalid range (" + from + ", " + to + ") or no bytes requested!");
+            if (to > datalength-1) throw new Error("only " + datalength + " bytes available! programmer error!");
+            // TODO: Use mozResponseArrayBuffer, responseStream, etc. if available.
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, false);
+            if (datalength !== chunkSize) xhr.setRequestHeader("Range", "bytes=" + from + "-" + to);
+            // Some hints to the browser that we want binary data.
+            if (typeof Uint8Array != 'undefined') xhr.responseType = 'arraybuffer';
+            if (xhr.overrideMimeType) {
+              xhr.overrideMimeType('text/plain; charset=x-user-defined');
+            }
+            xhr.send(null);
+            if (!(xhr.status >= 200 && xhr.status < 300 || xhr.status === 304)) throw new Error("Couldn't load " + url + ". Status: " + xhr.status);
+            if (xhr.response !== undefined) {
+              return new Uint8Array(xhr.response || []);
+            } else {
+              return intArrayFromString(xhr.responseText || '', true);
+            }
+          });
+          var lazyArray = new LazyUint8Array(chunkSize, datalength);
+          lazyArray.setDataGetter(function(chunkNum) {
+            var start = chunkNum * lazyArray.chunkSize;
+            var end = (chunkNum+1) * lazyArray.chunkSize - 1; // including this byte
+            end = Math.min(end, datalength-1); // if datalength-1 is selected, this is the last block
+            if (typeof(lazyArray.chunks[chunkNum]) === "undefined") {
+              lazyArray.chunks[chunkNum] = doXHR(start, end);
+            }
+            if (typeof(lazyArray.chunks[chunkNum]) === "undefined") throw new Error("doXHR failed!");
+            return lazyArray.chunks[chunkNum];
+          });
+          var properties = { isDevice: false, contents: lazyArray };
+        } else {
+          var properties = { isDevice: false, url: url };
+        }
+        return FS.createFile(parent, name, properties, canRead, canWrite);
+      },createPreloadedFile:function (parent, name, url, canRead, canWrite, onload, onerror, dontCreateFile) {
+        Browser.init();
+        var fullname = FS.joinPath([parent, name], true);
+        function processData(byteArray) {
+          function finish(byteArray) {
+            if (!dontCreateFile) {
+              FS.createDataFile(parent, name, byteArray, canRead, canWrite);
+            }
+            if (onload) onload();
+            removeRunDependency('cp ' + fullname);
+          }
+          var handled = false;
+          Module['preloadPlugins'].forEach(function(plugin) {
+            if (handled) return;
+            if (plugin['canHandle'](fullname)) {
+              plugin['handle'](byteArray, fullname, finish, function() {
+                if (onerror) onerror();
+                removeRunDependency('cp ' + fullname);
+              });
+              handled = true;
+            }
+          });
+          if (!handled) finish(byteArray);
+        }
+        addRunDependency('cp ' + fullname);
+        if (typeof url == 'string') {
+          Browser.asyncLoad(url, function(byteArray) {
+            processData(byteArray);
+          }, onerror);
+        } else {
+          processData(url);
+        }
+      },createLink:function (parent, name, target, canRead, canWrite) {
+        var properties = {isDevice: false, link: target};
+        return FS.createFile(parent, name, properties, canRead, canWrite);
+      },createDevice:function (parent, name, input, output) {
+        if (!(input || output)) {
+          throw new Error('A device must have at least one callback defined.');
+        }
+        var ops = {isDevice: true, input: input, output: output};
+        return FS.createFile(parent, name, ops, Boolean(input), Boolean(output));
+      },forceLoadFile:function (obj) {
+        if (obj.isDevice || obj.isFolder || obj.link || obj.contents) return true;
+        var success = true;
+        if (typeof XMLHttpRequest !== 'undefined') {
+          throw new Error("Lazy loading should have been performed (contents set) in createLazyFile, but it was not. Lazy loading only works in web workers. Use --embed-file or --preload-file in emcc on the main thread.");
+        } else if (Module['read']) {
+          // Command-line.
+          try {
+            // WARNING: Can't read binary files in V8's d8 or tracemonkey's js, as
+            //          read() will try to parse UTF8.
+            obj.contents = intArrayFromString(Module['read'](obj.url), true);
+          } catch (e) {
+            success = false;
+          }
+        } else {
+          throw new Error('Cannot load without read() or XMLHttpRequest.');
+        }
+        if (!success) ___setErrNo(ERRNO_CODES.EIO);
+        return success;
+      },ensureRoot:function () {
+        if (FS.root) return;
+        // The main file system tree. All the contents are inside this.
+        FS.root = {
+          read: true,
+          write: true,
+          isFolder: true,
+          isDevice: false,
+          timestamp: Date.now(),
+          inodeNumber: 1,
+          contents: {}
+        };
+      },init:function (input, output, error) {
+        // Make sure we initialize only once.
+        assert(!FS.init.initialized, 'FS.init was previously called. If you want to initialize later with custom parameters, remove any earlier calls (note that one is automatically added to the generated code)');
+        FS.init.initialized = true;
+        FS.ensureRoot();
+        // Allow Module.stdin etc. to provide defaults, if none explicitly passed to us here
+        input = input || Module['stdin'];
+        output = output || Module['stdout'];
+        error = error || Module['stderr'];
+        // Default handlers.
+        var stdinOverridden = true, stdoutOverridden = true, stderrOverridden = true;
+        if (!input) {
+          stdinOverridden = false;
+          input = function() {
+            if (!input.cache || !input.cache.length) {
+              var result;
+              if (typeof window != 'undefined' &&
+                  typeof window.prompt == 'function') {
+                // Browser.
+                result = window.prompt('Input: ');
+                if (result === null) result = String.fromCharCode(0); // cancel ==> EOF
+              } else if (typeof readline == 'function') {
+                // Command line.
+                result = readline();
+              }
+              if (!result) result = '';
+              input.cache = intArrayFromString(result + '\n', true);
+            }
+            return input.cache.shift();
+          };
+        }
+        var utf8 = new Runtime.UTF8Processor();
+        function simpleOutput(val) {
+          if (val === null || val === 10) {
+            output.printer(output.buffer.join(''));
+            output.buffer = [];
+          } else {
+            output.buffer.push(utf8.processCChar(val));
+          }
+        }
+        if (!output) {
+          stdoutOverridden = false;
+          output = simpleOutput;
+        }
+        if (!output.printer) output.printer = Module['print'];
+        if (!output.buffer) output.buffer = [];
+        if (!error) {
+          stderrOverridden = false;
+          error = simpleOutput;
+        }
+        if (!error.printer) error.printer = Module['print'];
+        if (!error.buffer) error.buffer = [];
+        // Create the temporary folder, if not already created
+        try {
+          FS.createFolder('/', 'tmp', true, true);
+        } catch(e) {}
+        // Create the I/O devices.
+        var devFolder = FS.createFolder('/', 'dev', true, true);
+        var stdin = FS.createDevice(devFolder, 'stdin', input);
+        var stdout = FS.createDevice(devFolder, 'stdout', null, output);
+        var stderr = FS.createDevice(devFolder, 'stderr', null, error);
+        FS.createDevice(devFolder, 'tty', input, output);
+        // Create default streams.
+        FS.streams[1] = {
+          path: '/dev/stdin',
+          object: stdin,
+          position: 0,
+          isRead: true,
+          isWrite: false,
+          isAppend: false,
+          isTerminal: !stdinOverridden,
+          error: false,
+          eof: false,
+          ungotten: []
+        };
+        FS.streams[2] = {
+          path: '/dev/stdout',
+          object: stdout,
+          position: 0,
+          isRead: false,
+          isWrite: true,
+          isAppend: false,
+          isTerminal: !stdoutOverridden,
+          error: false,
+          eof: false,
+          ungotten: []
+        };
+        FS.streams[3] = {
+          path: '/dev/stderr',
+          object: stderr,
+          position: 0,
+          isRead: false,
+          isWrite: true,
+          isAppend: false,
+          isTerminal: !stderrOverridden,
+          error: false,
+          eof: false,
+          ungotten: []
+        };
+        assert(Math.max(_stdin, _stdout, _stderr) < 128); // make sure these are low, we flatten arrays with these
+        HEAP32[((_stdin)>>2)]=1;
+        HEAP32[((_stdout)>>2)]=2;
+        HEAP32[((_stderr)>>2)]=3;
+        // Other system paths
+        FS.createPath('/', 'dev/shm/tmp', true, true); // temp files
+        // Newlib initialization
+        for (var i = FS.streams.length; i < Math.max(_stdin, _stdout, _stderr) + 4; i++) {
+          FS.streams[i] = null; // Make sure to keep FS.streams dense
+        }
+        FS.streams[_stdin] = FS.streams[1];
+        FS.streams[_stdout] = FS.streams[2];
+        FS.streams[_stderr] = FS.streams[3];
+        allocate([ allocate(
+          [0, 0, 0, 0, _stdin, 0, 0, 0, _stdout, 0, 0, 0, _stderr, 0, 0, 0],
+          'void*', ALLOC_STATIC) ], 'void*', ALLOC_NONE, __impure_ptr);
+      },quit:function () {
+        if (!FS.init.initialized) return;
+        // Flush any partially-printed lines in stdout and stderr. Careful, they may have been closed
+        if (FS.streams[2] && FS.streams[2].object.output.buffer.length > 0) FS.streams[2].object.output(10);
+        if (FS.streams[3] && FS.streams[3].object.output.buffer.length > 0) FS.streams[3].object.output(10);
+      },standardizePath:function (path) {
+        if (path.substr(0, 2) == './') path = path.substr(2);
+        return path;
+      },deleteFile:function (path) {
+        path = FS.analyzePath(path);
+        if (!path.parentExists || !path.exists) {
+          throw 'Invalid path ' + path;
+        }
+        delete path.parentObject.contents[path.name];
+      }};
+  function _pwrite(fildes, buf, nbyte, offset) {
+      // ssize_t pwrite(int fildes, const void *buf, size_t nbyte, off_t offset);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/write.html
+      var stream = FS.streams[fildes];
+      if (!stream || stream.object.isDevice) {
+        ___setErrNo(ERRNO_CODES.EBADF);
+        return -1;
+      } else if (!stream.isWrite) {
+        ___setErrNo(ERRNO_CODES.EACCES);
+        return -1;
+      } else if (stream.object.isFolder) {
+        ___setErrNo(ERRNO_CODES.EISDIR);
+        return -1;
+      } else if (nbyte < 0 || offset < 0) {
+        ___setErrNo(ERRNO_CODES.EINVAL);
+        return -1;
+      } else {
+        var contents = stream.object.contents;
+        while (contents.length < offset) contents.push(0);
+        for (var i = 0; i < nbyte; i++) {
+          contents[offset + i] = HEAPU8[(((buf)+(i))|0)];
+        }
+        stream.object.timestamp = Date.now();
+        return i;
+      }
+    }function _write(fildes, buf, nbyte) {
+      // ssize_t write(int fildes, const void *buf, size_t nbyte);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/write.html
+      var stream = FS.streams[fildes];
+      if (!stream) {
+        ___setErrNo(ERRNO_CODES.EBADF);
+        return -1;
+      } else if (!stream.isWrite) {
+        ___setErrNo(ERRNO_CODES.EACCES);
+        return -1;
+      } else if (nbyte < 0) {
+        ___setErrNo(ERRNO_CODES.EINVAL);
+        return -1;
+      } else {
+        if (stream.object.isDevice) {
+          if (stream.object.output) {
+            for (var i = 0; i < nbyte; i++) {
+              try {
+                stream.object.output(HEAP8[(((buf)+(i))|0)]);
+              } catch (e) {
+                ___setErrNo(ERRNO_CODES.EIO);
+                return -1;
+              }
+            }
+            stream.object.timestamp = Date.now();
+            return i;
+          } else {
+            ___setErrNo(ERRNO_CODES.ENXIO);
+            return -1;
+          }
+        } else {
+          var bytesWritten = _pwrite(fildes, buf, nbyte, stream.position);
+          if (bytesWritten != -1) stream.position += bytesWritten;
+          return bytesWritten;
+        }
+      }
+    }function _fwrite(ptr, size, nitems, stream) {
+      // size_t fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/fwrite.html
+      var bytesToWrite = nitems * size;
+      if (bytesToWrite == 0) return 0;
+      var bytesWritten = _write(stream, ptr, bytesToWrite);
+      if (bytesWritten == -1) {
+        if (FS.streams[stream]) FS.streams[stream].error = true;
+        return 0;
+      } else {
+        return Math.floor(bytesWritten / size);
+      }
     }
-    if (0 == i) {
-      e = 60;
-      break;
-    }
-    if (.9999988079071045 < h) {
-      e = 60;
-      break;
-    }
-    j = b[i + 12];
-    e = b[i + 13];
-    j = rj(j);
-    k = rj(e);
-    l = e = j + 7;
-    m = e + 9;
-    for (q = y; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-    l = e = k + 7;
-    m = e + 9;
-    for (q = z; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-    $k(j, h);
-    $k(k, h);
-    yj(i, b[P]);
-    b[i + 1] &= -33;
-    b[i + 32] += 1;
-    e = 0 == (4 == (b[i + 1] & 4)) ? 71 : 69;
-    do if (69 == e) if (0 == (2 == (b[i + 1] & 2))) e = 71; else {
-      qc(j, 1);
-      qc(k, 1);
-      xk(d);
-      Hk(d, j);
-      Hk(d, k);
-      Lk(d, i);
-      b[j + 1] = (b[j + 1] | 1) & 65535;
-      b[k + 1] = (b[k + 1] | 1) & 65535;
-      b[i + 1] |= 1;
-      b[B] = j;
-      b[L] = k;
-      for (e = i = 0; 2 > e; ) {
-        p = b[B + i];
-        e = 2 == b[p] ? 81 : 105;
-        b : do if (81 == e) {
-          n = b[p + 28];
-          for (l = b[p + 28]; ; ) {
-            if (0 == l) break b;
-            if (b[T] == b[F]) break b;
-            if (b[X] == b[Z]) break b;
-            r = b[n + 1];
-            e = 0 != (b[r + 1] & 1) ? 104 : 86;
-            c : do if (86 == e) {
-              u = b[n];
-              e = 2 == b[u] ? 87 : 89;
-              do if (87 == e) if (0 != (8 == (b[p + 1] & 8))) e = 89; else if (0 == (8 == (b[u + 1] & 8))) {
-                e = 104;
-                break c;
-              } while (0);
-              e = b[b[r + 12] + 11] & 1;
-              l = b[b[r + 13] + 11] & 1;
-              if (e & 1) e = 104; else if (l & 1) e = 104; else {
-                l = e = u + 7;
-                m = e + 9;
-                for (q = E; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-                e = 0 == (b[u + 1] & 1) ? 92 : 93;
-                92 == e && $k(u, h);
-                yj(r, b[V]);
-                e = 0 == (4 == (b[r + 1] & 4)) ? 95 : 96;
-                if (95 == e) {
-                  q = u + 7;
-                  l = E;
-                  for (m = E + 9; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-                  Yj(u);
-                } else if (96 == e) if (e = 0 == (2 == (b[r + 1] & 2)) ? 98 : 99, 98 == e) {
-                  q = u + 7;
-                  l = E;
-                  for (m = E + 9; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-                  Yj(u);
-                } else if (99 == e) {
-                  b[r + 1] |= 1;
-                  Lk(d, r);
-                  if (0 != (b[u + 1] & 1)) {
-                    e = 104;
-                    break c;
+  Module["_strlen"] = _strlen;
+  function __reallyNegative(x) {
+      return x < 0 || (x === 0 && (1/x) === -Infinity);
+    }function __formatString(format, varargs) {
+      var textIndex = format;
+      var argIndex = 0;
+      function getNextArg(type) {
+        // NOTE: Explicitly ignoring type safety. Otherwise this fails:
+        //       int x = 4; printf("%c\n", (char)x);
+        var ret;
+        if (type === 'double') {
+          ret = (HEAP32[((tempDoublePtr)>>2)]=HEAP32[(((varargs)+(argIndex))>>2)],HEAP32[(((tempDoublePtr)+(4))>>2)]=HEAP32[(((varargs)+((argIndex)+(4)))>>2)],(+(HEAPF64[(tempDoublePtr)>>3])));
+        } else if (type == 'i64') {
+          ret = [HEAP32[(((varargs)+(argIndex))>>2)],
+                 HEAP32[(((varargs)+(argIndex+4))>>2)]];
+        } else {
+          type = 'i32'; // varargs are always i32, i64, or double
+          ret = HEAP32[(((varargs)+(argIndex))>>2)];
+        }
+        argIndex += Runtime.getNativeFieldSize(type);
+        return ret;
+      }
+      var ret = [];
+      var curr, next, currArg;
+      while(1) {
+        var startTextIndex = textIndex;
+        curr = HEAP8[(textIndex)];
+        if (curr === 0) break;
+        next = HEAP8[((textIndex+1)|0)];
+        if (curr == 37) {
+          // Handle flags.
+          var flagAlwaysSigned = false;
+          var flagLeftAlign = false;
+          var flagAlternative = false;
+          var flagZeroPad = false;
+          flagsLoop: while (1) {
+            switch (next) {
+              case 43:
+                flagAlwaysSigned = true;
+                break;
+              case 45:
+                flagLeftAlign = true;
+                break;
+              case 35:
+                flagAlternative = true;
+                break;
+              case 48:
+                if (flagZeroPad) {
+                  break flagsLoop;
+                } else {
+                  flagZeroPad = true;
+                  break;
+                }
+              default:
+                break flagsLoop;
+            }
+            textIndex++;
+            next = HEAP8[((textIndex+1)|0)];
+          }
+          // Handle width.
+          var width = 0;
+          if (next == 42) {
+            width = getNextArg('i32');
+            textIndex++;
+            next = HEAP8[((textIndex+1)|0)];
+          } else {
+            while (next >= 48 && next <= 57) {
+              width = width * 10 + (next - 48);
+              textIndex++;
+              next = HEAP8[((textIndex+1)|0)];
+            }
+          }
+          // Handle precision.
+          var precisionSet = false;
+          if (next == 46) {
+            var precision = 0;
+            precisionSet = true;
+            textIndex++;
+            next = HEAP8[((textIndex+1)|0)];
+            if (next == 42) {
+              precision = getNextArg('i32');
+              textIndex++;
+            } else {
+              while(1) {
+                var precisionChr = HEAP8[((textIndex+1)|0)];
+                if (precisionChr < 48 ||
+                    precisionChr > 57) break;
+                precision = precision * 10 + (precisionChr - 48);
+                textIndex++;
+              }
+            }
+            next = HEAP8[((textIndex+1)|0)];
+          } else {
+            var precision = 6; // Standard default.
+          }
+          // Handle integer sizes. WARNING: These assume a 32-bit architecture!
+          var argSize;
+          switch (String.fromCharCode(next)) {
+            case 'h':
+              var nextNext = HEAP8[((textIndex+2)|0)];
+              if (nextNext == 104) {
+                textIndex++;
+                argSize = 1; // char (actually i32 in varargs)
+              } else {
+                argSize = 2; // short (actually i32 in varargs)
+              }
+              break;
+            case 'l':
+              var nextNext = HEAP8[((textIndex+2)|0)];
+              if (nextNext == 108) {
+                textIndex++;
+                argSize = 8; // long long
+              } else {
+                argSize = 4; // long
+              }
+              break;
+            case 'L': // long long
+            case 'q': // int64_t
+            case 'j': // intmax_t
+              argSize = 8;
+              break;
+            case 'z': // size_t
+            case 't': // ptrdiff_t
+            case 'I': // signed ptrdiff_t or unsigned size_t
+              argSize = 4;
+              break;
+            default:
+              argSize = null;
+          }
+          if (argSize) textIndex++;
+          next = HEAP8[((textIndex+1)|0)];
+          // Handle type specifier.
+          switch (String.fromCharCode(next)) {
+            case 'd': case 'i': case 'u': case 'o': case 'x': case 'X': case 'p': {
+              // Integer.
+              var signed = next == 100 || next == 105;
+              argSize = argSize || 4;
+              var currArg = getNextArg('i' + (argSize * 8));
+              var origArg = currArg;
+              var argText;
+              // Flatten i64-1 [low, high] into a (slightly rounded) double
+              if (argSize == 8) {
+                currArg = Runtime.makeBigInt(currArg[0], currArg[1], next == 117);
+              }
+              // Truncate to requested size.
+              if (argSize <= 4) {
+                var limit = Math.pow(256, argSize) - 1;
+                currArg = (signed ? reSign : unSign)(currArg & limit, argSize * 8);
+              }
+              // Format the number.
+              var currAbsArg = Math.abs(currArg);
+              var prefix = '';
+              if (next == 100 || next == 105) {
+                if (argSize == 8 && i64Math) argText = i64Math.stringify(origArg[0], origArg[1], null); else
+                argText = reSign(currArg, 8 * argSize, 1).toString(10);
+              } else if (next == 117) {
+                if (argSize == 8 && i64Math) argText = i64Math.stringify(origArg[0], origArg[1], true); else
+                argText = unSign(currArg, 8 * argSize, 1).toString(10);
+                currArg = Math.abs(currArg);
+              } else if (next == 111) {
+                argText = (flagAlternative ? '0' : '') + currAbsArg.toString(8);
+              } else if (next == 120 || next == 88) {
+                prefix = flagAlternative ? '0x' : '';
+                if (argSize == 8 && i64Math) {
+                  if (origArg[1]) {
+                    argText = (origArg[1]>>>0).toString(16);
+                    var lower = (origArg[0]>>>0).toString(16);
+                    while (lower.length < 8) lower = '0' + lower;
+                    argText += lower;
+                  } else {
+                    argText = (origArg[0]>>>0).toString(16);
                   }
-                  b[u + 1] = (b[u + 1] | 1) & 65535;
-                  e = 0 != b[u] ? 102 : 103;
-                  102 == e && qc(u, 1);
-                  Hk(d, u);
+                } else
+                if (currArg < 0) {
+                  // Represent negative numbers in hex as 2's complement.
+                  currArg = -currArg;
+                  argText = (currAbsArg - 1).toString(16);
+                  var buffer = [];
+                  for (var i = 0; i < argText.length; i++) {
+                    buffer.push((0xF - parseInt(argText[i], 16)).toString(16));
+                  }
+                  argText = buffer.join('');
+                  while (argText.length < argSize * 2) argText = 'f' + argText;
+                } else {
+                  argText = currAbsArg.toString(16);
+                }
+                if (next == 88) {
+                  prefix = prefix.toUpperCase();
+                  argText = argText.toUpperCase();
+                }
+              } else if (next == 112) {
+                if (currAbsArg === 0) {
+                  argText = '(nil)';
+                } else {
+                  prefix = '0x';
+                  argText = currAbsArg.toString(16);
                 }
               }
-            } while (0);
-            n = l = b[n + 3];
+              if (precisionSet) {
+                while (argText.length < precision) {
+                  argText = '0' + argText;
+                }
+              }
+              // Add sign if needed
+              if (flagAlwaysSigned) {
+                if (currArg < 0) {
+                  prefix = '-' + prefix;
+                } else {
+                  prefix = '+' + prefix;
+                }
+              }
+              // Add padding.
+              while (prefix.length + argText.length < width) {
+                if (flagLeftAlign) {
+                  argText += ' ';
+                } else {
+                  if (flagZeroPad) {
+                    argText = '0' + argText;
+                  } else {
+                    prefix = ' ' + prefix;
+                  }
+                }
+              }
+              // Insert the result into the buffer.
+              argText = prefix + argText;
+              argText.split('').forEach(function(chr) {
+                ret.push(chr.charCodeAt(0));
+              });
+              break;
+            }
+            case 'f': case 'F': case 'e': case 'E': case 'g': case 'G': {
+              // Float.
+              var currArg = getNextArg('double');
+              var argText;
+              if (isNaN(currArg)) {
+                argText = 'nan';
+                flagZeroPad = false;
+              } else if (!isFinite(currArg)) {
+                argText = (currArg < 0 ? '-' : '') + 'inf';
+                flagZeroPad = false;
+              } else {
+                var isGeneral = false;
+                var effectivePrecision = Math.min(precision, 20);
+                // Convert g/G to f/F or e/E, as per:
+                // http://pubs.opengroup.org/onlinepubs/9699919799/functions/printf.html
+                if (next == 103 || next == 71) {
+                  isGeneral = true;
+                  precision = precision || 1;
+                  var exponent = parseInt(currArg.toExponential(effectivePrecision).split('e')[1], 10);
+                  if (precision > exponent && exponent >= -4) {
+                    next = ((next == 103) ? 'f' : 'F').charCodeAt(0);
+                    precision -= exponent + 1;
+                  } else {
+                    next = ((next == 103) ? 'e' : 'E').charCodeAt(0);
+                    precision--;
+                  }
+                  effectivePrecision = Math.min(precision, 20);
+                }
+                if (next == 101 || next == 69) {
+                  argText = currArg.toExponential(effectivePrecision);
+                  // Make sure the exponent has at least 2 digits.
+                  if (/[eE][-+]\d$/.test(argText)) {
+                    argText = argText.slice(0, -1) + '0' + argText.slice(-1);
+                  }
+                } else if (next == 102 || next == 70) {
+                  argText = currArg.toFixed(effectivePrecision);
+                  if (currArg === 0 && __reallyNegative(currArg)) {
+                    argText = '-' + argText;
+                  }
+                }
+                var parts = argText.split('e');
+                if (isGeneral && !flagAlternative) {
+                  // Discard trailing zeros and periods.
+                  while (parts[0].length > 1 && parts[0].indexOf('.') != -1 &&
+                         (parts[0].slice(-1) == '0' || parts[0].slice(-1) == '.')) {
+                    parts[0] = parts[0].slice(0, -1);
+                  }
+                } else {
+                  // Make sure we have a period in alternative mode.
+                  if (flagAlternative && argText.indexOf('.') == -1) parts[0] += '.';
+                  // Zero pad until required precision.
+                  while (precision > effectivePrecision++) parts[0] += '0';
+                }
+                argText = parts[0] + (parts.length > 1 ? 'e' + parts[1] : '');
+                // Capitalize 'E' if needed.
+                if (next == 69) argText = argText.toUpperCase();
+                // Add sign.
+                if (flagAlwaysSigned && currArg >= 0) {
+                  argText = '+' + argText;
+                }
+              }
+              // Add padding.
+              while (argText.length < width) {
+                if (flagLeftAlign) {
+                  argText += ' ';
+                } else {
+                  if (flagZeroPad && (argText[0] == '-' || argText[0] == '+')) {
+                    argText = argText[0] + '0' + argText.slice(1);
+                  } else {
+                    argText = (flagZeroPad ? '0' : ' ') + argText;
+                  }
+                }
+              }
+              // Adjust case.
+              if (next < 97) argText = argText.toUpperCase();
+              // Insert the result into the buffer.
+              argText.split('').forEach(function(chr) {
+                ret.push(chr.charCodeAt(0));
+              });
+              break;
+            }
+            case 's': {
+              // String.
+              var arg = getNextArg('i8*') || nullString;
+              var argLength = _strlen(arg);
+              if (precisionSet) argLength = Math.min(argLength, precision);
+              if (!flagLeftAlign) {
+                while (argLength < width--) {
+                  ret.push(32);
+                }
+              }
+              for (var i = 0; i < argLength; i++) {
+                ret.push(HEAPU8[((arg++)|0)]);
+              }
+              if (flagLeftAlign) {
+                while (argLength < width--) {
+                  ret.push(32);
+                }
+              }
+              break;
+            }
+            case 'c': {
+              // Character.
+              if (flagLeftAlign) ret.push(getNextArg('i8'));
+              while (--width > 0) {
+                ret.push(32);
+              }
+              if (!flagLeftAlign) ret.push(getNextArg('i8'));
+              break;
+            }
+            case 'n': {
+              // Write the length written so far to the next parameter.
+              var ptr = getNextArg('i32*');
+              HEAP32[((ptr)>>2)]=ret.length
+              break;
+            }
+            case '%': {
+              // Literal percent sign.
+              ret.push(curr);
+              break;
+            }
+            default: {
+              // Unknown specifiers remain untouched.
+              for (var i = startTextIndex; i < textIndex + 2; i++) {
+                ret.push(HEAP8[(i)]);
+              }
+            }
           }
-        } while (0);
-        i = e = i + 1;
-      }
-      o[D] = (1 - h) * o[f];
-      o[aa] = 1 / o[D];
-      o[ja] = 1;
-      b[Y] = 20;
-      b[W] = b[f + 3];
-      b[$] = 0;
-      ik(d, D, b[j + 2], b[k + 2]);
-      for (h = 0; h < b[ga]; ) {
-        i = b[b[la] + h];
-        b[i + 1] &= 65534;
-        e = 2 != b[i] ? 113 : 110;
-        b : do if (110 == e) if (ej(i), j = b[i + 28], 0 == b[i + 28]) e = 113; else for (;;) if (k = b[j + 1] + 1, b[k] &= -34, j = k = b[j + 3], 0 == k) break b; while (0);
-        h += 1;
-      }
-      zj(fa, fa);
-      if (b[ka] & 1) {
-        e = 116;
-        break a;
-      } else {
-        e = 6;
-        continue a;
-      }
-    } while (0);
-    h = i;
-    i = ba;
-    l = b[h + 1];
-    i = 2;
-    1 == i ? b[h + 1] = l | 4 : 2 == i && (b[h + 1] = l & -5);
-    h = j + 7;
-    l = y;
-    m = y + 9;
-    for (q = h; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-    h = k + 7;
-    l = z;
-    m = z + 9;
-    for (q = h; l < m; l++, q++) b[q] = b[l], o[q] = o[l];
-    Yj(j);
-    Yj(k);
-  }
-  60 == e ? b[c + 102551] = 1 : 116 == e && (b[c + 102551] = 0);
-  Wj(d);
-  a = d;
-}
-
-Uk.X = 1;
-
-function Xk(c, f) {
-  var d = a;
-  a += 6;
-  var e, g = d + 2, i = d + 4;
-  1 == (1 > o[c + 8] ? 2 : 1) && O(al, 715, bl, Yk);
-  e = (f - o[c + 8]) / (1 - o[c + 8]);
-  var h = c + 2;
-  K(g, 1 - e, c + 2);
-  K(i, e, c + 4);
-  N(d, g, i);
-  b[h] = b[d];
-  o[h] = o[d];
-  b[h + 1] = b[d + 1];
-  o[h + 1] = o[d + 1];
-  o[c + 6] = (1 - e) * o[c + 6] + e * o[c + 7];
-  o[c + 8] = f;
-  a = d;
-}
-
-Xk.X = 1;
-
-function Zk(c) {
-  return b[c + 3];
-}
-
-function $k(c, f) {
-  var d = a;
-  a += 4;
-  var e = d + 2;
-  Xk(c + 7, f);
-  var g = c + 11, i = c + 9;
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[c + 14] = o[c + 13];
-  ch(c + 5, o[c + 14]);
-  g = c + 3;
-  i = c + 11;
-  S(e, c + 5, c + 7);
-  C(d, i, e);
-  b[g] = b[d];
-  o[g] = o[d];
-  b[g + 1] = b[d + 1];
-  o[g + 1] = o[d + 1];
-  a = d;
-}
-
-function vc(c, f, d, e) {
-  var g = a;
-  a += 14;
-  var i, h = g + 2, j = g + 8, k = g + 10, l = g + 12;
-  Ni(g);
-  i = 0 != (b[c + 102517] & 1) ? 1 : 2;
-  1 == i && (i = c + 102518, zj(i, i), b[c + 102517] &= -2);
-  b[c + 102517] |= 2;
-  o[h] = f;
-  b[h + 3] = d;
-  b[h + 4] = e;
-  i = 0 < f ? 3 : 4;
-  3 == i ? o[h + 1] = 1 / f : 4 == i && (o[h + 1] = 0);
-  o[h + 2] = o[c + 102547] * f;
-  b[h + 5] = b[c + 102548] & 1;
-  Ni(j);
-  vj(c + 102518);
-  f = Pi(j);
-  o[c + 102553] = f;
-  i = b[c + 102551] & 1 ? 6 : 8;
-  6 == i && 0 < o[h] && (Ni(k), Ok(c, h), k = Pi(k), o[c + 102554] = k);
-  i = b[c + 102549] & 1 ? 9 : 11;
-  9 == i && 0 < o[h] && (Ni(l), Uk(c, h), l = Pi(l), o[c + 102559] = l);
-  i = 0 < o[h] ? 12 : 13;
-  12 == i && (o[c + 102547] = o[h + 1]);
-  i = 0 != (b[c + 102517] & 4) ? 14 : 15;
-  if (14 == i) {
-    l = b[c + 102538];
-    h = 0 != b[c + 102538] ? 1 : 2;
-    a : do if (1 == h) for (;;) if (cc(l + 19), o[l + 21] = 0, l = k = b[l + 24], 0 == k) break a; while (0);
-  }
-  b[c + 102517] &= -3;
-  h = Pi(g);
-  o[c + 102552] = h;
-  a = g;
-}
-
-vc.X = 1;
-
-function cl(c) {
-  return b[b[c + 3] + 1];
-}
-
-function dl(c, f, d) {
-  var e, c = f + 8, f = d + 8, d = b[c + 2] == b[f + 2] ? 1 : 3;
-  1 == d && (0 == b[c + 2] ? d = 3 : (e = 0 < b[c + 2], d = 6));
-  if (3 == d) {
-    if (0 != (b[f] & b[c + 1])) d = 4; else var g = 0, d = 5;
-    4 == d && (g = 0 != (b[f + 1] & b[c]));
-    e = g & 1;
-  }
-  return e;
-}
-
-dl.X = 1;
-
-function el(c, f, d, e, g) {
-  fl(c, f, d, e, g);
-  b[c] = gl + 2;
-  f = 3 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(hl, 43, il, jl);
-  f = 0 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(hl, 44, il, kl);
-}
-
-el.X = 1;
-
-function ll(c, f, d, e) {
-  var g = a;
-  a += 13;
-  var i;
-  i = Zk(b[c + 12]);
-  dc(g);
-  wh(i, g, b[c + 14]);
-  $c(f, g, d, Zk(b[c + 13]), e);
-  a = g;
-}
-
-ll.X = 1;
-
-function ml(c, f, d, e, g) {
-  fl(c, f, d, e, g);
-  b[c] = nl + 2;
-  f = 3 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(ol, 43, pl, jl);
-  f = 2 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(ol, 44, pl, ql);
-}
-
-ml.X = 1;
-
-function rl(c, f, d, e) {
-  var g = a;
-  a += 13;
-  var i;
-  i = Zk(b[c + 12]);
-  dc(g);
-  wh(i, g, b[c + 14]);
-  c = Zk(b[c + 13]);
-  i = a;
-  a += 63;
-  dd(i, f, g, d, c, e);
-  a = i;
-  a = g;
-}
-
-rl.X = 1;
-
-function sl(c, f, d) {
-  fl(c, f, 0, d, 0);
-  b[c] = tl + 2;
-  f = 0 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(ul, 44, vl, wl);
-  f = 0 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(ul, 45, vl, kl);
-}
-
-function xl(c, f, d, e) {
-  1 == (0 <= d & 4 > d ? 2 : 1) && O(yl, 54, zl, Al);
-  3 == (0 <= e & 4 > e ? 4 : 3) && O(yl, 55, zl, Bl);
-  b[Cl + 12 * d + 3 * e] = c;
-  b[Cl + 12 * d + 3 * e + 1] = f;
-  b[Cl + 12 * d + 3 * e + 2] = 1;
-  if (5 == (d != e ? 5 : 6)) b[Cl + 12 * e + 3 * d] = c, b[Cl + 12 * e + 3 * d + 1] = f, b[Cl + 12 * e + 3 * d + 2] = 0;
-}
-
-xl.X = 1;
-
-function Hj(c, f, d, e, g) {
-  var i, h, j, k, l;
-  i = 0 == (b[Dl] & 1) ? 1 : 2;
-  1 == i && (xl(8, 10, 0, 0), xl(12, 14, 2, 0), xl(16, 18, 2, 2), xl(20, 22, 1, 0), xl(24, 26, 1, 2), xl(28, 30, 3, 0), xl(32, 34, 3, 2), b[Dl] = 1);
-  j = cl(c);
-  k = cl(d);
-  3 == (0 <= j & 4 > j ? 4 : 3) && O(yl, 80, El, Al);
-  5 == (0 <= k & 4 > k ? 6 : 5) && O(yl, 81, El, Bl);
-  l = b[Cl + 12 * j + 3 * k];
-  i = 0 != b[Cl + 12 * j + 3 * k] ? 7 : 10;
-  7 == i ? (i = b[Cl + 12 * j + 3 * k + 2] & 1 ? 8 : 9, 8 == i ? h = mb[l](c, f, d, e, g) : 9 == i && (h = mb[l](d, e, c, f, g))) : 10 == i && (h = 0);
-  return h;
-}
-
-Hj.X = 1;
-
-function uj(c, f) {
-  var d, e, g;
-  d = 1 == (b[Dl] & 1) ? 2 : 1;
-  1 == d && O(yl, 103, Fl, Gl);
-  d = 0 < b[c + 31] ? 3 : 4;
-  3 == d && (qc(rj(b[c + 12]), 1), qc(rj(b[c + 13]), 1));
-  e = cl(b[c + 12]);
-  g = cl(b[c + 13]);
-  d = 0 <= e ? 5 : 6;
-  5 == d && (d = 4 > g ? 7 : 6);
-  6 == d && O(yl, 114, Fl, Hl);
-  d = 0 <= e ? 8 : 9;
-  8 == d && (d = 4 > g ? 10 : 9);
-  9 == d && O(yl, 115, Fl, Hl);
-  mb[b[Cl + 12 * e + 3 * g + 1]](c, f);
-}
-
-uj.X = 1;
-
-function fl(c, f, d, e, g) {
-  b[c] = Il + 2;
-  b[c + 1] = 4;
-  b[c + 12] = f;
-  b[c + 13] = e;
-  b[c + 14] = d;
-  b[c + 15] = g;
-  b[c + 31] = 0;
-  b[c + 2] = 0;
-  b[c + 3] = 0;
-  b[c + 5] = 0;
-  b[c + 6] = 0;
-  b[c + 7] = 0;
-  b[c + 4] = 0;
-  b[c + 9] = 0;
-  b[c + 10] = 0;
-  b[c + 11] = 0;
-  b[c + 8] = 0;
-  b[c + 32] = 0;
-  f = Zc(o[b[c + 12] + 4] * o[b[c + 13] + 4]);
-  o[c + 34] = f;
-  o[c + 35] = o[b[c + 12] + 5] > o[b[c + 13] + 5] ? o[b[c + 12] + 5] : o[b[c + 13] + 5];
-}
-
-fl.X = 1;
-
-function yj(c, f) {
-  var d = a;
-  a += 17;
-  var e, g, i, h, j, k, l, m, n, p, u = d + 16, r, q;
-  i = e = c + 16;
-  e += 16;
-  for (h = d; i < e; i++, h++) b[h] = b[i], o[h] = o[i];
-  b[c + 1] |= 4;
-  g = 0;
-  i = 2 == (b[c + 1] & 2);
-  e = b[b[c + 12] + 11] & 1;
-  h = b[b[c + 13] + 11] & 1;
-  e & 1 ? (j = 1, e = 2) : e = 1;
-  1 == e && (j = h & 1);
-  h = rj(b[c + 12]);
-  k = rj(b[c + 13]);
-  l = h + 3;
-  m = k + 3;
-  e = j & 1 ? 3 : 4;
-  do if (3 == e) {
-    n = Zk(b[c + 12]);
-    g = Zk(b[c + 13]);
-    var v = n, x = b[c + 14], w = g, y = b[c + 15], z = l;
-    n = m;
-    g = a;
-    a += 37;
-    p = g + 23;
-    r = g + 31;
-    var B = g;
-    le(B);
-    le(B + 7);
-    me(g, v, x);
-    me(g + 7, w, y);
-    v = g + 14;
-    b[v] = b[z];
-    o[v] = o[z];
-    b[v + 1] = b[z + 1];
-    o[v + 1] = o[z + 1];
-    b[v + 2] = b[z + 2];
-    o[v + 2] = o[z + 2];
-    b[v + 3] = b[z + 3];
-    o[v + 3] = o[z + 3];
-    v = g + 18;
-    b[v] = b[n];
-    o[v] = o[n];
-    b[v + 1] = b[n + 1];
-    o[v + 1] = o[n + 1];
-    b[v + 2] = b[n + 2];
-    o[v + 2] = o[n + 2];
-    b[v + 3] = b[n + 3];
-    o[v + 3] = o[n + 3];
-    b[g + 22] = 1;
-    b[p + 1] = 0;
-    xe(r, p, g);
-    n = 11920928955078125e-22 > o[r + 4];
-    a = g;
-    g = n;
-    b[c + 31] = 0;
-  } else if (4 == e) {
-    mb[b[b[c]]](c, c + 16, l, m);
-    g = 0 < b[c + 31];
-    n = 0;
-    v = c + 31;
-    e = n < b[v] ? 5 : 12;
-    a : do if (5 == e) {
-      x = c + 16;
-      z = u;
-      w = d + 15;
-      y = d;
-      for (B = u; ; ) {
-        p = x + 5 * n;
-        o[p + 2] = 0;
-        o[p + 3] = 0;
-        b[z] = b[p + 4];
-        o[z] = o[p + 4];
-        for (r = 0; ; ) {
-          if (r >= b[w]) {
-            e = 11;
-            break;
-          }
-          q = y + 5 * r;
-          if (b[q + 4] == b[B]) {
-            e = 9;
-            break;
-          }
-          r += 1;
-        }
-        9 == e && (o[p + 2] = o[q + 2], o[p + 3] = o[q + 3]);
-        n += 1;
-        if (n >= b[v]) {
-          e = 12;
-          break a;
+          textIndex += 2;
+          // TODO: Support a/A (hex float) and m (last error) specifiers.
+          // TODO: Support %1${specifier} for arg selection.
+        } else {
+          ret.push(curr);
+          textIndex += 1;
         }
       }
-    } while (0);
-    (g & 1) == (i & 1) ? e = 14 : (qc(h, 1), qc(k, 1));
-  } while (0);
-  u = b[c + 1];
-  e = g & 1 ? 15 : 16;
-  15 == e ? b[c + 1] = u | 2 : 16 == e && (b[c + 1] = u & -3);
-  if (18 == (0 == (i & 1) ? 18 : 21) && 1 == (g & 1) && 0 != f) mb[b[b[f] + 2]](f, c);
-  if (22 == (1 == (i & 1) ? 22 : 25) && 0 == (g & 1) && 0 != f) mb[b[b[f] + 3]](f, c);
-  if (26 == (0 == (j & 1) ? 26 : 29) && g & 1 && 0 != f) mb[b[b[f] + 4]](f, c, d);
-  a = d;
-}
-
-yj.X = 1;
-
-function Jl(c) {
-  o[c] = 0;
-  o[c + 2] = 0;
-  o[c + 1] = 0;
-  o[c + 3] = 0;
-}
-
-function hk(c) {
-  Ei(b[c + 8], b[c + 10]);
-  Ei(b[c + 8], b[c + 9]);
-}
-
-function ak(c, f) {
-  var d, e, g, i, h, j, k, l, m, n;
-  e = f;
-  for (var p = f + 6, u = c; e < p; e++, u++) b[u] = b[e], o[u] = o[e];
-  b[c + 8] = b[f + 10];
-  b[c + 12] = b[f + 7];
-  e = Ki(b[c + 8], 88 * b[c + 12]);
-  b[c + 9] = e;
-  e = Ki(b[c + 8], 152 * b[c + 12]);
-  b[c + 10] = e;
-  b[c + 6] = b[f + 8];
-  b[c + 7] = b[f + 9];
-  b[c + 11] = b[f + 6];
-  e = 0;
-  p = c + 12;
-  d = e < b[p] ? 1 : 10;
-  a : do if (1 == d) for (var u = c + 11, r = c + 10, q = c + 9, v = c + 5, x = c + 2, w = c + 2; ; ) {
-    g = b[b[u] + e];
-    i = b[g + 12];
-    h = b[g + 13];
-    j = Zk(i);
-    k = Zk(h);
-    j = o[j + 2];
-    l = o[k + 2];
-    m = rj(i);
-    n = rj(h);
-    h = g + 16;
-    i = b[h + 15];
-    d = 0 < b[h + 15] ? 4 : 3;
-    3 == d && O(Kl, 71, Ll, Ml);
-    k = b[r] + 38 * e;
-    o[k + 34] = o[g + 34];
-    o[k + 35] = o[g + 35];
-    b[k + 28] = b[m + 2];
-    b[k + 29] = b[n + 2];
-    o[k + 30] = o[m + 30];
-    o[k + 31] = o[n + 30];
-    o[k + 32] = o[m + 32];
-    o[k + 33] = o[n + 32];
-    b[k + 37] = e;
-    b[k + 36] = i;
-    Jl(k + 24);
-    Jl(k + 20);
-    g = b[q] + 22 * e;
-    b[g + 8] = b[m + 2];
-    b[g + 9] = b[n + 2];
-    o[g + 10] = o[m + 30];
-    o[g + 11] = o[n + 30];
-    d = g + 12;
-    var y = m + 7;
-    b[d] = b[y];
-    o[d] = o[y];
-    b[d + 1] = b[y + 1];
-    o[d + 1] = o[y + 1];
-    d = g + 14;
-    y = n + 7;
-    b[d] = b[y];
-    o[d] = o[y];
-    b[d + 1] = b[y + 1];
-    o[d + 1] = o[y + 1];
-    o[g + 16] = o[m + 32];
-    o[g + 17] = o[n + 32];
-    d = g + 4;
-    m = h + 10;
-    b[d] = b[m];
-    o[d] = o[m];
-    b[d + 1] = b[m + 1];
-    o[d + 1] = o[m + 1];
-    d = g + 6;
-    m = h + 12;
-    b[d] = b[m];
-    o[d] = o[m];
-    b[d + 1] = b[m + 1];
-    o[d + 1] = o[m + 1];
-    b[g + 21] = i;
-    o[g + 19] = j;
-    o[g + 20] = l;
-    b[g + 18] = b[h + 14];
-    j = 0;
-    d = j < i ? 5 : 9;
-    b : do if (5 == d) for (;;) if (l = h + 5 * j, m = k + 9 * j, d = b[v] & 1 ? 6 : 7, 6 == d ? (o[m + 4] = o[x] * o[l + 2], o[m + 5] = o[w] * o[l + 3]) : 7 == d && (o[m + 4] = 0, o[m + 5] = 0), cc(m), cc(m + 2), o[m + 6] = 0, o[m + 7] = 0, o[m + 8] = 0, m = g + (j << 1), b[m] = b[l], o[m] = o[l], b[m + 1] = b[l + 1], o[m + 1] = o[l + 1], j += 1, j >= i) {
-      d = 9;
-      break b;
-    } while (0);
-    e += 1;
-    if (e >= b[p]) break a;
-  } while (0);
-}
-
-ak.X = 1;
-
-function bk(c) {
-  var f = a;
-  a += 54;
-  var d, e, g, i, h, j, k, l, m, n, p, u, r, q = f + 2, v = f + 4, x, w = f + 6, y, z = f + 8, B, E = f + 10, D, H = f + 12, I = f + 16, M = f + 20, G = f + 22, R = f + 24, P = f + 26, L = f + 28, T, F, X, Z = f + 34, V = f + 36, aa, ja, Y, W = f + 38, $, ga, la, fa, ka = f + 40, oa = f + 42, ua = f + 44, Da = f + 46, Ja = f + 48, Aa, Ta, pb, Fa, Va, Na, pa, ha, Ba, za = f + 50;
-  e = 0;
-  var va = c + 12;
-  d = e < b[va] ? 1 : 17;
-  a : do if (1 == d) for (var Ka = c + 10, ma = c + 9, La = c + 11, Ga = f, ya = q, Oa = c + 6, Ea = v, Gb = c + 6, Ob = c + 7, Pa = w, ec = c + 7, Pb = c + 6, Wa = z, fc = c + 6, wb = c + 7, Xa = E, Qb = c + 7, Hb = H + 2, Ab = I + 2, Bb = H + 2, db = H, Xb = M, Yb = I + 2, eb = I, xb = R, fb = L, Ia = za, Zb = L + 2, gb = Z, Cb = L + 2, hb = V; ; ) {
-    g = b[Ka] + 38 * e;
-    i = b[ma] + 22 * e;
-    h = o[i + 19];
-    j = o[i + 20];
-    k = b[b[La] + b[g + 37]] + 16;
-    l = b[g + 28];
-    m = b[g + 29];
-    n = o[g + 30];
-    p = o[g + 31];
-    u = o[g + 32];
-    r = o[g + 33];
-    var Db = i + 12;
-    b[Ga] = b[Db];
-    o[Ga] = o[Db];
-    b[Ga + 1] = b[Db + 1];
-    o[Ga + 1] = o[Db + 1];
-    var gc = i + 14;
-    b[ya] = b[gc];
-    o[ya] = o[gc];
-    b[ya + 1] = b[gc + 1];
-    o[ya + 1] = o[gc + 1];
-    var hc = b[Oa] + 3 * l;
-    b[Ea] = b[hc];
-    o[Ea] = o[hc];
-    b[Ea + 1] = b[hc + 1];
-    o[Ea + 1] = o[hc + 1];
-    x = o[b[Gb] + 3 * l + 2];
-    var qb = b[Ob] + 3 * l;
-    b[Pa] = b[qb];
-    o[Pa] = o[qb];
-    b[Pa + 1] = b[qb + 1];
-    o[Pa + 1] = o[qb + 1];
-    y = o[b[ec] + 3 * l + 2];
-    var Rb = b[Pb] + 3 * m;
-    b[Wa] = b[Rb];
-    o[Wa] = o[Rb];
-    b[Wa + 1] = b[Rb + 1];
-    o[Wa + 1] = o[Rb + 1];
-    B = o[b[fc] + 3 * m + 2];
-    var Sb = b[wb] + 3 * m;
-    b[Xa] = b[Sb];
-    o[Xa] = o[Sb];
-    b[Xa + 1] = b[Sb + 1];
-    o[Xa + 1] = o[Sb + 1];
-    D = o[b[Qb] + 3 * m + 2];
-    d = 0 < b[k + 15] ? 4 : 3;
-    3 == d && O(Kl, 168, Nl, Ol);
-    ch(Hb, x);
-    ch(Ab, B);
-    S(G, Bb, f);
-    C(M, v, G);
-    b[db] = b[Xb];
-    o[db] = o[Xb];
-    b[db + 1] = b[Xb + 1];
-    o[db + 1] = o[Xb + 1];
-    S(P, Yb, q);
-    C(R, z, P);
-    b[eb] = b[xb];
-    o[eb] = o[xb];
-    b[eb + 1] = b[xb + 1];
-    o[eb + 1] = o[xb + 1];
-    je(L, k, H, h, I, j);
-    var rb = g + 18;
-    b[rb] = b[fb];
-    o[rb] = o[fb];
-    b[rb + 1] = b[fb + 1];
-    o[rb + 1] = o[fb + 1];
-    T = b[g + 36];
-    F = 0;
-    if (F < T) {
-      var $b = g;
-      d = 5;
-    } else {
-      var Eb = g;
-      d = 12;
+      return ret;
+    }function _fprintf(stream, format, varargs) {
+      // int fprintf(FILE *restrict stream, const char *restrict format, ...);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/printf.html
+      var result = __formatString(format, varargs);
+      var stack = Runtime.stackSave();
+      var ret = _fwrite(allocate(result, 'i8', ALLOC_STACK), 1, result.length, stream);
+      Runtime.stackRestore(stack);
+      return ret;
+    }function _printf(format, varargs) {
+      // int printf(const char *restrict format, ...);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/printf.html
+      var stdout = HEAP32[((_stdout)>>2)];
+      return _fprintf(stdout, format, varargs);
     }
-    b : do if (5 == d) for (;;) {
-      var ic = X = $b + 9 * F;
-      C(Z, Zb + (F << 1), v);
-      var sb = ic;
-      b[sb] = b[gb];
-      o[sb] = o[gb];
-      b[sb + 1] = b[gb + 1];
-      o[sb + 1] = o[gb + 1];
-      var Ib = X + 2;
-      C(V, Cb + (F << 1), z);
-      var tb = Ib;
-      b[tb] = b[hb];
-      o[tb] = o[hb];
-      b[tb + 1] = b[hb + 1];
-      o[tb + 1] = o[hb + 1];
-      aa = Q(X, g + 18);
-      ja = Q(X + 2, g + 18);
-      Y = n + p + u * aa * aa + r * ja * ja;
-      if (0 < n + p + u * aa * aa + r * ja * ja) d = 6; else {
-        var ib = 0;
-        d = 7;
+  function ___cxa_pure_virtual() {
+      ABORT = true;
+      throw 'Pure virtual function called!';
+    }
+  var _sqrtf=Math.sqrt;
+  function ___assert_func(filename, line, func, condition) {
+      throw 'Assertion failed: ' + (condition ? Pointer_stringify(condition) : 'unknown condition') + ', at: ' + [filename ? Pointer_stringify(filename) : 'unknown filename', line, func ? Pointer_stringify(func) : 'unknown function'] + ' at ' + new Error().stack;
+    }
+  Module["_memset"] = _memset;var _llvm_memset_p0i8_i32=_memset;
+  var _sinf=Math.sin;
+  var _cosf=Math.cos;
+  var _floorf=Math.floor;
+  var _llvm_memset_p0i8_i64=_memset;
+  function _abort() {
+      ABORT = true;
+      throw 'abort() at ' + (new Error().stack);
+    }
+  function ___errno_location() {
+      return ___setErrNo.ret;
+    }var ___errno=___errno_location;
+  function _sysconf(name) {
+      // long sysconf(int name);
+      // http://pubs.opengroup.org/onlinepubs/009695399/functions/sysconf.html
+      switch(name) {
+        case 8: return PAGE_SIZE;
+        case 54:
+        case 56:
+        case 21:
+        case 61:
+        case 63:
+        case 22:
+        case 67:
+        case 23:
+        case 24:
+        case 25:
+        case 26:
+        case 27:
+        case 69:
+        case 28:
+        case 101:
+        case 70:
+        case 71:
+        case 29:
+        case 30:
+        case 199:
+        case 75:
+        case 76:
+        case 32:
+        case 43:
+        case 44:
+        case 80:
+        case 46:
+        case 47:
+        case 45:
+        case 48:
+        case 49:
+        case 42:
+        case 82:
+        case 33:
+        case 7:
+        case 108:
+        case 109:
+        case 107:
+        case 112:
+        case 119:
+        case 121:
+          return 200809;
+        case 13:
+        case 104:
+        case 94:
+        case 95:
+        case 34:
+        case 35:
+        case 77:
+        case 81:
+        case 83:
+        case 84:
+        case 85:
+        case 86:
+        case 87:
+        case 88:
+        case 89:
+        case 90:
+        case 91:
+        case 94:
+        case 95:
+        case 110:
+        case 111:
+        case 113:
+        case 114:
+        case 115:
+        case 116:
+        case 117:
+        case 118:
+        case 120:
+        case 40:
+        case 16:
+        case 79:
+        case 19:
+          return -1;
+        case 92:
+        case 93:
+        case 5:
+        case 72:
+        case 6:
+        case 74:
+        case 92:
+        case 93:
+        case 96:
+        case 97:
+        case 98:
+        case 99:
+        case 102:
+        case 103:
+        case 105:
+          return 1;
+        case 38:
+        case 66:
+        case 50:
+        case 51:
+        case 4:
+          return 1024;
+        case 15:
+        case 64:
+        case 41:
+          return 32;
+        case 55:
+        case 37:
+        case 17:
+          return 2147483647;
+        case 18:
+        case 1:
+          return 47839;
+        case 59:
+        case 57:
+          return 99;
+        case 68:
+        case 58:
+          return 2048;
+        case 0: return 2097152;
+        case 3: return 65536;
+        case 14: return 32768;
+        case 73: return 32767;
+        case 39: return 16384;
+        case 60: return 1000;
+        case 106: return 700;
+        case 52: return 256;
+        case 62: return 255;
+        case 2: return 100;
+        case 65: return 64;
+        case 36: return 20;
+        case 100: return 16;
+        case 20: return 6;
+        case 53: return 4;
+        case 10: return 1;
       }
-      6 == d && (ib = 1 / Y);
-      o[X + 6] = ib;
-      Wd(W, g + 18);
-      $ = Q(X, W);
-      ga = Q(X + 2, W);
-      la = n + p + u * $ * $ + r * ga * ga;
-      if (0 < n + p + u * $ * $ + r * ga * ga) d = 8; else {
-        var ac = 0;
-        d = 9;
+      ___setErrNo(ERRNO_CODES.EINVAL);
+      return -1;
+    }
+  function _time(ptr) {
+      var ret = Math.floor(Date.now()/1000);
+      if (ptr) {
+        HEAP32[((ptr)>>2)]=ret
       }
-      8 == d && (ac = 1 / la);
-      o[X + 7] = ac;
-      o[X + 8] = 0;
-      var jc = g + 18;
-      Ce(Da, D, X + 2);
-      N(ua, E, Da);
-      C(oa, ua, w);
-      Ce(Ja, y, X);
-      C(ka, oa, Ja);
-      var Tb = J(jc, ka);
-      fa = Tb;
-      d = -1 > Tb ? 10 : 11;
-      10 == d && (o[X + 8] = -o[g + 35] * fa);
-      F += 1;
-      if (F < T) $b = g; else {
-        Eb = g;
-        d = 12;
-        break b;
+      return ret;
+    }
+  function _sbrk(bytes) {
+      // Implement a Linux-like 'memory area' for our 'process'.
+      // Changes the size of the memory area by |bytes|; returns the
+      // address of the previous top ('break') of the memory area
+      // We need to make sure no one else allocates unfreeable memory!
+      // We must control this entirely. So we don't even need to do
+      // unfreeable allocations - the HEAP is ours, from STATICTOP up.
+      // TODO: We could in theory slice off the top of the HEAP when
+      //       sbrk gets a negative increment in |bytes|...
+      var self = _sbrk;
+      if (!self.called) {
+        STATICTOP = alignMemoryPage(STATICTOP); // make sure we start out aligned
+        self.called = true;
+        _sbrk.DYNAMIC_START = STATICTOP;
       }
-    } while (0);
-    d = 2 == b[Eb + 36] ? 13 : 16;
-    if (13 == d) {
-      Aa = g;
-      Ta = g + 9;
-      pb = Q(Aa, g + 18);
-      Fa = Q(Aa + 2, g + 18);
-      Va = Q(Ta, g + 18);
-      Na = Q(Ta + 2, g + 18);
-      pa = n + p + u * pb * pb + r * Fa * Fa;
-      ha = n + p + u * Va * Va + r * Na * Na;
-      Ba = n + p + u * pb * Va + r * Fa * Na;
-      var Ac = g;
-      d = pa * pa < 1e3 * (pa * ha - Ba * Ba) ? 14 : 15;
-      if (14 == d) {
-        nc(Ac + 24, pa, Ba);
-        nc(g + 26, Ba, ha);
-        var kc = g + 20;
-        Pl(za, g + 24);
-        var jb = kc;
-        b[jb] = b[Ia];
-        o[jb] = o[Ia];
-        b[jb + 1] = b[Ia + 1];
-        o[jb + 1] = o[Ia + 1];
-        b[jb + 2] = b[Ia + 2];
-        o[jb + 2] = o[Ia + 2];
-        b[jb + 3] = b[Ia + 3];
-        o[jb + 3] = o[Ia + 3];
-      } else 15 == d && (b[Ac + 36] = 1);
+      var ret = STATICTOP;
+      if (bytes != 0) Runtime.staticAlloc(bytes);
+      return ret;  // Previous break location.
     }
-    e += 1;
-    if (e >= b[va]) {
-      d = 17;
-      break a;
-    }
-  } while (0);
-  a = f;
-}
-
-bk.X = 1;
-
-function Pl(c, f) {
-  var d, e, g, i, h;
-  d = o[f];
-  e = o[f + 2];
-  g = o[f + 1];
-  i = o[f + 3];
-  h = d * i - e * g;
-  if (1 == (0 != h ? 1 : 2)) h = 1 / h;
-  o[c] = h * i;
-  o[c + 2] = -h * e;
-  o[c + 1] = -h * g;
-  o[c + 3] = h * d;
-}
-
-Pl.X = 1;
-
-function ck(c) {
-  var f = a;
-  a += 18;
-  var d, e, g, i, h, j, k, l, m, n, p, u = f + 2, r, q = f + 4, v = f + 6, x, w, y = f + 8, z = f + 10, B = f + 12, E = f + 14, D = f + 16;
-  e = 0;
-  var H = c + 12;
-  d = e < b[H] ? 1 : 5;
-  a : do if (1 == d) for (var I = c + 10, M = c + 7, G = f, R = c + 7, P = c + 7, L = u, T = c + 7, F = q, X = c + 7, Z = f, V = c + 7, aa = c + 7, ja = u, Y = c + 7; ; ) {
-    g = b[I] + 38 * e;
-    i = b[g + 28];
-    h = b[g + 29];
-    j = o[g + 30];
-    k = o[g + 32];
-    l = o[g + 31];
-    m = o[g + 33];
-    n = b[g + 36];
-    p = b[M] + 3 * i;
-    b[G] = b[p];
-    o[G] = o[p];
-    b[G + 1] = b[p + 1];
-    o[G + 1] = o[p + 1];
-    p = o[b[R] + 3 * i + 2];
-    r = b[P] + 3 * h;
-    b[L] = b[r];
-    o[L] = o[r];
-    b[L + 1] = b[r + 1];
-    o[L + 1] = o[r + 1];
-    r = o[b[T] + 3 * h + 2];
-    d = g + 18;
-    b[F] = b[d];
-    o[F] = o[d];
-    b[F + 1] = b[d + 1];
-    o[F + 1] = o[d + 1];
-    Wd(v, q);
-    x = 0;
-    d = x < n ? 3 : 4;
-    b : do if (3 == d) for (;;) if (w = g + 9 * x, K(z, o[w + 4], q), K(B, o[w + 5], v), N(y, z, B), p -= k * Q(w, y), K(E, j, y), Ke(f, E), r += m * Q(w + 2, y), K(D, l, y), Nb(u, D), x += 1, x >= n) {
-      d = 4;
-      break b;
-    } while (0);
-    g = b[X] + 3 * i;
-    b[g] = b[Z];
-    o[g] = o[Z];
-    b[g + 1] = b[Z + 1];
-    o[g + 1] = o[Z + 1];
-    o[b[V] + 3 * i + 2] = p;
-    i = b[aa] + 3 * h;
-    b[i] = b[ja];
-    o[i] = o[ja];
-    b[i + 1] = b[ja + 1];
-    o[i + 1] = o[ja + 1];
-    o[b[Y] + 3 * h + 2] = r;
-    e += 1;
-    if (e >= b[H]) break a;
-  } while (0);
-  a = f;
-}
-
-ck.X = 1;
-
-function Ql(c, f, d) {
-  oc(c, o[f] * o[d] + o[f + 2] * o[d + 1], o[f + 1] * o[d] + o[f + 3] * o[d + 1]);
-}
-
-function dk(c) {
-  var f = a;
-  a += 126;
-  var d, e, g, i, h, j, k, l, m, n, p, u = f + 2, r, q = f + 4, v = f + 6, x, w, y, z = f + 8, B = f + 10, E = f + 12, D = f + 14, H = f + 16, I, M, G, R, P = f + 18, L = f + 20, T = f + 22, F, X = f + 24, Z = f + 26, V = f + 28, aa = f + 30, ja = f + 32, Y, W, $, ga = f + 34, la = f + 36, fa = f + 38, ka, oa, ua = f + 40, Da = f + 42, Ja = f + 44, Aa = f + 46, Ta = f + 48, pb = f + 50, Fa = f + 52, Va = f + 54, Na = f + 56, pa = f + 58, ha = f + 60, Ba, za, va = f + 62, Ka = f + 64, ma = f + 66, La = f + 68, Ga = f + 70, ya = f + 72, Oa = f + 74, Ea = f + 76, Gb = f + 78, Ob = f + 80, Pa = f + 82, ec = f + 84, Pb = f + 86, Wa = f + 88, fc = f + 90, wb = f + 92, Xa = f + 94, Qb = f + 96, Hb = f + 98, Ab = f + 100, Bb = f + 102, db = f + 104, Xb = f + 106, Yb = f + 108, eb = f + 110, xb = f + 112, fb = f + 114, Ia = f + 116, Zb = f + 118, gb = f + 120, Cb = f + 122, hb = f + 124;
-  e = 0;
-  var Db = c + 12;
-  d = e < b[Db] ? 1 : 24;
-  a : do if (1 == d) for (var gc = c + 10, hc = c + 7, qb = f, Rb = c + 7, Sb = c + 7, rb = u, $b = c + 7, Eb = q, ic = c + 7, sb = f, Ib = c + 7, tb = c + 7, ib = u, ac = c + 7, jc = ua, Tb = ua + 1, Ac = va, kc = va + 1, jb = ma, $d = ma + 1, Ue = Ga, Ve = Ga + 1, ed = ma, fd = ma + 1, gd = va, hd = ma, id = ma + 1, jd = ma, kd = va + 1, ld = ma, Ah = ec, md = ec + 1, nd = ma, Bh = ma + 1, od = ma, pd = va + 1, ae = ma + 1, We = ma + 1, Xe = va, qd = ma + 1, rd = Hb, sd = Hb + 1, td = ma, ud = ma + 1, vd = ma, wd = ma + 1, xd = va, Ch = va + 1, yd = xb, zd = xb + 1, Dh = ma, Ad = ma + 1; ; ) {
-    g = b[gc] + 38 * e;
-    i = b[g + 28];
-    h = b[g + 29];
-    j = o[g + 30];
-    k = o[g + 32];
-    l = o[g + 31];
-    m = o[g + 33];
-    n = b[g + 36];
-    var sc = b[hc] + 3 * i;
-    b[qb] = b[sc];
-    o[qb] = o[sc];
-    b[qb + 1] = b[sc + 1];
-    o[qb + 1] = o[sc + 1];
-    p = o[b[Rb] + 3 * i + 2];
-    var Bc = b[Sb] + 3 * h;
-    b[rb] = b[Bc];
-    o[rb] = o[Bc];
-    b[rb + 1] = b[Bc + 1];
-    o[rb + 1] = o[Bc + 1];
-    r = o[b[$b] + 3 * h + 2];
-    var Qc = g + 18;
-    b[Eb] = b[Qc];
-    o[Eb] = o[Qc];
-    b[Eb + 1] = b[Qc + 1];
-    o[Eb + 1] = o[Qc + 1];
-    Wd(v, q);
-    x = o[g + 34];
-    d = 1 == n | 2 == n ? 4 : 3;
-    3 == d && O(Kl, 311, Rl, Sl);
-    w = 0;
-    if (w < n) {
-      var be = g;
-      d = 5;
-    } else {
-      var Rc = g;
-      d = 6;
-    }
-    b : do if (5 == d) for (;;) if (y = be + 9 * w, Ce(D, r, y + 2), N(E, u, D), C(B, E, f), Ce(H, p, y), C(z, B, H), I = J(z, v), M = o[y + 7] * -I, G = x * o[y + 4], R = $j(o[y + 5] + M, -G, G), M = R - o[y + 5], o[y + 5] = R, K(P, M, v), K(L, j, P), Ke(f, L), p -= k * Q(y, P), K(T, l, P), Nb(u, T), r += m * Q(y + 2, P), w += 1, w < n) be = g; else {
-      Rc = g;
-      d = 6;
-      break b;
-    } while (0);
-    var Sc = g;
-    d = 1 == b[Rc + 36] ? 7 : 8;
-    b : do if (7 == d) F = Sc, Ce(aa, r, F + 2), N(V, u, aa), C(Z, V, f), Ce(ja, p, F), C(X, Z, ja), Y = J(X, q), W = -o[F + 6] * (Y - o[F + 8]), $ = 0 < o[F + 4] + W ? o[F + 4] + W : 0, W = $ - o[F + 4], o[F + 4] = $, K(ga, W, q), K(la, j, ga), Ke(f, la), p -= k * Q(F, ga), K(fa, l, ga), Nb(u, fa), r += m * Q(F + 2, ga); else if (8 == d) {
-      ka = Sc;
-      oa = g + 9;
-      oc(ua, o[ka + 4], o[oa + 4]);
-      d = 0 <= o[jc] ? 9 : 10;
-      9 == d && (d = 0 <= o[Tb] ? 11 : 10);
-      10 == d && O(Kl, 406, Rl, Tl);
-      Ce(Ta, r, ka + 2);
-      N(Aa, u, Ta);
-      C(Ja, Aa, f);
-      Ce(pb, p, ka);
-      C(Da, Ja, pb);
-      Ce(pa, r, oa + 2);
-      N(Na, u, pa);
-      C(Va, Na, f);
-      Ce(ha, p, oa);
-      C(Fa, Va, ha);
-      Ba = J(Da, q);
-      za = J(Fa, q);
-      o[Ac] = Ba - o[ka + 8];
-      o[kc] = za - o[oa + 8];
-      Ql(Ka, g + 24, ua);
-      Ke(va, Ka);
-      Ql(La, g + 20, va);
-      Pd(ma, La);
-      d = 0 <= o[jb] ? 12 : 14;
-      do if (12 == d) if (0 <= o[$d]) {
-        C(Ga, ma, ua);
-        K(ya, o[Ue], q);
-        K(Oa, o[Ve], q);
-        var Bd = j;
-        N(Gb, ya, Oa);
-        K(Ea, Bd, Gb);
-        Ke(f, Ea);
-        p -= k * (Q(ka, ya) + Q(oa, Oa));
-        var Cd = l;
-        N(Pa, ya, Oa);
-        K(Ob, Cd, Pa);
-        Nb(u, Ob);
-        r += m * (Q(ka + 2, ya) + Q(oa + 2, Oa));
-        o[ka + 4] = o[ed];
-        o[oa + 4] = o[fd];
-        d = 23;
-        break b;
-      } else d = 14; while (0);
-      o[hd] = -o[ka + 6] * o[gd];
-      Ba = o[id] = 0;
-      za = o[g + 25] * o[jd] + o[kd];
-      d = 0 <= o[ld] ? 15 : 17;
-      do if (15 == d) if (0 <= za) {
-        C(ec, ma, ua);
-        K(Pb, o[Ah], q);
-        K(Wa, o[md], q);
-        var Dd = j;
-        N(wb, Pb, Wa);
-        K(fc, Dd, wb);
-        Ke(f, fc);
-        p -= k * (Q(ka, Pb) + Q(oa, Wa));
-        var Ed = l;
-        N(Qb, Pb, Wa);
-        K(Xa, Ed, Qb);
-        Nb(u, Xa);
-        r += m * (Q(ka + 2, Pb) + Q(oa + 2, Wa));
-        o[ka + 4] = o[nd];
-        o[oa + 4] = o[Bh];
-        d = 23;
-        break b;
-      } else d = 17; while (0);
-      o[od] = 0;
-      o[ae] = -o[oa + 6] * o[pd];
-      Ba = o[g + 26] * o[We] + o[Xe];
-      za = 0;
-      d = 0 <= o[qd] ? 18 : 20;
-      do if (18 == d) if (0 <= Ba) {
-        C(Hb, ma, ua);
-        K(Ab, o[rd], q);
-        K(Bb, o[sd], q);
-        var Fd = j;
-        N(Xb, Ab, Bb);
-        K(db, Fd, Xb);
-        Ke(f, db);
-        p -= k * (Q(ka, Ab) + Q(oa, Bb));
-        var Gd = l;
-        N(eb, Ab, Bb);
-        K(Yb, Gd, eb);
-        Nb(u, Yb);
-        r += m * (Q(ka + 2, Ab) + Q(oa + 2, Bb));
-        o[ka + 4] = o[td];
-        o[oa + 4] = o[ud];
-        d = 23;
-        break b;
-      } else d = 20; while (0);
-      o[vd] = 0;
-      o[wd] = 0;
-      var Ye = o[xd];
-      Ba = Ye;
-      za = o[Ch];
-      if (0 <= Ye) if (0 <= za) {
-        C(xb, ma, ua);
-        K(fb, o[yd], q);
-        K(Ia, o[zd], q);
-        var Hd = j;
-        N(gb, fb, Ia);
-        K(Zb, Hd, gb);
-        Ke(f, Zb);
-        p -= k * (Q(ka, fb) + Q(oa, Ia));
-        var Id = l;
-        N(hb, fb, Ia);
-        K(Cb, Id, hb);
-        Nb(u, Cb);
-        r += m * (Q(ka + 2, fb) + Q(oa + 2, Ia));
-        o[ka + 4] = o[Dh];
-        o[oa + 4] = o[Ad];
-      } else d = 23; else d = 23;
-    } while (0);
-    var Jd = b[ic] + 3 * i;
-    b[Jd] = b[sb];
-    o[Jd] = o[sb];
-    b[Jd + 1] = b[sb + 1];
-    o[Jd + 1] = o[sb + 1];
-    o[b[Ib] + 3 * i + 2] = p;
-    var tc = b[tb] + 3 * h;
-    b[tc] = b[ib];
-    o[tc] = o[ib];
-    b[tc + 1] = b[ib + 1];
-    o[tc + 1] = o[ib + 1];
-    o[b[ac] + 3 * h + 2] = r;
-    e += 1;
-    if (e >= b[Db]) {
-      d = 24;
-      break a;
-    }
-  } while (0);
-  a = f;
-}
-
-dk.X = 1;
-
-function ek(c) {
-  var f, d, e, g, i;
-  d = 0;
-  var h = c + 12;
-  f = d < b[h] ? 1 : 5;
-  a : do if (1 == f) for (var j = c + 10, k = c + 11; ; ) {
-    e = b[j] + 38 * d;
-    g = b[b[k] + b[e + 37]] + 16;
-    i = 0;
-    f = i < b[e + 36] ? 3 : 4;
-    b : do if (3 == f) for (;;) if (o[g + 5 * i + 2] = o[e + 9 * i + 4], o[g + 5 * i + 3] = o[e + 9 * i + 5], i += 1, i >= b[e + 36]) {
-      f = 4;
-      break b;
-    } while (0);
-    d += 1;
-    if (d >= b[h]) break a;
-  } while (0);
-}
-
-ek.X = 1;
-
-function fk(c) {
-  var f = a;
-  a += 43;
-  var d, e, g, i, h, j, k, l, m = f + 2, n, p, u, r = f + 4, q, v = f + 6, x, w, y = f + 8, z = f + 12, B = f + 16, E = f + 18, D = f + 20, H = f + 22, I = f + 24, M = f + 29, G = f + 31, R = f + 33, P = f + 35, L, T, F, X = f + 37, Z = f + 39, V = f + 41;
-  g = e = 0;
-  var aa = c + 12;
-  d = g < b[aa] ? 1 : 7;
-  a : do if (1 == d) for (var ja = c + 9, Y = f, W = m, $ = c + 6, ga = r, la = c + 6, fa = c + 6, ka = v, oa = c + 6, ua = c + 6, Da = r, Ja = c + 6, Aa = c + 6, Ta = v, pb = c + 6, Fa = y + 2, Va = z + 2, Na = y + 2, pa = y, ha = B, Ba = z + 2, za = z, va = D, Ka = M, ma = I, La = G, Ga = I + 2, ya = I + 4; ; ) {
-    i = b[ja] + 22 * g;
-    h = b[i + 8];
-    j = b[i + 9];
-    k = i + 12;
-    b[Y] = b[k];
-    o[Y] = o[k];
-    b[Y + 1] = b[k + 1];
-    o[Y + 1] = o[k + 1];
-    k = o[i + 10];
-    l = o[i + 16];
-    n = i + 14;
-    b[W] = b[n];
-    o[W] = o[n];
-    b[W + 1] = b[n + 1];
-    o[W + 1] = o[n + 1];
-    n = o[i + 11];
-    p = o[i + 17];
-    u = b[i + 21];
-    q = b[$] + 3 * h;
-    b[ga] = b[q];
-    o[ga] = o[q];
-    b[ga + 1] = b[q + 1];
-    o[ga + 1] = o[q + 1];
-    q = o[b[la] + 3 * h + 2];
-    x = b[fa] + 3 * j;
-    b[ka] = b[x];
-    o[ka] = o[x];
-    b[ka + 1] = b[x + 1];
-    o[ka + 1] = o[x + 1];
-    x = o[b[oa] + 3 * j + 2];
-    w = 0;
-    d = w < u ? 3 : 6;
-    b : do if (3 == d) for (;;) {
-      ch(Fa, q);
-      ch(Va, x);
-      S(E, Na, f);
-      C(B, r, E);
-      b[pa] = b[ha];
-      o[pa] = o[ha];
-      b[pa + 1] = b[ha + 1];
-      o[pa + 1] = o[ha + 1];
-      S(H, Ba, m);
-      C(D, v, H);
-      b[za] = b[va];
-      o[za] = o[va];
-      b[za + 1] = b[va + 1];
-      o[za + 1] = o[va + 1];
-      Ul(I, i, y, z, w);
-      b[Ka] = b[ma];
-      o[Ka] = o[ma];
-      b[Ka + 1] = b[ma + 1];
-      o[Ka + 1] = o[ma + 1];
-      b[La] = b[Ga];
-      o[La] = o[Ga];
-      b[La + 1] = b[Ga + 1];
-      o[La + 1] = o[Ga + 1];
-      d = o[ya];
-      C(R, G, r);
-      C(P, G, v);
-      e = e < d ? e : d;
-      L = $j(.20000000298023224 * (d + .004999999888241291), -.20000000298023224, 0);
-      d = Q(R, M);
-      T = Q(P, M);
-      F = k + n + l * d * d + p * T * T;
-      if (0 < k + n + l * d * d + p * T * T) d = 4; else {
-        var Oa = 0;
-        d = 5;
-      }
-      4 == d && (Oa = -L / F);
-      L = Oa;
-      K(X, L, M);
-      K(Z, k, X);
-      Ke(r, Z);
-      q -= l * Q(R, X);
-      K(V, n, X);
-      Nb(v, V);
-      x += p * Q(P, X);
-      w += 1;
-      if (w >= u) {
-        d = 6;
-        break b;
-      }
-    } while (0);
-    i = b[ua] + 3 * h;
-    b[i] = b[Da];
-    o[i] = o[Da];
-    b[i + 1] = b[Da + 1];
-    o[i + 1] = o[Da + 1];
-    o[b[Ja] + 3 * h + 2] = q;
-    h = b[Aa] + 3 * j;
-    b[h] = b[Ta];
-    o[h] = o[Ta];
-    b[h + 1] = b[Ta + 1];
-    o[h + 1] = o[Ta + 1];
-    o[b[pb] + 3 * j + 2] = x;
-    g += 1;
-    if (g >= b[aa]) break a;
-  } while (0);
-  a = f;
-  return -.014999999664723873 <= e;
-}
-
-fk.X = 1;
-
-function Ul(c, f, d, e, g) {
-  var i = a;
-  a += 30;
-  var h, j = i + 2, k = i + 4, l = i + 6, m = i + 8, n = i + 10, p = i + 12, u = i + 14, r = i + 16, q = i + 18, v = i + 20, x = i + 22, w = i + 24, y = i + 26, z = i + 28;
-  h = 0 < b[f + 21] ? 2 : 1;
-  1 == h && O(Kl, 617, Vl, Wl);
-  h = b[f + 18];
-  h = 0 == h ? 3 : 1 == h ? 4 : 2 == h ? 5 : 6;
-  3 == h ? (Pc(i, d, f + 6), Pc(j, e, f), C(k, j, i), b[c] = b[k], o[c] = o[k], b[c + 1] = b[k + 1], o[c + 1] = o[k + 1], Xc(c), r = c + 2, N(m, i, j), K(l, .5, m), b[r] = b[l], o[r] = o[l], b[r + 1] = b[l + 1], o[r + 1] = o[l + 1], C(n, j, i), o[c + 4] = J(n, c) - o[f + 19] - o[f + 20]) : 4 == h ? (S(p, d + 2, f + 4), b[c] = b[p], o[c] = o[p], b[c + 1] = b[p + 1], o[c + 1] = o[p + 1], Pc(u, d, f + 6), Pc(r, e, f + (g << 1)), C(q, r, u), o[c + 4] = J(q, c) - o[f + 19] - o[f + 20], c += 2, b[c] = b[r], o[c] = o[r], b[c + 1] = b[r + 1], o[c + 1] = o[r + 1]) : 5 == h && (S(v, e + 2, f + 4), b[c] = b[v], o[c] = o[v], b[c + 1] = b[v + 1], o[c + 1] = o[v + 1], Pc(x, e, f + 6), Pc(w, d, f + (g << 1)), C(y, w, x), o[c + 4] = J(y, c) - o[f + 19] - o[f + 20], f = c + 2, b[f] = b[w], o[f] = o[w], b[f + 1] = b[w + 1], o[f + 1] = o[w + 1], Pd(z, c), b[c] = b[z], o[c] = o[z], b[c + 1] = b[z + 1], o[c + 1] = o[z + 1]);
-  a = i;
-}
-
-Ul.X = 1;
-
-function nk(c, f, d) {
-  var e = a;
-  a += 43;
-  var g, i, h, j, k, l, m = e + 2, n, p, u, r, q, v = e + 4, x, w = e + 6, y, z, B = e + 8, E = e + 12, D = e + 16, H = e + 18, I = e + 20, M = e + 22, G = e + 24, R = e + 29, P = e + 31, L = e + 33, T = e + 35, F, X, Z, V = e + 37, aa = e + 39, ja = e + 41;
-  h = i = 0;
-  var Y = c + 12;
-  g = h < b[Y] ? 1 : 13;
-  a : do if (1 == g) for (var W = c + 9, $ = e, ga = m, la = c + 6, fa = v, ka = c + 6, oa = c + 6, ua = w, Da = c + 6, Ja = c + 6, Aa = v, Ta = c + 6, pb = c + 6, Fa = w, Va = c + 6, Na = B + 2, pa = E + 2, ha = B + 2, Ba = B, za = D, va = E + 2, Ka = E, ma = I, La = R, Ga = G, ya = P, Oa = G + 2, Ea = G + 4; ; ) {
-    j = b[W] + 22 * h;
-    k = b[j + 8];
-    l = b[j + 9];
-    n = j + 12;
-    b[$] = b[n];
-    o[$] = o[n];
-    b[$ + 1] = b[n + 1];
-    o[$ + 1] = o[n + 1];
-    n = j + 14;
-    b[ga] = b[n];
-    o[ga] = o[n];
-    b[ga + 1] = b[n + 1];
-    o[ga + 1] = o[n + 1];
-    n = b[j + 21];
-    u = p = 0;
-    g = k == f ? 4 : 3;
-    3 == g && (g = k == d ? 4 : 5);
-    4 == g && (p = o[j + 10], u = o[j + 16]);
-    r = o[j + 11];
-    q = o[j + 17];
-    g = l == f ? 7 : 6;
-    6 == g && (g = l == d ? 7 : 8);
-    7 == g && (r = o[j + 11], q = o[j + 17]);
-    x = b[la] + 3 * k;
-    b[fa] = b[x];
-    o[fa] = o[x];
-    b[fa + 1] = b[x + 1];
-    o[fa + 1] = o[x + 1];
-    x = o[b[ka] + 3 * k + 2];
-    y = b[oa] + 3 * l;
-    b[ua] = b[y];
-    o[ua] = o[y];
-    b[ua + 1] = b[y + 1];
-    o[ua + 1] = o[y + 1];
-    y = o[b[Da] + 3 * l + 2];
-    z = 0;
-    g = z < n ? 9 : 12;
-    b : do if (9 == g) for (;;) {
-      ch(Na, x);
-      ch(pa, y);
-      S(H, ha, e);
-      C(D, v, H);
-      b[Ba] = b[za];
-      o[Ba] = o[za];
-      b[Ba + 1] = b[za + 1];
-      o[Ba + 1] = o[za + 1];
-      S(M, va, m);
-      C(I, w, M);
-      b[Ka] = b[ma];
-      o[Ka] = o[ma];
-      b[Ka + 1] = b[ma + 1];
-      o[Ka + 1] = o[ma + 1];
-      Ul(G, j, B, E, z);
-      b[La] = b[Ga];
-      o[La] = o[Ga];
-      b[La + 1] = b[Ga + 1];
-      o[La + 1] = o[Ga + 1];
-      b[ya] = b[Oa];
-      o[ya] = o[Oa];
-      b[ya + 1] = b[Oa + 1];
-      o[ya + 1] = o[Oa + 1];
-      g = o[Ea];
-      C(L, P, v);
-      C(T, P, w);
-      i = i < g ? i : g;
-      F = $j(.75 * (g + .004999999888241291), -.20000000298023224, 0);
-      g = Q(L, R);
-      X = Q(T, R);
-      Z = p + r + u * g * g + q * X * X;
-      if (0 < p + r + u * g * g + q * X * X) g = 10; else {
-        var Gb = 0;
-        g = 11;
-      }
-      10 == g && (Gb = -F / Z);
-      F = Gb;
-      K(V, F, R);
-      K(aa, p, V);
-      Ke(v, aa);
-      x -= u * Q(L, V);
-      K(ja, r, V);
-      Nb(w, ja);
-      y += q * Q(T, V);
-      z += 1;
-      if (z >= n) {
-        g = 12;
-        break b;
-      }
-    } while (0);
-    j = b[Ja] + 3 * k;
-    b[j] = b[Aa];
-    o[j] = o[Aa];
-    b[j + 1] = b[Aa + 1];
-    o[j + 1] = o[Aa + 1];
-    o[b[Ta] + 3 * k + 2] = x;
-    k = b[pb] + 3 * l;
-    b[k] = b[Fa];
-    o[k] = o[Fa];
-    b[k + 1] = b[Fa + 1];
-    o[k + 1] = o[Fa + 1];
-    o[b[Va] + 3 * l + 2] = y;
-    h += 1;
-    if (h >= b[Y]) break a;
-  } while (0);
-  a = e;
-  return -.007499999832361937 <= i;
-}
-
-nk.X = 1;
-
-function Xl(c, f, d) {
-  fl(c, f, 0, d, 0);
-  b[c] = Yl + 2;
-  f = 1 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(Zl, 41, $l, am);
-  f = 0 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(Zl, 42, $l, kl);
-}
-
-function bm(c, f) {
-  cm(c, f);
-  b[c] = dm + 2;
-  var d = c + 21, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 23;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 27] = o[f + 9];
-  o[c + 18] = o[f + 10];
-  o[c + 19] = o[f + 11];
-  o[c + 26] = 0;
-  o[c + 25] = 0;
-  o[c + 20] = 0;
-}
-
-bm.X = 1;
-
-function em(c, f, d) {
-  fl(c, f, 0, d, 0);
-  b[c] = fm + 2;
-  f = 1 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(gm, 41, hm, am);
-  f = 2 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(gm, 42, hm, ql);
-}
-
-function im(c, f, d) {
-  fl(c, f, 0, d, 0);
-  b[c] = jm + 2;
-  f = 2 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(km, 41, lm, mm);
-  f = 0 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(km, 42, lm, kl);
-}
-
-function nm(c, f, d) {
-  fl(c, f, 0, d, 0);
-  b[c] = om + 2;
-  f = 2 == cl(b[c + 12]) ? 2 : 1;
-  1 == f && O(pm, 44, qm, mm);
-  f = 2 == cl(b[c + 13]) ? 4 : 3;
-  3 == f && O(pm, 45, qm, ql);
-}
-
-function rm(c, f, d) {
-  Pc(c, f + 3, d);
-}
-
-function sm(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(tm, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 21], o[c + 22] ], "double", s));
-  U(ym, A([ o[c + 23], o[c + 24] ], "double", s));
-  U(zm, A([ o[c + 27] ], "double", s));
-  U(Am, A([ o[c + 18] ], "double", s));
-  U(Bm, A([ o[c + 19] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-sm.X = 1;
-
-function Dm(c, f) {
-  var d = a;
-  a += 32;
-  var e, g, i = d + 2, h, j = d + 4, k, l = d + 6, m, n = d + 8, p = d + 10, u = d + 12, r = d + 14, q = d + 16, v = d + 18;
-  e = d + 20;
-  var x = d + 22, w = d + 24, y, z = d + 26, B = d + 28, E = d + 30;
-  b[c + 28] = b[b[c + 12] + 2];
-  b[c + 29] = b[b[c + 13] + 2];
-  h = c + 36;
-  m = b[c + 12] + 7;
-  b[h] = b[m];
-  o[h] = o[m];
-  b[h + 1] = b[m + 1];
-  o[h + 1] = o[m + 1];
-  h = c + 38;
-  m = b[c + 13] + 7;
-  b[h] = b[m];
-  o[h] = o[m];
-  b[h + 1] = b[m + 1];
-  o[h + 1] = o[m + 1];
-  o[c + 40] = o[b[c + 12] + 30];
-  o[c + 41] = o[b[c + 13] + 30];
-  o[c + 42] = o[b[c + 12] + 32];
-  o[c + 43] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 28];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 28] + 2];
-  h = b[f + 7] + 3 * b[c + 28];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 28] + 2];
-  m = b[f + 6] + 3 * b[c + 29];
-  b[j] = b[m];
-  o[j] = o[m];
-  b[j + 1] = b[m + 1];
-  o[j + 1] = o[m + 1];
-  k = o[b[f + 6] + 3 * b[c + 29] + 2];
-  m = b[f + 7] + 3 * b[c + 29];
-  b[l] = b[m];
-  o[l] = o[m];
-  b[l + 1] = b[m + 1];
-  o[l + 1] = o[m + 1];
-  m = o[b[f + 7] + 3 * b[c + 29] + 2];
-  Em(n, g);
-  Em(p, k);
-  g = c + 32;
-  C(r, c + 21, c + 36);
-  S(u, n, r);
-  b[g] = b[u];
-  o[g] = o[u];
-  b[g + 1] = b[u + 1];
-  o[g + 1] = o[u + 1];
-  n = c + 34;
-  C(v, c + 23, c + 38);
-  S(q, p, v);
-  b[n] = b[q];
-  o[n] = o[q];
-  b[n + 1] = b[q + 1];
-  o[n + 1] = o[q + 1];
-  p = c + 30;
-  N(w, j, c + 34);
-  C(x, w, d);
-  C(e, x, c + 32);
-  b[p] = b[e];
-  o[p] = o[e];
-  b[p + 1] = b[e + 1];
-  o[p + 1] = o[e + 1];
-  x = Yc(c + 30);
-  e = .004999999888241291 < x ? 1 : 2;
-  1 == e ? Vh(c + 30, 1 / x) : 2 == e && nc(c + 30, 0, 0);
-  e = Q(c + 32, c + 30);
-  w = Q(c + 34, c + 30);
-  j = o[c + 40] + o[c + 42] * e * e + o[c + 41] + o[c + 43] * w * w;
-  0 != o[c + 40] + o[c + 42] * e * e + o[c + 41] + o[c + 43] * w * w ? e = 4 : (y = 0, e = 5);
-  4 == e && (y = 1 / j);
-  o[c + 44] = y;
-  e = 0 < o[c + 18] ? 6 : 11;
-  if (6 == e) {
-    y = x - o[c + 27];
-    x = 6.2831854820251465 * o[c + 18];
-    e = 2 * o[c + 44] * o[c + 19] * x;
-    x *= o[c + 44] * x;
-    w = o[f];
-    o[c + 25] = w * (e + w * x);
-    if (0 != o[c + 25]) e = 7; else {
-      var D = 0;
-      e = 8;
-    }
-    7 == e && (D = 1 / o[c + 25]);
-    o[c + 25] = D;
-    o[c + 20] = y * w * x * o[c + 25];
-    D = j + o[c + 25];
-    if (0 != D) e = 9; else {
-      var H = 0;
-      e = 10;
-    }
-    9 == e && (H = 1 / D);
-    o[c + 44] = H;
-  } else 11 == e && (o[c + 25] = 0, o[c + 20] = 0);
-  e = b[f + 5] & 1 ? 13 : 14;
-  13 == e ? (o[c + 26] *= o[f + 2], K(z, o[c + 26], c + 30), K(B, o[c + 40], z), Ke(i, B), h -= o[c + 42] * Q(c + 32, z), K(E, o[c + 41], z), Nb(l, E), m += o[c + 43] * Q(c + 34, z)) : 14 == e && (o[c + 26] = 0);
-  z = b[f + 7] + 3 * b[c + 28];
-  b[z] = b[i];
-  o[z] = o[i];
-  b[z + 1] = b[i + 1];
-  o[z + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 28] + 2] = h;
-  i = b[f + 7] + 3 * b[c + 29];
-  b[i] = b[l];
-  o[i] = o[l];
-  b[i + 1] = b[l + 1];
-  o[i + 1] = o[l + 1];
-  o[b[f + 7] + 3 * b[c + 29] + 2] = m;
-  a = d;
-}
-
-Dm.X = 1;
-
-function Fm(c, f) {
-  var d = a;
-  a += 20;
-  var e, g = d + 2, i, h = d + 4, j = d + 6, k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18;
-  e = b[f + 7] + 3 * b[c + 28];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 28] + 2];
-  i = b[f + 7] + 3 * b[c + 29];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 29] + 2];
-  Ce(j, e, c + 32);
-  N(h, d, j);
-  Ce(l, i, c + 34);
-  N(k, g, l);
-  j = c + 30;
-  C(m, k, h);
-  h = -o[c + 44] * (J(j, m) + o[c + 20] + o[c + 25] * o[c + 26]);
-  o[c + 26] += h;
-  K(n, h, c + 30);
-  K(p, o[c + 40], n);
-  Ke(d, p);
-  e -= o[c + 42] * Q(c + 32, n);
-  K(u, o[c + 41], n);
-  Nb(g, u);
-  i += o[c + 43] * Q(c + 34, n);
-  n = b[f + 7] + 3 * b[c + 28];
-  b[n] = b[d];
-  o[n] = o[d];
-  b[n + 1] = b[d + 1];
-  o[n + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 28] + 2] = e;
-  e = b[f + 7] + 3 * b[c + 29];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 29] + 2] = i;
-  a = d;
-}
-
-Fm.X = 1;
-
-function Gm(c, f) {
-  var d = a;
-  a += 28;
-  var e, g, i = d + 2, h = d + 4, j = d + 6, k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18, r = d + 20, q = d + 22, v = d + 24, x = d + 26;
-  e = 0 < o[c + 18] ? 1 : 2;
-  1 == e ? g = 1 : 2 == e && (e = b[f + 6] + 3 * b[c + 28], b[d] = b[e], o[d] = o[e], b[d + 1] = b[e + 1], o[d + 1] = o[e + 1], e = o[b[f + 6] + 3 * b[c + 28] + 2], g = b[f + 6] + 3 * b[c + 29], b[i] = b[g], o[i] = o[g], b[i + 1] = b[g + 1], o[i + 1] = o[g + 1], g = o[b[f + 6] + 3 * b[c + 29] + 2], Em(h, e), Em(j, g), C(l, c + 21, c + 36), S(k, h, l), C(n, c + 23, c + 38), S(m, j, n), N(r, i, m), C(u, r, d), C(p, u, k), h = Xc(p), h -= o[c + 27], h = $j(h, -.20000000298023224, .20000000298023224), j = -o[c + 44] * h, K(q, j, p), K(v, o[c + 40], q), Ke(d, v), e -= o[c + 42] * Q(k, q), K(x, o[c + 41], q), Nb(i, x), g += o[c + 43] * Q(m, q), k = b[f + 6] + 3 * b[c + 28], b[k] = b[d], o[k] = o[d], b[k + 1] = b[d + 1], o[k + 1] = o[d + 1], o[b[f + 6] + 3 * b[c + 28] + 2] = e, k = b[f + 6] + 3 * b[c + 29], b[k] = b[i], o[k] = o[i], b[k + 1] = b[i + 1], o[k + 1] = o[i + 1], o[b[f + 6] + 3 * b[c + 29] + 2] = g, g = .004999999888241291 > ke(h));
-  a = d;
-  return g;
-}
-
-Gm.X = 1;
-
-function Em(c, f) {
-  var d = Ih(f);
-  o[c] = d;
-  d = Jh(f);
-  o[c + 1] = d;
-}
-
-function Hm(c, f) {
-  cm(c, f);
-  b[c] = Im + 2;
-  var d = c + 18, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 20;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  cc(c + 22);
-  o[c + 24] = 0;
-  o[c + 25] = o[f + 9];
-  o[c + 26] = o[f + 10];
-}
-
-Hm.X = 1;
-
-function Jm(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(Km, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 18], o[c + 19] ], "double", s));
-  U(ym, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(Lm, A([ o[c + 25] ], "double", s));
-  U(Mm, A([ o[c + 26] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-Jm.X = 1;
-
-function Nm(c, f) {
-  var d = a;
-  a += 30;
-  var e, g, i, h, j = d + 2, k, l = d + 4, m = d + 6, n = d + 8, p = d + 10, u = d + 12, r = d + 14;
-  e = d + 16;
-  var q = d + 20, v = d + 24, x = d + 26, w = d + 28;
-  b[c + 27] = b[b[c + 12] + 2];
-  b[c + 28] = b[b[c + 13] + 2];
-  i = c + 33;
-  k = b[c + 12] + 7;
-  b[i] = b[k];
-  o[i] = o[k];
-  b[i + 1] = b[k + 1];
-  o[i + 1] = o[k + 1];
-  i = c + 35;
-  k = b[c + 13] + 7;
-  b[i] = b[k];
-  o[i] = o[k];
-  b[i + 1] = b[k + 1];
-  o[i + 1] = o[k + 1];
-  o[c + 37] = o[b[c + 12] + 30];
-  o[c + 38] = o[b[c + 13] + 30];
-  o[c + 39] = o[b[c + 12] + 32];
-  o[c + 40] = o[b[c + 13] + 32];
-  g = o[b[f + 6] + 3 * b[c + 27] + 2];
-  i = b[f + 7] + 3 * b[c + 27];
-  b[d] = b[i];
-  o[d] = o[i];
-  b[d + 1] = b[i + 1];
-  o[d + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 27] + 2];
-  h = o[b[f + 6] + 3 * b[c + 28] + 2];
-  k = b[f + 7] + 3 * b[c + 28];
-  b[j] = b[k];
-  o[j] = o[k];
-  b[j + 1] = b[k + 1];
-  o[j + 1] = o[k + 1];
-  k = o[b[f + 7] + 3 * b[c + 28] + 2];
-  Em(l, g);
-  Em(m, h);
-  g = c + 29;
-  C(p, c + 18, c + 33);
-  S(n, l, p);
-  b[g] = b[n];
-  o[g] = o[n];
-  b[g + 1] = b[n + 1];
-  o[g + 1] = o[n + 1];
-  l = c + 31;
-  C(r, c + 20, c + 35);
-  S(u, m, r);
-  b[l] = b[u];
-  o[l] = o[u];
-  b[l + 1] = b[u + 1];
-  o[l + 1] = o[u + 1];
-  m = o[c + 37];
-  u = o[c + 38];
-  r = o[c + 39];
-  l = o[c + 40];
-  o[e] = m + u + r * o[c + 30] * o[c + 30] + l * o[c + 32] * o[c + 32];
-  o[e + 1] = -r * o[c + 29] * o[c + 30] - l * o[c + 31] * o[c + 32];
-  o[e + 2] = o[e + 1];
-  o[e + 3] = m + u + r * o[c + 29] * o[c + 29] + l * o[c + 31] * o[c + 31];
-  n = c + 41;
-  Pl(q, e);
-  b[n] = b[q];
-  o[n] = o[q];
-  b[n + 1] = b[q + 1];
-  o[n + 1] = o[q + 1];
-  b[n + 2] = b[q + 2];
-  o[n + 2] = o[q + 2];
-  b[n + 3] = b[q + 3];
-  o[n + 3] = o[q + 3];
-  o[c + 45] = r + l;
-  e = 0 < o[c + 45] ? 1 : 2;
-  1 == e && (o[c + 45] = 1 / o[c + 45]);
-  q = c + 22;
-  e = b[f + 5] & 1 ? 3 : 4;
-  3 == e ? (Vh(q, o[f + 2]), o[c + 24] *= o[f + 2], oc(v, o[c + 22], o[c + 23]), K(x, m, v), Ke(d, x), i -= r * (Q(c + 29, v) + o[c + 24]), K(w, u, v), Nb(j, w), k += l * (Q(c + 31, v) + o[c + 24])) : 4 == e && (cc(q), o[c + 24] = 0);
-  v = b[f + 7] + 3 * b[c + 27];
-  b[v] = b[d];
-  o[v] = o[d];
-  b[v + 1] = b[d + 1];
-  o[v + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 27] + 2] = i;
-  v = b[f + 7] + 3 * b[c + 28];
-  b[v] = b[j];
-  o[v] = o[j];
-  b[v + 1] = b[j + 1];
-  o[v + 1] = o[j + 1];
-  o[b[f + 7] + 3 * b[c + 28] + 2] = k;
-  a = d;
-}
-
-Nm.X = 1;
-
-function Om(c, f) {
-  var d = a;
-  a += 26;
-  var e, g = d + 2, i, h, j, k, l, m, n, p, u, r = d + 4, q = d + 6, v = d + 8, x = d + 10, w = d + 12, y = d + 14, z = d + 16, B = d + 18, E = d + 20, D = d + 22, H = d + 24;
-  e = b[f + 7] + 3 * b[c + 27];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 27] + 2];
-  i = b[f + 7] + 3 * b[c + 28];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 28] + 2];
-  h = o[c + 37];
-  j = o[c + 38];
-  k = o[c + 39];
-  l = o[c + 40];
-  m = o[f];
-  n = -o[c + 45] * (i - e);
-  p = o[c + 24];
-  u = m * o[c + 26];
-  o[c + 24] = $j(o[c + 24] + n, -u, u);
-  n = o[c + 24] - p;
-  e -= k * n;
-  i += l * n;
-  Ce(x, i, c + 31);
-  N(v, g, x);
-  C(q, v, d);
-  Ce(w, e, c + 29);
-  C(r, q, w);
-  Ql(z, c + 41, r);
-  Pd(y, z);
-  r = c + 22;
-  b[B] = b[r];
-  o[B] = o[r];
-  b[B + 1] = b[r + 1];
-  o[B + 1] = o[r + 1];
-  Nb(c + 22, y);
-  r = m * o[c + 25];
-  if (1 == (ve(c + 22) > r * r ? 1 : 2)) Xc(c + 22), Vh(c + 22, r);
-  C(E, c + 22, B);
-  b[y] = b[E];
-  o[y] = o[E];
-  b[y + 1] = b[E + 1];
-  o[y + 1] = o[E + 1];
-  K(D, h, y);
-  Ke(d, D);
-  e -= k * Q(c + 29, y);
-  K(H, j, y);
-  Nb(g, H);
-  i += l * Q(c + 31, y);
-  y = b[f + 7] + 3 * b[c + 27];
-  b[y] = b[d];
-  o[y] = o[d];
-  b[y + 1] = b[d + 1];
-  o[y + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 27] + 2] = e;
-  e = b[f + 7] + 3 * b[c + 28];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 28] + 2] = i;
-  a = d;
-}
-
-Om.X = 1;
-
-function Pm(c, f) {
-  var d = a;
-  a += 40;
-  var e, g, i, h, j = d + 4, k, l = d + 8, m = d + 10, n = d + 12, p = d + 14, u = d + 16, r = d + 18, q = d + 20, v = d + 24, x = d + 28, w = d + 30, y = d + 32, z = d + 34, B = d + 36, E = d + 38;
-  cm(c, f);
-  b[c] = Qm + 2;
-  b[c + 18] = b[f + 5];
-  b[c + 19] = b[f + 6];
-  b[c + 20] = b[b[c + 18] + 1];
-  b[c + 21] = b[b[c + 19] + 1];
-  e = 1 == b[c + 20] ? 5 : 3;
-  3 == e && (2 == b[c + 20] || O(Rm, 53, Sm, Tm));
-  e = 1 == b[c + 21] ? 8 : 6;
-  6 == e && (2 == b[c + 21] || O(Rm, 54, Sm, Um));
-  b[c + 22] = b[b[c + 18] + 12];
-  b[c + 12] = b[b[c + 18] + 13];
-  var D = b[c + 12] + 3;
-  b[d] = b[D];
-  o[d] = o[D];
-  b[d + 1] = b[D + 1];
-  o[d + 1] = o[D + 1];
-  b[d + 2] = b[D + 2];
-  o[d + 2] = o[D + 2];
-  b[d + 3] = b[D + 3];
-  o[d + 3] = o[D + 3];
-  h = o[b[c + 12] + 14];
-  D = b[c + 22] + 3;
-  b[j] = b[D];
-  o[j] = o[D];
-  b[j + 1] = b[D + 1];
-  o[j + 1] = o[D + 1];
-  b[j + 2] = b[D + 2];
-  o[j + 2] = o[D + 2];
-  b[j + 3] = b[D + 3];
-  o[j + 3] = o[D + 3];
-  k = o[b[c + 22] + 14];
-  D = b[f + 5];
-  e = 1 == b[c + 20] ? 11 : 13;
-  11 == e ? (g = c + 28, j = D + 18, b[g] = b[j], o[g] = o[j], b[g + 1] = b[j + 1], o[g + 1] = o[j + 1], g = c + 24, j = D + 20, b[g] = b[j], o[g] = o[j], b[g + 1] = b[j + 1], o[g + 1] = o[j + 1], o[c + 36] = o[D + 30], cc(c + 32), g = h - k - o[c + 36]) : 13 == e && (g = c + 28, h = D + 18, b[g] = b[h], o[g] = o[h], b[g + 1] = b[h + 1], o[g + 1] = o[h + 1], g = c + 24, h = D + 20, b[g] = b[h], o[g] = o[h], b[g + 1] = b[h + 1], o[g + 1] = o[h + 1], o[c + 36] = o[D + 26], g = c + 32, D += 22, b[g] = b[D], o[g] = o[D], b[g + 1] = b[D + 1], o[g + 1] = o[D + 1], g = c + 28, b[l] = b[g], o[l] = o[g], b[l + 1] = b[g + 1], o[l + 1] = o[g + 1], g = j + 2, S(p, d + 2, c + 24), C(u, d, j), N(n, p, u), Od(m, g, n), C(r, m, l), g = J(r, c + 32));
-  b[c + 23] = b[b[c + 19] + 12];
-  b[c + 13] = b[b[c + 19] + 13];
-  j = b[c + 13] + 3;
-  b[q] = b[j];
-  o[q] = o[j];
-  b[q + 1] = b[j + 1];
-  o[q + 1] = o[j + 1];
-  b[q + 2] = b[j + 2];
-  o[q + 2] = o[j + 2];
-  b[q + 3] = b[j + 3];
-  o[q + 3] = o[j + 3];
-  l = o[b[c + 13] + 14];
-  j = b[c + 23] + 3;
-  b[v] = b[j];
-  o[v] = o[j];
-  b[v + 1] = b[j + 1];
-  o[v + 1] = o[j + 1];
-  b[v + 2] = b[j + 2];
-  o[v + 2] = o[j + 2];
-  b[v + 3] = b[j + 3];
-  o[v + 3] = o[j + 3];
-  m = o[b[c + 23] + 14];
-  j = b[f + 6];
-  e = 1 == b[c + 21] ? 17 : 18;
-  17 == e ? (q = c + 30, v = j + 18, b[q] = b[v], o[q] = o[v], b[q + 1] = b[v + 1], o[q + 1] = o[v + 1], q = c + 26, v = j + 20, b[q] = b[v], o[q] = o[v], b[q + 1] = b[v + 1], o[q + 1] = o[v + 1], o[c + 37] = o[j + 30], cc(c + 34), i = l - m - o[c + 37]) : 18 == e && (i = c + 30, l = j + 18, b[i] = b[l], o[i] = o[l], b[i + 1] = b[l + 1], o[i + 1] = o[l + 1], i = c + 26, l = j + 20, b[i] = b[l], o[i] = o[l], b[i + 1] = b[l + 1], o[i + 1] = o[l + 1], o[c + 37] = o[j + 26], i = c + 34, j += 22, b[i] = b[j], o[i] = o[j], b[i + 1] = b[j + 1], o[i + 1] = o[j + 1], i = c + 30, b[x] = b[i], o[x] = o[i], b[x + 1] = b[i + 1], o[x + 1] = o[i + 1], i = v + 2, S(z, q + 2, c + 26), C(B, q, v), N(y, z, B), Od(w, i, y), C(E, w, x), i = J(E, c + 34));
-  o[c + 39] = o[f + 7];
-  o[c + 38] = g + o[c + 39] * i;
-  o[c + 40] = 0;
-  a = d;
-}
-
-Pm.X = 1;
-
-function Vm(c, f) {
-  var d = a;
-  a += 54;
-  var e, g = d + 2, i, h = d + 4, j, k = d + 6, l = d + 8, m, n = d + 10, p = d + 12, u, r = d + 14, q = d + 16, v = d + 18, x = d + 20, w = d + 22, y = d + 24, z = d + 26, B = d + 28, E = d + 30, D = d + 32, H = d + 34, I = d + 36, M = d + 38, G = d + 40, R = d + 42, P = d + 44, L = d + 46, T = d + 48, F = d + 50, X = d + 52;
-  b[c + 41] = b[b[c + 12] + 2];
-  b[c + 42] = b[b[c + 13] + 2];
-  b[c + 43] = b[b[c + 22] + 2];
-  b[c + 44] = b[b[c + 23] + 2];
-  i = c + 45;
-  e = b[c + 12] + 7;
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  i = c + 47;
-  e = b[c + 13] + 7;
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  i = c + 49;
-  e = b[c + 22] + 7;
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  i = c + 51;
-  e = b[c + 23] + 7;
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  o[c + 53] = o[b[c + 12] + 30];
-  o[c + 54] = o[b[c + 13] + 30];
-  o[c + 55] = o[b[c + 22] + 30];
-  o[c + 56] = o[b[c + 23] + 30];
-  o[c + 57] = o[b[c + 12] + 32];
-  o[c + 58] = o[b[c + 13] + 32];
-  o[c + 59] = o[b[c + 22] + 32];
-  o[c + 60] = o[b[c + 23] + 32];
-  i = b[f + 6] + 3 * b[c + 41];
-  b[d] = b[i];
-  o[d] = o[i];
-  b[d + 1] = b[i + 1];
-  o[d + 1] = o[i + 1];
-  e = o[b[f + 6] + 3 * b[c + 41] + 2];
-  i = b[f + 7] + 3 * b[c + 41];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 41] + 2];
-  j = b[f + 6] + 3 * b[c + 42];
-  b[h] = b[j];
-  o[h] = o[j];
-  b[h + 1] = b[j + 1];
-  o[h + 1] = o[j + 1];
-  j = o[b[f + 6] + 3 * b[c + 42] + 2];
-  h = b[f + 7] + 3 * b[c + 42];
-  b[k] = b[h];
-  o[k] = o[h];
-  b[k + 1] = b[h + 1];
-  o[k + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 42] + 2];
-  m = b[f + 6] + 3 * b[c + 43];
-  b[l] = b[m];
-  o[l] = o[m];
-  b[l + 1] = b[m + 1];
-  o[l + 1] = o[m + 1];
-  m = o[b[f + 6] + 3 * b[c + 43] + 2];
-  l = b[f + 7] + 3 * b[c + 43];
-  b[n] = b[l];
-  o[n] = o[l];
-  b[n + 1] = b[l + 1];
-  o[n + 1] = o[l + 1];
-  l = o[b[f + 7] + 3 * b[c + 43] + 2];
-  u = b[f + 6] + 3 * b[c + 44];
-  b[p] = b[u];
-  o[p] = o[u];
-  b[p + 1] = b[u + 1];
-  o[p + 1] = o[u + 1];
-  u = o[b[f + 6] + 3 * b[c + 44] + 2];
-  p = b[f + 7] + 3 * b[c + 44];
-  b[r] = b[p];
-  o[r] = o[p];
-  b[r + 1] = b[p + 1];
-  o[r + 1] = o[p + 1];
-  p = o[b[f + 7] + 3 * b[c + 44] + 2];
-  Em(q, e);
-  Em(v, j);
-  Em(x, m);
-  Em(w, u);
-  o[c + 69] = 0;
-  e = 1 == b[c + 20] ? 1 : 2;
-  1 == e ? (cc(c + 61), o[c + 65] = 1, o[c + 67] = 1, o[c + 69] += o[c + 57] + o[c + 59]) : 2 == e && (S(y, x, c + 32), C(B, c + 28, c + 49), S(z, x, B), C(D, c + 24, c + 45), S(E, q, D), q = c + 61, b[q] = b[y], o[q] = o[y], b[q + 1] = b[y + 1], o[q + 1] = o[y + 1], o[c + 67] = Q(z, y), o[c + 65] = Q(E, y), o[c + 69] += o[c + 55] + o[c + 53] + o[c + 59] * o[c + 67] * o[c + 67] + o[c + 57] * o[c + 65] * o[c + 65]);
-  e = 1 == b[c + 21] ? 4 : 5;
-  4 == e ? (cc(c + 63), o[c + 66] = o[c + 39], o[c + 68] = o[c + 39], o[c + 69] += o[c + 39] * o[c + 39] * (o[c + 58] + o[c + 60])) : 5 == e && (S(H, w, c + 34), C(M, c + 30, c + 51), S(I, w, M), C(R, c + 26, c + 47), S(G, v, R), v = c + 63, K(P, o[c + 39], H), b[v] = b[P], o[v] = o[P], b[v + 1] = b[P + 1], o[v + 1] = o[P + 1], o[c + 68] = o[c + 39] * Q(I, H), o[c + 66] = o[c + 39] * Q(G, H), o[c + 69] += o[c + 39] * o[c + 39] * (o[c + 56] + o[c + 54]) + o[c + 60] * o[c + 68] * o[c + 68] + o[c + 58] * o[c + 66] * o[c + 66]);
-  if (0 < o[c + 69]) e = 7; else {
-    var Z = 0;
-    e = 8;
-  }
-  7 == e && (Z = 1 / o[c + 69]);
-  o[c + 69] = Z;
-  e = b[f + 5] & 1 ? 9 : 10;
-  9 == e ? (K(L, o[c + 53] * o[c + 40], c + 61), Nb(g, L), i += o[c + 57] * o[c + 40] * o[c + 65], K(T, o[c + 54] * o[c + 40], c + 63), Nb(k, T), h += o[c + 58] * o[c + 40] * o[c + 66], K(F, o[c + 55] * o[c + 40], c + 61), Ke(n, F), l -= o[c + 59] * o[c + 40] * o[c + 67], K(X, o[c + 56] * o[c + 40], c + 63), Ke(r, X), p -= o[c + 60] * o[c + 40] * o[c + 68]) : 10 == e && (o[c + 40] = 0);
-  H = b[f + 7] + 3 * b[c + 41];
-  b[H] = b[g];
-  o[H] = o[g];
-  b[H + 1] = b[g + 1];
-  o[H + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 41] + 2] = i;
-  g = b[f + 7] + 3 * b[c + 42];
-  b[g] = b[k];
-  o[g] = o[k];
-  b[g + 1] = b[k + 1];
-  o[g + 1] = o[k + 1];
-  o[b[f + 7] + 3 * b[c + 42] + 2] = h;
-  k = b[f + 7] + 3 * b[c + 43];
-  b[k] = b[n];
-  o[k] = o[n];
-  b[k + 1] = b[n + 1];
-  o[k + 1] = o[n + 1];
-  o[b[f + 7] + 3 * b[c + 43] + 2] = l;
-  n = b[f + 7] + 3 * b[c + 44];
-  b[n] = b[r];
-  o[n] = o[r];
-  b[n + 1] = b[r + 1];
-  o[n + 1] = o[r + 1];
-  o[b[f + 7] + 3 * b[c + 44] + 2] = p;
-  a = d;
-}
-
-Vm.X = 1;
-
-function Wm(c, f) {
-  var d = a;
-  a += 20;
-  var e, g = d + 2, i, h = d + 4, j, k = d + 6, l, m, n = d + 8;
-  m = d + 10;
-  var p = d + 12, u = d + 14, r = d + 16, q = d + 18;
-  e = b[f + 7] + 3 * b[c + 41];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 41] + 2];
-  i = b[f + 7] + 3 * b[c + 42];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 42] + 2];
-  j = b[f + 7] + 3 * b[c + 43];
-  b[h] = b[j];
-  o[h] = o[j];
-  b[h + 1] = b[j + 1];
-  o[h + 1] = o[j + 1];
-  j = o[b[f + 7] + 3 * b[c + 43] + 2];
-  l = b[f + 7] + 3 * b[c + 44];
-  b[k] = b[l];
-  o[k] = o[l];
-  b[k + 1] = b[l + 1];
-  o[k + 1] = o[l + 1];
-  l = o[b[f + 7] + 3 * b[c + 44] + 2];
-  var v = c + 61;
-  C(n, d, h);
-  n = J(v, n);
-  v = c + 63;
-  C(m, g, k);
-  m = n + J(v, m);
-  m += o[c + 65] * e - o[c + 67] * j + (o[c + 66] * i - o[c + 68] * l);
-  m *= -o[c + 69];
-  o[c + 40] += m;
-  K(p, o[c + 53] * m, c + 61);
-  Nb(d, p);
-  e += o[c + 57] * m * o[c + 65];
-  K(u, o[c + 54] * m, c + 63);
-  Nb(g, u);
-  i += o[c + 58] * m * o[c + 66];
-  K(r, o[c + 55] * m, c + 61);
-  Ke(h, r);
-  j -= o[c + 59] * m * o[c + 67];
-  K(q, o[c + 56] * m, c + 63);
-  Ke(k, q);
-  l -= o[c + 60] * m * o[c + 68];
-  p = b[f + 7] + 3 * b[c + 41];
-  b[p] = b[d];
-  o[p] = o[d];
-  b[p + 1] = b[d + 1];
-  o[p + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 41] + 2] = e;
-  e = b[f + 7] + 3 * b[c + 42];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 42] + 2] = i;
-  g = b[f + 7] + 3 * b[c + 43];
-  b[g] = b[h];
-  o[g] = o[h];
-  b[g + 1] = b[h + 1];
-  o[g + 1] = o[h + 1];
-  o[b[f + 7] + 3 * b[c + 43] + 2] = j;
-  h = b[f + 7] + 3 * b[c + 44];
-  b[h] = b[k];
-  o[h] = o[k];
-  b[h + 1] = b[k + 1];
-  o[h + 1] = o[k + 1];
-  o[b[f + 7] + 3 * b[c + 44] + 2] = l;
-  a = d;
-}
-
-Wm.X = 1;
-
-function Xm(c) {
-  var f, d, e, g;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  e = b[b[c + 18] + 14];
-  g = b[b[c + 19] + 14];
-  U(Ym, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(Zm, A([ e ], "i32", s));
-  U($m, A([ g ], "i32", s));
-  U(an, A([ o[c + 39] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-Xm.X = 1;
-
-function bn(c, f) {
-  var d = a;
-  a += 70;
-  var e, g, i = d + 2, h, j = d + 4, k, l = d + 6, m, n = d + 8, p = d + 10, u = d + 12, r = d + 14, q, v, x = d + 16, w = d + 18, y, z, B, E, D, H = d + 20, I = d + 22, M = d + 24, G = d + 26, R = d + 28, P = d + 30, L = d + 32, T = d + 34, F = d + 36, X = d + 38, Z = d + 40, V = d + 42, aa = d + 44, ja = d + 46, Y = d + 48, W = d + 50, $ = d + 52, ga = d + 54, la = d + 56, fa = d + 58, ka = d + 60, oa = d + 62, ua = d + 64, Da = d + 66, Ja = d + 68;
-  g = b[f + 6] + 3 * b[c + 41];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 41] + 2];
-  h = b[f + 6] + 3 * b[c + 42];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 42] + 2];
-  k = b[f + 6] + 3 * b[c + 43];
-  b[j] = b[k];
-  o[j] = o[k];
-  b[j + 1] = b[k + 1];
-  o[j + 1] = o[k + 1];
-  k = o[b[f + 6] + 3 * b[c + 43] + 2];
-  m = b[f + 6] + 3 * b[c + 44];
-  b[l] = b[m];
-  o[l] = o[m];
-  b[l + 1] = b[m + 1];
-  o[l + 1] = o[m + 1];
-  m = o[b[f + 6] + 3 * b[c + 44] + 2];
-  Em(n, g);
-  Em(p, h);
-  Em(u, k);
-  Em(r, m);
-  D = 0;
-  e = 1 == b[c + 20] ? 1 : 2;
-  1 == e ? (cc(x), B = y = 1, D += o[c + 57] + o[c + 59], q = g - k - o[c + 36]) : 2 == e && (S(H, u, c + 32), C(M, c + 28, c + 49), S(I, u, M), C(R, c + 24, c + 45), S(G, n, R), b[x] = b[H], o[x] = o[H], b[x + 1] = b[H + 1], o[x + 1] = o[H + 1], B = Q(I, H), y = Q(G, H), D += o[c + 55] + o[c + 53] + o[c + 59] * B * B + o[c + 57] * y * y, C(P, c + 28, c + 49), C(F, d, j), N(T, G, F), Od(L, u, T), C(X, L, P), q = J(X, c + 32));
-  e = 1 == b[c + 21] ? 4 : 5;
-  4 == e ? (cc(w), z = o[c + 39], E = o[c + 39], D += o[c + 39] * o[c + 39] * (o[c + 58] + o[c + 60]), v = h - m - o[c + 37]) : 5 == e && (S(Z, r, c + 34), C(aa, c + 30, c + 51), S(V, r, aa), C(Y, c + 26, c + 47), S(ja, p, Y), K(W, o[c + 39], Z), b[w] = b[W], o[w] = o[W], b[w + 1] = b[W + 1], o[w + 1] = o[W + 1], E = o[c + 39] * Q(V, Z), z = o[c + 39] * Q(ja, Z), D += o[c + 39] * o[c + 39] * (o[c + 56] + o[c + 54]) + o[c + 60] * E * E + o[c + 58] * z * z, C($, c + 30, c + 51), C(fa, i, l), N(la, ja, fa), Od(ga, r, la), C(ka, ga, $), v = J(ka, c + 34));
-  n = q + o[c + 39] * v - o[c + 38];
-  p = 0;
-  7 == (0 < D ? 7 : 8) && (p = -n / D);
-  K(oa, o[c + 53] * p, x);
-  Nb(d, oa);
-  g += o[c + 57] * p * y;
-  K(ua, o[c + 54] * p, w);
-  Nb(i, ua);
-  h += o[c + 58] * p * z;
-  K(Da, o[c + 55] * p, x);
-  Ke(j, Da);
-  k -= o[c + 59] * p * B;
-  K(Ja, o[c + 56] * p, w);
-  Ke(l, Ja);
-  m -= o[c + 60] * p * E;
-  x = b[f + 6] + 3 * b[c + 41];
-  b[x] = b[d];
-  o[x] = o[d];
-  b[x + 1] = b[d + 1];
-  o[x + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 41] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 42];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 42] + 2] = h;
-  i = b[f + 6] + 3 * b[c + 43];
-  b[i] = b[j];
-  o[i] = o[j];
-  b[i + 1] = b[j + 1];
-  o[i + 1] = o[j + 1];
-  o[b[f + 6] + 3 * b[c + 43] + 2] = k;
-  j = b[f + 6] + 3 * b[c + 44];
-  b[j] = b[l];
-  o[j] = o[l];
-  b[j + 1] = b[l + 1];
-  o[j + 1] = o[l + 1];
-  o[b[f + 6] + 3 * b[c + 44] + 2] = m;
-  a = d;
-  return ca;
-}
-
-bn.X = 1;
-
-function cm(c, f) {
-  b[c] = cn + 2;
-  1 == (b[f + 2] != b[f + 3] ? 2 : 1) && O(dn, 173, en, fn);
-  b[c + 1] = b[f];
-  b[c + 2] = 0;
-  b[c + 3] = 0;
-  b[c + 12] = b[f + 2];
-  b[c + 13] = b[f + 3];
-  b[c + 14] = 0;
-  b[c + 16] = b[f + 4] & 1;
-  b[c + 15] = 0;
-  b[c + 17] = b[f + 1];
-  b[c + 5] = 0;
-  b[c + 4] = 0;
-  b[c + 6] = 0;
-  b[c + 7] = 0;
-  b[c + 9] = 0;
-  b[c + 8] = 0;
-  b[c + 10] = 0;
-  b[c + 11] = 0;
-}
-
-cm.X = 1;
-
-function gn(c, f) {
-  var d = a;
-  a += 2;
-  var e;
-  cm(c, f);
-  b[c] = hn + 2;
-  e = Ri(f + 5) ? 2 : 1;
-  1 == e && O(jn, 34, kn, ln);
-  e = xi(o[f + 7]) ? 3 : 4;
-  3 == e && (e = 0 <= o[f + 7] ? 5 : 4);
-  4 == e && O(jn, 35, kn, mn);
-  e = xi(o[f + 8]) ? 6 : 7;
-  6 == e && (e = 0 <= o[f + 8] ? 8 : 7);
-  7 == e && O(jn, 36, kn, nn);
-  e = xi(o[f + 9]) ? 9 : 10;
-  9 == e && (e = 0 <= o[f + 9] ? 11 : 10);
-  10 == e && O(jn, 37, kn, on);
-  e = c + 20;
-  var g = f + 5;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 18;
-  Tc(d, b[c + 13] + 3, c + 20);
-  b[e] = b[d];
-  o[e] = o[d];
-  b[e + 1] = b[d + 1];
-  o[e + 1] = o[d + 1];
-  o[c + 27] = o[f + 7];
-  cc(c + 25);
-  o[c + 22] = o[f + 8];
-  o[c + 23] = o[f + 9];
-  o[c + 24] = 0;
-  o[c + 28] = 0;
-  a = d;
-}
-
-gn.X = 1;
-
-function pn(c, f) {
-  var d = a;
-  a += 24;
-  var e, g = d + 2, i, h = d + 4, j, k, l = d + 6, m = d + 8, n = d + 10, p = d + 14, u = d + 18, r = d + 20, q = d + 22;
-  b[c + 30] = b[b[c + 13] + 2];
-  i = c + 33;
-  e = b[c + 13] + 7;
-  b[i] = b[e];
-  o[i] = o[e];
-  b[i + 1] = b[e + 1];
-  o[i + 1] = o[e + 1];
-  o[c + 35] = o[b[c + 13] + 30];
-  o[c + 36] = o[b[c + 13] + 32];
-  i = b[f + 6] + 3 * b[c + 30];
-  b[d] = b[i];
-  o[d] = o[i];
-  b[d + 1] = b[i + 1];
-  o[d + 1] = o[i + 1];
-  e = o[b[f + 6] + 3 * b[c + 30] + 2];
-  i = b[f + 7] + 3 * b[c + 30];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 30] + 2];
-  Em(h, e);
-  j = o[b[c + 13] + 29];
-  k = 6.2831854820251465 * o[c + 22];
-  e = 2 * j * o[c + 23] * k;
-  j = j * k * k;
-  k = o[f];
-  1 == (1.1920928955078125e-7 < e + k * j ? 2 : 1) && O(jn, 125, qn, rn);
-  o[c + 28] = k * (e + k * j);
-  e = 0 != o[c + 28] ? 3 : 4;
-  3 == e && (o[c + 28] = 1 / o[c + 28]);
-  o[c + 24] = k * j * o[c + 28];
-  e = c + 31;
-  C(m, c + 18, c + 33);
-  S(l, h, m);
-  b[e] = b[l];
-  o[e] = o[l];
-  b[e + 1] = b[l + 1];
-  o[e + 1] = o[l + 1];
-  o[n] = o[c + 35] + o[c + 36] * o[c + 32] * o[c + 32] + o[c + 28];
-  o[n + 1] = -o[c + 36] * o[c + 31] * o[c + 32];
-  o[n + 2] = o[n + 1];
-  o[n + 3] = o[c + 35] + o[c + 36] * o[c + 31] * o[c + 31] + o[c + 28];
-  h = c + 37;
-  Pl(p, n);
-  b[h] = b[p];
-  o[h] = o[p];
-  b[h + 1] = b[p + 1];
-  o[h + 1] = o[p + 1];
-  b[h + 2] = b[p + 2];
-  o[h + 2] = o[p + 2];
-  b[h + 3] = b[p + 3];
-  o[h + 3] = o[p + 3];
-  n = c + 41;
-  N(r, d, c + 31);
-  C(u, r, c + 20);
-  b[n] = b[u];
-  o[n] = o[u];
-  b[n + 1] = b[u + 1];
-  o[n + 1] = o[u + 1];
-  Vh(c + 41, o[c + 24]);
-  i *= .9800000190734863;
-  u = c + 25;
-  e = b[f + 5] & 1 ? 5 : 6;
-  5 == e ? (Vh(u, o[f + 2]), K(q, o[c + 35], c + 25), Nb(g, q), i += o[c + 36] * Q(c + 31, c + 25)) : 6 == e && cc(u);
-  q = b[f + 7] + 3 * b[c + 30];
-  b[q] = b[g];
-  o[q] = o[g];
-  b[q + 1] = b[g + 1];
-  o[q + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 30] + 2] = i;
-  a = d;
-}
-
-pn.X = 1;
-
-function sn(c, f) {
-  var d = a;
-  a += 22;
-  var e, g = d + 2, i = d + 4, h = d + 6, j = d + 8, k = d + 10, l = d + 12, m = d + 14, n = d + 16, p = d + 18, u = d + 20;
-  e = b[f + 7] + 3 * b[c + 30];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 30] + 2];
-  Ce(i, e, c + 31);
-  N(g, d, i);
-  i = c + 37;
-  N(k, g, c + 41);
-  K(l, o[c + 28], c + 25);
-  N(m, k, l);
-  Pd(j, m);
-  Ql(h, i, j);
-  g = c + 25;
-  b[n] = b[g];
-  o[n] = o[g];
-  b[n + 1] = b[g + 1];
-  o[n + 1] = o[g + 1];
-  Nb(c + 25, h);
-  g = o[f] * o[c + 27];
-  if (1 == (ve(c + 25) > g * g ? 1 : 2)) j = c + 25, k = Yc(c + 25), Vh(j, g / k);
-  C(p, c + 25, n);
-  b[h] = b[p];
-  o[h] = o[p];
-  b[h + 1] = b[p + 1];
-  o[h + 1] = o[p + 1];
-  K(u, o[c + 35], h);
-  Nb(d, u);
-  e += o[c + 36] * Q(c + 31, h);
-  h = b[f + 7] + 3 * b[c + 30];
-  b[h] = b[d];
-  o[h] = o[d];
-  b[h + 1] = b[d + 1];
-  o[h + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 30] + 2] = e;
-  a = d;
-}
-
-sn.X = 1;
-
-function tn(c) {
-  o[c] = 0;
-  o[c + 1] = 0;
-  o[c + 2] = 0;
-}
-
-function un(c, f, d, e) {
-  o[c] = f;
-  o[c + 1] = d;
-  o[c + 2] = e;
-}
-
-function vn(c, f) {
-  o[c] *= f;
-  o[c + 1] *= f;
-  o[c + 2] *= f;
-}
-
-function wn(c, f) {
-  var d = a;
-  a += 2;
-  cm(c, f);
-  b[c] = xn + 2;
-  var e = c + 18, g = f + 5;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 20;
-  g = f + 7;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 22;
-  g = f + 9;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  Xc(c + 22);
-  e = c + 24;
-  Ce(d, 1, c + 22);
-  b[e] = b[d];
-  o[e] = o[d];
-  b[e + 1] = b[d + 1];
-  o[e + 1] = o[d + 1];
-  o[c + 26] = o[f + 11];
-  tn(c + 27);
-  o[c + 65] = 0;
-  o[c + 30] = 0;
-  o[c + 31] = o[f + 13];
-  o[c + 32] = o[f + 14];
-  o[c + 33] = o[f + 16];
-  o[c + 34] = o[f + 17];
-  b[c + 35] = b[f + 12] & 1;
-  b[c + 36] = b[f + 15] & 1;
-  b[c + 37] = 0;
-  cc(c + 48);
-  cc(c + 50);
-  a = d;
-}
-
-wn.X = 1;
-
-function yn(c, f) {
-  var d = a;
-  a += 44;
-  var e, g, i = d + 2, h, j = d + 4, k, l = d + 6, m, n = d + 8, p = d + 10, u = d + 12, r = d + 14, q = d + 16, v = d + 18, x = d + 20, w = d + 22, y = d + 24;
-  e = d + 26;
-  var z = d + 28, B = d + 30, E = d + 32, D = d + 34, H = d + 36, I = d + 38, M = d + 40, G = d + 42;
-  b[c + 38] = b[b[c + 12] + 2];
-  b[c + 39] = b[b[c + 13] + 2];
-  h = c + 40;
-  m = b[c + 12] + 7;
-  b[h] = b[m];
-  o[h] = o[m];
-  b[h + 1] = b[m + 1];
-  o[h + 1] = o[m + 1];
-  h = c + 42;
-  m = b[c + 13] + 7;
-  b[h] = b[m];
-  o[h] = o[m];
-  b[h + 1] = b[m + 1];
-  o[h + 1] = o[m + 1];
-  o[c + 44] = o[b[c + 12] + 30];
-  o[c + 45] = o[b[c + 13] + 30];
-  o[c + 46] = o[b[c + 12] + 32];
-  o[c + 47] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 38];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 38] + 2];
-  h = b[f + 7] + 3 * b[c + 38];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 38] + 2];
-  m = b[f + 6] + 3 * b[c + 39];
-  b[j] = b[m];
-  o[j] = o[m];
-  b[j + 1] = b[m + 1];
-  o[j + 1] = o[m + 1];
-  k = o[b[f + 6] + 3 * b[c + 39] + 2];
-  m = b[f + 7] + 3 * b[c + 39];
-  b[l] = b[m];
-  o[l] = o[m];
-  b[l + 1] = b[m + 1];
-  o[l + 1] = o[m + 1];
-  m = o[b[f + 7] + 3 * b[c + 39] + 2];
-  Em(n, g);
-  Em(p, k);
-  C(r, c + 18, c + 40);
-  S(u, n, r);
-  C(v, c + 20, c + 42);
-  S(q, p, v);
-  C(y, j, d);
-  N(w, y, q);
-  C(x, w, u);
-  j = o[c + 44];
-  p = o[c + 45];
-  r = o[c + 46];
-  v = o[c + 47];
-  w = c + 48;
-  S(e, n, c + 22);
-  b[w] = b[e];
-  o[w] = o[e];
-  b[w + 1] = b[e + 1];
-  o[w + 1] = o[e + 1];
-  N(z, x, u);
-  o[c + 54] = Q(z, c + 48);
-  o[c + 55] = Q(q, c + 48);
-  o[c + 65] = j + p + r * o[c + 54] * o[c + 54] + v * o[c + 55] * o[c + 55];
-  e = 0 < o[c + 65] ? 1 : 2;
-  1 == e && (o[c + 65] = 1 / o[c + 65]);
-  e = c + 50;
-  S(B, n, c + 24);
-  b[e] = b[B];
-  o[e] = o[B];
-  b[e + 1] = b[B + 1];
-  o[e + 1] = o[B + 1];
-  N(E, x, u);
-  o[c + 52] = Q(E, c + 50);
-  o[c + 53] = Q(q, c + 50);
-  n = j + p + r * o[c + 52] * o[c + 52] + v * o[c + 53] * o[c + 53];
-  u = r * o[c + 52] + v * o[c + 53];
-  q = r * o[c + 52] * o[c + 54] + v * o[c + 53] * o[c + 55];
-  B = r + v;
-  3 == (0 == r + v ? 3 : 4) && (B = 1);
-  E = r * o[c + 54] + v * o[c + 55];
-  e = j + p + r * o[c + 54] * o[c + 54] + v * o[c + 55] * o[c + 55];
-  un(c + 56, n, u, q);
-  un(c + 59, u, B, E);
-  un(c + 62, q, E, e);
-  e = b[c + 35] & 1 ? 5 : 14;
-  a : do if (5 == e) if (n = J(c + 48, x), e = .009999999776482582 > ke(o[c + 32] - o[c + 31]) ? 6 : 7, 6 == e) b[c + 37] = 3; else {
-    if (7 == e) if (e = n <= o[c + 31] ? 8 : 10, 8 == e) {
-      if (1 == b[c + 37]) break a;
-      b[c + 37] = 1;
-      o[c + 29] = 0;
-    } else if (10 == e) if (u = c + 37, e = n >= o[c + 32] ? 11 : 13, 11 == e) {
-      if (2 == b[u]) break a;
-      b[c + 37] = 2;
-      o[c + 29] = 0;
-    } else 13 == e && (b[u] = 0, o[c + 29] = 0);
-  } else 14 == e && (b[c + 37] = 0, o[c + 29] = 0); while (0);
-  e = 0 == (b[c + 36] & 1) ? 16 : 17;
-  16 == e && (o[c + 30] = 0);
-  x = c + 27;
-  e = b[f + 5] & 1 ? 18 : 19;
-  18 == e ? (vn(x, o[f + 2]), o[c + 30] *= o[f + 2], K(H, o[c + 27], c + 50), K(I, o[c + 30] + o[c + 29], c + 48), N(D, H, I), H = o[c + 27] * o[c + 52] + o[c + 28] + (o[c + 30] + o[c + 29]) * o[c + 54], I = o[c + 27] * o[c + 53] + o[c + 28] + (o[c + 30] + o[c + 29]) * o[c + 55], K(M, j, D), Ke(i, M), h -= r * H, K(G, p, D), Nb(l, G), m += v * I) : 19 == e && (tn(x), o[c + 30] = 0);
-  D = b[f + 7] + 3 * b[c + 38];
-  b[D] = b[i];
-  o[D] = o[i];
-  b[D + 1] = b[i + 1];
-  o[D + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 38] + 2] = h;
-  i = b[f + 7] + 3 * b[c + 39];
-  b[i] = b[l];
-  o[i] = o[l];
-  b[i + 1] = b[l + 1];
-  o[i + 1] = o[l + 1];
-  o[b[f + 7] + 3 * b[c + 39] + 2] = m;
-  a = d;
-}
-
-yn.X = 1;
-
-function zn(c, f) {
-  un(c, -o[f], -o[f + 1], -o[f + 2]);
-}
-
-function An(c, f) {
-  o[c] += o[f];
-  o[c + 1] += o[f + 1];
-  o[c + 2] += o[f + 2];
-}
-
-function Bn(c, f, d) {
-  oc(c, o[f] * o[d] + o[f + 3] * o[d + 1], o[f + 1] * o[d] + o[f + 4] * o[d + 1]);
-}
-
-function Cn(c, f) {
-  var d = a;
-  a += 73;
-  var e, g, i = d + 2, h, j, k, l, m, n;
-  n = d + 4;
-  var p, u = d + 6, r = d + 8, q = d + 10, v = d + 12, x = d + 14, w;
-  w = d + 16;
-  var y = d + 18, z = d + 21, B = d + 24, E = d + 27, D = d + 30, H = d + 32, I = d + 34, M = d + 36, G = d + 38, R = d + 40, P = d + 42, L = d + 44, T = d + 47, F = d + 49, X = d + 51, Z = d + 53, V = d + 55, aa = d + 57, ja = d + 59, Y = d + 61, W = d + 63, $ = d + 65, ga = d + 67, la = d + 69, fa = d + 71;
-  g = b[f + 7] + 3 * b[c + 38];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 7] + 3 * b[c + 38] + 2];
-  h = b[f + 7] + 3 * b[c + 39];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 39] + 2];
-  j = o[c + 44];
-  k = o[c + 45];
-  l = o[c + 46];
-  m = o[c + 47];
-  e = b[c + 36] & 1 ? 1 : 3;
-  1 == e && 3 != b[c + 37] && (e = c + 48, C(n, i, d), n = J(e, n) + o[c + 55] * h - o[c + 54] * g, n = o[c + 65] * (o[c + 34] - n), e = o[c + 30], p = o[f] * o[c + 33], o[c + 30] = $j(o[c + 30] + n, -p, p), n = o[c + 30] - e, K(u, n, c + 48), e = n * o[c + 54], n *= o[c + 55], K(r, j, u), Ke(d, r), g -= l * e, K(q, k, u), Nb(i, q), h += m * n);
-  u = c + 50;
-  C(x, i, d);
-  o[v] = J(u, x) + o[c + 53] * h - o[c + 52] * g;
-  o[v + 1] = h - g;
-  e = b[c + 35] & 1 ? 4 : 10;
-  4 == e && (0 == b[c + 37] ? e = 10 : (x = c + 48, C(w, i, d), w = J(x, w) + o[c + 55] * h - o[c + 54] * g, qi(y, o[v], o[v + 1], w), w = c + 27, b[z] = b[w], o[z] = o[w], b[z + 1] = b[w + 1], o[z + 1] = o[w + 1], b[z + 2] = b[w + 2], o[z + 2] = o[w + 2], w = c + 56, zn(E, y), vi(B, w, E), An(c + 27, B), e = 1 == b[c + 37] ? 6 : 7, 6 == e ? o[c + 29] = 0 < o[c + 29] ? o[c + 29] : 0 : 7 == e && (2 != b[c + 37] || (o[c + 29] = 0 > o[c + 29] ? o[c + 29] : 0)), Pd(H, v), y = o[c + 29] - o[z + 2], oc(M, o[c + 62], o[c + 63]), K(I, y, M), C(D, H, I), ri(R, c + 56, D), oc(P, o[z], o[z + 1]), N(G, R, P), o[c + 27] = o[G], o[c + 28] = o[G + 1], D = c + 27, qi(L, o[D] - o[z], o[D + 1] - o[z + 1], o[D + 2] - o[z + 2]), b[B] = b[L], o[B] = o[L], b[B + 1] = b[L + 1], o[B + 1] = o[L + 1], b[B + 2] = b[L + 2], o[B + 2] = o[L + 2], K(F, o[B], c + 50), K(X, o[B + 2], c + 48), N(T, F, X), z = o[B] * o[c + 52] + o[B + 1] + o[B + 2] * o[c + 54], B = o[B] * o[c + 53] + o[B + 1] + o[B + 2] * o[c + 55], K(Z, j, T), Ke(d, Z), g -= l * z, K(V, k, T), Nb(i, V), h += m * B, e = 13));
-  a : do if (10 == e) {
-    T = c + 56;
-    Pd(ja, v);
-    ri(aa, T, ja);
-    o[c + 27] += o[aa];
-    o[c + 28] += o[aa + 1];
-    K(Y, o[aa], c + 50);
-    T = o[aa] * o[c + 52] + o[aa + 1];
-    Z = o[aa] * o[c + 53] + o[aa + 1];
-    K(W, j, Y);
-    Ke(d, W);
-    g -= l * T;
-    K($, k, Y);
-    Nb(i, $);
-    h += m * Z;
-    T = ga;
-    Z = v;
-    b[T] = b[Z];
-    o[T] = o[Z];
-    b[T + 1] = b[Z + 1];
-    o[T + 1] = o[Z + 1];
-    T = c + 50;
-    C(la, i, d);
-    o[v] = J(T, la) + o[c + 53] * h - o[c + 52] * g;
-    o[v + 1] = h - g;
-    e = .009999999776482582 < ke(o[v]) ? 12 : 11;
-    if (11 == e && .009999999776482582 >= ke(o[v + 1])) break a;
-    Bn(fa, c + 56, aa);
-    o[v] = o[v];
-  } while (0);
-  v = b[f + 7] + 3 * b[c + 38];
-  b[v] = b[d];
-  o[v] = o[d];
-  b[v + 1] = b[d + 1];
-  o[v + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 38] + 2] = g;
-  g = b[f + 7] + 3 * b[c + 39];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 39] + 2] = h;
-  a = d;
-}
-
-Cn.X = 1;
-
-function Dn(c, f, d) {
-  var e, g, i, h;
-  e = o[f];
-  g = o[f + 2];
-  i = o[f + 1];
-  f = o[f + 3];
-  h = e * f - g * i;
-  if (1 == (0 != h ? 1 : 2)) h = 1 / h;
-  o[c] = h * (f * o[d] - g * o[d + 1]);
-  o[c + 1] = h * (e * o[d + 1] - i * o[d]);
-}
-
-Dn.X = 1;
-
-function En(c, f) {
-  var d = a;
-  a += 71;
-  var e, g, i = d + 2, h, j = d + 4, k = d + 6, l, m, n, p, u = d + 8, r = d + 10, q = d + 12, v = d + 14, x = d + 16;
-  e = d + 18;
-  var w = d + 20, y = d + 22, z = d + 24, B = d + 26, E = d + 28, D = d + 30, H = d + 33, I, M, G, R = d + 35, P = d + 44, L = d + 47, T = d + 50;
-  I = d + 53;
-  M = d + 57;
-  G = d + 59;
-  var F = d + 61, X = d + 63, Z = d + 65, V = d + 67, aa = d + 69;
-  g = b[f + 6] + 3 * b[c + 38];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 38] + 2];
-  h = b[f + 6] + 3 * b[c + 39];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 39] + 2];
-  Em(j, g);
-  Em(k, h);
-  l = o[c + 44];
-  m = o[c + 45];
-  n = o[c + 46];
-  p = o[c + 47];
-  C(r, c + 18, c + 40);
-  S(u, j, r);
-  C(v, c + 20, c + 42);
-  S(q, k, v);
-  N(w, i, q);
-  C(e, w, d);
-  C(x, e, u);
-  S(y, j, c + 22);
-  N(z, x, u);
-  r = Q(z, y);
-  k = Q(q, y);
-  S(B, j, c + 24);
-  N(E, x, u);
-  u = Q(E, B);
-  E = Q(q, B);
-  o[H] = J(B, x);
-  o[H + 1] = h - g - o[c + 26];
-  q = ke(o[H]);
-  j = ke(o[H + 1]);
-  v = w = 0;
-  e = b[c + 35] & 1 ? 1 : 7;
-  a : do if (1 == e) {
-    var ja = z = J(y, x);
-    e = .009999999776482582 > ke(o[c + 32] - o[c + 31]) ? 2 : 3;
-    if (2 == e) v = $j(ja, -.20000000298023224, .20000000298023224), q = q > ke(z) ? q : ke(z), w = 1; else if (3 == e) {
-      var Y = z;
-      e = ja <= o[c + 31] ? 4 : 5;
-      if (4 == e) v = $j(Y - o[c + 31] + .004999999888241291, -.20000000298023224, 0), q = q > o[c + 31] - z ? q : o[c + 31] - z, w = 1; else if (5 == e) {
-        if (!(Y >= o[c + 32])) break a;
-        v = $j(z - o[c + 32] - .004999999888241291, 0, .20000000298023224);
-        q = q > z - o[c + 32] ? q : z - o[c + 32];
-        w = 1;
-      }
-    }
-  } while (0);
-  x = l + m + n * u * u + p * E * E;
-  e = w & 1 ? 8 : 11;
-  8 == e ? (I = n * u + p * E, M = n * u * r + p * E * k, G = n + p, 9 == (0 == G ? 9 : 10) && (G = 1), e = n * r + p * k, w = l + m + n * r * r + p * k * k, un(R, x, I, M), un(R + 3, I, G, e), un(R + 6, M, e, w), o[P] = o[H], o[P + 1] = o[H + 1], o[P + 2] = v, zn(T, P), vi(L, R, T), b[D] = b[L], o[D] = o[L], b[D + 1] = b[L + 1], o[D + 1] = o[L + 1], b[D + 2] = b[L + 2], o[D + 2] = o[L + 2]) : 11 == e && (R = n * u + p * E, P = n + p, 12 == (0 == P ? 12 : 13) && (P = 1), nc(I, x, R), nc(I + 2, R, P), Pd(G, H), Dn(M, I, G), o[D] = o[M], o[D + 1] = o[M + 1], o[D + 2] = 0);
-  K(X, o[D], B);
-  K(Z, o[D + 2], y);
-  N(F, X, Z);
-  y = o[D] * u + o[D + 1] + o[D + 2] * r;
-  D = o[D] * E + o[D + 1] + o[D + 2] * k;
-  K(V, l, F);
-  Ke(d, V);
-  g -= n * y;
-  K(aa, m, F);
-  Nb(i, aa);
-  F = b[f + 6] + 3 * b[c + 38];
-  b[F] = b[d];
-  o[F] = o[d];
-  b[F + 1] = b[d + 1];
-  o[F + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 38] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 39];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 39] + 2] = h + p * D;
-  if (.004999999888241291 >= q) e = 15; else {
-    var W = 0;
-    e = 16;
-  }
-  15 == e && (W = .03490658849477768 >= j);
-  a = d;
-  return W;
-}
-
-En.X = 1;
-
-function Fn(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(Gn, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 18], o[c + 19] ], "double", s));
-  U(ym, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(Hn, A([ o[c + 22], o[c + 23] ], "double", s));
-  U(In, A([ o[c + 26] ], "double", s));
-  U(Jn, A([ b[c + 35] & 1 ], "i32", s));
-  U(Kn, A([ o[c + 31] ], "double", s));
-  U(Ln, A([ o[c + 32] ], "double", s));
-  U(Mn, A([ b[c + 36] & 1 ], "i32", s));
-  U(Nn, A([ o[c + 34] ], "double", s));
-  U(On, A([ o[c + 33] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-Fn.X = 1;
-
-function Pn(c, f) {
-  cm(c, f);
-  b[c] = Qn + 2;
-  var d = c + 18, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 20;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 24;
-  e = f + 9;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 26;
-  e = f + 11;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 22] = o[f + 13];
-  o[c + 23] = o[f + 14];
-  1 == (0 != o[f + 15] ? 2 : 1) && O(Rn, 65, Sn, Tn);
-  o[c + 29] = o[f + 15];
-  o[c + 28] = o[f + 13] + o[c + 29] * o[f + 14];
-  o[c + 30] = 0;
-}
-
-Pn.X = 1;
-
-function Un(c, f) {
-  var d = a;
-  a += 36;
-  var e, g, i = d + 2, h;
-  e = d + 4;
-  var j, k = d + 6, l, m = d + 8, n = d + 10, p = d + 12, u = d + 14, r = d + 16, q = d + 18, v = d + 20, x = d + 22, w = d + 24, y = d + 26, z = d + 28, B = d + 30, E = d + 32, D = d + 34;
-  b[c + 31] = b[b[c + 12] + 2];
-  b[c + 32] = b[b[c + 13] + 2];
-  h = c + 41;
-  l = b[c + 12] + 7;
-  b[h] = b[l];
-  o[h] = o[l];
-  b[h + 1] = b[l + 1];
-  o[h + 1] = o[l + 1];
-  h = c + 43;
-  l = b[c + 13] + 7;
-  b[h] = b[l];
-  o[h] = o[l];
-  b[h + 1] = b[l + 1];
-  o[h + 1] = o[l + 1];
-  o[c + 45] = o[b[c + 12] + 30];
-  o[c + 46] = o[b[c + 13] + 30];
-  o[c + 47] = o[b[c + 12] + 32];
-  o[c + 48] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 31];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 31] + 2];
-  h = b[f + 7] + 3 * b[c + 31];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 31] + 2];
-  l = b[f + 6] + 3 * b[c + 32];
-  b[e] = b[l];
-  o[e] = o[l];
-  b[e + 1] = b[l + 1];
-  o[e + 1] = o[l + 1];
-  j = o[b[f + 6] + 3 * b[c + 32] + 2];
-  l = b[f + 7] + 3 * b[c + 32];
-  b[k] = b[l];
-  o[k] = o[l];
-  b[k + 1] = b[l + 1];
-  o[k + 1] = o[l + 1];
-  l = o[b[f + 7] + 3 * b[c + 32] + 2];
-  Em(m, g);
-  Em(n, j);
-  g = c + 37;
-  C(u, c + 24, c + 41);
-  S(p, m, u);
-  b[g] = b[p];
-  o[g] = o[p];
-  b[g + 1] = b[p + 1];
-  o[g + 1] = o[p + 1];
-  m = c + 39;
-  C(q, c + 26, c + 43);
-  S(r, n, q);
-  b[m] = b[r];
-  o[m] = o[r];
-  b[m + 1] = b[r + 1];
-  o[m + 1] = o[r + 1];
-  n = c + 33;
-  N(x, d, c + 37);
-  C(v, x, c + 18);
-  b[n] = b[v];
-  o[n] = o[v];
-  b[n + 1] = b[v + 1];
-  o[n + 1] = o[v + 1];
-  v = c + 35;
-  N(y, e, c + 39);
-  C(w, y, c + 20);
-  b[v] = b[w];
-  o[v] = o[w];
-  b[v + 1] = b[w + 1];
-  o[v + 1] = o[w + 1];
-  w = Yc(c + 33);
-  y = Yc(c + 35);
-  e = .04999999701976776 < w ? 1 : 2;
-  1 == e ? Vh(c + 33, 1 / w) : 2 == e && cc(c + 33);
-  e = .04999999701976776 < y ? 4 : 5;
-  4 == e ? Vh(c + 35, 1 / y) : 5 == e && cc(c + 35);
-  e = Q(c + 37, c + 33);
-  w = Q(c + 39, c + 35);
-  o[c + 49] = o[c + 45] + o[c + 47] * e * e + o[c + 29] * o[c + 29] * (o[c + 46] + o[c + 48] * w * w);
-  e = 0 < o[c + 49] ? 7 : 8;
-  7 == e && (o[c + 49] = 1 / o[c + 49]);
-  e = b[f + 5] & 1 ? 9 : 10;
-  9 == e ? (o[c + 30] *= o[f + 2], K(z, -o[c + 30], c + 33), K(B, -o[c + 29] * o[c + 30], c + 35), K(E, o[c + 45], z), Nb(i, E), h += o[c + 47] * Q(c + 37, z), K(D, o[c + 46], B), Nb(k, D), l += o[c + 48] * Q(c + 39, B)) : 10 == e && (o[c + 30] = 0);
-  z = b[f + 7] + 3 * b[c + 31];
-  b[z] = b[i];
-  o[z] = o[i];
-  b[z + 1] = b[i + 1];
-  o[z + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 31] + 2] = h;
-  i = b[f + 7] + 3 * b[c + 32];
-  b[i] = b[k];
-  o[i] = o[k];
-  b[i + 1] = b[k + 1];
-  o[i + 1] = o[k + 1];
-  o[b[f + 7] + 3 * b[c + 32] + 2] = l;
-  a = d;
-}
-
-Un.X = 1;
-
-function Vn(c, f) {
-  var d = a;
-  a += 20;
-  var e, g = d + 2, i, h = d + 4, j = d + 6, k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18;
-  e = b[f + 7] + 3 * b[c + 31];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 31] + 2];
-  i = b[f + 7] + 3 * b[c + 32];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 32] + 2];
-  Ce(j, e, c + 37);
-  N(h, d, j);
-  Ce(l, i, c + 39);
-  N(k, g, l);
-  h = -o[c + 49] * (-J(c + 33, h) - o[c + 29] * J(c + 35, k));
-  o[c + 30] += h;
-  K(m, -h, c + 33);
-  K(n, -o[c + 29] * h, c + 35);
-  K(p, o[c + 45], m);
-  Nb(d, p);
-  e += o[c + 47] * Q(c + 37, m);
-  K(u, o[c + 46], n);
-  Nb(g, u);
-  i += o[c + 48] * Q(c + 39, n);
-  m = b[f + 7] + 3 * b[c + 31];
-  b[m] = b[d];
-  o[m] = o[d];
-  b[m + 1] = b[d + 1];
-  o[m + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 31] + 2] = e;
-  e = b[f + 7] + 3 * b[c + 32];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 32] + 2] = i;
-  a = d;
-}
-
-Vn.X = 1;
-
-function Wn(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(Xn, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(Yn, A([ o[c + 18], o[c + 19] ], "double", s));
-  U(Zn, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(xm, A([ o[c + 24], o[c + 25] ], "double", s));
-  U(ym, A([ o[c + 26], o[c + 27] ], "double", s));
-  U($n, A([ o[c + 22] ], "double", s));
-  U(ao, A([ o[c + 23] ], "double", s));
-  U(an, A([ o[c + 29] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-Wn.X = 1;
-
-function bo(c, f) {
-  cm(c, f);
-  b[c] = co + 2;
-  var d = c + 18, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 20;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 30] = o[f + 9];
-  tn(c + 22);
-  o[c + 25] = 0;
-  o[c + 31] = o[f + 11];
-  o[c + 32] = o[f + 12];
-  o[c + 27] = o[f + 15];
-  o[c + 28] = o[f + 14];
-  b[c + 29] = b[f + 10] & 1;
-  b[c + 26] = b[f + 13] & 1;
-  b[c + 57] = 0;
-}
-
-bo.X = 1;
-
-function eo(c, f) {
-  var d = a;
-  a += 32;
-  var e, g, i = d + 2, h, j = d + 4, k = d + 6, l = d + 8, m = d + 10, n = d + 12;
-  e = d + 14;
-  var p = d + 16, u = d + 18, r = d + 20, q = d + 22, v = d + 24, x = d + 26, w = d + 28, y = d + 30;
-  g = b[f + 6] + 3 * b[c + 31];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 31] + 2];
-  h = b[f + 6] + 3 * b[c + 32];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 32] + 2];
-  Em(j, g);
-  Em(k, h);
-  C(m, c + 24, c + 41);
-  S(l, j, m);
-  C(e, c + 26, c + 43);
-  S(n, k, e);
-  N(u, d, l);
-  C(p, u, c + 18);
-  N(q, i, n);
-  C(r, q, c + 20);
-  j = Yc(p);
-  k = Yc(r);
-  e = .04999999701976776 < j ? 1 : 2;
-  1 == e ? Vh(p, 1 / j) : 2 == e && cc(p);
-  e = .04999999701976776 < k ? 4 : 5;
-  4 == e ? Vh(r, 1 / k) : 5 == e && cc(r);
-  e = Q(l, p);
-  m = Q(n, r);
-  e = o[c + 45] + o[c + 47] * e * e;
-  u = o[c + 46] + o[c + 48] * m * m;
-  m = e + o[c + 29] * o[c + 29] * u;
-  e = 0 < e + o[c + 29] * o[c + 29] * u ? 7 : 8;
-  7 == e && (m = 1 / m);
-  k = o[c + 28] - j - o[c + 29] * k;
-  j = ke(k);
-  k *= -m;
-  K(v, -k, p);
-  K(x, -o[c + 29] * k, r);
-  K(w, o[c + 45], v);
-  Nb(d, w);
-  g += o[c + 47] * Q(l, v);
-  K(y, o[c + 46], x);
-  Nb(i, y);
-  h += o[c + 48] * Q(n, x);
-  l = b[f + 6] + 3 * b[c + 31];
-  b[l] = b[d];
-  o[l] = o[d];
-  b[l + 1] = b[d + 1];
-  o[l + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 31] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 32];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 32] + 2] = h;
-  a = d;
-  return .004999999888241291 > j;
-}
-
-eo.X = 1;
-
-function fo(c, f) {
-  var d = a;
-  a += 26;
-  var e, g, i = d + 2, h, j = d + 4, k, l = d + 6, m = d + 8;
-  e = d + 10;
-  var n = d + 12, p = d + 14, u = d + 16, r = d + 18, q, v = d + 20, x = d + 22, w = d + 24;
-  b[c + 33] = b[b[c + 12] + 2];
-  b[c + 34] = b[b[c + 13] + 2];
-  h = c + 39;
-  g = b[c + 12] + 7;
-  b[h] = b[g];
-  o[h] = o[g];
-  b[h + 1] = b[g + 1];
-  o[h + 1] = o[g + 1];
-  h = c + 41;
-  g = b[c + 13] + 7;
-  b[h] = b[g];
-  o[h] = o[g];
-  b[h + 1] = b[g + 1];
-  o[h + 1] = o[g + 1];
-  o[c + 43] = o[b[c + 12] + 30];
-  o[c + 44] = o[b[c + 13] + 30];
-  o[c + 45] = o[b[c + 12] + 32];
-  o[c + 46] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 33];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 33] + 2];
-  h = b[f + 7] + 3 * b[c + 33];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 33] + 2];
-  k = b[f + 6] + 3 * b[c + 34];
-  b[j] = b[k];
-  o[j] = o[k];
-  b[j + 1] = b[k + 1];
-  o[j + 1] = o[k + 1];
-  k = o[b[f + 6] + 3 * b[c + 34] + 2];
-  j = b[f + 7] + 3 * b[c + 34];
-  b[l] = b[j];
-  o[l] = o[j];
-  b[l + 1] = b[j + 1];
-  o[l + 1] = o[j + 1];
-  j = o[b[f + 7] + 3 * b[c + 34] + 2];
-  Em(m, g);
-  Em(e, k);
-  q = c + 35;
-  C(p, c + 18, c + 39);
-  S(n, m, p);
-  b[q] = b[n];
-  o[q] = o[n];
-  b[q + 1] = b[n + 1];
-  o[q + 1] = o[n + 1];
-  m = c + 37;
-  C(r, c + 20, c + 41);
-  S(u, e, r);
-  b[m] = b[u];
-  o[m] = o[u];
-  b[m + 1] = b[u + 1];
-  o[m + 1] = o[u + 1];
-  u = o[c + 43];
-  r = o[c + 44];
-  m = o[c + 45];
-  n = o[c + 46];
-  p = 0 == m + n;
-  o[c + 47] = u + r + o[c + 36] * o[c + 36] * m + o[c + 38] * o[c + 38] * n;
-  o[c + 50] = -o[c + 36] * o[c + 35] * m - o[c + 38] * o[c + 37] * n;
-  o[c + 53] = -o[c + 36] * m - o[c + 38] * n;
-  o[c + 48] = o[c + 50];
-  o[c + 51] = u + r + o[c + 35] * o[c + 35] * m + o[c + 37] * o[c + 37] * n;
-  o[c + 54] = o[c + 35] * m + o[c + 37] * n;
-  o[c + 49] = o[c + 53];
-  o[c + 52] = o[c + 54];
-  o[c + 55] = m + n;
-  o[c + 56] = m + n;
-  e = 0 < o[c + 56] ? 1 : 2;
-  1 == e && (o[c + 56] = 1 / o[c + 56]);
-  e = 0 == (b[c + 26] & 1) ? 4 : 3;
-  3 == e && (e = p & 1 ? 4 : 5);
-  4 == e && (o[c + 25] = 0);
-  e = b[c + 29] & 1 ? 6 : 18;
-  a : do if (6 == e) if (0 != (p & 1)) e = 18; else if (q = k - g - o[c + 30], e = .06981317698955536 > ke(o[c + 32] - o[c + 31]) ? 8 : 9, 8 == e) {
-    b[c + 57] = 3;
-    e = 19;
-    break a;
-  } else if (9 == e) if (e = q <= o[c + 31] ? 10 : 13, 10 == e) {
-    e = 1 != b[c + 57] ? 11 : 12;
-    11 == e && (o[c + 24] = 0);
-    b[c + 57] = 1;
-    e = 19;
-    break a;
-  } else if (13 == e) {
-    var y = c + 57;
-    e = q >= o[c + 32] ? 14 : 17;
-    if (14 == e) {
-      e = 2 != b[y] ? 15 : 16;
-      15 == e && (o[c + 24] = 0);
-      b[c + 57] = 2;
-      e = 19;
-      break a;
-    } else if (17 == e) {
-      b[y] = 0;
-      o[c + 24] = 0;
-      e = 19;
-      break a;
-    }
-  } while (0);
-  18 == e && (b[c + 57] = 0);
-  g = c + 22;
-  e = b[f + 5] & 1 ? 20 : 21;
-  20 == e ? (vn(g, o[f + 2]), o[c + 25] *= o[f + 2], oc(v, o[c + 22], o[c + 23]), K(x, u, v), Ke(i, x), h -= m * (Q(c + 35, v) + o[c + 25] + o[c + 24]), K(w, r, v), Nb(l, w), j += n * (Q(c + 37, v) + o[c + 25] + o[c + 24])) : 21 == e && (tn(g), o[c + 25] = 0);
-  v = b[f + 7] + 3 * b[c + 33];
-  b[v] = b[i];
-  o[v] = o[i];
-  b[v + 1] = b[i + 1];
-  o[v + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 33] + 2] = h;
-  i = b[f + 7] + 3 * b[c + 34];
-  b[i] = b[l];
-  o[i] = o[l];
-  b[i + 1] = b[l + 1];
-  o[i + 1] = o[l + 1];
-  o[b[f + 7] + 3 * b[c + 34] + 2] = j;
-  a = d;
-}
-
-fo.X = 1;
-
-function go(c, f) {
-  var d = a;
-  a += 67;
-  var e, g, i = d + 2, h, j, k, l, m, n, p, u, r = d + 4, q = d + 6, v = d + 8, x = d + 10, w = d + 12, y = d + 14, z = d + 17, B = d + 20, E = d + 23, D = d + 25, H = d + 27, I = d + 29, M = d + 31, G = d + 33, R = d + 35, P = d + 37, L = d + 39, T = d + 41, F = d + 43, X = d + 45, Z = d + 47, V = d + 49, aa = d + 51, ja = d + 53, Y = d + 55, W = d + 57, $ = d + 59, ga = d + 61, la = d + 63, fa = d + 65;
-  g = b[f + 7] + 3 * b[c + 33];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 7] + 3 * b[c + 33] + 2];
-  h = b[f + 7] + 3 * b[c + 34];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 34] + 2];
-  j = o[c + 43];
-  k = o[c + 44];
-  l = o[c + 45];
-  m = o[c + 46];
-  n = 0 == l + m;
-  e = b[c + 26] & 1 ? 1 : 4;
-  1 == e && 3 != b[c + 57] && 0 == (n & 1) && (e = h - g - o[c + 28], e *= -o[c + 56], p = o[c + 25], u = o[f] * o[c + 27], o[c + 25] = $j(o[c + 25] + e, -u, u), e = o[c + 25] - p, g -= l * e, h += m * e);
-  e = b[c + 29] & 1 ? 5 : 18;
-  do if (5 == e) if (0 == b[c + 57]) e = 18; else if (0 != (n & 1)) e = 18; else {
-    Ce(x, h, c + 37);
-    N(v, i, x);
-    C(q, v, d);
-    Ce(w, g, c + 35);
-    C(r, q, w);
-    e = h - g;
-    qi(y, o[r], o[r + 1], e);
-    vi(B, c + 47, y);
-    zn(z, B);
-    e = 3 == b[c + 57] ? 8 : 9;
-    a : do if (8 == e) An(c + 22, z); else if (9 == e) if (e = 1 == b[c + 57] ? 10 : 13, 10 == e) e = o[c + 24] + o[z + 2], e = 0 > e ? 11 : 12, 11 == e ? (Pd(D, r), p = o[c + 24], oc(I, o[c + 53], o[c + 54]), K(H, p, I), N(E, D, H), ri(M, c + 47, E), o[z] = o[M], o[z + 1] = o[M + 1], o[z + 2] = -o[c + 24], o[c + 22] += o[M], o[c + 23] += o[M + 1], o[c + 24] = 0) : 12 == e && An(c + 22, z); else if (13 == e) {
-      if (2 != b[c + 57]) break a;
-      e = o[c + 24] + o[z + 2];
-      e = 0 < e ? 15 : 16;
-      15 == e ? (Pd(R, r), p = o[c + 24], oc(L, o[c + 53], o[c + 54]), K(P, p, L), N(G, R, P), ri(T, c + 47, G), o[z] = o[T], o[z + 1] = o[T + 1], o[z + 2] = -o[c + 24], o[c + 22] += o[T], o[c + 23] += o[T + 1], o[c + 24] = 0) : 16 == e && An(c + 22, z);
-    } while (0);
-    oc(F, o[z], o[z + 1]);
-    K(X, j, F);
-    Ke(d, X);
-    g -= l * (Q(c + 35, F) + o[z + 2]);
-    K(Z, k, F);
-    Nb(i, Z);
-    h += m * (Q(c + 37, F) + o[z + 2]);
-    e = 19;
-  } while (0);
-  18 == e && (Ce(Y, h, c + 37), N(ja, i, Y), C(aa, ja, d), Ce(W, g, c + 35), C(V, aa, W), r = c + 47, Pd(ga, V), ri($, r, ga), o[c + 22] += o[$], o[c + 23] += o[$ + 1], K(la, j, $), Ke(d, la), g -= l * Q(c + 35, $), K(fa, k, $), Nb(i, fa), h += m * Q(c + 37, $));
-  V = b[f + 7] + 3 * b[c + 33];
-  b[V] = b[d];
-  o[V] = o[d];
-  b[V + 1] = b[d + 1];
-  o[V + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 33] + 2] = g;
-  g = b[f + 7] + 3 * b[c + 34];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 34] + 2] = h;
-  a = d;
-}
-
-go.X = 1;
-
-function ho(c, f) {
-  var d = a;
-  a += 34;
-  var e, g, i = d + 2, h, j = d + 4, k = d + 6, l, m, n, p, u = d + 8, r = d + 10, q = d + 12, v = d + 14, x = d + 16, w = d + 18, y = d + 20, z = d + 22, B = d + 26, E = d + 28, D = d + 30, H = d + 32;
-  g = b[f + 6] + 3 * b[c + 33];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 33] + 2];
-  h = b[f + 6] + 3 * b[c + 34];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 34] + 2];
-  Em(j, g);
-  Em(k, h);
-  l = 0;
-  m = 0 == o[c + 45] + o[c + 46];
-  e = b[c + 29] & 1 ? 1 : 10;
-  do if (1 == e) if (0 == b[c + 57]) e = 10; else if (0 != (m & 1)) e = 10; else {
-    n = h - g - o[c + 30];
-    p = 0;
-    e = 3 == b[c + 57] ? 4 : 5;
-    a : do if (4 == e) l = $j(n - o[c + 31], -.13962635397911072, .13962635397911072), p = -o[c + 56] * l, l = ke(l); else if (5 == e) if (e = 1 == b[c + 57] ? 6 : 7, 6 == e) p = n - o[c + 31], l = -p, p = $j(p + .03490658849477768, -.13962635397911072, 0), p *= -o[c + 56]; else if (7 == e) {
-      if (2 != b[c + 57]) {
-        e = 9;
-        break a;
-      }
-      l = p = n - o[c + 32];
-      p = $j(p - .03490658849477768, 0, .13962635397911072);
-      p *= -o[c + 56];
-    } while (0);
-    g -= o[c + 45] * p;
-    h += o[c + 46] * p;
-  } while (0);
-  ch(j, g);
-  ch(k, h);
-  C(r, c + 18, c + 39);
-  S(u, j, r);
-  C(v, c + 20, c + 41);
-  S(q, k, v);
-  N(y, i, q);
-  C(w, y, d);
-  C(x, w, u);
-  j = Yc(x);
-  k = o[c + 43];
-  r = o[c + 44];
-  v = o[c + 45];
-  w = o[c + 46];
-  o[z] = k + r + v * o[u + 1] * o[u + 1] + w * o[q + 1] * o[q + 1];
-  o[z + 1] = -v * o[u] * o[u + 1] - w * o[q] * o[q + 1];
-  o[z + 2] = o[z + 1];
-  o[z + 3] = k + r + v * o[u] * o[u] + w * o[q] * o[q];
-  Dn(E, z, x);
-  Pd(B, E);
-  K(D, k, B);
-  Ke(d, D);
-  g -= v * Q(u, B);
-  K(H, r, B);
-  Nb(i, H);
-  h += w * Q(q, B);
-  u = b[f + 6] + 3 * b[c + 33];
-  b[u] = b[d];
-  o[u] = o[d];
-  b[u + 1] = b[d + 1];
-  o[u + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 33] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 34];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 34] + 2] = h;
-  if (.004999999888241291 >= j) e = 11; else {
-    var I = 0;
-    e = 12;
-  }
-  11 == e && (I = .03490658849477768 >= l);
-  a = d;
-  return I;
-}
-
-ho.X = 1;
-
-function io(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(jo, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 18], o[c + 19] ], "double", s));
-  U(ym, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(In, A([ o[c + 30] ], "double", s));
-  U(Jn, A([ b[c + 29] & 1 ], "i32", s));
-  U(ko, A([ o[c + 31] ], "double", s));
-  U(lo, A([ o[c + 32] ], "double", s));
-  U(Mn, A([ b[c + 26] & 1 ], "i32", s));
-  U(Nn, A([ o[c + 28] ], "double", s));
-  U(mo, A([ o[c + 27] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-io.X = 1;
-
-function no(c, f) {
-  cm(c, f);
-  b[c] = oo + 2;
-  var d = c + 18, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 20;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 22] = o[f + 9];
-  o[c + 41] = 0;
-  o[c + 24] = 0;
-  b[c + 42] = 0;
-  o[c + 23] = 0;
-}
-
-no.X = 1;
-
-function po(c, f) {
-  var d = a;
-  a += 32;
-  var e, g, i = d + 2, h;
-  e = d + 4;
-  var j, k = d + 6, l, m = d + 8, n = d + 10, p = d + 12, u = d + 14, r = d + 16, q = d + 18, v = d + 20, x = d + 22, w = d + 24, y = d + 26, z = d + 28, B = d + 30;
-  b[c + 25] = b[b[c + 12] + 2];
-  b[c + 26] = b[b[c + 13] + 2];
-  h = c + 33;
-  l = b[c + 12] + 7;
-  b[h] = b[l];
-  o[h] = o[l];
-  b[h + 1] = b[l + 1];
-  o[h + 1] = o[l + 1];
-  h = c + 35;
-  l = b[c + 13] + 7;
-  b[h] = b[l];
-  o[h] = o[l];
-  b[h + 1] = b[l + 1];
-  o[h + 1] = o[l + 1];
-  o[c + 37] = o[b[c + 12] + 30];
-  o[c + 38] = o[b[c + 13] + 30];
-  o[c + 39] = o[b[c + 12] + 32];
-  o[c + 40] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 25];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 25] + 2];
-  h = b[f + 7] + 3 * b[c + 25];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 25] + 2];
-  l = b[f + 6] + 3 * b[c + 26];
-  b[e] = b[l];
-  o[e] = o[l];
-  b[e + 1] = b[l + 1];
-  o[e + 1] = o[l + 1];
-  j = o[b[f + 6] + 3 * b[c + 26] + 2];
-  l = b[f + 7] + 3 * b[c + 26];
-  b[k] = b[l];
-  o[k] = o[l];
-  b[k + 1] = b[l + 1];
-  o[k + 1] = o[l + 1];
-  l = o[b[f + 7] + 3 * b[c + 26] + 2];
-  Em(m, g);
-  Em(n, j);
-  g = c + 29;
-  C(u, c + 18, c + 33);
-  S(p, m, u);
-  b[g] = b[p];
-  o[g] = o[p];
-  b[g + 1] = b[p + 1];
-  o[g + 1] = o[p + 1];
-  m = c + 31;
-  C(q, c + 20, c + 35);
-  S(r, n, q);
-  b[m] = b[r];
-  o[m] = o[r];
-  b[m + 1] = b[r + 1];
-  o[m + 1] = o[r + 1];
-  n = c + 27;
-  N(w, e, c + 31);
-  C(x, w, d);
-  C(v, x, c + 29);
-  b[n] = b[v];
-  o[n] = o[v];
-  b[n + 1] = b[v + 1];
-  o[n + 1] = o[v + 1];
-  e = Yc(c + 27);
-  o[c + 23] = e;
-  e = 0 < o[c + 23] - o[c + 22] ? 1 : 2;
-  1 == e ? b[c + 42] = 2 : 2 == e && (b[c + 42] = 0);
-  v = c + 27;
-  e = .004999999888241291 < o[c + 23] ? 4 : 5;
-  if (4 == e) {
-    Vh(v, 1 / o[c + 23]);
-    e = Q(c + 29, c + 27);
-    v = Q(c + 31, c + 27);
-    v = o[c + 37] + o[c + 39] * e * e + o[c + 38] + o[c + 40] * v * v;
-    if (0 != v) e = 6; else {
-      var E = 0;
-      e = 7;
-    }
-    6 == e && (E = 1 / v);
-    o[c + 41] = E;
-    e = b[f + 5] & 1 ? 8 : 9;
-    8 == e ? (o[c + 24] *= o[f + 2], K(y, o[c + 24], c + 27), K(z, o[c + 37], y), Ke(i, z), h -= o[c + 39] * Q(c + 29, y), K(B, o[c + 38], y), Nb(k, B), l += o[c + 40] * Q(c + 31, y)) : 9 == e && (o[c + 24] = 0);
-    y = b[f + 7] + 3 * b[c + 25];
-    b[y] = b[i];
-    o[y] = o[i];
-    b[y + 1] = b[i + 1];
-    o[y + 1] = o[i + 1];
-    o[b[f + 7] + 3 * b[c + 25] + 2] = h;
-    i = b[f + 7] + 3 * b[c + 26];
-    b[i] = b[k];
-    o[i] = o[k];
-    b[i + 1] = b[k + 1];
-    o[i + 1] = o[k + 1];
-    o[b[f + 7] + 3 * b[c + 26] + 2] = l;
-  } else 5 == e && (cc(v), o[c + 41] = 0, o[c + 24] = 0);
-  a = d;
-}
-
-po.X = 1;
-
-function qo(c, f) {
-  var d = a;
-  a += 20;
-  var e, g = d + 2, i, h = d + 4, j = d + 6, k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18;
-  e = b[f + 7] + 3 * b[c + 25];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 7] + 3 * b[c + 25] + 2];
-  i = b[f + 7] + 3 * b[c + 26];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 7] + 3 * b[c + 26] + 2];
-  Ce(j, e, c + 29);
-  N(h, d, j);
-  Ce(l, i, c + 31);
-  N(k, g, l);
-  j = o[c + 23] - o[c + 22];
-  l = c + 27;
-  C(m, k, h);
-  h = J(l, m);
-  if (1 == (0 > j ? 1 : 2)) h += o[f + 1] * j;
-  h *= -o[c + 41];
-  k = o[c + 24];
-  o[c + 24] = 0 < o[c + 24] + h ? 0 : o[c + 24] + h;
-  h = o[c + 24] - k;
-  K(n, h, c + 27);
-  K(p, o[c + 37], n);
-  Ke(d, p);
-  e -= o[c + 39] * Q(c + 29, n);
-  K(u, o[c + 38], n);
-  Nb(g, u);
-  i += o[c + 40] * Q(c + 31, n);
-  n = b[f + 7] + 3 * b[c + 25];
-  b[n] = b[d];
-  o[n] = o[d];
-  b[n + 1] = b[d + 1];
-  o[n + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 25] + 2] = e;
-  e = b[f + 7] + 3 * b[c + 26];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 7] + 3 * b[c + 26] + 2] = i;
-  a = d;
-}
-
-qo.X = 1;
-
-function ro(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(so, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 18], o[c + 19] ], "double", s));
-  U(ym, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(to, A([ o[c + 22] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-ro.X = 1;
-
-function uo(c, f) {
-  cm(c, f);
-  b[c] = vo + 2;
-  var d = c + 21, e = f + 5;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  d = c + 23;
-  e = f + 7;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[c + 25] = o[f + 9];
-  o[c + 18] = o[f + 10];
-  o[c + 19] = o[f + 11];
-  tn(c + 27);
-}
-
-uo.X = 1;
-
-function wo(c, f) {
-  var d = a;
-  a += 28;
-  var e, g = d + 2, i, h = d + 4, j = d + 6, k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18, r = d + 20, q = d + 22, v = d + 24, x = d + 26;
-  e = b[f + 6] + 3 * b[c + 25];
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  e = o[b[f + 6] + 3 * b[c + 25] + 2];
-  i = b[f + 6] + 3 * b[c + 26];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  i = o[b[f + 6] + 3 * b[c + 26] + 2];
-  Em(h, e);
-  Em(j, i);
-  C(l, c + 18, c + 33);
-  S(k, h, l);
-  C(n, c + 20, c + 35);
-  S(m, j, n);
-  N(r, g, m);
-  C(u, r, d);
-  C(p, u, k);
-  h = Xc(p);
-  j = h - o[c + 22];
-  j = $j(j, 0, .20000000298023224);
-  K(q, -o[c + 41] * j, p);
-  K(v, o[c + 37], q);
-  Ke(d, v);
-  e -= o[c + 39] * Q(k, q);
-  K(x, o[c + 38], q);
-  Nb(g, x);
-  i += o[c + 40] * Q(m, q);
-  k = b[f + 6] + 3 * b[c + 25];
-  b[k] = b[d];
-  o[k] = o[d];
-  b[k + 1] = b[d + 1];
-  o[k + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 25] + 2] = e;
-  e = b[f + 6] + 3 * b[c + 26];
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  o[b[f + 6] + 3 * b[c + 26] + 2] = i;
-  g = .004999999888241291 > h - o[c + 22];
-  a = d;
-  return g;
-}
-
-wo.X = 1;
-
-function xo(c, f) {
-  var d = a;
-  a += 35;
-  var e, g, i = d + 2, h, j = d + 4, k, l = d + 6, m = d + 8, n = d + 10;
-  e = d + 12;
-  var p = d + 14, u = d + 16, r = d + 18, q = d + 20, v, x = d + 29, w = d + 31, y = d + 33;
-  b[c + 30] = b[b[c + 12] + 2];
-  b[c + 31] = b[b[c + 13] + 2];
-  h = c + 36;
-  g = b[c + 12] + 7;
-  b[h] = b[g];
-  o[h] = o[g];
-  b[h + 1] = b[g + 1];
-  o[h + 1] = o[g + 1];
-  h = c + 38;
-  g = b[c + 13] + 7;
-  b[h] = b[g];
-  o[h] = o[g];
-  b[h + 1] = b[g + 1];
-  o[h + 1] = o[g + 1];
-  o[c + 40] = o[b[c + 12] + 30];
-  o[c + 41] = o[b[c + 13] + 30];
-  o[c + 42] = o[b[c + 12] + 32];
-  o[c + 43] = o[b[c + 13] + 32];
-  h = b[f + 6] + 3 * b[c + 30];
-  b[d] = b[h];
-  o[d] = o[h];
-  b[d + 1] = b[h + 1];
-  o[d + 1] = o[h + 1];
-  g = o[b[f + 6] + 3 * b[c + 30] + 2];
-  h = b[f + 7] + 3 * b[c + 30];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 30] + 2];
-  k = b[f + 6] + 3 * b[c + 31];
-  b[j] = b[k];
-  o[j] = o[k];
-  b[j + 1] = b[k + 1];
-  o[j + 1] = o[k + 1];
-  k = o[b[f + 6] + 3 * b[c + 31] + 2];
-  j = b[f + 7] + 3 * b[c + 31];
-  b[l] = b[j];
-  o[l] = o[j];
-  b[l + 1] = b[j + 1];
-  o[l + 1] = o[j + 1];
-  j = o[b[f + 7] + 3 * b[c + 31] + 2];
-  Em(m, g);
-  Em(n, k);
-  var z = c + 32;
-  C(p, c + 21, c + 36);
-  S(e, m, p);
-  b[z] = b[e];
-  o[z] = o[e];
-  b[z + 1] = b[e + 1];
-  o[z + 1] = o[e + 1];
-  m = c + 34;
-  C(r, c + 23, c + 38);
-  S(u, n, r);
-  b[m] = b[u];
-  o[m] = o[u];
-  b[m + 1] = b[u + 1];
-  o[m + 1] = o[u + 1];
-  n = o[c + 40];
-  u = o[c + 41];
-  r = o[c + 42];
-  m = o[c + 43];
-  o[q] = n + u + o[c + 33] * o[c + 33] * r + o[c + 35] * o[c + 35] * m;
-  o[q + 3] = -o[c + 33] * o[c + 32] * r - o[c + 35] * o[c + 34] * m;
-  o[q + 6] = -o[c + 33] * r - o[c + 35] * m;
-  o[q + 1] = o[q + 3];
-  o[q + 4] = n + u + o[c + 32] * o[c + 32] * r + o[c + 34] * o[c + 34] * m;
-  o[q + 7] = o[c + 32] * r + o[c + 34] * m;
-  o[q + 2] = o[q + 6];
-  o[q + 5] = o[q + 7];
-  o[q + 8] = r + m;
-  e = 0 < o[c + 18] ? 1 : 8;
-  if (1 == e) {
-    si(q, c + 44);
-    q = r + m;
-    0 < q ? e = 2 : (v = 0, e = 3);
-    2 == e && (v = 1 / q);
-    e = v;
-    v = k - g - o[c + 25];
-    k = 6.2831854820251465 * o[c + 18];
-    g = 2 * e * o[c + 19] * k;
-    k *= e * k;
-    p = o[f];
-    o[c + 26] = p * (g + p * k);
-    if (0 != o[c + 26]) e = 4; else {
-      var B = 0;
-      e = 5;
-    }
-    4 == e && (B = 1 / o[c + 26]);
-    o[c + 26] = B;
-    o[c + 20] = v * p * k * o[c + 26];
-    B = q + o[c + 26];
-    if (0 != B) e = 6; else {
-      var E = 0;
-      e = 7;
-    }
-    6 == e && (E = 1 / B);
-    o[c + 52] = E;
-  } else 8 == e && (wi(q, c + 44), o[c + 26] = 0, o[c + 20] = 0);
-  E = c + 27;
-  e = b[f + 5] & 1 ? 10 : 11;
-  10 == e ? (vn(E, o[f + 2]), oc(x, o[c + 27], o[c + 28]), K(w, n, x), Ke(i, w), h -= r * (Q(c + 32, x) + o[c + 29]), K(y, u, x), Nb(l, y), j += m * (Q(c + 34, x) + o[c + 29])) : 11 == e && tn(E);
-  x = b[f + 7] + 3 * b[c + 30];
-  b[x] = b[i];
-  o[x] = o[i];
-  b[x + 1] = b[i + 1];
-  o[x + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 30] + 2] = h;
-  i = b[f + 7] + 3 * b[c + 31];
-  b[i] = b[l];
-  o[i] = o[l];
-  b[i + 1] = b[l + 1];
-  o[i + 1] = o[l + 1];
-  o[b[f + 7] + 3 * b[c + 31] + 2] = j;
-  a = d;
-}
-
-xo.X = 1;
-
-function yo(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(zo, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 21], o[c + 22] ], "double", s));
-  U(ym, A([ o[c + 23], o[c + 24] ], "double", s));
-  U(In, A([ o[c + 25] ], "double", s));
-  U(Am, A([ o[c + 18] ], "double", s));
-  U(Bm, A([ o[c + 19] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-yo.X = 1;
-
-function Ao(c, f, d) {
-  qi(c, o[f] + o[d], o[f + 1] + o[d + 1], o[f + 2] + o[d + 2]);
-}
-
-function Bo(c, f, d) {
-  qi(c, f * o[d], f * o[d + 1], f * o[d + 2]);
-}
-
-function Co(c, f) {
-  var d = a;
-  a += 49;
-  var e, g, i = d + 2, h, j, k, l, m, n, p = d + 4, u = d + 6, r = d + 8, q = d + 10, v = d + 12, x = d + 14, w = d + 16, y = d + 18, z = d + 20, B = d + 22, E = d + 24, D = d + 26, H = d + 28, I = d + 30, M = d + 32;
-  n = d + 34;
-  var G = d + 37, R = d + 40, P = d + 43, L = d + 45, T = d + 47;
-  g = b[f + 7] + 3 * b[c + 30];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 7] + 3 * b[c + 30] + 2];
-  h = b[f + 7] + 3 * b[c + 31];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 7] + 3 * b[c + 31] + 2];
-  j = o[c + 40];
-  k = o[c + 41];
-  l = o[c + 42];
-  m = o[c + 43];
-  var F = h;
-  e = 0 < o[c + 18] ? 1 : 2;
-  1 == e ? (n = -o[c + 52] * (F - g + o[c + 20] + o[c + 26] * o[c + 29]), o[c + 29] += n, g -= l * n, h += m * n, Ce(q, h, c + 34), N(r, i, q), C(u, r, d), Ce(v, g, c + 32), C(p, u, v), Bn(w, c + 44, p), Pd(x, w), o[c + 27] += o[x], o[c + 28] += o[x + 1], b[y] = b[x], o[y] = o[x], b[y + 1] = b[x + 1], o[y + 1] = o[x + 1], K(z, j, y), Ke(d, z), g -= l * Q(c + 32, y), K(B, k, y), Nb(i, B), h += m * Q(c + 34, y)) : 2 == e && (Ce(I, F, c + 34), N(H, i, I), C(D, H, d), Ce(M, g, c + 32), C(E, D, M), qi(n, o[E], o[E + 1], h - g), p = c + 44, u = a, a += 12, r = u + 3, q = u + 6, v = u + 9, Bo(r, o[n], p), Bo(q, o[n + 1], p + 3), Ao(u, r, q), Bo(v, o[n + 2], p + 6), Ao(R, u, v), a = u, zn(G, R), An(c + 27, G), oc(P, o[G], o[G + 1]), K(L, j, P), Ke(d, L), g -= l * (Q(c + 32, P) + o[G + 2]), K(T, k, P), Nb(i, T), h += m * (Q(c + 34, P) + o[G + 2]));
-  n = b[f + 7] + 3 * b[c + 30];
-  b[n] = b[d];
-  o[n] = o[d];
-  b[n + 1] = b[d + 1];
-  o[n + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 30] + 2] = g;
-  g = b[f + 7] + 3 * b[c + 31];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 7] + 3 * b[c + 31] + 2] = h;
-  a = d;
-}
-
-Co.X = 1;
-
-function Do(c, f) {
-  var d = a;
-  a += 60;
-  var e, g, i = d + 2, h;
-  e = d + 4;
-  var j = d + 6, k, l, m, n, p = d + 8, u = d + 10, r = d + 12, q = d + 14, v, x, w = d + 16, y = d + 25, z = d + 27, B = d + 29, E = d + 31, D = d + 33, H = d + 35, I = d + 37, M = d + 39, G = d + 41, R = d + 43, P = d + 45, L = d + 48, T = d + 51, F = d + 54, X = d + 56, Z = d + 58;
-  g = b[f + 6] + 3 * b[c + 30];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 30] + 2];
-  h = b[f + 6] + 3 * b[c + 31];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 31] + 2];
-  Em(e, g);
-  Em(j, h);
-  k = o[c + 40];
-  l = o[c + 41];
-  m = o[c + 42];
-  n = o[c + 43];
-  C(u, c + 21, c + 36);
-  S(p, e, u);
-  C(q, c + 23, c + 38);
-  S(r, j, q);
-  o[w] = k + l + o[p + 1] * o[p + 1] * m + o[r + 1] * o[r + 1] * n;
-  o[w + 3] = -o[p + 1] * o[p] * m - o[r + 1] * o[r] * n;
-  o[w + 6] = -o[p + 1] * m - o[r + 1] * n;
-  o[w + 1] = o[w + 3];
-  o[w + 4] = k + l + o[p] * o[p] * m + o[r] * o[r] * n;
-  o[w + 7] = o[p] * m + o[r] * n;
-  o[w + 2] = o[w + 6];
-  o[w + 5] = o[w + 7];
-  o[w + 8] = m + n;
-  e = 0 < o[c + 18] ? 1 : 2;
-  1 == e ? (N(B, i, r), C(z, B, d), C(y, z, p), v = Yc(y), x = 0, ri(D, w, y), Pd(E, D), K(H, k, E), Ke(d, H), g -= m * Q(p, E), K(I, l, E), Nb(i, I), h += n * Q(r, E)) : 2 == e && (N(R, i, r), C(G, R, d), C(M, G, p), y = h - g - o[c + 25], v = Yc(M), x = ke(y), qi(P, o[M], o[M + 1], y), vi(T, w, P), zn(L, T), oc(F, o[L], o[L + 1]), K(X, k, F), Ke(d, X), g -= m * (Q(p, F) + o[L + 2]), K(Z, l, F), Nb(i, Z), h += n * (Q(r, F) + o[L + 2]));
-  p = b[f + 6] + 3 * b[c + 30];
-  b[p] = b[d];
-  o[p] = o[d];
-  b[p + 1] = b[d + 1];
-  o[p + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 30] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 31];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 31] + 2] = h;
-  if (.004999999888241291 >= v) e = 4; else {
-    var V = 0;
-    e = 5;
-  }
-  4 == e && (V = .03490658849477768 >= x);
-  a = d;
-  return V;
-}
-
-Do.X = 1;
-
-function Eo(c, f) {
-  var d = a;
-  a += 2;
-  cm(c, f);
-  b[c] = Fo + 2;
-  var e = c + 20, g = f + 5;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 22;
-  g = f + 7;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 24;
-  g = f + 9;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = c + 26;
-  Ce(d, 1, c + 24);
-  b[e] = b[d];
-  o[e] = o[d];
-  b[e + 1] = b[d + 1];
-  o[e + 1] = o[d + 1];
-  o[c + 52] = 0;
-  o[c + 28] = 0;
-  o[c + 53] = 0;
-  o[c + 29] = 0;
-  o[c + 54] = 0;
-  o[c + 30] = 0;
-  o[c + 31] = o[f + 12];
-  o[c + 32] = o[f + 13];
-  b[c + 33] = b[f + 11] & 1;
-  o[c + 18] = o[f + 14];
-  o[c + 19] = o[f + 15];
-  o[c + 55] = 0;
-  o[c + 56] = 0;
-  cc(c + 44);
-  cc(c + 46);
-  a = d;
-}
-
-Eo.X = 1;
-
-function Go(c, f) {
-  var d = a;
-  a += 44;
-  var e, g, i, h, j, k, l = d + 2, m, n = d + 4, p, u = d + 6, r, q = d + 8, v = d + 10, x = d + 12, w = d + 14, y = d + 16, z = d + 18, B = d + 20, E = d + 22, D = d + 24;
-  e = d + 26;
-  var H = d + 28, I = d + 30, M = d + 32, G = d + 34, R = d + 36, P = d + 38, L = d + 40, T = d + 42;
-  b[c + 34] = b[b[c + 12] + 2];
-  b[c + 35] = b[b[c + 13] + 2];
-  m = c + 36;
-  h = b[c + 12] + 7;
-  b[m] = b[h];
-  o[m] = o[h];
-  b[m + 1] = b[h + 1];
-  o[m + 1] = o[h + 1];
-  m = c + 38;
-  h = b[c + 13] + 7;
-  b[m] = b[h];
-  o[m] = o[h];
-  b[m + 1] = b[h + 1];
-  o[m + 1] = o[h + 1];
-  o[c + 40] = o[b[c + 12] + 30];
-  o[c + 41] = o[b[c + 13] + 30];
-  o[c + 42] = o[b[c + 12] + 32];
-  o[c + 43] = o[b[c + 13] + 32];
-  g = o[c + 40];
-  i = o[c + 41];
-  h = o[c + 42];
-  j = o[c + 43];
-  m = b[f + 6] + 3 * b[c + 34];
-  b[d] = b[m];
-  o[d] = o[m];
-  b[d + 1] = b[m + 1];
-  o[d + 1] = o[m + 1];
-  k = o[b[f + 6] + 3 * b[c + 34] + 2];
-  m = b[f + 7] + 3 * b[c + 34];
-  b[l] = b[m];
-  o[l] = o[m];
-  b[l + 1] = b[m + 1];
-  o[l + 1] = o[m + 1];
-  m = o[b[f + 7] + 3 * b[c + 34] + 2];
-  r = b[f + 6] + 3 * b[c + 35];
-  b[n] = b[r];
-  o[n] = o[r];
-  b[n + 1] = b[r + 1];
-  o[n + 1] = o[r + 1];
-  p = o[b[f + 6] + 3 * b[c + 35] + 2];
-  r = b[f + 7] + 3 * b[c + 35];
-  b[u] = b[r];
-  o[u] = o[r];
-  b[u + 1] = b[r + 1];
-  o[u + 1] = o[r + 1];
-  r = o[b[f + 7] + 3 * b[c + 35] + 2];
-  Em(q, k);
-  Em(v, p);
-  C(w, c + 20, c + 36);
-  S(x, q, w);
-  C(z, c + 22, c + 38);
-  S(y, v, z);
-  N(D, n, y);
-  C(E, D, d);
-  C(B, E, x);
-  n = c + 46;
-  S(e, q, c + 26);
-  b[n] = b[e];
-  o[n] = o[e];
-  b[n + 1] = b[e + 1];
-  o[n + 1] = o[e + 1];
-  N(H, B, x);
-  o[c + 50] = Q(H, c + 46);
-  o[c + 51] = Q(y, c + 46);
-  o[c + 52] = g + i + h * o[c + 50] * o[c + 50] + j * o[c + 51] * o[c + 51];
-  e = 0 < o[c + 52] ? 1 : 2;
-  1 == e && (o[c + 52] = 1 / o[c + 52]);
-  o[c + 54] = 0;
-  o[c + 55] = 0;
-  o[c + 56] = 0;
-  e = 0 < o[c + 18] ? 3 : 8;
-  3 == e ? (e = c + 44, S(I, q, c + 24), b[e] = b[I], o[e] = o[I], b[e + 1] = b[I + 1], o[e + 1] = o[I + 1], N(M, B, x), o[c + 48] = Q(M, c + 44), o[c + 49] = Q(y, c + 44), q = g + i + h * o[c + 48] * o[c + 48] + j * o[c + 49] * o[c + 49], 0 < q && (o[c + 54] = 1 / q, B = J(B, c + 44), y = 6.2831854820251465 * o[c + 18], x = 2 * o[c + 54] * o[c + 19] * y, y *= o[c + 54] * y, I = o[f], o[c + 56] = I * (x + I * y), e = 0 < o[c + 56] ? 5 : 6, 5 == e && (o[c + 56] = 1 / o[c + 56]), o[c + 55] = B * I * y * o[c + 56], o[c + 54] = q + o[c + 56], 0 < o[c + 54] && (o[c + 54] = 1 / o[c + 54]))) : 8 == e && (o[c + 30] = 0);
-  e = b[c + 33] & 1 ? 10 : 12;
-  10 == e ? (o[c + 53] = h + j, 0 < o[c + 53] && (o[c + 53] = 1 / o[c + 53])) : 12 == e && (o[c + 53] = 0, o[c + 29] = 0);
-  e = b[f + 5] & 1 ? 14 : 15;
-  14 == e ? (o[c + 28] *= o[f + 2], o[c + 30] *= o[f + 2], o[c + 29] *= o[f + 2], K(R, o[c + 28], c + 46), K(P, o[c + 30], c + 44), N(G, R, P), R = o[c + 28] * o[c + 50] + o[c + 30] * o[c + 48] + o[c + 29], P = o[c + 28] * o[c + 51] + o[c + 30] * o[c + 49] + o[c + 29], K(L, o[c + 40], G), Ke(l, L), m -= o[c + 42] * R, K(T, o[c + 41], G), Nb(u, T), r += o[c + 43] * P) : 15 == e && (o[c + 28] = 0, o[c + 30] = 0, o[c + 29] = 0);
-  G = b[f + 7] + 3 * b[c + 34];
-  b[G] = b[l];
-  o[G] = o[l];
-  b[G + 1] = b[l + 1];
-  o[G + 1] = o[l + 1];
-  o[b[f + 7] + 3 * b[c + 34] + 2] = m;
-  l = b[f + 7] + 3 * b[c + 35];
-  b[l] = b[u];
-  o[l] = o[u];
-  b[l + 1] = b[u + 1];
-  o[l + 1] = o[u + 1];
-  o[b[f + 7] + 3 * b[c + 35] + 2] = r;
-  a = d;
-}
-
-Go.X = 1;
-
-function Ho(c, f) {
-  var d = a;
-  a += 20;
-  var e, g, i, h, j, k = d + 2, l, m = d + 4, n, p = d + 6, u = d + 8, r = d + 10, q = d + 12, v = d + 14, x = d + 16, w = d + 18;
-  e = o[c + 40];
-  g = o[c + 41];
-  i = o[c + 42];
-  h = o[c + 43];
-  j = b[f + 7] + 3 * b[c + 34];
-  b[d] = b[j];
-  o[d] = o[j];
-  b[d + 1] = b[j + 1];
-  o[d + 1] = o[j + 1];
-  j = o[b[f + 7] + 3 * b[c + 34] + 2];
-  l = b[f + 7] + 3 * b[c + 35];
-  b[k] = b[l];
-  o[k] = o[l];
-  b[k + 1] = b[l + 1];
-  o[k + 1] = o[l + 1];
-  l = o[b[f + 7] + 3 * b[c + 35] + 2];
-  n = c + 44;
-  C(m, k, d);
-  n = -o[c + 54] * (J(n, m) + o[c + 49] * l - o[c + 48] * j + o[c + 55] + o[c + 56] * o[c + 30]);
-  o[c + 30] += n;
-  K(p, n, c + 44);
-  m = n * o[c + 48];
-  n *= o[c + 49];
-  K(u, e, p);
-  Ke(d, u);
-  j -= i * m;
-  K(r, g, p);
-  Nb(k, r);
-  l += h * n;
-  p = -o[c + 53] * (l - j - o[c + 32]);
-  u = o[c + 29];
-  r = o[f] * o[c + 31];
-  o[c + 29] = $j(o[c + 29] + p, -r, r);
-  p = o[c + 29] - u;
-  j -= i * p;
-  l += h * p;
-  p = c + 46;
-  C(q, k, d);
-  q = -o[c + 52] * (J(p, q) + o[c + 51] * l - o[c + 50] * j);
-  o[c + 28] += q;
-  K(v, q, c + 46);
-  p = q * o[c + 50];
-  q *= o[c + 51];
-  K(x, e, v);
-  Ke(d, x);
-  j -= i * p;
-  K(w, g, v);
-  Nb(k, w);
-  e = b[f + 7] + 3 * b[c + 34];
-  b[e] = b[d];
-  o[e] = o[d];
-  b[e + 1] = b[d + 1];
-  o[e + 1] = o[d + 1];
-  o[b[f + 7] + 3 * b[c + 34] + 2] = j;
-  e = b[f + 7] + 3 * b[c + 35];
-  b[e] = b[k];
-  o[e] = o[k];
-  b[e + 1] = b[k + 1];
-  o[e + 1] = o[k + 1];
-  o[b[f + 7] + 3 * b[c + 35] + 2] = l + h * q;
-  a = d;
-}
-
-Ho.X = 1;
-
-function Io(c) {
-  var f, d;
-  f = b[b[c + 12] + 2];
-  d = b[b[c + 13] + 2];
-  U(Jo, A(1, "i32", s));
-  U(um, A([ f ], "i32", s));
-  U(vm, A([ d ], "i32", s));
-  U(wm, A([ b[c + 16] & 1 ], "i32", s));
-  U(xm, A([ o[c + 20], o[c + 21] ], "double", s));
-  U(ym, A([ o[c + 22], o[c + 23] ], "double", s));
-  U(Hn, A([ o[c + 24], o[c + 25] ], "double", s));
-  U(Mn, A([ b[c + 33] & 1 ], "i32", s));
-  U(Nn, A([ o[c + 32] ], "double", s));
-  U(mo, A([ o[c + 31] ], "double", s));
-  U(Am, A([ o[c + 18] ], "double", s));
-  U(Bm, A([ o[c + 19] ], "double", s));
-  U(Cm, A([ b[c + 14] ], "i32", s));
-}
-
-Io.X = 1;
-
-function Ko(c, f) {
-  var d = a;
-  a += 32;
-  var e, g, i = d + 2, h, j = d + 4;
-  e = d + 6;
-  var k = d + 8, l = d + 10, m = d + 12, n = d + 14, p = d + 16, u = d + 18, r = d + 20, q = d + 22, v = d + 24, x, w = d + 26, y = d + 28, z = d + 30;
-  g = b[f + 6] + 3 * b[c + 34];
-  b[d] = b[g];
-  o[d] = o[g];
-  b[d + 1] = b[g + 1];
-  o[d + 1] = o[g + 1];
-  g = o[b[f + 6] + 3 * b[c + 34] + 2];
-  h = b[f + 6] + 3 * b[c + 35];
-  b[i] = b[h];
-  o[i] = o[h];
-  b[i + 1] = b[h + 1];
-  o[i + 1] = o[h + 1];
-  h = o[b[f + 6] + 3 * b[c + 35] + 2];
-  Em(j, g);
-  Em(e, h);
-  C(l, c + 20, c + 36);
-  S(k, j, l);
-  C(n, c + 22, c + 38);
-  S(m, e, n);
-  C(r, i, d);
-  N(u, r, m);
-  C(p, u, k);
-  S(q, j, c + 26);
-  N(v, p, k);
-  j = Q(v, q);
-  m = Q(m, q);
-  p = J(p, q);
-  k = o[c + 40] + o[c + 41] + o[c + 42] * o[c + 50] * o[c + 50] + o[c + 43] * o[c + 51] * o[c + 51];
-  e = 0 != k ? 1 : 2;
-  1 == e ? x = -p / k : 2 == e && (x = 0);
-  K(w, x, q);
-  q = x * j;
-  x *= m;
-  K(y, o[c + 40], w);
-  Ke(d, y);
-  g -= o[c + 42] * q;
-  K(z, o[c + 41], w);
-  Nb(i, z);
-  h += o[c + 43] * x;
-  w = b[f + 6] + 3 * b[c + 34];
-  b[w] = b[d];
-  o[w] = o[d];
-  b[w + 1] = b[d + 1];
-  o[w + 1] = o[d + 1];
-  o[b[f + 6] + 3 * b[c + 34] + 2] = g;
-  g = b[f + 6] + 3 * b[c + 35];
-  b[g] = b[i];
-  o[g] = o[i];
-  b[g + 1] = b[i + 1];
-  o[g + 1] = o[i + 1];
-  o[b[f + 6] + 3 * b[c + 35] + 2] = h;
-  i = .004999999888241291 >= ke(p);
-  a = d;
-  return i;
-}
-
-Ko.X = 1;
-
-function dj(c, f) {
-  for (var d = f, e = f + 2, g = c; d < e; d++, g++) b[g] = b[d], o[g] = o[d];
-}
-
-function wc() {
-  Lo === ba && (Lo = Date.now());
-  return Math.floor(1 * (Date.now() - Lo));
-}
-
-var Lo, Mo = 13, No = 9, Oo = 22, Po = 5, Qo = 21, Ro = 6;
-
-function So(c) {
-  To || (To = A([ 0 ], "i32", t));
-  b[To] = c;
-}
-
-var To, Uo = 0, zc = 0, Vo = 0, Wo = 2, Jc = [ da ], Xo = ca;
-
-function Yo(c, f) {
-  if ("string" !== typeof c) return da;
-  f === ba && (f = "/");
-  c && "/" == c[0] && (f = "");
-  for (var d = (f + "/" + c).split("/").reverse(), e = [ "" ]; d.length; ) {
-    var g = d.pop();
-    "" == g || "." == g || (".." == g ? 1 < e.length && e.pop() : e.push(g));
-  }
-  return 1 == e.length ? "/" : e.join("/");
-}
-
-function Zo(c, f, d) {
-  var e = {
-    Q: ea,
-    m: ea,
-    error: 0,
-    name: da,
-    path: da,
-    object: da,
-    w: ea,
-    A: da,
-    z: da
-  }, c = Yo(c);
-  if ("/" == c) e.Q = ca, e.m = e.w = ca, e.name = "/", e.path = e.A = "/", e.object = e.z = $o; else if (c !== da) for (var d = d || 0, c = c.slice(1).split("/"), g = $o, i = [ "" ]; c.length; ) {
-    if (1 == c.length && g.c) e.w = ca, e.A = 1 == i.length ? "/" : i.join("/"), e.z = g, e.name = c[0];
-    var h = c.shift();
-    if (g.c) if (g.C) {
-      if (!g.a.hasOwnProperty(h)) {
-        e.error = 2;
-        break;
-      }
-    } else {
-      e.error = Mo;
-      break;
-    } else {
-      e.error = 20;
-      break;
-    }
-    g = g.a[h];
-    if (g.link && !(f && 0 == c.length)) {
-      if (40 < d) {
-        e.error = 40;
-        break;
-      }
-      e = Yo(g.link, i.join("/"));
-      return Zo([ e ].concat(c).join("/"), f, d + 1);
-    }
-    i.push(h);
-    if (0 == c.length) e.m = ca, e.path = i.join("/"), e.object = g;
-  }
-  return e;
-}
-
-function ap(c, f, d, e, g) {
-  c || (c = "/");
-  if ("string" === typeof c) bp(), c = Zo(c, ba), c.m ? c = c.object : (So(c.error), c = da);
-  if (!c) throw So(Mo), Error("Parent path must exist.");
-  if (!c.c) throw So(20), Error("Parent must be a folder.");
-  if (!c.write && !Xo) throw So(Mo), Error("Parent folder must be writeable.");
-  if (!f || "." == f || ".." == f) throw So(2), Error("Name must not be empty.");
-  if (c.a.hasOwnProperty(f)) throw So(17), Error("Can't overwrite object.");
-  c.a[f] = {
-    C: e === ba ? ca : e,
-    write: g === ba ? ea : g,
-    timestamp: Date.now(),
-    N: Wo++
-  };
-  for (var i in d) d.hasOwnProperty(i) && (c.a[f][i] = d[i]);
-  return c.a[f];
-}
-
-function cp(c, f) {
-  return ap("/", c, {
-    c: ca,
-    h: ea,
-    a: {}
-  }, ca, f);
-}
-
-function dp(c, f, d, e) {
-  if (!d && !e) throw Error("A device must have at least one callback defined.");
-  var g = {
-    h: ca,
-    input: d,
-    d: e
-  };
-  g.c = ea;
-  return ap(c, f, g, Boolean(d), Boolean(e));
-}
-
-function bp() {
-  $o || ($o = {
-    C: ca,
-    write: ea,
-    c: ca,
-    h: ea,
-    timestamp: Date.now(),
-    N: 1,
-    a: {}
-  });
-}
-
-var ep, $o;
-
-function Ic(c, f, d) {
-  var e = Jc[c];
-  if (e) {
-    if (e.i) {
-      if (0 > d) return So(Oo), -1;
-      if (e.object.h) {
-        if (e.object.d) {
-          for (var g = 0; g < d; g++) try {
-            e.object.d(b[f + g]);
-          } catch (i) {
-            return So(Po), -1;
-          }
-          e.object.timestamp = Date.now();
-          return g;
-        }
-        So(Ro);
+  function _llvm_lifetime_start() {}
+  function _llvm_lifetime_end() {}
+  function _fputc(c, stream) {
+      // int fputc(int c, FILE *stream);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/fputc.html
+      var chr = unSign(c & 0xFF);
+      HEAP8[((_fputc.ret)|0)]=chr
+      var ret = _write(stream, _fputc.ret, 1);
+      if (ret == -1) {
+        if (FS.streams[stream]) FS.streams[stream].error = true;
         return -1;
+      } else {
+        return chr;
       }
-      g = e.position;
-      c = Jc[c];
-      if (!c || c.object.h) So(No), f = -1; else if (c.i) if (c.object.c) So(Qo), f = -1; else if (0 > d || 0 > g) So(Oo), f = -1; else {
-        for (var h = c.object.a; h.length < g; ) h.push(0);
-        for (var j = 0; j < d; j++) h[g + j] = Za[f + j];
-        c.object.timestamp = Date.now();
-        f = j;
-      } else So(Mo), f = -1;
-      -1 != f && (e.position += f);
-      return f;
+    }function _putchar(c) {
+      // int putchar(int c);
+      // http://pubs.opengroup.org/onlinepubs/000095399/functions/putchar.html
+      return _fputc(c, HEAP32[((_stdout)>>2)]);
     }
-    So(Mo);
-    return -1;
-  }
-  So(No);
-  return -1;
-}
-
-function fp(c, f) {
-  function d(c) {
-    var d;
-    d = "float" === c || "double" === c ? o[f + g] : b[f + g];
-    g += Ma.M(c);
-    return Number(d);
-  }
-  for (var e = c, g = 0, i = [], h, j; ; ) {
-    var k = e;
-    h = b[e];
-    if (0 === h) break;
-    j = b[e + 1];
-    if (37 == h) {
-      var l = ea, m = ea, n = ea, p = ea;
-      a : for (;;) {
-        switch (j) {
-         case 43:
-          l = ca;
-          break;
-         case 45:
-          m = ca;
-          break;
-         case 35:
-          n = ca;
-          break;
-         case 48:
-          if (p) break a; else {
-            p = ca;
-            break;
+  var Browser={mainLoop:{scheduler:null,shouldPause:false,paused:false,queue:[],pause:function () {
+          Browser.mainLoop.shouldPause = true;
+        },resume:function () {
+          if (Browser.mainLoop.paused) {
+            Browser.mainLoop.paused = false;
+            Browser.mainLoop.scheduler();
           }
-         default:
-          break a;
+          Browser.mainLoop.shouldPause = false;
+        },updateStatus:function () {
+          if (Module['setStatus']) {
+            var message = Module['statusMessage'] || 'Please wait...';
+            var remaining = Browser.mainLoop.remainingBlockers;
+            var expected = Browser.mainLoop.expectedBlockers;
+            if (remaining) {
+              if (remaining < expected) {
+                Module['setStatus'](message + ' (' + (expected - remaining) + '/' + expected + ')');
+              } else {
+                Module['setStatus'](message);
+              }
+            } else {
+              Module['setStatus']('');
+            }
+          }
+        }},isFullScreen:false,pointerLock:false,moduleContextCreatedCallbacks:[],workers:[],init:function () {
+        if (Browser.initted) return;
+        Browser.initted = true;
+        try {
+          new Blob();
+          Browser.hasBlobConstructor = true;
+        } catch(e) {
+          Browser.hasBlobConstructor = false;
+          console.log("warning: no blob constructor, cannot create blobs with mimetypes");
         }
-        e++;
-        j = b[e + 1];
-      }
-      var u = 0;
-      if (42 == j) u = d("i32"), e++, j = b[e + 1]; else for (; 48 <= j && 57 >= j; ) u = 10 * u + (j - 48), e++, j = b[e + 1];
-      var r = ea;
-      if (46 == j) {
-        var q = 0, r = ca;
-        e++;
-        j = b[e + 1];
-        if (42 == j) q = d("i32"), e++; else for (;;) {
-          j = b[e + 1];
-          if (48 > j || 57 < j) break;
-          q = 10 * q + (j - 48);
-          e++;
+        Browser.BlobBuilder = typeof MozBlobBuilder != "undefined" ? MozBlobBuilder : (typeof WebKitBlobBuilder != "undefined" ? WebKitBlobBuilder : (!Browser.hasBlobConstructor ? console.log("warning: no BlobBuilder") : null));
+        Browser.URLObject = typeof window != "undefined" ? (window.URL ? window.URL : window.webkitURL) : console.log("warning: cannot create object URLs");
+        // Support for plugins that can process preloaded files. You can add more of these to
+        // your app by creating and appending to Module.preloadPlugins.
+        //
+        // Each plugin is asked if it can handle a file based on the file's name. If it can,
+        // it is given the file's raw data. When it is done, it calls a callback with the file's
+        // (possibly modified) data. For example, a plugin might decompress a file, or it
+        // might create some side data structure for use later (like an Image element, etc.).
+        function getMimetype(name) {
+          return {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'bmp': 'image/bmp',
+            'ogg': 'audio/ogg',
+            'wav': 'audio/wav',
+            'mp3': 'audio/mpeg'
+          }[name.substr(-3)];
+          return ret;
         }
-        j = b[e + 1];
-      } else q = 6;
-      var v;
-      switch (String.fromCharCode(j)) {
-       case "h":
-        j = b[e + 2];
-        104 == j ? (e++, v = 1) : v = 2;
-        break;
-       case "l":
-        j = b[e + 2];
-        108 == j ? (e++, v = 8) : v = 4;
-        break;
-       case "L":
-       case "q":
-       case "j":
-        v = 8;
-        break;
-       case "z":
-       case "t":
-       case "I":
-        v = 4;
-        break;
-       default:
-        v = da;
+        if (!Module["preloadPlugins"]) Module["preloadPlugins"] = [];
+        var imagePlugin = {};
+        imagePlugin['canHandle'] = function(name) {
+          return !Module.noImageDecoding && /\.(jpg|jpeg|png|bmp)$/.exec(name);
+        };
+        imagePlugin['handle'] = function(byteArray, name, onload, onerror) {
+          var b = null;
+          if (Browser.hasBlobConstructor) {
+            try {
+              b = new Blob([byteArray], { type: getMimetype(name) });
+            } catch(e) {
+              Runtime.warnOnce('Blob constructor present but fails: ' + e + '; falling back to blob builder');
+            }
+          }
+          if (!b) {
+            var bb = new Browser.BlobBuilder();
+            bb.append((new Uint8Array(byteArray)).buffer); // we need to pass a buffer, and must copy the array to get the right data range
+            b = bb.getBlob();
+          }
+          var url = Browser.URLObject.createObjectURL(b);
+          var img = new Image();
+          img.onload = function() {
+            assert(img.complete, 'Image ' + name + ' could not be decoded');
+            var canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            Module["preloadedImages"][name] = canvas;
+            Browser.URLObject.revokeObjectURL(url);
+            if (onload) onload(byteArray);
+          };
+          img.onerror = function(event) {
+            console.log('Image ' + url + ' could not be decoded');
+            if (onerror) onerror();
+          };
+          img.src = url;
+        };
+        Module['preloadPlugins'].push(imagePlugin);
+        var audioPlugin = {};
+        audioPlugin['canHandle'] = function(name) {
+          return !Module.noAudioDecoding && name.substr(-4) in { '.ogg': 1, '.wav': 1, '.mp3': 1 };
+        };
+        audioPlugin['handle'] = function(byteArray, name, onload, onerror) {
+          var done = false;
+          function finish(audio) {
+            if (done) return;
+            done = true;
+            Module["preloadedAudios"][name] = audio;
+            if (onload) onload(byteArray);
+          }
+          function fail() {
+            if (done) return;
+            done = true;
+            Module["preloadedAudios"][name] = new Audio(); // empty shim
+            if (onerror) onerror();
+          }
+          if (Browser.hasBlobConstructor) {
+            try {
+              var b = new Blob([byteArray], { type: getMimetype(name) });
+            } catch(e) {
+              return fail();
+            }
+            var url = Browser.URLObject.createObjectURL(b); // XXX we never revoke this!
+            var audio = new Audio();
+            audio.addEventListener('canplaythrough', function() { finish(audio) }, false); // use addEventListener due to chromium bug 124926
+            audio.onerror = function(event) {
+              if (done) return;
+              console.log('warning: browser could not fully decode audio ' + name + ', trying slower base64 approach');
+              function encode64(data) {
+                var BASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+                var PAD = '=';
+                var ret = '';
+                var leftchar = 0;
+                var leftbits = 0;
+                for (var i = 0; i < data.length; i++) {
+                  leftchar = (leftchar << 8) | data[i];
+                  leftbits += 8;
+                  while (leftbits >= 6) {
+                    var curr = (leftchar >> (leftbits-6)) & 0x3f;
+                    leftbits -= 6;
+                    ret += BASE[curr];
+                  }
+                }
+                if (leftbits == 2) {
+                  ret += BASE[(leftchar&3) << 4];
+                  ret += PAD + PAD;
+                } else if (leftbits == 4) {
+                  ret += BASE[(leftchar&0xf) << 2];
+                  ret += PAD;
+                }
+                return ret;
+              }
+              audio.src = 'data:audio/x-' + name.substr(-3) + ';base64,' + encode64(byteArray);
+              finish(audio); // we don't wait for confirmation this worked - but it's worth trying
+            };
+            audio.src = url;
+            // workaround for chrome bug 124926 - we do not always get oncanplaythrough or onerror
+            setTimeout(function() {
+              finish(audio); // try to use it even though it is not necessarily ready to play
+            }, 10000);
+          } else {
+            return fail();
+          }
+        };
+        Module['preloadPlugins'].push(audioPlugin);
+        // Canvas event setup
+        var canvas = Module['canvas'];
+        canvas.requestPointerLock = canvas['requestPointerLock'] ||
+                                    canvas['mozRequestPointerLock'] ||
+                                    canvas['webkitRequestPointerLock'];
+        canvas.exitPointerLock = document['exitPointerLock'] ||
+                                 document['mozExitPointerLock'] ||
+                                 document['webkitExitPointerLock'];
+        canvas.exitPointerLock = canvas.exitPointerLock.bind(document);
+        function pointerLockChange() {
+          Browser.pointerLock = document['pointerLockElement'] === canvas ||
+                                document['mozPointerLockElement'] === canvas ||
+                                document['webkitPointerLockElement'] === canvas;
+        }
+        document.addEventListener('pointerlockchange', pointerLockChange, false);
+        document.addEventListener('mozpointerlockchange', pointerLockChange, false);
+        document.addEventListener('webkitpointerlockchange', pointerLockChange, false);
+        if (Module['elementPointerLock']) {
+          canvas.addEventListener("click", function(ev) {
+            if (!Browser.pointerLock && canvas.requestPointerLock) {
+              canvas.requestPointerLock();
+              ev.preventDefault();
+            }
+          }, false);
+        }
+      },createContext:function (canvas, useWebGL, setInModule) {
+        var ctx;
+        try {
+          if (useWebGL) {
+            ctx = canvas.getContext('experimental-webgl', {
+              alpha: false
+            });
+          } else {
+            ctx = canvas.getContext('2d');
+          }
+          if (!ctx) throw ':(';
+        } catch (e) {
+          Module.print('Could not create canvas - ' + e);
+          return null;
+        }
+        if (useWebGL) {
+          // Set the background of the WebGL canvas to black
+          canvas.style.backgroundColor = "black";
+          // Warn on context loss
+          canvas.addEventListener('webglcontextlost', function(event) {
+            alert('WebGL context lost. You will need to reload the page.');
+          }, false);
+        }
+        if (setInModule) {
+          Module.ctx = ctx;
+          Module.useWebGL = useWebGL;
+          Browser.moduleContextCreatedCallbacks.forEach(function(callback) { callback() });
+          Browser.init();
+        }
+        return ctx;
+      },destroyContext:function (canvas, useWebGL, setInModule) {},fullScreenHandlersInstalled:false,lockPointer:undefined,resizeCanvas:undefined,requestFullScreen:function (lockPointer, resizeCanvas) {
+        this.lockPointer = lockPointer;
+        this.resizeCanvas = resizeCanvas;
+        if (typeof this.lockPointer === 'undefined') this.lockPointer = true;
+        if (typeof this.resizeCanvas === 'undefined') this.resizeCanvas = false;
+        var canvas = Module['canvas'];
+        function fullScreenChange() {
+          Browser.isFullScreen = false;
+          if ((document['webkitFullScreenElement'] || document['webkitFullscreenElement'] ||
+               document['mozFullScreenElement'] || document['mozFullscreenElement'] ||
+               document['fullScreenElement'] || document['fullscreenElement']) === canvas) {
+            canvas.cancelFullScreen = document['cancelFullScreen'] ||
+                                      document['mozCancelFullScreen'] ||
+                                      document['webkitCancelFullScreen'];
+            canvas.cancelFullScreen = canvas.cancelFullScreen.bind(document);
+            if (Browser.lockPointer) canvas.requestPointerLock();
+            Browser.isFullScreen = true;
+            if (Browser.resizeCanvas) Browser.setFullScreenCanvasSize();
+          } else if (Browser.resizeCanvas){
+            Browser.setWindowedCanvasSize();
+          }
+          if (Module['onFullScreen']) Module['onFullScreen'](Browser.isFullScreen);
+        }
+        if (!this.fullScreenHandlersInstalled) {
+          this.fullScreenHandlersInstalled = true;
+          document.addEventListener('fullscreenchange', fullScreenChange, false);
+          document.addEventListener('mozfullscreenchange', fullScreenChange, false);
+          document.addEventListener('webkitfullscreenchange', fullScreenChange, false);
+        }
+        canvas.requestFullScreen = canvas['requestFullScreen'] ||
+                                   canvas['mozRequestFullScreen'] ||
+                                   (canvas['webkitRequestFullScreen'] ? function() { canvas['webkitRequestFullScreen'](Element['ALLOW_KEYBOARD_INPUT']) } : null);
+        canvas.requestFullScreen(); 
+      },requestAnimationFrame:function (func) {
+        if (!window.requestAnimationFrame) {
+          window.requestAnimationFrame = window['requestAnimationFrame'] ||
+                                         window['mozRequestAnimationFrame'] ||
+                                         window['webkitRequestAnimationFrame'] ||
+                                         window['msRequestAnimationFrame'] ||
+                                         window['oRequestAnimationFrame'] ||
+                                         window['setTimeout'];
+        }
+        window.requestAnimationFrame(func);
+      },getMovementX:function (event) {
+        return event['movementX'] ||
+               event['mozMovementX'] ||
+               event['webkitMovementX'] ||
+               0;
+      },getMovementY:function (event) {
+        return event['movementY'] ||
+               event['mozMovementY'] ||
+               event['webkitMovementY'] ||
+               0;
+      },xhrLoad:function (url, onload, onerror) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = function() {
+          if (xhr.status == 200) {
+            onload(xhr.response);
+          } else {
+            onerror();
+          }
+        };
+        xhr.onerror = onerror;
+        xhr.send(null);
+      },asyncLoad:function (url, onload, onerror, noRunDep) {
+        Browser.xhrLoad(url, function(arrayBuffer) {
+          assert(arrayBuffer, 'Loading data file "' + url + '" failed (no arrayBuffer).');
+          onload(new Uint8Array(arrayBuffer));
+          if (!noRunDep) removeRunDependency('al ' + url);
+        }, function(event) {
+          if (onerror) {
+            onerror();
+          } else {
+            throw 'Loading data file "' + url + '" failed.';
+          }
+        });
+        if (!noRunDep) addRunDependency('al ' + url);
+      },resizeListeners:[],updateResizeListeners:function () {
+        var canvas = Module['canvas'];
+        Browser.resizeListeners.forEach(function(listener) {
+          listener(canvas.width, canvas.height);
+        });
+      },setCanvasSize:function (width, height, noUpdates) {
+        var canvas = Module['canvas'];
+        canvas.width = width;
+        canvas.height = height;
+        if (!noUpdates) Browser.updateResizeListeners();
+      },windowedWidth:0,windowedHeight:0,setFullScreenCanvasSize:function () {
+        var canvas = Module['canvas'];
+        this.windowedWidth = canvas.width;
+        this.windowedHeight = canvas.height;
+        canvas.width = screen.width;
+        canvas.height = screen.height;
+        var flags = HEAPU32[((SDL.screen+Runtime.QUANTUM_SIZE*0)>>2)];
+        flags = flags | 0x00800000; // set SDL_FULLSCREEN flag
+        HEAP32[((SDL.screen+Runtime.QUANTUM_SIZE*0)>>2)]=flags
+        Browser.updateResizeListeners();
+      },setWindowedCanvasSize:function () {
+        var canvas = Module['canvas'];
+        canvas.width = this.windowedWidth;
+        canvas.height = this.windowedHeight;
+        var flags = HEAPU32[((SDL.screen+Runtime.QUANTUM_SIZE*0)>>2)];
+        flags = flags & ~0x00800000; // clear SDL_FULLSCREEN flag
+        HEAP32[((SDL.screen+Runtime.QUANTUM_SIZE*0)>>2)]=flags
+        Browser.updateResizeListeners();
+      }};
+__ATINIT__.unshift({ func: function() { if (!Module["noFSInit"] && !FS.init.initialized) FS.init() } });__ATMAIN__.push({ func: function() { FS.ignorePermissions = false } });__ATEXIT__.push({ func: function() { FS.quit() } });Module["FS_createFolder"] = FS.createFolder;Module["FS_createPath"] = FS.createPath;Module["FS_createDataFile"] = FS.createDataFile;Module["FS_createPreloadedFile"] = FS.createPreloadedFile;Module["FS_createLazyFile"] = FS.createLazyFile;Module["FS_createLink"] = FS.createLink;Module["FS_createDevice"] = FS.createDevice;
+___setErrNo(0);
+_fputc.ret = allocate([0], "i8", ALLOC_STATIC);
+Module["requestFullScreen"] = function(lockPointer, resizeCanvas) { Browser.requestFullScreen(lockPointer, resizeCanvas) };
+  Module["requestAnimationFrame"] = function(func) { Browser.requestAnimationFrame(func) };
+  Module["pauseMainLoop"] = function() { Browser.mainLoop.pause() };
+  Module["resumeMainLoop"] = function() { Browser.mainLoop.resume() };
+var Math_min = Math.min;
+function asmPrintInt(x, y) {
+  Module.print('int ' + x + ',' + y);// + ' ' + new Error().stack);
+}
+function asmPrintFloat(x, y) {
+  Module.print('float ' + x + ',' + y);// + ' ' + new Error().stack);
+}
+// EMSCRIPTEN_START_ASM
+var asm=(function(global,env,buffer){"use asm";var a=new global.Int8Array(buffer);var b=new global.Int16Array(buffer);var c=new global.Int32Array(buffer);var d=new global.Uint8Array(buffer);var e=new global.Uint16Array(buffer);var f=new global.Uint32Array(buffer);var g=new global.Float32Array(buffer);var h=new global.Float64Array(buffer);var i=env.STACKTOP|0;var j=env.STACK_MAX|0;var k=env.tempDoublePtr|0;var l=env.ABORT|0;var m=env.__ZTVN10__cxxabiv120__si_class_type_infoE|0;var n=env.__ZTVN10__cxxabiv117__class_type_infoE|0;var o=+env.NaN;var p=+env.Infinity;var q=0;var r=0;var s=0,t=0,u=0,v=0,w=0.0,x=0,y=0,z=0,A=0.0;var B=0;var C=0;var D=0;var E=0;var F=0;var G=0;var H=0;var I=0;var J=0;var K=0;var L=global.Math.floor;var M=global.Math.abs;var N=global.Math.sqrt;var O=global.Math.pow;var P=global.Math.cos;var Q=global.Math.sin;var R=global.Math.tan;var S=global.Math.acos;var T=global.Math.asin;var U=global.Math.atan;var V=global.Math.atan2;var W=global.Math.exp;var X=global.Math.log;var Y=global.Math.ceil;var Z=global.Math.imul;var _=env.abort;var $=env.assert;var aa=env.asmPrintInt;var ab=env.asmPrintFloat;var ac=env.copyTempDouble;var ad=env.copyTempFloat;var ae=env.min;var af=env._llvm_lifetime_end;var ag=env._cosf;var ah=env._floorf;var ai=env._abort;var aj=env._fprintf;var ak=env._printf;var al=env.__reallyNegative;var am=env._sqrtf;var an=env._fputc;var ao=env._sysconf;var ap=env._clock;var aq=env.___setErrNo;var ar=env._fwrite;var as=env._write;var at=env._exit;var au=env.___cxa_pure_virtual;var av=env.__formatString;var aw=env.__ZSt9terminatev;var ax=env._sinf;var ay=env.___assert_func;var az=env._pwrite;var aA=env._putchar;var aB=env._sbrk;var aC=env.___errno_location;var aD=env.___gxx_personality_v0;var aE=env._llvm_lifetime_start;var aF=env._time;var aG=env.__exit;
+// EMSCRIPTEN_START_FUNCS
+function aT(a){a=a|0;var b=0;b=i;i=i+a|0;i=i+3>>2<<2;return b|0}function aU(){return i|0}function aV(a){a=a|0;i=a}function aW(a){a=a|0;q=a}function aX(a){a=a|0;B=a}function aY(a){a=a|0;C=a}function aZ(a){a=a|0;D=a}function a_(a){a=a|0;E=a}function a$(a){a=a|0;F=a}function a0(a){a=a|0;G=a}function a1(a){a=a|0;H=a}function a2(a){a=a|0;I=a}function a3(a){a=a|0;J=a}function a4(a){a=a|0;K=a}function a5(a){a=a|0;return}function a6(a){a=a|0;return}function a7(a,b){a=a|0;b=b|0;bb();return 0}function a8(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0;c[a>>2]=-1;b=a+12|0;c[b>>2]=16;c[a+8>>2]=0;d=de(576)|0;e=a+4|0;c[e>>2]=d;dk(d|0,0,(c[b>>2]|0)*36&-1|0);d=(c[b>>2]|0)-1|0;L4:do{if((d|0)>0){f=0;while(1){g=f+1|0;c[(c[e>>2]|0)+(f*36&-1)+20>>2]=g;c[(c[e>>2]|0)+(f*36&-1)+32>>2]=-1;h=(c[b>>2]|0)-1|0;if((g|0)<(h|0)){f=g}else{i=h;break L4}}}else{i=d}}while(0);c[(c[e>>2]|0)+(i*36&-1)+20>>2]=-1;c[(c[e>>2]|0)+(((c[b>>2]|0)-1|0)*36&-1)+32>>2]=-1;b=a+16|0;c[b>>2]=0;c[b+4>>2]=0;c[b+8>>2]=0;c[b+12>>2]=0;c[a+48>>2]=16;c[a+52>>2]=0;c[a+44>>2]=de(192)|0;c[a+36>>2]=16;c[a+40>>2]=0;c[a+32>>2]=de(64)|0;return}function a9(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,h=0,i=0.0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0;e=a|0;f=bo(e)|0;h=a+4|0;i=+g[b+4>>2]+-.10000000149011612;j=(c[h>>2]|0)+(f*36&-1)|0;l=(g[k>>2]=+g[b>>2]+-.10000000149011612,c[k>>2]|0);m=(g[k>>2]=i,c[k>>2]|0)|0;c[j>>2]=0|l;c[j+4>>2]=m;i=+g[b+12>>2]+.10000000149011612;m=(c[h>>2]|0)+(f*36&-1)+8|0;j=(g[k>>2]=+g[b+8>>2]+.10000000149011612,c[k>>2]|0);b=(g[k>>2]=i,c[k>>2]|0)|0;c[m>>2]=0|j;c[m+4>>2]=b;c[(c[h>>2]|0)+(f*36&-1)+16>>2]=d;c[(c[h>>2]|0)+(f*36&-1)+32>>2]=0;bp(e,f);e=a+28|0;c[e>>2]=(c[e>>2]|0)+1|0;e=a+40|0;h=c[e>>2]|0;d=a+36|0;b=a+32|0;if((h|0)!=(c[d>>2]|0)){n=h;o=c[b>>2]|0;p=o+(n<<2)|0;c[p>>2]=f;q=c[e>>2]|0;r=q+1|0;c[e>>2]=r;return f|0}a=c[b>>2]|0;c[d>>2]=h<<1;d=de(h<<3)|0;c[b>>2]=d;h=a;di(d,h,c[e>>2]<<2);df(h);n=c[e>>2]|0;o=c[b>>2]|0;p=o+(n<<2)|0;c[p>>2]=f;q=c[e>>2]|0;r=q+1|0;c[e>>2]=r;return f|0}function ba(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0,r=0,s=0.0,t=0,u=0,v=0,w=0,x=0,y=0.0,z=0.0,A=0.0,B=0.0,C=0,D=0.0,E=0.0;h=a+60|0;c[h>>2]=0;i=e+12|0;j=+g[f+12>>2];l=+g[i>>2];m=+g[f+8>>2];n=+g[e+16>>2];o=+g[f>>2]+(j*l-m*n)- +g[d>>2];p=l*m+j*n+ +g[f+4>>2]- +g[d+4>>2];n=+g[d+12>>2];j=+g[d+8>>2];m=o*n+p*j;l=n*p+o*(-0.0-j);j=+g[b+8>>2]+ +g[e+8>>2];e=c[b+148>>2]|0;do{if((e|0)>0){d=0;o=-3.4028234663852886e+38;f=0;while(1){p=(m- +g[b+20+(d<<3)>>2])*+g[b+84+(d<<3)>>2]+(l- +g[b+20+(d<<3)+4>>2])*+g[b+84+(d<<3)+4>>2];if(p>j){q=31;break}r=p>o;s=r?p:o;t=r?d:f;r=d+1|0;if((r|0)<(e|0)){d=r;o=s;f=t}else{q=15;break}}if((q|0)==15){u=s<1.1920928955078125e-7;v=t;break}else if((q|0)==31){return}}else{u=1;v=0}}while(0);q=v+1|0;t=b+20+(v<<3)|0;f=c[t>>2]|0;d=c[t+4>>2]|0;s=(c[k>>2]=f,+g[k>>2]);t=d;o=(c[k>>2]=t,+g[k>>2]);r=b+20+(((q|0)<(e|0)?q:0)<<3)|0;q=c[r>>2]|0;e=c[r+4>>2]|0;p=(c[k>>2]=q,+g[k>>2]);r=e;n=(c[k>>2]=r,+g[k>>2]);if(u){c[h>>2]=1;c[a+56>>2]=1;u=b+84+(v<<3)|0;w=a+40|0;x=c[u+4>>2]|0;c[w>>2]=c[u>>2]|0;c[w+4>>2]=x;x=a+48|0;w=(g[k>>2]=(s+p)*.5,c[k>>2]|0);u=(g[k>>2]=(o+n)*.5,c[k>>2]|0)|0;c[x>>2]=0|w;c[x+4>>2]=u;u=i;x=a;w=c[u+4>>2]|0;c[x>>2]=c[u>>2]|0;c[x+4>>2]=w;c[a+16>>2]=0;return}y=m-s;z=l-o;A=m-p;B=l-n;if(y*(p-s)+z*(n-o)<=0.0){if(y*y+z*z>j*j){return}c[h>>2]=1;c[a+56>>2]=1;w=a+40|0;x=w;u=(g[k>>2]=y,c[k>>2]|0);C=(g[k>>2]=z,c[k>>2]|0)|0;c[x>>2]=0|u;c[x+4>>2]=C;D=+N(y*y+z*z);if(D>=1.1920928955078125e-7){E=1.0/D;g[w>>2]=y*E;g[a+44>>2]=z*E}w=a+48|0;c[w>>2]=0|f&-1;c[w+4>>2]=t|d&0;d=i;t=a;w=c[d+4>>2]|0;c[t>>2]=c[d>>2]|0;c[t+4>>2]=w;c[a+16>>2]=0;return}if(A*(s-p)+B*(o-n)>0.0){E=(s+p)*.5;p=(o+n)*.5;w=b+84+(v<<3)|0;if((m-E)*+g[w>>2]+(l-p)*+g[b+84+(v<<3)+4>>2]>j){return}c[h>>2]=1;c[a+56>>2]=1;v=w;w=a+40|0;b=c[v+4>>2]|0;c[w>>2]=c[v>>2]|0;c[w+4>>2]=b;b=a+48|0;w=(g[k>>2]=E,c[k>>2]|0);v=(g[k>>2]=p,c[k>>2]|0)|0;c[b>>2]=0|w;c[b+4>>2]=v;v=i;b=a;w=c[v+4>>2]|0;c[b>>2]=c[v>>2]|0;c[b+4>>2]=w;c[a+16>>2]=0;return}if(A*A+B*B>j*j){return}c[h>>2]=1;c[a+56>>2]=1;h=a+40|0;w=h;b=(g[k>>2]=A,c[k>>2]|0);v=(g[k>>2]=B,c[k>>2]|0)|0;c[w>>2]=0|b;c[w+4>>2]=v;j=+N(A*A+B*B);if(j>=1.1920928955078125e-7){p=1.0/j;g[h>>2]=A*p;g[a+44>>2]=B*p}h=a+48|0;c[h>>2]=0|q&-1;c[h+4>>2]=r|e&0;e=i;i=a;r=c[e+4>>2]|0;c[i>>2]=c[e>>2]|0;c[i+4>>2]=r;c[a+16>>2]=0;return}function bb(){var d=0,e=0,f=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0.0,M=0.0,N=0,O=0.0,P=0.0,Q=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0;d=i;i=i+104420|0;e=d|0;f=d+28|0;j=d+56|0;l=d+64|0;m=d+103092|0;n=d+103144|0;o=d+103192|0;p=d+103344|0;q=d+103396|0;g[j>>2]=0.0;g[j+4>>2]=-10.0;b9(l,j);j=l+102976|0;L51:do{if((a[j]&1)<<24>>24!=0){a[j]=0;r=c[l+102952>>2]|0;if((r|0)==0){break}else{t=r}while(1){r=t+4|0;u=b[r>>1]|0;if((u&2)<<16>>16==0){b[r>>1]=u|2;g[t+144>>2]=0.0}u=c[t+96>>2]|0;if((u|0)==0){break L51}else{t=u}}}}while(0);c[m+44>>2]=0;dk(m+4|0,0,32);a[m+36|0]=1;a[m+37|0]=1;a[m+38|0]=0;a[m+39|0]=0;c[m>>2]=0;a[m+40|0]=1;g[m+48>>2]=1.0;t=l+102868|0;j=c[t>>2]|0;if((j&2|0)==0){v=j}else{ay(5245532,109,5248280,5246264);v=c[t>>2]|0}if((v&2|0)==0){v=bM(l|0,152)|0;if((v|0)==0){w=0}else{j=v;bQ(j,m,l);w=j}c[w+92>>2]=0;j=l+102952|0;c[w+96>>2]=c[j>>2]|0;m=c[j>>2]|0;if((m|0)!=0){c[m+92>>2]=w}c[j>>2]=w;j=l+102960|0;c[j>>2]=(c[j>>2]|0)+1|0;x=w}else{x=0}c[n>>2]=5250828;c[n+4>>2]=1;g[n+8>>2]=.009999999776482582;w=n+28|0;c[w>>2]=0;c[w+4>>2]=0;c[w+8>>2]=0;c[w+12>>2]=0;b[w+16>>1]=0;w=n+12|0;c[w>>2]=-1038090240;c[w+4>>2]=0;w=n+20|0;c[w>>2]=1109393408;c[w+4>>2]=0;a[n+44|0]=0;a[n+45|0]=0;b[e+22>>1]=1;b[e+24>>1]=-1;b[e+26>>1]=0;c[e+4>>2]=0;g[e+8>>2]=.20000000298023224;g[e+12>>2]=0.0;a[e+20|0]=0;c[e>>2]=n|0;g[e+16>>2]=0.0;bS(x,e);c[o>>2]=5250784;c[o+4>>2]=2;g[o+8>>2]=.009999999776482582;c[o+148>>2]=4;g[o+20>>2]=-.5;g[o+24>>2]=-.5;g[o+28>>2]=.5;g[o+32>>2]=-.5;g[o+36>>2]=.5;g[o+40>>2]=.5;g[o+44>>2]=-.5;g[o+48>>2]=.5;g[o+84>>2]=0.0;g[o+88>>2]=-1.0;g[o+92>>2]=1.0;g[o+96>>2]=0.0;g[o+100>>2]=0.0;g[o+104>>2]=1.0;g[o+108>>2]=-1.0;g[o+112>>2]=0.0;g[o+12>>2]=0.0;g[o+16>>2]=0.0;e=p+44|0;x=p+36|0;n=p+4|0;w=p+37|0;j=p+38|0;m=p+39|0;v=p|0;u=p+40|0;r=p+48|0;y=p+4|0;z=l|0;A=l+102952|0;B=l+102960|0;C=o|0;o=f+22|0;D=f+24|0;E=f+26|0;F=f|0;G=f+4|0;H=f+8|0;I=f+12|0;J=f+16|0;K=f+20|0;L=.75;M=-7.0;N=0;while(1){O=L;P=M;Q=N;while(1){c[e>>2]=0;dk(n|0,0,32);a[x]=1;a[w]=1;a[j]=0;a[m]=0;a[u]=1;g[r>>2]=1.0;c[v>>2]=2;R=(g[k>>2]=P,c[k>>2]|0);S=(g[k>>2]=O,c[k>>2]|0)|0;c[y>>2]=0|R;c[y+4>>2]=S;S=c[t>>2]|0;if((S&2|0)==0){T=S}else{ay(5245532,109,5248280,5246264);T=c[t>>2]|0}if((T&2|0)==0){S=bM(z,152)|0;if((S|0)==0){U=0}else{R=S;bQ(R,p,l);U=R}c[U+92>>2]=0;c[U+96>>2]=c[A>>2]|0;R=c[A>>2]|0;if((R|0)!=0){c[R+92>>2]=U}c[A>>2]=U;c[B>>2]=(c[B>>2]|0)+1|0;V=U}else{V=0}b[o>>1]=1;b[D>>1]=-1;b[E>>1]=0;c[G>>2]=0;g[H>>2]=.20000000298023224;g[I>>2]=0.0;a[K]=0;c[F>>2]=C;g[J>>2]=5.0;bS(V,f);R=Q+1|0;if((R|0)<40){O=O+0.0;P=P+1.125;Q=R}else{break}}Q=N+1|0;if((Q|0)<40){L=L+1.0;M=M+.5625;N=Q}else{W=0;break}}while(1){cj(l,.01666666753590107,3,3);N=W+1|0;if((N|0)<64){W=N}else{X=0;break}}while(1){W=ap()|0;cj(l,.01666666753590107,3,3);N=(ap()|0)-W|0;c[q+(X<<2)>>2]=N;ak(5246464,(s=i,i=i+8|0,h[k>>3]=+(N>>>0>>>0)/1.0e3*1.0e3,c[s>>2]=c[k>>2]|0,c[s+4>>2]=c[k+4>>2]|0,s)|0);N=X+1|0;if((N|0)<256){X=N}else{break}}aA(10);X=0;N=0;while(1){Y=(c[q+(N<<2)>>2]|0)+X|0;W=N+1|0;if((W|0)==256){break}else{X=Y;N=W}}ak(5246464,(s=i,i=i+8|0,h[k>>3]=+(Y>>>0>>>0)*.00390625/1.0e3*1.0e3,c[s>>2]=c[k>>2]|0,c[s+4>>2]=c[k+4>>2]|0,s)|0);cb(l);i=d;return}function bc(b,d,e,f,h){b=b|0;d=d|0;e=e|0;f=f|0;h=h|0;var i=0,j=0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0,s=0,t=0,u=0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0,D=0.0,E=0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0;i=b+60|0;c[i>>2]=0;j=f+12|0;l=+g[h+12>>2];m=+g[j>>2];n=+g[h+8>>2];o=+g[f+16>>2];p=+g[h>>2]+(l*m-n*o)- +g[e>>2];q=m*n+l*o+ +g[h+4>>2]- +g[e+4>>2];o=+g[e+12>>2];l=+g[e+8>>2];n=p*o+q*l;m=o*q+p*(-0.0-l);e=d+12|0;h=c[e>>2]|0;r=c[e+4>>2]|0;l=(c[k>>2]=h,+g[k>>2]);e=r;p=(c[k>>2]=e,+g[k>>2]);s=d+20|0;t=c[s>>2]|0;u=c[s+4>>2]|0;q=(c[k>>2]=t,+g[k>>2]);s=u;o=(c[k>>2]=s,+g[k>>2]);v=q-l;w=o-p;x=v*(q-n)+w*(o-m);y=n-l;z=m-p;A=y*v+z*w;B=+g[d+8>>2]+ +g[f+8>>2];if(A<=0.0){if(y*y+z*z>B*B){return}do{if((a[d+44|0]&1)<<24>>24!=0){f=d+28|0;C=c[f+4>>2]|0;D=(c[k>>2]=c[f>>2]|0,+g[k>>2]);if((l-n)*(l-D)+(p-m)*(p-(c[k>>2]=C,+g[k>>2]))<=0.0){break}return}}while(0);c[i>>2]=1;c[b+56>>2]=0;g[b+40>>2]=0.0;g[b+44>>2]=0.0;C=b+48|0;c[C>>2]=0|h&-1;c[C+4>>2]=e|r&0;C=b+16|0;c[C>>2]=0;f=C;a[C]=0;a[f+1|0]=0;a[f+2|0]=0;a[f+3|0]=0;f=j;C=b;E=c[f+4>>2]|0;c[C>>2]=c[f>>2]|0;c[C+4>>2]=E;return}if(x<=0.0){D=n-q;F=m-o;if(D*D+F*F>B*B){return}do{if((a[d+45|0]&1)<<24>>24!=0){E=d+36|0;C=c[E+4>>2]|0;G=(c[k>>2]=c[E>>2]|0,+g[k>>2]);if(D*(G-q)+F*((c[k>>2]=C,+g[k>>2])-o)<=0.0){break}return}}while(0);c[i>>2]=1;c[b+56>>2]=0;g[b+40>>2]=0.0;g[b+44>>2]=0.0;d=b+48|0;c[d>>2]=0|t&-1;c[d+4>>2]=s|u&0;u=b+16|0;c[u>>2]=0;s=u;a[u]=1;a[s+1|0]=0;a[s+2|0]=0;a[s+3|0]=0;s=j;u=b;d=c[s+4>>2]|0;c[u>>2]=c[s>>2]|0;c[u+4>>2]=d;return}F=v*v+w*w;if(F<=0.0){ay(5244336,127,5250260,5245840)}D=1.0/F;F=n-(l*x+q*A)*D;q=m-(p*x+o*A)*D;if(F*F+q*q>B*B){return}B=-0.0-w;if(v*z+y*B<0.0){H=w;I=-0.0-v}else{H=B;I=v}v=+N(I*I+H*H);if(v<1.1920928955078125e-7){J=H;K=I}else{B=1.0/v;J=H*B;K=I*B}c[i>>2]=1;c[b+56>>2]=1;i=b+40|0;d=(g[k>>2]=J,c[k>>2]|0);u=(g[k>>2]=K,c[k>>2]|0)|0;c[i>>2]=0|d;c[i+4>>2]=u;u=b+48|0;c[u>>2]=0|h&-1;c[u+4>>2]=e|r&0;r=b+16|0;c[r>>2]=0;e=r;a[r]=0;a[e+1|0]=0;a[e+2|0]=1;a[e+3|0]=0;e=j;j=b;b=c[e+4>>2]|0;c[j>>2]=c[e>>2]|0;c[j+4>>2]=b;return}function bd(b,d,e,f,h,j){b=b|0;d=d|0;e=e|0;f=f|0;h=h|0;j=j|0;var l=0,m=0,n=0,o=0,p=0,q=0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0,y=0,z=0.0,A=0.0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,O=0.0,P=0.0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0,_=0.0,$=0.0,aa=0,ab=0.0,ac=0,ad=0,ae=0,af=0,ag=0,ah=0,ai=0,aj=0,ak=0,al=0,am=0,an=0,ao=0,ap=0,aq=0.0,ar=0,as=0,at=0,au=0,av=0,aw=0,ax=0,ay=0,az=0,aA=0.0,aB=0.0,aC=0.0,aD=0.0,aE=0,aF=0,aG=0,aH=0,aI=0,aJ=0,aK=0,aL=0,aM=0,aN=0,aO=0.0,aP=0,aQ=0,aR=0.0;l=i;i=i+84|0;m=l|0;n=l+12|0;o=l+36|0;p=l+60|0;q=b+132|0;r=+g[f+12>>2];s=+g[j+8>>2];t=+g[f+8>>2];u=+g[j+12>>2];v=r*s-t*u;w=s*t+r*u;x=(g[k>>2]=v,c[k>>2]|0);y=(g[k>>2]=w,c[k>>2]|0)|0;u=+g[j>>2]- +g[f>>2];s=+g[j+4>>2]- +g[f+4>>2];z=r*u+t*s;A=u*(-0.0-t)+r*s;f=(g[k>>2]=z,c[k>>2]|0);j=(g[k>>2]=A,c[k>>2]|0)|0;B=q;c[B>>2]=0|f;c[B+4>>2]=j;j=b+140|0;c[j>>2]=0|x;c[j+4>>2]=y;y=b+144|0;s=+g[h+12>>2];j=b+140|0;r=+g[h+16>>2];x=q|0;t=z+(w*s-v*r);q=b+136|0;z=s*v+w*r+A;B=b+148|0;f=(g[k>>2]=t,c[k>>2]|0);C=(g[k>>2]=z,c[k>>2]|0)|0;c[B>>2]=0|f;c[B+4>>2]=C;C=e+28|0;B=b+156|0;f=c[C>>2]|0;D=c[C+4>>2]|0;c[B>>2]=f;c[B+4>>2]=D;B=e+12|0;C=b+164|0;E=c[B>>2]|0;F=c[B+4>>2]|0;c[C>>2]=E;c[C+4>>2]=F;B=e+20|0;G=b+172|0;H=c[B>>2]|0;I=c[B+4>>2]|0;c[G>>2]=H;c[G+4>>2]=I;B=e+36|0;J=b+180|0;K=c[B>>2]|0;L=c[B+4>>2]|0;c[J>>2]=K;c[J+4>>2]=L;J=a[e+44|0]&1;B=J<<24>>24!=0;M=a[e+45|0]|0;e=(M&1)<<24>>24!=0;A=(c[k>>2]=H,+g[k>>2]);r=(c[k>>2]=E,+g[k>>2]);w=A-r;v=(c[k>>2]=I,+g[k>>2]);I=b+168|0;s=(c[k>>2]=F,+g[k>>2]);u=v-s;O=+N(w*w+u*u);P=(c[k>>2]=f,+g[k>>2]);Q=(c[k>>2]=D,+g[k>>2]);R=(c[k>>2]=K,+g[k>>2]);S=(c[k>>2]=L,+g[k>>2]);if(O<1.1920928955078125e-7){T=w;U=u}else{V=1.0/O;T=w*V;U=u*V}L=b+196|0;V=-0.0-T;K=L|0;g[K>>2]=U;D=b+200|0;g[D>>2]=V;u=(t-r)*U+(z-s)*V;if(B){V=r-P;r=s-Q;s=+N(V*V+r*r);if(s<1.1920928955078125e-7){W=V;X=r}else{w=1.0/s;W=V*w;X=r*w}w=-0.0-W;g[b+188>>2]=X;g[b+192>>2]=w;Y=(t-P)*X+(z-Q)*w;Z=U*W-T*X>=0.0}else{Y=0.0;Z=0}L152:do{if(e){X=R-A;W=S-v;w=+N(X*X+W*W);if(w<1.1920928955078125e-7){_=X;$=W}else{Q=1.0/w;_=X*Q;$=W*Q}Q=-0.0-_;f=b+204|0;g[f>>2]=$;F=b+208|0;g[F>>2]=Q;E=T*$-U*_>0.0;W=(t-A)*$+(z-v)*Q;if((J&M)<<24>>24==0){aa=E;ab=W;ac=152;break}if(Z&E){do{if(Y<0.0&u<0.0){H=W>=0.0;a[b+248|0]=H&1;ad=b+212|0;if(H){ae=ad;break}H=ad;ad=(g[k>>2]=-0.0-U,c[k>>2]|0);af=0|ad;ad=(g[k>>2]=T,c[k>>2]|0)|0;c[H>>2]=af;c[H+4>>2]=ad;H=b+228|0;c[H>>2]=af;c[H+4>>2]=ad;H=b+236|0;c[H>>2]=af;c[H+4>>2]=ad;break L152}else{a[b+248|0]=1;ae=b+212|0}}while(0);ad=L;H=ae;af=c[ad+4>>2]|0;c[H>>2]=c[ad>>2]|0;c[H+4>>2]=af;af=b+188|0;H=b+228|0;ad=c[af+4>>2]|0;c[H>>2]=c[af>>2]|0;c[H+4>>2]=ad;ad=b+204|0;H=b+236|0;af=c[ad+4>>2]|0;c[H>>2]=c[ad>>2]|0;c[H+4>>2]=af;break}if(Z){do{if(Y<0.0){if(u<0.0){a[b+248|0]=0;ag=b+212|0}else{af=W>=0.0;a[b+248|0]=af&1;H=b+212|0;if(af){ah=H;break}else{ag=H}}H=ag;af=(g[k>>2]=-0.0-U,c[k>>2]|0);ad=(g[k>>2]=T,c[k>>2]|0)|0;c[H>>2]=0|af;c[H+4>>2]=ad;Q=-0.0- +g[F>>2];ad=b+228|0;H=(g[k>>2]=-0.0- +g[f>>2],c[k>>2]|0);af=(g[k>>2]=Q,c[k>>2]|0)|0;c[ad>>2]=0|H;c[ad+4>>2]=af;Q=-0.0- +g[D>>2];af=b+236|0;ad=(g[k>>2]=-0.0- +g[K>>2],c[k>>2]|0);H=(g[k>>2]=Q,c[k>>2]|0)|0;c[af>>2]=0|ad;c[af+4>>2]=H;break L152}else{a[b+248|0]=1;ah=b+212|0}}while(0);H=L;af=ah;ad=c[H+4>>2]|0;c[af>>2]=c[H>>2]|0;c[af+4>>2]=ad;ad=b+188|0;af=b+228|0;ai=c[ad+4>>2]|0;c[af>>2]=c[ad>>2]|0;c[af+4>>2]=ai;ai=b+236|0;af=c[H+4>>2]|0;c[ai>>2]=c[H>>2]|0;c[ai+4>>2]=af;break}if(!E){do{if(Y<0.0|u<0.0){a[b+248|0]=0;aj=b+212|0}else{af=W>=0.0;a[b+248|0]=af&1;ai=b+212|0;if(!af){aj=ai;break}af=L;H=ai;ai=c[af>>2]|0;ad=c[af+4>>2]|0;c[H>>2]=ai;c[H+4>>2]=ad;H=b+228|0;c[H>>2]=ai;c[H+4>>2]=ad;H=b+236|0;c[H>>2]=ai;c[H+4>>2]=ad;break L152}}while(0);E=aj;ad=(g[k>>2]=-0.0-U,c[k>>2]|0);H=(g[k>>2]=T,c[k>>2]|0)|0;c[E>>2]=0|ad;c[E+4>>2]=H;Q=-0.0- +g[F>>2];H=b+228|0;E=(g[k>>2]=-0.0- +g[f>>2],c[k>>2]|0);ad=(g[k>>2]=Q,c[k>>2]|0)|0;c[H>>2]=0|E;c[H+4>>2]=ad;Q=-0.0- +g[b+192>>2];ad=b+236|0;H=(g[k>>2]=-0.0- +g[b+188>>2],c[k>>2]|0);E=(g[k>>2]=Q,c[k>>2]|0)|0;c[ad>>2]=0|H;c[ad+4>>2]=E;break}do{if(W<0.0){if(Y<0.0){a[b+248|0]=0;ak=b+212|0}else{E=u>=0.0;a[b+248|0]=E&1;ad=b+212|0;if(E){al=ad;break}else{ak=ad}}ad=ak;E=(g[k>>2]=-0.0-U,c[k>>2]|0);H=(g[k>>2]=T,c[k>>2]|0)|0;c[ad>>2]=0|E;c[ad+4>>2]=H;Q=-0.0- +g[D>>2];H=b+228|0;ad=(g[k>>2]=-0.0- +g[K>>2],c[k>>2]|0);E=(g[k>>2]=Q,c[k>>2]|0)|0;c[H>>2]=0|ad;c[H+4>>2]=E;Q=-0.0- +g[b+192>>2];E=b+236|0;H=(g[k>>2]=-0.0- +g[b+188>>2],c[k>>2]|0);ad=(g[k>>2]=Q,c[k>>2]|0)|0;c[E>>2]=0|H;c[E+4>>2]=ad;break L152}else{a[b+248|0]=1;al=b+212|0}}while(0);f=L;F=al;ad=c[f+4>>2]|0;c[F>>2]=c[f>>2]|0;c[F+4>>2]=ad;ad=b+228|0;F=c[f+4>>2]|0;c[ad>>2]=c[f>>2]|0;c[ad+4>>2]=F;F=b+204|0;ad=b+236|0;f=c[F+4>>2]|0;c[ad>>2]=c[F>>2]|0;c[ad+4>>2]=f;break}else{aa=0;ab=0.0;ac=152}}while(0);L193:do{if((ac|0)==152){if(B){al=Y>=0.0;if(Z){do{if(al){a[b+248|0]=1;am=b+212|0}else{ak=u>=0.0;a[b+248|0]=ak&1;aj=b+212|0;if(ak){am=aj;break}ak=aj;aj=(g[k>>2]=-0.0-U,c[k>>2]|0);ah=0;ag=(g[k>>2]=T,c[k>>2]|0);c[ak>>2]=ah|aj;c[ak+4>>2]=ag|0;ak=L;aj=b+228|0;ae=c[ak>>2]|0;M=c[ak+4>>2]|0;c[aj>>2]=ae;c[aj+4>>2]=M;M=b+236|0;c[M>>2]=ah|(g[k>>2]=-0.0-(c[k>>2]=ae,+g[k>>2]),c[k>>2]|0);c[M+4>>2]=ag|0;break L193}}while(0);ag=L;M=am;ae=c[ag+4>>2]|0;c[M>>2]=c[ag>>2]|0;c[M+4>>2]=ae;ae=b+188|0;M=b+228|0;ag=c[ae+4>>2]|0;c[M>>2]=c[ae>>2]|0;c[M+4>>2]=ag;v=-0.0- +g[D>>2];ag=b+236|0;M=(g[k>>2]=-0.0- +g[K>>2],c[k>>2]|0);ae=(g[k>>2]=v,c[k>>2]|0)|0;c[ag>>2]=0|M;c[ag+4>>2]=ae;break}else{do{if(al){ae=u>=0.0;a[b+248|0]=ae&1;ag=b+212|0;if(!ae){an=ag;break}ae=L;M=ag;ag=c[ae>>2]|0;ah=c[ae+4>>2]|0;c[M>>2]=ag;c[M+4>>2]=ah;M=b+228|0;c[M>>2]=ag;c[M+4>>2]=ah;ah=b+236|0;M=(g[k>>2]=-0.0-(c[k>>2]=ag,+g[k>>2]),c[k>>2]|0);ag=(g[k>>2]=T,c[k>>2]|0)|0;c[ah>>2]=0|M;c[ah+4>>2]=ag;break L193}else{a[b+248|0]=0;an=b+212|0}}while(0);al=an;ag=(g[k>>2]=-0.0-U,c[k>>2]|0);ah=(g[k>>2]=T,c[k>>2]|0)|0;c[al>>2]=0|ag;c[al+4>>2]=ah;ah=L;al=b+228|0;ag=c[ah+4>>2]|0;c[al>>2]=c[ah>>2]|0;c[al+4>>2]=ag;v=-0.0- +g[b+192>>2];ag=b+236|0;al=(g[k>>2]=-0.0- +g[b+188>>2],c[k>>2]|0);ah=(g[k>>2]=v,c[k>>2]|0)|0;c[ag>>2]=0|al;c[ag+4>>2]=ah;break}}ah=u>=0.0;if(!e){a[b+248|0]=ah&1;ag=b+212|0;if(ah){al=L;M=ag;ae=c[al>>2]|0;aj=c[al+4>>2]|0;c[M>>2]=ae;c[M+4>>2]=aj;aj=b+228|0;M=(g[k>>2]=-0.0-(c[k>>2]=ae,+g[k>>2]),c[k>>2]|0);ae=0|M;M=(g[k>>2]=T,c[k>>2]|0)|0;c[aj>>2]=ae;c[aj+4>>2]=M;aj=b+236|0;c[aj>>2]=ae;c[aj+4>>2]=M;break}else{M=ag;ag=(g[k>>2]=-0.0-U,c[k>>2]|0);aj=(g[k>>2]=T,c[k>>2]|0)|0;c[M>>2]=0|ag;c[M+4>>2]=aj;aj=L;M=b+228|0;ag=c[aj>>2]|0;ae=c[aj+4>>2]|0;c[M>>2]=ag;c[M+4>>2]=ae;M=b+236|0;c[M>>2]=ag;c[M+4>>2]=ae;break}}if(aa){do{if(ah){a[b+248|0]=1;ao=b+212|0}else{ae=ab>=0.0;a[b+248|0]=ae&1;M=b+212|0;if(ae){ao=M;break}ae=M;M=(g[k>>2]=-0.0-U,c[k>>2]|0);ag=0|M;M=(g[k>>2]=T,c[k>>2]|0)|0;c[ae>>2]=ag;c[ae+4>>2]=M;ae=b+228|0;c[ae>>2]=ag;c[ae+4>>2]=M;M=L;ae=b+236|0;ag=c[M+4>>2]|0;c[ae>>2]=c[M>>2]|0;c[ae+4>>2]=ag;break L193}}while(0);ag=L;ae=ao;M=c[ag+4>>2]|0;c[ae>>2]=c[ag>>2]|0;c[ae+4>>2]=M;v=-0.0- +g[D>>2];M=b+228|0;ae=(g[k>>2]=-0.0- +g[K>>2],c[k>>2]|0);ag=(g[k>>2]=v,c[k>>2]|0)|0;c[M>>2]=0|ae;c[M+4>>2]=ag;ag=b+204|0;M=b+236|0;ae=c[ag+4>>2]|0;c[M>>2]=c[ag>>2]|0;c[M+4>>2]=ae;break}else{do{if(ah){ae=ab>=0.0;a[b+248|0]=ae&1;M=b+212|0;if(!ae){ap=M;break}ae=L;ag=M;M=c[ae>>2]|0;aj=c[ae+4>>2]|0;c[ag>>2]=M;c[ag+4>>2]=aj;ag=b+228|0;ae=(g[k>>2]=-0.0-(c[k>>2]=M,+g[k>>2]),c[k>>2]|0);al=(g[k>>2]=T,c[k>>2]|0)|0;c[ag>>2]=0|ae;c[ag+4>>2]=al;al=b+236|0;c[al>>2]=M;c[al+4>>2]=aj;break L193}else{a[b+248|0]=0;ap=b+212|0}}while(0);ah=ap;aj=(g[k>>2]=-0.0-U,c[k>>2]|0);al=(g[k>>2]=T,c[k>>2]|0)|0;c[ah>>2]=0|aj;c[ah+4>>2]=al;v=-0.0- +g[b+208>>2];al=b+228|0;ah=(g[k>>2]=-0.0- +g[b+204>>2],c[k>>2]|0);aj=(g[k>>2]=v,c[k>>2]|0)|0;c[al>>2]=0|ah;c[al+4>>2]=aj;aj=L;al=b+236|0;ah=c[aj+4>>2]|0;c[al>>2]=c[aj>>2]|0;c[al+4>>2]=ah;break}}}while(0);ap=h+148|0;ao=b+128|0;c[ao>>2]=c[ap>>2]|0;L231:do{if((c[ap>>2]|0)>0){aa=0;while(1){T=+g[y>>2];U=+g[h+20+(aa<<3)>>2];ab=+g[j>>2];u=+g[h+20+(aa<<3)+4>>2];Y=U*ab+T*u+ +g[q>>2];e=b+(aa<<3)|0;an=(g[k>>2]=+g[x>>2]+(T*U-ab*u),c[k>>2]|0);am=(g[k>>2]=Y,c[k>>2]|0)|0;c[e>>2]=0|an;c[e+4>>2]=am;Y=+g[y>>2];u=+g[h+84+(aa<<3)>>2];ab=+g[j>>2];U=+g[h+84+(aa<<3)+4>>2];am=b+64+(aa<<3)|0;e=(g[k>>2]=Y*u-ab*U,c[k>>2]|0);an=(g[k>>2]=u*ab+Y*U,c[k>>2]|0)|0;c[am>>2]=0|e;c[am+4>>2]=an;an=aa+1|0;if((an|0)<(c[ap>>2]|0)){aa=an}else{break L231}}}}while(0);ap=b+244|0;g[ap>>2]=.019999999552965164;aa=d+60|0;c[aa>>2]=0;an=b+248|0;am=c[ao>>2]|0;L235:do{if((am|0)>0){U=+g[b+164>>2];Y=+g[I>>2];ab=+g[b+212>>2];u=+g[b+216>>2];e=0;T=3.4028234663852886e+38;while(1){v=ab*(+g[b+(e<<3)>>2]-U)+u*(+g[b+(e<<3)+4>>2]-Y);z=v<T?v:T;Z=e+1|0;if((Z|0)==(am|0)){aq=z;break L235}else{e=Z;T=z}}}else{aq=3.4028234663852886e+38}}while(0);if(aq>+g[ap>>2]){i=l;return}be(m,b);am=c[m>>2]|0;do{if((am|0)==0){ac=188}else{T=+g[m+8>>2];if(T>+g[ap>>2]){i=l;return}if(T<=aq*.9800000190734863+.0010000000474974513){ac=188;break}I=c[m+4>>2]|0;e=d+56|0;if((am|0)==1){ar=e;ac=190;break}c[e>>2]=2;e=n;Z=c[C>>2]|0;B=c[C+4>>2]|0;c[e>>2]=Z;c[e+4>>2]=B;e=n+8|0;ah=e;a[e]=0;e=I&255;a[ah+1|0]=e;a[ah+2|0]=0;a[ah+3|0]=1;ah=n+12|0;al=c[G>>2]|0;aj=c[G+4>>2]|0;c[ah>>2]=al;c[ah+4>>2]=aj;ah=n+20|0;M=ah;a[ah]=0;a[M+1|0]=e;a[M+2|0]=0;a[M+3|0]=1;M=I+1|0;ah=(M|0)<(c[ao>>2]|0)?M:0;M=b+(I<<3)|0;ag=c[M>>2]|0;ae=c[M+4>>2]|0;M=b+(ah<<3)|0;ak=c[M>>2]|0;J=c[M+4>>2]|0;M=b+64+(I<<3)|0;f=c[M>>2]|0;ad=c[M+4>>2]|0;T=(c[k>>2]=Z,+g[k>>2]);Y=(c[k>>2]=B,+g[k>>2]);u=(c[k>>2]=al,+g[k>>2]);as=I;at=ah&255;au=f;av=ad;aw=ak;ax=J;ay=ag;az=ae;aA=u;aB=T;aC=(c[k>>2]=aj,+g[k>>2]);aD=Y;aE=e;aF=0;break}}while(0);do{if((ac|0)==188){ar=d+56|0;ac=190;break}}while(0);do{if((ac|0)==190){c[ar>>2]=1;am=c[ao>>2]|0;L254:do{if((am|0)>1){aq=+g[b+216>>2];Y=+g[b+212>>2];m=0;T=Y*+g[b+64>>2]+aq*+g[b+68>>2];e=1;while(1){u=Y*+g[b+64+(e<<3)>>2]+aq*+g[b+64+(e<<3)+4>>2];aj=u<T;ae=aj?e:m;ag=e+1|0;if((ag|0)<(am|0)){m=ae;T=aj?u:T;e=ag}else{aG=ae;break L254}}}else{aG=0}}while(0);e=aG+1|0;m=(e|0)<(am|0)?e:0;e=b+(aG<<3)|0;ae=n;ag=c[e>>2]|0;aj=c[e+4>>2]|0;c[ae>>2]=ag;c[ae+4>>2]=aj;ae=n+8|0;e=ae;a[ae]=0;ae=aG&255;a[e+1|0]=ae;a[e+2|0]=1;a[e+3|0]=0;e=b+(m<<3)|0;J=n+12|0;ak=c[e>>2]|0;ad=c[e+4>>2]|0;c[J>>2]=ak;c[J+4>>2]=ad;J=n+20|0;e=J;a[J]=0;a[e+1|0]=m&255;a[e+2|0]=1;a[e+3|0]=0;e=(a[an]&1)<<24>>24==0;T=(c[k>>2]=ag,+g[k>>2]);aq=(c[k>>2]=aj,+g[k>>2]);Y=(c[k>>2]=ak,+g[k>>2]);u=(c[k>>2]=ad,+g[k>>2]);if(e){e=c[G>>2]|0;ad=c[G+4>>2]|0;ak=c[C>>2]|0;aj=c[C+4>>2]|0;U=-0.0- +g[D>>2];ag=(g[k>>2]=-0.0- +g[K>>2],c[k>>2]|0);as=1;at=0;au=ag;av=(g[k>>2]=U,c[k>>2]|0);aw=ak;ax=aj;ay=e;az=ad;aA=Y;aB=T;aC=u;aD=aq;aE=ae;aF=1;break}else{ad=L;as=0;at=1;au=c[ad>>2]|0;av=c[ad+4>>2]|0;aw=c[G>>2]|0;ax=c[G+4>>2]|0;ay=c[C>>2]|0;az=c[C+4>>2]|0;aA=Y;aB=T;aC=u;aD=aq;aE=ae;aF=1;break}}}while(0);aq=(c[k>>2]=au,+g[k>>2]);u=(c[k>>2]=av,+g[k>>2]);T=(c[k>>2]=ax,+g[k>>2]);Y=(c[k>>2]=ay,+g[k>>2]);U=(c[k>>2]=az,+g[k>>2]);ab=-0.0-aq;z=Y*u+U*ab;v=-0.0-u;$=(c[k>>2]=aw,+g[k>>2])*v+T*aq;T=u*aB+aD*ab-z;A=u*aA+aC*ab-z;if(T>0.0){aH=0}else{aw=o;ax=n;c[aw>>2]=c[ax>>2]|0;c[aw+4>>2]=c[ax+4>>2]|0;c[aw+8>>2]=c[ax+8>>2]|0;aH=1}if(A>0.0){aI=aH}else{ax=o+(aH*12&-1)|0;aw=n+12|0;c[ax>>2]=c[aw>>2]|0;c[ax+4>>2]=c[aw+4>>2]|0;c[ax+8>>2]=c[aw+8>>2]|0;aI=aH+1|0}if(T*A<0.0){z=T/(T-A);aH=o+(aI*12&-1)|0;aw=(g[k>>2]=aB+z*(aA-aB),c[k>>2]|0);ax=(g[k>>2]=aD+z*(aC-aD),c[k>>2]|0)|0;c[aH>>2]=0|aw;c[aH+4>>2]=ax;ax=o+(aI*12&-1)+8|0;aH=ax;a[ax]=as&255;a[aH+1|0]=aE;a[aH+2|0]=0;a[aH+3|0]=1;aJ=aI+1|0}else{aJ=aI}if((aJ|0)<2){i=l;return}aD=+g[o>>2];aC=+g[o+4>>2];z=aD*v+aq*aC-$;aJ=o+12|0;aB=+g[aJ>>2];aA=+g[o+16>>2];A=aB*v+aq*aA-$;if(z>0.0){aK=0}else{aI=p;aH=o;c[aI>>2]=c[aH>>2]|0;c[aI+4>>2]=c[aH+4>>2]|0;c[aI+8>>2]=c[aH+8>>2]|0;aK=1}if(A>0.0){aL=aK}else{aH=p+(aK*12&-1)|0;aI=aJ;c[aH>>2]=c[aI>>2]|0;c[aH+4>>2]=c[aI+4>>2]|0;c[aH+8>>2]=c[aI+8>>2]|0;aL=aK+1|0}if(z*A<0.0){$=z/(z-A);aK=p+(aL*12&-1)|0;aI=(g[k>>2]=aD+$*(aB-aD),c[k>>2]|0);aH=(g[k>>2]=aC+$*(aA-aC),c[k>>2]|0)|0;c[aK>>2]=0|aI;c[aK+4>>2]=aH;aH=p+(aL*12&-1)+8|0;aK=aH;a[aH]=at;a[aK+1|0]=a[(o+8|0)+1|0]|0;a[aK+2|0]=0;a[aK+3|0]=1;aM=aL+1|0}else{aM=aL}if((aM|0)<2){i=l;return}aM=d+40|0;do{if(aF){aL=aM;c[aL>>2]=0|au;c[aL+4>>2]=av|0;aL=d+48|0;c[aL>>2]=0|ay;c[aL+4>>2]=az|0;aC=+g[p>>2];aA=+g[p+4>>2];$=+g[ap>>2];if(aq*(aC-Y)+u*(aA-U)>$){aN=0;aO=$}else{$=aC- +g[x>>2];aC=aA- +g[q>>2];aA=+g[y>>2];aD=+g[j>>2];aL=d;aK=(g[k>>2]=$*aA+aC*aD,c[k>>2]|0);o=(g[k>>2]=aA*aC+$*(-0.0-aD),c[k>>2]|0)|0;c[aL>>2]=0|aK;c[aL+4>>2]=o;c[d+16>>2]=c[p+8>>2]|0;aN=1;aO=+g[ap>>2]}aD=+g[p+12>>2];$=+g[p+16>>2];if(aq*(aD-Y)+u*($-U)>aO){aP=aN;break}aC=aD- +g[x>>2];aD=$- +g[q>>2];$=+g[y>>2];aA=+g[j>>2];o=d+(aN*20&-1)|0;aL=(g[k>>2]=aC*$+aD*aA,c[k>>2]|0);aK=(g[k>>2]=$*aD+aC*(-0.0-aA),c[k>>2]|0)|0;c[o>>2]=0|aL;c[o+4>>2]=aK;c[d+(aN*20&-1)+16>>2]=c[p+20>>2]|0;aP=aN+1|0}else{aK=h+84+(as<<3)|0;o=aM;aL=c[aK+4>>2]|0;c[o>>2]=c[aK>>2]|0;c[o+4>>2]=aL;aL=h+20+(as<<3)|0;o=d+48|0;aK=c[aL+4>>2]|0;c[o>>2]=c[aL>>2]|0;c[o+4>>2]=aK;aA=+g[ap>>2];if(aq*(+g[p>>2]-Y)+u*(+g[p+4>>2]-U)>aA){aQ=0;aR=aA}else{aK=p;o=d;aL=c[aK+4>>2]|0;c[o>>2]=c[aK>>2]|0;c[o+4>>2]=aL;aL=p+8|0;o=aL;aK=d+16|0;at=aK;a[at+2|0]=a[o+3|0]|0;a[at+3|0]=a[o+2|0]|0;a[aK]=a[o+1|0]|0;a[at+1|0]=a[aL]|0;aQ=1;aR=+g[ap>>2]}aL=p+12|0;if(aq*(+g[aL>>2]-Y)+u*(+g[p+16>>2]-U)>aR){aP=aQ;break}at=aL;aL=d+(aQ*20&-1)|0;o=c[at+4>>2]|0;c[aL>>2]=c[at>>2]|0;c[aL+4>>2]=o;o=p+20|0;aL=o;at=d+(aQ*20&-1)+16|0;aK=at;a[aK+2|0]=a[aL+3|0]|0;a[aK+3|0]=a[aL+2|0]|0;a[at]=a[aL+1|0]|0;a[aK+1|0]=a[o]|0;aP=aQ+1|0}}while(0);c[aa>>2]=aP;i=l;return}function be(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,h=0.0,i=0.0,j=0.0,k=0.0,l=0.0,m=0.0,n=0.0,o=0,p=0,q=0,r=0,s=0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0,D=0.0,E=0;d=a|0;c[d>>2]=0;e=a+4|0;c[e>>2]=-1;f=a+8|0;g[f>>2]=-3.4028234663852886e+38;h=+g[b+216>>2];i=+g[b+212>>2];a=c[b+128>>2]|0;if((a|0)<=0){return}j=+g[b+164>>2];k=+g[b+168>>2];l=+g[b+172>>2];m=+g[b+176>>2];n=+g[b+244>>2];o=b+228|0;p=b+232|0;q=b+236|0;r=b+240|0;s=0;t=-3.4028234663852886e+38;while(1){u=+g[b+64+(s<<3)>>2];v=-0.0-u;w=-0.0- +g[b+64+(s<<3)+4>>2];x=+g[b+(s<<3)>>2];y=+g[b+(s<<3)+4>>2];z=(x-j)*v+(y-k)*w;A=(x-l)*v+(y-m)*w;B=z<A?z:A;if(B>n){break}do{if(h*u+i*w<0.0){if((v- +g[o>>2])*i+(w- +g[p>>2])*h>=-.03490658849477768&B>t){C=234;break}else{D=t;break}}else{if((v- +g[q>>2])*i+(w- +g[r>>2])*h>=-.03490658849477768&B>t){C=234;break}else{D=t;break}}}while(0);if((C|0)==234){C=0;c[d>>2]=2;c[e>>2]=s;g[f>>2]=B;D=B}E=s+1|0;if((E|0)<(a|0)){s=E;t=D}else{C=238;break}}if((C|0)==238){return}c[d>>2]=2;c[e>>2]=s;g[f>>2]=B;return}function bf(b,d,e,f,h){b=b|0;d=d|0;e=e|0;f=f|0;h=h|0;var j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0,B=0,C=0,D=0,E=0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0.0,O=0,P=0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0.0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0;j=i;i=i+80|0;l=j|0;m=j+4|0;n=j+8|0;o=j+32|0;p=j+56|0;q=b+60|0;c[q>>2]=0;r=+g[d+8>>2]+ +g[f+8>>2];c[l>>2]=0;s=+bg(l,d,e,f,h);if(s>r){i=j;return}c[m>>2]=0;t=+bg(m,f,h,d,e);if(t>r){i=j;return}if(t>s*.9800000190734863+.0010000000474974513){s=+g[h>>2];t=+g[h+4>>2];u=+g[h+8>>2];v=+g[h+12>>2];w=+g[e>>2];x=+g[e+4>>2];y=+g[e+8>>2];z=+g[e+12>>2];A=c[m>>2]|0;c[b+56>>2]=2;B=f;C=d;D=A;E=1;F=w;G=x;H=y;I=z;J=s;K=t;L=u;M=v}else{v=+g[e>>2];u=+g[e+4>>2];t=+g[e+8>>2];s=+g[e+12>>2];z=+g[h>>2];y=+g[h+4>>2];x=+g[h+8>>2];w=+g[h+12>>2];h=c[l>>2]|0;c[b+56>>2]=1;B=d;C=f;D=h;E=0;F=z;G=y;H=x;I=w;J=v;K=u;L=t;M=s}h=c[C+148>>2]|0;do{if((D|0)>-1){if((c[B+148>>2]|0)>(D|0)){break}else{O=247;break}}else{O=247}}while(0);if((O|0)==247){ay(5243644,151,5249996,5245732)}s=+g[B+84+(D<<3)>>2];t=+g[B+84+(D<<3)+4>>2];u=M*s-L*t;v=L*s+M*t;t=I*u+H*v;s=-0.0-H;w=I*v+u*s;L333:do{if((h|0)>0){O=0;u=3.4028234663852886e+38;f=0;while(1){v=t*+g[C+84+(O<<3)>>2]+w*+g[C+84+(O<<3)+4>>2];d=v<u;l=d?O:f;e=O+1|0;if((e|0)==(h|0)){P=l;break L333}else{O=e;u=d?v:u;f=l}}}else{P=0}}while(0);f=P+1|0;O=(f|0)<(h|0)?f:0;w=+g[C+20+(P<<3)>>2];t=+g[C+20+(P<<3)+4>>2];u=F+(I*w-H*t);v=G+(H*w+I*t);f=n;h=(g[k>>2]=u,c[k>>2]|0);l=(g[k>>2]=v,c[k>>2]|0)|0;c[f>>2]=0|h;c[f+4>>2]=l;l=D&255;f=n+8|0;h=f;a[f]=l;f=P&255;a[h+1|0]=f;a[h+2|0]=1;a[h+3|0]=0;h=n+12|0;t=+g[C+20+(O<<3)>>2];w=+g[C+20+(O<<3)+4>>2];x=F+(I*t-H*w);y=G+(H*t+I*w);C=h;P=(g[k>>2]=x,c[k>>2]|0);d=(g[k>>2]=y,c[k>>2]|0)|0;c[C>>2]=0|P;c[C+4>>2]=d;d=n+20|0;C=d;a[d]=l;a[C+1|0]=O&255;a[C+2|0]=1;a[C+3|0]=0;C=D+1|0;O=(C|0)<(c[B+148>>2]|0)?C:0;C=B+20+(D<<3)|0;D=c[C+4>>2]|0;w=(c[k>>2]=c[C>>2]|0,+g[k>>2]);t=(c[k>>2]=D,+g[k>>2]);D=B+20+(O<<3)|0;B=c[D+4>>2]|0;z=(c[k>>2]=c[D>>2]|0,+g[k>>2]);Q=(c[k>>2]=B,+g[k>>2]);R=z-w;S=Q-t;T=+N(R*R+S*S);if(T<1.1920928955078125e-7){U=R;V=S}else{W=1.0/T;U=R*W;V=S*W}W=M*U-L*V;S=M*V+L*U;R=W*-1.0;T=J+(M*w-L*t);X=K+(L*w+M*t);Y=T*S+X*R;Z=r-(T*W+X*S);X=r+((J+(M*z-L*Q))*W+(K+(L*z+M*Q))*S);M=-0.0-W;L=-0.0-S;K=u*M+v*L-Z;J=x*M+y*L-Z;if(K>0.0){_=0}else{B=o;D=n;c[B>>2]=c[D>>2]|0;c[B+4>>2]=c[D+4>>2]|0;c[B+8>>2]=c[D+8>>2]|0;_=1}if(J>0.0){$=_}else{D=o+(_*12&-1)|0;B=h;c[D>>2]=c[B>>2]|0;c[D+4>>2]=c[B+4>>2]|0;c[D+8>>2]=c[B+8>>2]|0;$=_+1|0}if(K*J<0.0){Z=K/(K-J);_=o+($*12&-1)|0;B=(g[k>>2]=u+Z*(x-u),c[k>>2]|0);D=(g[k>>2]=v+Z*(y-v),c[k>>2]|0)|0;c[_>>2]=0|B;c[_+4>>2]=D;D=o+($*12&-1)+8|0;_=D;a[D]=l;a[_+1|0]=f;a[_+2|0]=0;a[_+3|0]=1;aa=$+1|0}else{aa=$}if((aa|0)<2){i=j;return}v=+g[o>>2];y=+g[o+4>>2];Z=W*v+S*y-X;aa=o+12|0;u=+g[aa>>2];x=+g[o+16>>2];J=W*u+S*x-X;if(Z>0.0){ab=0}else{$=p;_=o;c[$>>2]=c[_>>2]|0;c[$+4>>2]=c[_+4>>2]|0;c[$+8>>2]=c[_+8>>2]|0;ab=1}if(J>0.0){ac=ab}else{_=p+(ab*12&-1)|0;$=aa;c[_>>2]=c[$>>2]|0;c[_+4>>2]=c[$+4>>2]|0;c[_+8>>2]=c[$+8>>2]|0;ac=ab+1|0}if(Z*J<0.0){X=Z/(Z-J);ab=p+(ac*12&-1)|0;$=(g[k>>2]=v+X*(u-v),c[k>>2]|0);_=(g[k>>2]=y+X*(x-y),c[k>>2]|0)|0;c[ab>>2]=0|$;c[ab+4>>2]=_;_=p+(ac*12&-1)+8|0;ab=_;a[_]=O&255;a[ab+1|0]=a[(o+8|0)+1|0]|0;a[ab+2|0]=0;a[ab+3|0]=1;ad=ac+1|0}else{ad=ac}if((ad|0)<2){i=j;return}ad=b+40|0;ac=(g[k>>2]=V,c[k>>2]|0);ab=(g[k>>2]=U*-1.0,c[k>>2]|0)|0;c[ad>>2]=0|ac;c[ad+4>>2]=ab;ab=b+48|0;ad=(g[k>>2]=(w+z)*.5,c[k>>2]|0);ac=(g[k>>2]=(t+Q)*.5,c[k>>2]|0)|0;c[ab>>2]=0|ad;c[ab+4>>2]=ac;Q=+g[p>>2];t=+g[p+4>>2];ac=S*Q+R*t-Y>r;do{if(E<<24>>24==0){if(ac){ae=0}else{z=Q-F;w=t-G;ab=b;ad=(g[k>>2]=I*z+H*w,c[k>>2]|0);o=(g[k>>2]=z*s+I*w,c[k>>2]|0)|0;c[ab>>2]=0|ad;c[ab+4>>2]=o;c[b+16>>2]=c[p+8>>2]|0;ae=1}w=+g[p+12>>2];z=+g[p+16>>2];if(S*w+R*z-Y>r){af=ae;break}U=w-F;w=z-G;o=b+(ae*20&-1)|0;ab=(g[k>>2]=I*U+H*w,c[k>>2]|0);ad=(g[k>>2]=U*s+I*w,c[k>>2]|0)|0;c[o>>2]=0|ab;c[o+4>>2]=ad;c[b+(ae*20&-1)+16>>2]=c[p+20>>2]|0;af=ae+1|0}else{if(ac){ag=0}else{w=Q-F;U=t-G;ad=b;o=(g[k>>2]=I*w+H*U,c[k>>2]|0);ab=(g[k>>2]=w*s+I*U,c[k>>2]|0)|0;c[ad>>2]=0|o;c[ad+4>>2]=ab;ab=b+16|0;ad=c[p+8>>2]|0;c[ab>>2]=ad;o=ab;a[ab]=ad>>>8&255;a[o+1|0]=ad&255;a[o+2|0]=ad>>>24&255;a[o+3|0]=ad>>>16&255;ag=1}U=+g[p+12>>2];w=+g[p+16>>2];if(S*U+R*w-Y>r){af=ag;break}z=U-F;U=w-G;ad=b+(ag*20&-1)|0;o=(g[k>>2]=I*z+H*U,c[k>>2]|0);ab=(g[k>>2]=z*s+I*U,c[k>>2]|0)|0;c[ad>>2]=0|o;c[ad+4>>2]=ab;ab=b+(ag*20&-1)+16|0;ad=c[p+20>>2]|0;c[ab>>2]=ad;o=ab;a[ab]=ad>>>8&255;a[o+1|0]=ad&255;a[o+2|0]=ad>>>24&255;a[o+3|0]=ad>>>16&255;af=ag+1|0}}while(0);c[q>>2]=af;i=j;return}function bg(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0.0,j=0.0,k=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0,t=0,u=0,v=0,w=0,x=0,y=0.0,z=0,A=0.0,B=0;h=c[b+148>>2]|0;i=+g[f+12>>2];j=+g[e+12>>2];k=+g[f+8>>2];l=+g[e+16>>2];m=+g[d+12>>2];n=+g[b+12>>2];o=+g[d+8>>2];p=+g[b+16>>2];q=+g[f>>2]+(i*j-k*l)-(+g[d>>2]+(m*n-o*p));r=j*k+i*l+ +g[f+4>>2]-(n*o+m*p+ +g[d+4>>2]);p=m*q+o*r;n=m*r+q*(-0.0-o);L378:do{if((h|0)>0){s=0;o=-3.4028234663852886e+38;t=0;while(1){q=p*+g[b+84+(s<<3)>>2]+n*+g[b+84+(s<<3)+4>>2];u=q>o;v=u?s:t;w=s+1|0;if((w|0)==(h|0)){x=v;break L378}else{s=w;o=u?q:o;t=v}}}else{x=0}}while(0);n=+bh(b,d,x,e,f);t=((x|0)>0?x:h)-1|0;p=+bh(b,d,t,e,f);s=x+1|0;v=(s|0)<(h|0)?s:0;o=+bh(b,d,v,e,f);if(p>n&p>o){q=p;s=t;while(1){t=((s|0)>0?s:h)-1|0;p=+bh(b,d,t,e,f);if(p>q){q=p;s=t}else{y=q;z=s;break}}c[a>>2]=z;return+y}if(o>n){A=o;B=v}else{y=n;z=x;c[a>>2]=z;return+y}while(1){x=B+1|0;v=(x|0)<(h|0)?x:0;n=+bh(b,d,v,e,f);if(n>A){A=n;B=v}else{y=A;z=B;break}}c[a>>2]=z;return+y}function bh(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0.0,k=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0,t=0.0,u=0,v=0,w=0,x=0;h=c[e+148>>2]|0;do{if((d|0)>-1){if((c[a+148>>2]|0)>(d|0)){break}else{i=294;break}}else{i=294}}while(0);if((i|0)==294){ay(5243644,32,5250136,5245732)}j=+g[b+12>>2];k=+g[a+84+(d<<3)>>2];l=+g[b+8>>2];m=+g[a+84+(d<<3)+4>>2];n=j*k-l*m;o=k*l+j*m;m=+g[f+12>>2];k=+g[f+8>>2];p=m*n+k*o;q=m*o+n*(-0.0-k);L398:do{if((h|0)>0){i=0;r=3.4028234663852886e+38;s=0;while(1){t=p*+g[e+20+(i<<3)>>2]+q*+g[e+20+(i<<3)+4>>2];u=t<r;v=u?i:s;w=i+1|0;if((w|0)==(h|0)){x=v;break L398}else{i=w;r=u?t:r;s=v}}}else{x=0}}while(0);q=+g[a+20+(d<<3)>>2];p=+g[a+20+(d<<3)+4>>2];r=+g[e+20+(x<<3)>>2];t=+g[e+20+(x<<3)+4>>2];return+(n*(+g[f>>2]+(m*r-k*t)-(+g[b>>2]+(j*q-l*p)))+o*(r*k+m*t+ +g[f+4>>2]-(q*l+j*p+ +g[b+4>>2])))}function bi(a,b,d,e,f,h){a=a|0;b=b|0;d=d|0;e=+e;f=f|0;h=+h;var i=0,j=0,l=0,m=0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0,u=0.0,v=0,w=0,x=0,y=0.0,z=0.0,A=0.0,B=0.0,C=0,D=0,E=0,F=0,G=0,H=0.0,I=0.0;i=b+60|0;if((c[i>>2]|0)==0){return}j=c[b+56>>2]|0;if((j|0)==0){l=a|0;g[l>>2]=1.0;m=a+4|0;g[m>>2]=0.0;n=+g[d+12>>2];o=+g[b+48>>2];p=+g[d+8>>2];q=+g[b+52>>2];r=+g[d>>2]+(n*o-p*q);s=o*p+n*q+ +g[d+4>>2];q=+g[f+12>>2];n=+g[b>>2];p=+g[f+8>>2];o=+g[b+4>>2];t=+g[f>>2]+(q*n-p*o);u=n*p+q*o+ +g[f+4>>2];o=r-t;q=s-u;do{if(o*o+q*q>1.4210854715202004e-14){p=t-r;n=u-s;v=a;w=(g[k>>2]=p,c[k>>2]|0);x=(g[k>>2]=n,c[k>>2]|0)|0;c[v>>2]=0|w;c[v+4>>2]=x;y=+N(p*p+n*n);if(y<1.1920928955078125e-7){z=p;A=n;break}B=1.0/y;y=p*B;g[l>>2]=y;p=n*B;g[m>>2]=p;z=y;A=p}else{z=1.0;A=0.0}}while(0);m=a+8|0;l=(g[k>>2]=(r+z*e+(t-z*h))*.5,c[k>>2]|0);x=(g[k>>2]=(s+A*e+(u-A*h))*.5,c[k>>2]|0)|0;c[m>>2]=0|l;c[m+4>>2]=x;return}else if((j|0)==1){x=d+12|0;A=+g[x>>2];u=+g[b+40>>2];m=d+8|0;s=+g[m>>2];z=+g[b+44>>2];t=A*u-s*z;r=u*s+A*z;l=a;v=(g[k>>2]=t,c[k>>2]|0);w=(g[k>>2]=r,c[k>>2]|0)|0;c[l>>2]=0|v;c[l+4>>2]=w;z=+g[x>>2];A=+g[b+48>>2];s=+g[m>>2];u=+g[b+52>>2];q=+g[d>>2]+(z*A-s*u);o=A*s+z*u+ +g[d+4>>2];if((c[i>>2]|0)<=0){return}m=f+12|0;x=f+8|0;w=f|0;l=f+4|0;v=a|0;C=a+4|0;D=0;u=t;t=r;while(1){r=+g[m>>2];z=+g[b+(D*20&-1)>>2];s=+g[x>>2];A=+g[b+(D*20&-1)+4>>2];p=+g[w>>2]+(r*z-s*A);y=z*s+r*A+ +g[l>>2];A=e-(u*(p-q)+(y-o)*t);E=a+8+(D<<3)|0;F=(g[k>>2]=(p-u*h+(p+u*A))*.5,c[k>>2]|0);G=(g[k>>2]=(y-t*h+(y+t*A))*.5,c[k>>2]|0)|0;c[E>>2]=0|F;c[E+4>>2]=G;G=D+1|0;if((G|0)>=(c[i>>2]|0)){break}D=G;u=+g[v>>2];t=+g[C>>2]}return}else if((j|0)==2){j=f+12|0;t=+g[j>>2];u=+g[b+40>>2];C=f+8|0;o=+g[C>>2];q=+g[b+44>>2];A=t*u-o*q;y=u*o+t*q;v=a;D=(g[k>>2]=A,c[k>>2]|0);l=(g[k>>2]=y,c[k>>2]|0)|0;c[v>>2]=0|D;c[v+4>>2]=l;q=+g[j>>2];t=+g[b+48>>2];o=+g[C>>2];u=+g[b+52>>2];p=+g[f>>2]+(q*t-o*u);r=t*o+q*u+ +g[f+4>>2];L422:do{if((c[i>>2]|0)>0){f=d+12|0;C=d+8|0;j=d|0;l=d+4|0;D=a|0;w=a+4|0;x=0;u=A;q=y;while(1){o=+g[f>>2];t=+g[b+(x*20&-1)>>2];s=+g[C>>2];z=+g[b+(x*20&-1)+4>>2];B=+g[j>>2]+(o*t-s*z);n=t*s+o*z+ +g[l>>2];z=h-(u*(B-p)+(n-r)*q);m=a+8+(x<<3)|0;G=(g[k>>2]=(B-u*e+(B+u*z))*.5,c[k>>2]|0);E=(g[k>>2]=(n-q*e+(n+q*z))*.5,c[k>>2]|0)|0;c[m>>2]=0|G;c[m+4>>2]=E;E=x+1|0;z=+g[D>>2];n=+g[w>>2];if((E|0)<(c[i>>2]|0)){x=E;u=z;q=n}else{H=z;I=n;break L422}}}else{H=A;I=y}}while(0);i=(g[k>>2]=-0.0-H,c[k>>2]|0);a=(g[k>>2]=-0.0-I,c[k>>2]|0)|0;c[v>>2]=0|i;c[v+4>>2]=a;return}else{return}}function bj(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,h=0,i=0,j=0,k=0;e=c[b+4>>2]|0;if((e|0)==0){c[a+16>>2]=b+12|0;c[a+20>>2]=1;g[a+24>>2]=+g[b+8>>2];return}else if((e|0)==2){c[a+16>>2]=b+20|0;c[a+20>>2]=c[b+148>>2]|0;g[a+24>>2]=+g[b+8>>2];return}else if((e|0)==3){f=b+16|0;do{if((d|0)>-1){if((c[f>>2]|0)>(d|0)){break}else{h=324;break}}else{h=324}}while(0);if((h|0)==324){ay(5242984,53,5249500,5246360)}h=b+12|0;i=(c[h>>2]|0)+(d<<3)|0;j=a;k=c[i+4>>2]|0;c[j>>2]=c[i>>2]|0;c[j+4>>2]=k;k=d+1|0;d=a+8|0;j=c[h>>2]|0;if((k|0)<(c[f>>2]|0)){f=j+(k<<3)|0;k=d;h=c[f+4>>2]|0;c[k>>2]=c[f>>2]|0;c[k+4>>2]=h}else{h=j;j=d;d=c[h+4>>2]|0;c[j>>2]=c[h>>2]|0;c[j+4>>2]=d}c[a+16>>2]=a|0;c[a+20>>2]=2;g[a+24>>2]=+g[b+8>>2];return}else if((e|0)==1){c[a+16>>2]=b+12|0;c[a+20>>2]=2;g[a+24>>2]=+g[b+8>>2];return}else{ay(5242984,81,5249500,5245872);return}}function bk(a){a=a|0;var b=0,d=0,e=0.0,f=0.0,h=0,i=0.0,j=0.0,l=0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0;b=a+16|0;d=c[b+4>>2]|0;e=(c[k>>2]=c[b>>2]|0,+g[k>>2]);f=(c[k>>2]=d,+g[k>>2]);d=a+36|0;b=a+52|0;h=c[b+4>>2]|0;i=(c[k>>2]=c[b>>2]|0,+g[k>>2]);j=(c[k>>2]=h,+g[k>>2]);h=a+72|0;b=a+88|0;l=c[b+4>>2]|0;m=(c[k>>2]=c[b>>2]|0,+g[k>>2]);n=(c[k>>2]=l,+g[k>>2]);o=i-e;p=j-f;q=e*o+f*p;r=i*o+j*p;s=m-e;t=n-f;u=e*s+f*t;v=m*s+n*t;w=m-i;x=n-j;y=i*w+j*x;z=m*w+n*x;x=o*t-p*s;s=(i*n-j*m)*x;p=(f*m-e*n)*x;n=(e*j-f*i)*x;if(!(q<-0.0|u<-0.0)){g[a+24>>2]=1.0;c[a+108>>2]=1;return}if(!(q>=-0.0|r<=0.0|n>0.0)){x=1.0/(r-q);g[a+24>>2]=r*x;g[a+60>>2]=x*(-0.0-q);c[a+108>>2]=2;return}if(!(u>=-0.0|v<=0.0|p>0.0)){q=1.0/(v-u);g[a+24>>2]=v*q;g[a+96>>2]=q*(-0.0-u);c[a+108>>2]=2;di(d,h,36);return}if(!(r>0.0|y<-0.0)){g[a+60>>2]=1.0;c[a+108>>2]=1;di(a,d,36);return}if(!(v>0.0|z>0.0)){g[a+96>>2]=1.0;c[a+108>>2]=1;di(a,h,36);return}if(y>=-0.0|z<=0.0|s>0.0){v=1.0/(n+(s+p));g[a+24>>2]=s*v;g[a+60>>2]=p*v;g[a+96>>2]=n*v;c[a+108>>2]=3;return}else{v=1.0/(z-y);g[a+60>>2]=z*v;g[a+96>>2]=v*(-0.0-y);c[a+108>>2]=2;di(a,h,36);return}}function bl(d,e,f){d=d|0;e=e|0;f=f|0;var h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,O=0,P=0,Q=0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0,Z=0,_=0,$=0.0,aa=0.0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0,ah=0,ai=0,aj=0,ak=0,al=0,am=0,an=0,ao=0,ap=0,aq=0,ar=0,as=0.0,at=0,au=0,av=0,aw=0,ax=0,az=0,aA=0,aB=0,aC=0,aD=0,aE=0,aF=0.0,aG=0.0,aH=0.0;h=i;i=i+168|0;j=h|0;l=h+16|0;m=h+32|0;n=h+144|0;o=h+156|0;c[1310733]=(c[1310733]|0)+1|0;p=j;q=f+56|0;c[p>>2]=c[q>>2]|0;c[p+4>>2]=c[q+4>>2]|0;c[p+8>>2]=c[q+8>>2]|0;c[p+12>>2]=c[q+12>>2]|0;q=l;p=f+72|0;c[q>>2]=c[p>>2]|0;c[q+4>>2]=c[p+4>>2]|0;c[q+8>>2]=c[p+8>>2]|0;c[q+12>>2]=c[p+12>>2]|0;bm(m,e,f|0,j,f+28|0,l);p=m|0;q=m+108|0;r=c[q>>2]|0;if((r|0)==0){ay(5242984,194,5247088,5245872)}else if(!((r|0)==1|(r|0)==2|(r|0)==3)){ay(5242984,207,5247088,5245872)}r=j+12|0;s=j+8|0;t=f+16|0;u=f+20|0;v=j|0;w=j+4|0;j=l+12|0;x=l+8|0;y=f+44|0;z=f+48|0;A=l|0;B=l+4|0;l=m+16|0;C=m+20|0;D=m+52|0;E=m+56|0;F=m+16|0;G=m+52|0;H=m+24|0;I=m+60|0;J=m;K=m+36|0;L=0;M=c[q>>2]|0;L481:while(1){O=(M|0)>0;L483:do{if(O){P=0;while(1){c[n+(P<<2)>>2]=c[p+(P*36&-1)+28>>2]|0;c[o+(P<<2)>>2]=c[p+(P*36&-1)+32>>2]|0;Q=P+1|0;if((Q|0)==(M|0)){break L483}else{P=Q}}}}while(0);do{if((M|0)==2){P=c[F+4>>2]|0;R=(c[k>>2]=c[F>>2]|0,+g[k>>2]);S=(c[k>>2]=P,+g[k>>2]);P=c[G+4>>2]|0;T=(c[k>>2]=c[G>>2]|0,+g[k>>2]);U=(c[k>>2]=P,+g[k>>2]);V=T-R;W=U-S;X=R*V+S*W;if(X>=-0.0){g[H>>2]=1.0;c[q>>2]=1;Y=377;break}S=T*V+U*W;if(S>0.0){W=1.0/(S-X);g[H>>2]=S*W;g[I>>2]=W*(-0.0-X);c[q>>2]=2;Y=378;break}else{g[I>>2]=1.0;c[q>>2]=1;di(J,K,36);Y=372;break}}else if((M|0)==3){bk(m);Y=372;break}else if((M|0)==1){Y=375}else{ay(5242984,498,5250444,5245872);Y=372;break}}while(0);do{if((Y|0)==372){Y=0;P=c[q>>2]|0;if((P|0)==0){ay(5242984,194,5247088,5245872);Y=375;break}else if((P|0)==1|(P|0)==2){Z=P;Y=376;break}else if((P|0)==3){_=L;break L481}else{ay(5242984,207,5247088,5245872);Y=375;break}}}while(0);do{if((Y|0)==375){Y=0;Z=c[q>>2]|0;Y=376;break}}while(0);do{if((Y|0)==376){Y=0;if((Z|0)==1){Y=377;break}else if((Z|0)==2){Y=378;break}ay(5242984,184,5246980,5245872);P=5242944;Q=c[P+4>>2]|0;X=(c[k>>2]=c[P>>2]|0,+g[k>>2]);$=X;aa=(c[k>>2]=Q,+g[k>>2]);break}}while(0);do{if((Y|0)==377){Y=0;$=-0.0- +g[l>>2];aa=-0.0- +g[C>>2]}else if((Y|0)==378){Y=0;X=+g[l>>2];W=+g[D>>2]-X;S=+g[C>>2];U=+g[E>>2]-S;if(W*(-0.0-S)-U*(-0.0-X)>0.0){$=U*-1.0;aa=W;break}else{$=U;aa=W*-1.0;break}}}while(0);if(aa*aa+$*$<1.4210854715202004e-14){_=L;break}Q=c[q>>2]|0;P=p+(Q*36&-1)|0;W=-0.0-aa;U=+g[r>>2];X=+g[s>>2];S=U*(-0.0-$)+X*W;V=U*W+$*X;ab=c[t>>2]|0;ac=c[u>>2]|0;do{if((ac|0)>1){W=V*+g[ab+4>>2]+S*+g[ab>>2];ad=1;ae=0;while(1){T=S*+g[ab+(ad<<3)>>2]+V*+g[ab+(ad<<3)+4>>2];af=T>W;ag=af?ad:ae;ah=ad+1|0;if((ah|0)==(ac|0)){break}else{W=af?T:W;ad=ah;ae=ag}}ae=p+(Q*36&-1)+28|0;c[ae>>2]=ag;ad=P|0;if((ag|0)>-1){ai=ag;aj=ae;ak=ad;Y=388;break}else{al=ag;am=ae;an=ad;Y=389;break}}else{ad=p+(Q*36&-1)+28|0;c[ad>>2]=0;ai=0;aj=ad;ak=P|0;Y=388;break}}while(0);do{if((Y|0)==388){Y=0;if((ac|0)>(ai|0)){ao=ai;ap=aj;aq=ak;ar=ab;break}else{al=ai;am=aj;an=ak;Y=389;break}}}while(0);if((Y|0)==389){Y=0;ay(5244292,103,5247284,5243996);ao=al;ap=am;aq=an;ar=c[t>>2]|0}V=+g[ar+(ao<<3)>>2];S=+g[ar+(ao<<3)+4>>2];W=V*X+U*S+ +g[w>>2];ab=P;ac=(g[k>>2]=+g[v>>2]+(U*V-X*S),c[k>>2]|0);ad=(g[k>>2]=W,c[k>>2]|0)|0;c[ab>>2]=0|ac;c[ab+4>>2]=ad;W=+g[j>>2];S=+g[x>>2];V=$*W+aa*S;T=aa*W+$*(-0.0-S);ad=c[y>>2]|0;ab=c[z>>2]|0;do{if((ab|0)>1){R=T*+g[ad+4>>2]+V*+g[ad>>2];ac=1;ae=0;while(1){as=V*+g[ad+(ac<<3)>>2]+T*+g[ad+(ac<<3)+4>>2];ah=as>R;at=ah?ac:ae;af=ac+1|0;if((af|0)==(ab|0)){break}else{R=ah?as:R;ac=af;ae=at}}ae=p+(Q*36&-1)+32|0;c[ae>>2]=at;ac=p+(Q*36&-1)+8|0;if((at|0)>-1){au=at;av=ae;aw=ac;Y=395;break}else{ax=at;az=ae;aA=ac;Y=396;break}}else{ac=p+(Q*36&-1)+32|0;c[ac>>2]=0;au=0;av=ac;aw=p+(Q*36&-1)+8|0;Y=395;break}}while(0);do{if((Y|0)==395){Y=0;if((ab|0)>(au|0)){aB=au;aC=av;aD=aw;aE=ad;break}else{ax=au;az=av;aA=aw;Y=396;break}}}while(0);if((Y|0)==396){Y=0;ay(5244292,103,5247284,5243996);aB=ax;aC=az;aD=aA;aE=c[y>>2]|0}T=+g[aE+(aB<<3)>>2];V=+g[aE+(aB<<3)+4>>2];X=+g[A>>2]+(W*T-S*V);U=T*S+W*V+ +g[B>>2];ad=aD;ab=(g[k>>2]=X,c[k>>2]|0);P=(g[k>>2]=U,c[k>>2]|0)|0;c[ad>>2]=0|ab;c[ad+4>>2]=P;V=U- +g[aq+4>>2];P=p+(Q*36&-1)+16|0;ad=(g[k>>2]=X- +g[aq>>2],c[k>>2]|0);ab=(g[k>>2]=V,c[k>>2]|0)|0;c[P>>2]=0|ad;c[P+4>>2]=ab;ab=L+1|0;c[1310732]=(c[1310732]|0)+1|0;L537:do{if(O){P=c[ap>>2]|0;ad=0;while(1){if((P|0)==(c[n+(ad<<2)>>2]|0)){if((c[aC>>2]|0)==(c[o+(ad<<2)>>2]|0)){_=ab;break L481}}ac=ad+1|0;if((ac|0)<(M|0)){ad=ac}else{break L537}}}}while(0);O=(c[q>>2]|0)+1|0;c[q>>2]=O;if((ab|0)<20){L=ab;M=O}else{_=ab;break}}M=c[1310731]|0;c[1310731]=(M|0)>(_|0)?M:_;M=d+8|0;bn(m,d|0,M);L=d|0;o=M|0;$=+g[L>>2]- +g[o>>2];aC=d+4|0;n=d+12|0;aa=+g[aC>>2]- +g[n>>2];ap=d+16|0;g[ap>>2]=+N($*$+aa*aa);c[d+20>>2]=_;_=c[q>>2]|0;if((_|0)==0){ay(5242984,246,5246940,5245872);aF=0.0}else if((_|0)==2){aa=+g[l>>2]- +g[D>>2];$=+g[C>>2]- +g[E>>2];aF=+N(aa*aa+$*$)}else if((_|0)==3){$=+g[l>>2];aa=+g[C>>2];aF=(+g[D>>2]-$)*(+g[m+92>>2]-aa)-(+g[E>>2]-aa)*(+g[m+88>>2]-$)}else if((_|0)==1){aF=0.0}else{ay(5242984,259,5246940,5245872);aF=0.0}g[e>>2]=aF;_=c[q>>2]|0;b[e+4>>1]=_&65535;L552:do{if((_|0)>0){q=0;while(1){a[q+(e+6)|0]=c[p+(q*36&-1)+28>>2]&255;a[q+(e+9)|0]=c[p+(q*36&-1)+32>>2]&255;m=q+1|0;if((m|0)<(_|0)){q=m}else{break L552}}}}while(0);if((a[f+88|0]&1)<<24>>24==0){i=h;return}aF=+g[f+24>>2];$=+g[f+52>>2];aa=+g[ap>>2];W=aF+$;if(!(aa>W&aa>1.1920928955078125e-7)){S=(+g[aC>>2]+ +g[n>>2])*.5;f=d;d=(g[k>>2]=(+g[L>>2]+ +g[o>>2])*.5,c[k>>2]|0);_=0|d;d=(g[k>>2]=S,c[k>>2]|0)|0;c[f>>2]=_;c[f+4>>2]=d;f=M;c[f>>2]=_;c[f+4>>2]=d;g[ap>>2]=0.0;i=h;return}g[ap>>2]=aa-W;W=+g[o>>2];aa=+g[L>>2];S=W-aa;V=+g[n>>2];X=+g[aC>>2];U=V-X;T=+N(S*S+U*U);if(T<1.1920928955078125e-7){aG=S;aH=U}else{R=1.0/T;aG=S*R;aH=U*R}g[L>>2]=aF*aG+aa;g[aC>>2]=aF*aH+X;g[o>>2]=W-$*aG;g[n>>2]=V-$*aH;i=h;return}function bm(a,e,f,h,i,j){a=a|0;e=e|0;f=f|0;h=h|0;i=i|0;j=j|0;var l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0.0,J=0.0,K=0,L=0.0,M=0.0,O=0.0,P=0.0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0;l=e+4|0;m=b[l>>1]|0;if((m&65535)<4){n=m}else{ay(5242984,102,5247692,5243624);n=b[l>>1]|0}l=n&65535;m=a+108|0;c[m>>2]=l;o=a|0;L571:do{if(n<<16>>16==0){p=l}else{q=f+20|0;r=f+16|0;s=i+20|0;t=i+16|0;u=h+12|0;v=h+8|0;w=h|0;x=h+4|0;y=j+12|0;z=j+8|0;A=j|0;B=j+4|0;C=0;while(1){D=o+(C*36&-1)|0;E=d[C+(e+6)|0]|0;c[o+(C*36&-1)+28>>2]=E;F=d[C+(e+9)|0]|0;G=o+(C*36&-1)+32|0;c[G>>2]=F;if((c[q>>2]|0)>(E|0)){H=F}else{ay(5244292,103,5247284,5243996);H=c[G>>2]|0}G=(c[r>>2]|0)+(E<<3)|0;E=c[G+4>>2]|0;I=(c[k>>2]=c[G>>2]|0,+g[k>>2]);J=(c[k>>2]=E,+g[k>>2]);do{if((H|0)>-1){if((c[s>>2]|0)>(H|0)){break}else{K=428;break}}else{K=428}}while(0);if((K|0)==428){K=0;ay(5244292,103,5247284,5243996)}E=(c[t>>2]|0)+(H<<3)|0;G=c[E+4>>2]|0;L=(c[k>>2]=c[E>>2]|0,+g[k>>2]);M=(c[k>>2]=G,+g[k>>2]);O=+g[u>>2];P=+g[v>>2];Q=+g[w>>2]+(I*O-J*P);R=J*O+I*P+ +g[x>>2];G=D;E=(g[k>>2]=Q,c[k>>2]|0);F=(g[k>>2]=R,c[k>>2]|0)|0;c[G>>2]=0|E;c[G+4>>2]=F;R=+g[y>>2];P=+g[z>>2];O=+g[A>>2]+(L*R-M*P);S=M*R+L*P+ +g[B>>2];F=o+(C*36&-1)+8|0;G=(g[k>>2]=O,c[k>>2]|0);E=(g[k>>2]=S,c[k>>2]|0)|0;c[F>>2]=0|G;c[F+4>>2]=E;S=+g[o+(C*36&-1)+12>>2]- +g[o+(C*36&-1)+4>>2];E=o+(C*36&-1)+16|0;F=(g[k>>2]=O-Q,c[k>>2]|0);G=(g[k>>2]=S,c[k>>2]|0)|0;c[E>>2]=0|F;c[E+4>>2]=G;g[o+(C*36&-1)+24>>2]=0.0;G=C+1|0;E=c[m>>2]|0;if((G|0)<(E|0)){C=G}else{p=E;break L571}}}}while(0);L584:do{if((p|0)>1){S=+g[e>>2];if((p|0)==3){Q=+g[a+16>>2];O=+g[a+20>>2];T=(+g[a+52>>2]-Q)*(+g[a+92>>2]-O)-(+g[a+56>>2]-O)*(+g[a+88>>2]-Q)}else if((p|0)==2){Q=+g[a+16>>2]- +g[a+52>>2];O=+g[a+20>>2]- +g[a+56>>2];T=+N(Q*Q+O*O)}else{ay(5242984,259,5246940,5245872);T=0.0}do{if(T>=S*.5){if(S*2.0<T|T<1.1920928955078125e-7){break}U=c[m>>2]|0;K=439;break L584}}while(0);c[m>>2]=0;break}else{U=p;K=439}}while(0);do{if((K|0)==439){if((U|0)==0){break}return}}while(0);c[a+28>>2]=0;c[a+32>>2]=0;if((c[f+20>>2]|0)<=0){ay(5244292,103,5247284,5243996)}U=c[f+16>>2]|0;f=c[U+4>>2]|0;T=(c[k>>2]=c[U>>2]|0,+g[k>>2]);S=(c[k>>2]=f,+g[k>>2]);if((c[i+20>>2]|0)<=0){ay(5244292,103,5247284,5243996)}f=c[i+16>>2]|0;i=c[f+4>>2]|0;O=(c[k>>2]=c[f>>2]|0,+g[k>>2]);Q=(c[k>>2]=i,+g[k>>2]);P=+g[h+12>>2];L=+g[h+8>>2];R=+g[h>>2]+(T*P-S*L);M=S*P+T*L+ +g[h+4>>2];h=a;i=(g[k>>2]=R,c[k>>2]|0);f=(g[k>>2]=M,c[k>>2]|0)|0;c[h>>2]=0|i;c[h+4>>2]=f;L=+g[j+12>>2];T=+g[j+8>>2];P=+g[j>>2]+(O*L-Q*T);S=Q*L+O*T+ +g[j+4>>2];j=a+8|0;f=(g[k>>2]=P,c[k>>2]|0);h=(g[k>>2]=S,c[k>>2]|0)|0;c[j>>2]=0|f;c[j+4>>2]=h;h=a+16|0;a=(g[k>>2]=P-R,c[k>>2]|0);j=(g[k>>2]=S-M,c[k>>2]|0)|0;c[h>>2]=0|a;c[h+4>>2]=j;c[m>>2]=1;return}function bn(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,h=0,i=0,j=0.0,l=0.0,m=0.0,n=0,o=0,p=0.0;e=c[a+108>>2]|0;if((e|0)==0){ay(5242984,217,5247028,5245872);return}else if((e|0)==1){f=a;h=b;i=c[f+4>>2]|0;c[h>>2]=c[f>>2]|0;c[h+4>>2]=i;i=a+8|0;h=d;f=c[i+4>>2]|0;c[h>>2]=c[i>>2]|0;c[h+4>>2]=f;return}else if((e|0)==2){f=a+24|0;j=+g[f>>2];h=a+60|0;l=+g[h>>2];m=j*+g[a+4>>2]+l*+g[a+40>>2];i=b;n=(g[k>>2]=j*+g[a>>2]+l*+g[a+36>>2],c[k>>2]|0);o=(g[k>>2]=m,c[k>>2]|0)|0;c[i>>2]=0|n;c[i+4>>2]=o;m=+g[f>>2];l=+g[h>>2];j=m*+g[a+12>>2]+l*+g[a+48>>2];h=d;f=(g[k>>2]=m*+g[a+8>>2]+l*+g[a+44>>2],c[k>>2]|0);o=(g[k>>2]=j,c[k>>2]|0)|0;c[h>>2]=0|f;c[h+4>>2]=o;return}else if((e|0)==3){j=+g[a+24>>2];l=+g[a+60>>2];m=+g[a+96>>2];p=j*+g[a+4>>2]+l*+g[a+40>>2]+m*+g[a+76>>2];e=b;b=(g[k>>2]=j*+g[a>>2]+l*+g[a+36>>2]+m*+g[a+72>>2],c[k>>2]|0);a=0|b;b=(g[k>>2]=p,c[k>>2]|0)|0;c[e>>2]=a;c[e+4>>2]=b;e=d;c[e>>2]=a;c[e+4>>2]=b;return}else{ay(5242984,236,5247028,5245872);return}}function bo(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0;b=a+16|0;d=c[b>>2]|0;if((d|0)==-1){e=a+8|0;f=c[e>>2]|0;g=a+12|0;if((f|0)==(c[g>>2]|0)){h=f}else{ay(5245632,61,5249920,5246308);h=c[g>>2]|0}f=a+4|0;i=c[f>>2]|0;c[g>>2]=h<<1;j=de(h*72&-1)|0;c[f>>2]=j;h=i;di(j,h,(c[e>>2]|0)*36&-1);df(h);h=c[e>>2]|0;j=(c[g>>2]|0)-1|0;L625:do{if((h|0)<(j|0)){i=h;while(1){k=i+1|0;c[(c[f>>2]|0)+(i*36&-1)+20>>2]=k;c[(c[f>>2]|0)+(i*36&-1)+32>>2]=-1;l=(c[g>>2]|0)-1|0;if((k|0)<(l|0)){i=k}else{m=l;break L625}}}else{m=j}}while(0);c[(c[f>>2]|0)+(m*36&-1)+20>>2]=-1;c[(c[f>>2]|0)+(((c[g>>2]|0)-1|0)*36&-1)+32>>2]=-1;g=c[e>>2]|0;c[b>>2]=g;n=g;o=f;p=e}else{n=d;o=a+4|0;p=a+8|0}a=(c[o>>2]|0)+(n*36&-1)+20|0;c[b>>2]=c[a>>2]|0;c[a>>2]=-1;c[(c[o>>2]|0)+(n*36&-1)+24>>2]=-1;c[(c[o>>2]|0)+(n*36&-1)+28>>2]=-1;c[(c[o>>2]|0)+(n*36&-1)+32>>2]=0;c[(c[o>>2]|0)+(n*36&-1)+16>>2]=0;c[p>>2]=(c[p>>2]|0)+1|0;return n|0}function bp(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,h=0,i=0.0,j=0.0,l=0.0,m=0.0,n=0,o=0,p=0,q=0,r=0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0.0,D=0.0,E=0.0,F=0,G=0;d=a+24|0;c[d>>2]=(c[d>>2]|0)+1|0;d=a|0;e=c[d>>2]|0;if((e|0)==-1){c[d>>2]=b;c[(c[a+4>>2]|0)+(b*36&-1)+20>>2]=-1;return}f=a+4|0;h=c[f>>2]|0;i=+g[h+(b*36&-1)>>2];j=+g[h+(b*36&-1)+4>>2];l=+g[h+(b*36&-1)+8>>2];m=+g[h+(b*36&-1)+12>>2];n=c[h+(e*36&-1)+24>>2]|0;L635:do{if((n|0)==-1){o=e}else{p=e;q=n;while(1){r=c[h+(p*36&-1)+28>>2]|0;s=+g[h+(p*36&-1)+8>>2];t=+g[h+(p*36&-1)>>2];u=+g[h+(p*36&-1)+12>>2];v=+g[h+(p*36&-1)+4>>2];w=((s>l?s:l)-(t<i?t:i)+((u>m?u:m)-(v<j?v:j)))*2.0;x=w*2.0;y=(w-(s-t+(u-v))*2.0)*2.0;v=+g[h+(q*36&-1)>>2];u=i<v?i:v;t=+g[h+(q*36&-1)+4>>2];s=j<t?j:t;w=+g[h+(q*36&-1)+8>>2];z=l>w?l:w;A=+g[h+(q*36&-1)+12>>2];B=m>A?m:A;if((c[h+(q*36&-1)+24>>2]|0)==-1){C=(z-u+(B-s))*2.0}else{C=(z-u+(B-s))*2.0-(w-v+(A-t))*2.0}t=y+C;A=+g[h+(r*36&-1)>>2];v=i<A?i:A;w=+g[h+(r*36&-1)+4>>2];s=j<w?j:w;B=+g[h+(r*36&-1)+8>>2];u=l>B?l:B;z=+g[h+(r*36&-1)+12>>2];D=m>z?m:z;if((c[h+(r*36&-1)+24>>2]|0)==-1){E=(u-v+(D-s))*2.0}else{E=(u-v+(D-s))*2.0-(B-A+(z-w))*2.0}w=y+E;if(x<t&x<w){o=p;break L635}F=t<w?q:r;r=c[h+(F*36&-1)+24>>2]|0;if((r|0)==-1){o=F;break L635}else{p=F;q=r}}}}while(0);n=c[h+(o*36&-1)+20>>2]|0;h=bo(a)|0;c[(c[f>>2]|0)+(h*36&-1)+20>>2]=n;c[(c[f>>2]|0)+(h*36&-1)+16>>2]=0;e=c[f>>2]|0;E=+g[e+(o*36&-1)>>2];C=+g[e+(o*36&-1)+4>>2];q=e+(h*36&-1)|0;p=(g[k>>2]=i<E?i:E,c[k>>2]|0);r=(g[k>>2]=j<C?j:C,c[k>>2]|0)|0;c[q>>2]=0|p;c[q+4>>2]=r;C=+g[e+(o*36&-1)+8>>2];j=+g[e+(o*36&-1)+12>>2];r=e+(h*36&-1)+8|0;e=(g[k>>2]=l>C?l:C,c[k>>2]|0);q=(g[k>>2]=m>j?m:j,c[k>>2]|0)|0;c[r>>2]=0|e;c[r+4>>2]=q;q=c[f>>2]|0;c[q+(h*36&-1)+32>>2]=(c[q+(o*36&-1)+32>>2]|0)+1|0;q=c[f>>2]|0;if((n|0)==-1){c[q+(h*36&-1)+24>>2]=o;c[(c[f>>2]|0)+(h*36&-1)+28>>2]=b;c[(c[f>>2]|0)+(o*36&-1)+20>>2]=h;c[(c[f>>2]|0)+(b*36&-1)+20>>2]=h;c[d>>2]=h}else{d=q+(n*36&-1)+24|0;if((c[d>>2]|0)==(o|0)){c[d>>2]=h}else{c[q+(n*36&-1)+28>>2]=h}c[(c[f>>2]|0)+(h*36&-1)+24>>2]=o;c[(c[f>>2]|0)+(h*36&-1)+28>>2]=b;c[(c[f>>2]|0)+(o*36&-1)+20>>2]=h;c[(c[f>>2]|0)+(b*36&-1)+20>>2]=h}h=c[(c[f>>2]|0)+(b*36&-1)+20>>2]|0;if((h|0)==-1){return}else{G=h}while(1){h=bs(a,G)|0;b=c[f>>2]|0;o=c[b+(h*36&-1)+24>>2]|0;n=c[b+(h*36&-1)+28>>2]|0;if((o|0)==-1){ay(5245632,307,5249956,5243352)}if((n|0)==-1){ay(5245632,308,5249956,5243176)}b=c[f>>2]|0;q=c[b+(o*36&-1)+32>>2]|0;d=c[b+(n*36&-1)+32>>2]|0;c[b+(h*36&-1)+32>>2]=((q|0)>(d|0)?q:d)+1|0;d=c[f>>2]|0;j=+g[d+(o*36&-1)>>2];m=+g[d+(n*36&-1)>>2];C=+g[d+(o*36&-1)+4>>2];l=+g[d+(n*36&-1)+4>>2];q=d+(h*36&-1)|0;b=(g[k>>2]=j<m?j:m,c[k>>2]|0);r=(g[k>>2]=C<l?C:l,c[k>>2]|0)|0;c[q>>2]=0|b;c[q+4>>2]=r;l=+g[d+(o*36&-1)+8>>2];C=+g[d+(n*36&-1)+8>>2];m=+g[d+(o*36&-1)+12>>2];j=+g[d+(n*36&-1)+12>>2];n=d+(h*36&-1)+8|0;d=(g[k>>2]=l>C?l:C,c[k>>2]|0);o=(g[k>>2]=m>j?m:j,c[k>>2]|0)|0;c[n>>2]=0|d;c[n+4>>2]=o;o=c[(c[f>>2]|0)+(h*36&-1)+20>>2]|0;if((o|0)==-1){break}else{G=o}}return}function bq(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,h=0,i=0,j=0,l=0,m=0,n=0.0,o=0.0,p=0.0,q=0.0;d=a|0;if((c[d>>2]|0)==(b|0)){c[d>>2]=-1;return}e=a+4|0;f=c[e>>2]|0;h=c[f+(b*36&-1)+20>>2]|0;i=c[f+(h*36&-1)+20>>2]|0;j=c[f+(h*36&-1)+24>>2]|0;if((j|0)==(b|0)){l=c[f+(h*36&-1)+28>>2]|0}else{l=j}if((i|0)==-1){c[d>>2]=l;c[f+(l*36&-1)+20>>2]=-1;do{if((h|0)>-1){if((c[a+12>>2]|0)>(h|0)){break}else{m=512;break}}else{m=512}}while(0);if((m|0)==512){ay(5245632,97,5249848,5245352)}d=a+8|0;if((c[d>>2]|0)<=0){ay(5245632,98,5249848,5244276)}j=a+16|0;c[(c[e>>2]|0)+(h*36&-1)+20>>2]=c[j>>2]|0;c[(c[e>>2]|0)+(h*36&-1)+32>>2]=-1;c[j>>2]=h;c[d>>2]=(c[d>>2]|0)-1|0;return}d=f+(i*36&-1)+24|0;if((c[d>>2]|0)==(h|0)){c[d>>2]=l}else{c[f+(i*36&-1)+28>>2]=l}c[(c[e>>2]|0)+(l*36&-1)+20>>2]=i;do{if((h|0)>-1){if((c[a+12>>2]|0)>(h|0)){break}else{m=505;break}}else{m=505}}while(0);if((m|0)==505){ay(5245632,97,5249848,5245352)}m=a+8|0;if((c[m>>2]|0)<=0){ay(5245632,98,5249848,5244276)}l=a+16|0;c[(c[e>>2]|0)+(h*36&-1)+20>>2]=c[l>>2]|0;c[(c[e>>2]|0)+(h*36&-1)+32>>2]=-1;c[l>>2]=h;c[m>>2]=(c[m>>2]|0)-1|0;m=i;while(1){i=bs(a,m)|0;h=c[e>>2]|0;l=c[h+(i*36&-1)+24>>2]|0;f=c[h+(i*36&-1)+28>>2]|0;n=+g[h+(l*36&-1)>>2];o=+g[h+(f*36&-1)>>2];p=+g[h+(l*36&-1)+4>>2];q=+g[h+(f*36&-1)+4>>2];d=h+(i*36&-1)|0;j=(g[k>>2]=n<o?n:o,c[k>>2]|0);b=(g[k>>2]=p<q?p:q,c[k>>2]|0)|0;c[d>>2]=0|j;c[d+4>>2]=b;q=+g[h+(l*36&-1)+8>>2];p=+g[h+(f*36&-1)+8>>2];o=+g[h+(l*36&-1)+12>>2];n=+g[h+(f*36&-1)+12>>2];b=h+(i*36&-1)+8|0;h=(g[k>>2]=q>p?q:p,c[k>>2]|0);d=(g[k>>2]=o>n?o:n,c[k>>2]|0)|0;c[b>>2]=0|h;c[b+4>>2]=d;d=c[e>>2]|0;b=c[d+(l*36&-1)+32>>2]|0;l=c[d+(f*36&-1)+32>>2]|0;c[d+(i*36&-1)+32>>2]=((b|0)>(l|0)?b:l)+1|0;l=c[(c[e>>2]|0)+(i*36&-1)+20>>2]|0;if((l|0)==-1){break}else{m=l}}return}function br(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,h=0,i=0,j=0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0,u=0.0;do{if((b|0)>-1){if((c[a+12>>2]|0)>(b|0)){break}else{f=522;break}}else{f=522}}while(0);if((f|0)==522){ay(5245632,135,5249776,5245416)}f=a+4|0;h=c[f>>2]|0;if((c[h+(b*36&-1)+24>>2]|0)==-1){i=h}else{ay(5245632,137,5249776,5243572);i=c[f>>2]|0}do{if(+g[i+(b*36&-1)>>2]<=+g[d>>2]){if(+g[i+(b*36&-1)+4>>2]>+g[d+4>>2]){break}if(+g[d+8>>2]>+g[i+(b*36&-1)+8>>2]){break}if(+g[d+12>>2]>+g[i+(b*36&-1)+12>>2]){break}else{j=0}return j|0}}while(0);bq(a,b);i=d;h=c[i+4>>2]|0;l=(c[k>>2]=c[i>>2]|0,+g[k>>2]);m=(c[k>>2]=h,+g[k>>2]);h=d+8|0;d=c[h+4>>2]|0;n=(c[k>>2]=c[h>>2]|0,+g[k>>2]);o=l+-.10000000149011612;l=m+-.10000000149011612;m=n+.10000000149011612;n=(c[k>>2]=d,+g[k>>2])+.10000000149011612;p=+g[e>>2]*2.0;q=+g[e+4>>2]*2.0;if(p<0.0){r=m;s=o+p}else{r=p+m;s=o}if(q<0.0){t=n;u=l+q}else{t=q+n;u=l}e=c[f>>2]|0;f=e+(b*36&-1)|0;d=(g[k>>2]=s,c[k>>2]|0);h=(g[k>>2]=u,c[k>>2]|0)|0;c[f>>2]=0|d;c[f+4>>2]=h;h=e+(b*36&-1)+8|0;e=(g[k>>2]=r,c[k>>2]|0);f=(g[k>>2]=t,c[k>>2]|0)|0;c[h>>2]=0|e;c[h+4>>2]=f;bp(a,b);j=1;return j|0}function bs(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,h=0,i=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0,M=0,N=0,O=0;if((b|0)==-1){ay(5245632,382,5249884,5243116)}d=a+4|0;e=c[d>>2]|0;f=e+(b*36&-1)|0;h=e+(b*36&-1)+24|0;i=c[h>>2]|0;if((i|0)==-1){j=b;return j|0}l=e+(b*36&-1)+32|0;if((c[l>>2]|0)<2){j=b;return j|0}m=e+(b*36&-1)+28|0;n=c[m>>2]|0;do{if((i|0)>-1){if((i|0)<(c[a+12>>2]|0)){break}else{o=545;break}}else{o=545}}while(0);if((o|0)==545){ay(5245632,392,5249884,5242952)}do{if((n|0)>-1){if((n|0)<(c[a+12>>2]|0)){break}else{o=548;break}}else{o=548}}while(0);if((o|0)==548){ay(5245632,393,5249884,5246432)}p=c[d>>2]|0;q=p+(i*36&-1)|0;r=p+(n*36&-1)|0;s=p+(n*36&-1)+32|0;t=p+(i*36&-1)+32|0;u=(c[s>>2]|0)-(c[t>>2]|0)|0;if((u|0)>1){v=p+(n*36&-1)+24|0;w=c[v>>2]|0;x=p+(n*36&-1)+28|0;y=c[x>>2]|0;z=p+(w*36&-1)|0;A=p+(y*36&-1)|0;do{if((w|0)>-1){if((w|0)<(c[a+12>>2]|0)){break}else{o=552;break}}else{o=552}}while(0);if((o|0)==552){ay(5245632,407,5249884,5246400)}do{if((y|0)>-1){if((y|0)<(c[a+12>>2]|0)){break}else{o=555;break}}else{o=555}}while(0);if((o|0)==555){ay(5245632,408,5249884,5246204)}c[v>>2]=b;v=e+(b*36&-1)+20|0;B=p+(n*36&-1)+20|0;c[B>>2]=c[v>>2]|0;c[v>>2]=n;v=c[B>>2]|0;do{if((v|0)==-1){c[a>>2]=n}else{C=c[d>>2]|0;D=C+(v*36&-1)+24|0;if((c[D>>2]|0)==(b|0)){c[D>>2]=n;break}if((c[C+(v*36&-1)+28>>2]|0)==(b|0)){E=v;F=C}else{ay(5245632,424,5249884,5245924);E=c[B>>2]|0;F=c[d>>2]|0}c[F+(E*36&-1)+28>>2]=n}}while(0);E=p+(w*36&-1)+32|0;F=p+(y*36&-1)+32|0;if((c[E>>2]|0)>(c[F>>2]|0)){c[x>>2]=w;c[m>>2]=y;c[p+(y*36&-1)+20>>2]=b;G=+g[q>>2];H=+g[A>>2];I=G<H?G:H;H=+g[p+(i*36&-1)+4>>2];G=+g[p+(y*36&-1)+4>>2];B=f;v=(g[k>>2]=I,c[k>>2]|0);C=(g[k>>2]=H<G?H:G,c[k>>2]|0)|0;c[B>>2]=0|v;c[B+4>>2]=C;G=+g[p+(i*36&-1)+8>>2];H=+g[p+(y*36&-1)+8>>2];J=+g[p+(i*36&-1)+12>>2];K=+g[p+(y*36&-1)+12>>2];C=e+(b*36&-1)+8|0;B=(g[k>>2]=G>H?G:H,c[k>>2]|0);v=(g[k>>2]=J>K?J:K,c[k>>2]|0)|0;c[C>>2]=0|B;c[C+4>>2]=v;K=+g[z>>2];J=+g[e+(b*36&-1)+4>>2];H=+g[p+(w*36&-1)+4>>2];v=r;C=(g[k>>2]=I<K?I:K,c[k>>2]|0);B=(g[k>>2]=J<H?J:H,c[k>>2]|0)|0;c[v>>2]=0|C;c[v+4>>2]=B;H=+g[e+(b*36&-1)+8>>2];J=+g[p+(w*36&-1)+8>>2];K=+g[e+(b*36&-1)+12>>2];I=+g[p+(w*36&-1)+12>>2];B=p+(n*36&-1)+8|0;v=(g[k>>2]=H>J?H:J,c[k>>2]|0);C=(g[k>>2]=K>I?K:I,c[k>>2]|0)|0;c[B>>2]=0|v;c[B+4>>2]=C;C=c[t>>2]|0;B=c[F>>2]|0;v=((C|0)>(B|0)?C:B)+1|0;c[l>>2]=v;B=c[E>>2]|0;L=(v|0)>(B|0)?v:B}else{c[x>>2]=y;c[m>>2]=w;c[p+(w*36&-1)+20>>2]=b;I=+g[q>>2];K=+g[z>>2];J=I<K?I:K;K=+g[p+(i*36&-1)+4>>2];I=+g[p+(w*36&-1)+4>>2];z=f;m=(g[k>>2]=J,c[k>>2]|0);x=(g[k>>2]=K<I?K:I,c[k>>2]|0)|0;c[z>>2]=0|m;c[z+4>>2]=x;I=+g[p+(i*36&-1)+8>>2];K=+g[p+(w*36&-1)+8>>2];H=+g[p+(i*36&-1)+12>>2];G=+g[p+(w*36&-1)+12>>2];w=e+(b*36&-1)+8|0;x=(g[k>>2]=I>K?I:K,c[k>>2]|0);z=(g[k>>2]=H>G?H:G,c[k>>2]|0)|0;c[w>>2]=0|x;c[w+4>>2]=z;G=+g[A>>2];H=+g[e+(b*36&-1)+4>>2];K=+g[p+(y*36&-1)+4>>2];A=r;z=(g[k>>2]=J<G?J:G,c[k>>2]|0);w=(g[k>>2]=H<K?H:K,c[k>>2]|0)|0;c[A>>2]=0|z;c[A+4>>2]=w;K=+g[e+(b*36&-1)+8>>2];H=+g[p+(y*36&-1)+8>>2];G=+g[e+(b*36&-1)+12>>2];J=+g[p+(y*36&-1)+12>>2];y=p+(n*36&-1)+8|0;w=(g[k>>2]=K>H?K:H,c[k>>2]|0);A=(g[k>>2]=G>J?G:J,c[k>>2]|0)|0;c[y>>2]=0|w;c[y+4>>2]=A;A=c[t>>2]|0;y=c[E>>2]|0;E=((A|0)>(y|0)?A:y)+1|0;c[l>>2]=E;y=c[F>>2]|0;L=(E|0)>(y|0)?E:y}c[s>>2]=L+1|0;j=n;return j|0}if((u|0)>=-1){j=b;return j|0}u=p+(i*36&-1)+24|0;L=c[u>>2]|0;y=p+(i*36&-1)+28|0;E=c[y>>2]|0;F=p+(L*36&-1)|0;A=p+(E*36&-1)|0;do{if((L|0)>-1){if((L|0)<(c[a+12>>2]|0)){break}else{o=570;break}}else{o=570}}while(0);if((o|0)==570){ay(5245632,467,5249884,5245808)}do{if((E|0)>-1){if((E|0)<(c[a+12>>2]|0)){break}else{o=573;break}}else{o=573}}while(0);if((o|0)==573){ay(5245632,468,5249884,5245776)}c[u>>2]=b;u=e+(b*36&-1)+20|0;o=p+(i*36&-1)+20|0;c[o>>2]=c[u>>2]|0;c[u>>2]=i;u=c[o>>2]|0;do{if((u|0)==-1){c[a>>2]=i}else{w=c[d>>2]|0;z=w+(u*36&-1)+24|0;if((c[z>>2]|0)==(b|0)){c[z>>2]=i;break}if((c[w+(u*36&-1)+28>>2]|0)==(b|0)){M=u;N=w}else{ay(5245632,484,5249884,5245700);M=c[o>>2]|0;N=c[d>>2]|0}c[N+(M*36&-1)+28>>2]=i}}while(0);M=p+(L*36&-1)+32|0;N=p+(E*36&-1)+32|0;if((c[M>>2]|0)>(c[N>>2]|0)){c[y>>2]=L;c[h>>2]=E;c[p+(E*36&-1)+20>>2]=b;J=+g[r>>2];G=+g[A>>2];H=J<G?J:G;G=+g[p+(n*36&-1)+4>>2];J=+g[p+(E*36&-1)+4>>2];d=f;o=(g[k>>2]=H,c[k>>2]|0);u=(g[k>>2]=G<J?G:J,c[k>>2]|0)|0;c[d>>2]=0|o;c[d+4>>2]=u;J=+g[p+(n*36&-1)+8>>2];G=+g[p+(E*36&-1)+8>>2];K=+g[p+(n*36&-1)+12>>2];I=+g[p+(E*36&-1)+12>>2];u=e+(b*36&-1)+8|0;d=(g[k>>2]=J>G?J:G,c[k>>2]|0);o=(g[k>>2]=K>I?K:I,c[k>>2]|0)|0;c[u>>2]=0|d;c[u+4>>2]=o;I=+g[F>>2];K=+g[e+(b*36&-1)+4>>2];G=+g[p+(L*36&-1)+4>>2];o=q;u=(g[k>>2]=H<I?H:I,c[k>>2]|0);d=(g[k>>2]=K<G?K:G,c[k>>2]|0)|0;c[o>>2]=0|u;c[o+4>>2]=d;G=+g[e+(b*36&-1)+8>>2];K=+g[p+(L*36&-1)+8>>2];I=+g[e+(b*36&-1)+12>>2];H=+g[p+(L*36&-1)+12>>2];d=p+(i*36&-1)+8|0;o=(g[k>>2]=G>K?G:K,c[k>>2]|0);u=(g[k>>2]=I>H?I:H,c[k>>2]|0)|0;c[d>>2]=0|o;c[d+4>>2]=u;u=c[s>>2]|0;d=c[N>>2]|0;o=((u|0)>(d|0)?u:d)+1|0;c[l>>2]=o;d=c[M>>2]|0;O=(o|0)>(d|0)?o:d}else{c[y>>2]=E;c[h>>2]=L;c[p+(L*36&-1)+20>>2]=b;H=+g[r>>2];I=+g[F>>2];K=H<I?H:I;I=+g[p+(n*36&-1)+4>>2];H=+g[p+(L*36&-1)+4>>2];F=f;f=(g[k>>2]=K,c[k>>2]|0);r=(g[k>>2]=I<H?I:H,c[k>>2]|0)|0;c[F>>2]=0|f;c[F+4>>2]=r;H=+g[p+(n*36&-1)+8>>2];I=+g[p+(L*36&-1)+8>>2];G=+g[p+(n*36&-1)+12>>2];J=+g[p+(L*36&-1)+12>>2];L=e+(b*36&-1)+8|0;n=(g[k>>2]=H>I?H:I,c[k>>2]|0);r=(g[k>>2]=G>J?G:J,c[k>>2]|0)|0;c[L>>2]=0|n;c[L+4>>2]=r;J=+g[A>>2];G=+g[e+(b*36&-1)+4>>2];I=+g[p+(E*36&-1)+4>>2];A=q;q=(g[k>>2]=K<J?K:J,c[k>>2]|0);r=(g[k>>2]=G<I?G:I,c[k>>2]|0)|0;c[A>>2]=0|q;c[A+4>>2]=r;I=+g[e+(b*36&-1)+8>>2];G=+g[p+(E*36&-1)+8>>2];J=+g[e+(b*36&-1)+12>>2];K=+g[p+(E*36&-1)+12>>2];E=p+(i*36&-1)+8|0;p=(g[k>>2]=I>G?I:G,c[k>>2]|0);b=(g[k>>2]=J>K?J:K,c[k>>2]|0)|0;c[E>>2]=0|p;c[E+4>>2]=b;b=c[s>>2]|0;s=c[M>>2]|0;M=((b|0)>(s|0)?b:s)+1|0;c[l>>2]=M;l=c[N>>2]|0;O=(M|0)>(l|0)?M:l}c[t>>2]=O+1|0;j=i;return j|0}function bt(d,e){d=d|0;e=e|0;var f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0.0,x=0.0,y=0.0,z=0,A=0,B=0.0,C=0.0,D=0,E=0.0,F=0.0,G=0,H=0,I=0,J=0,K=0,M=0,N=0,O=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0.0,$=0.0,aa=0,ab=0.0,ac=0.0,ad=0.0,ae=0.0,af=0.0,ag=0.0,ah=0.0,ai=0.0,aj=0.0,ak=0.0,al=0.0,am=0.0,an=0,ao=0,ap=0,aq=0.0,ar=0,as=0.0,at=0.0,au=0,av=0.0,aw=0.0,ax=0.0,az=0.0,aA=0,aB=0.0,aC=0,aD=0,aE=0,aF=0,aG=0,aH=0;f=i;i=i+308|0;h=f|0;j=f+36|0;l=f+72|0;m=f+84|0;n=f+176|0;o=f+200|0;p=f+300|0;q=f+304|0;c[1310730]=(c[1310730]|0)+1|0;r=d|0;c[r>>2]=0;s=e+128|0;t=d+4|0;g[t>>2]=+g[s>>2];d=e|0;u=e+28|0;di(h,e+56|0,36);di(j,e+92|0,36);v=h+24|0;w=+g[v>>2];x=+L(w/6.2831854820251465)*6.2831854820251465;y=w-x;g[v>>2]=y;z=h+28|0;w=+g[z>>2]-x;g[z>>2]=w;A=j+24|0;x=+g[A>>2];B=+L(x/6.2831854820251465)*6.2831854820251465;C=x-B;g[A>>2]=C;D=j+28|0;x=+g[D>>2]-B;g[D>>2]=x;B=+g[s>>2];E=+g[e+24>>2]+ +g[e+52>>2]+-.014999999664723873;F=E<.004999999888241291?.004999999888241291:E;if(F<=.0012499999720603228){ay(5244124,280,5250388,5245852)}b[l+4>>1]=0;s=m;G=e;c[s>>2]=c[G>>2]|0;c[s+4>>2]=c[G+4>>2]|0;c[s+8>>2]=c[G+8>>2]|0;c[s+12>>2]=c[G+12>>2]|0;c[s+16>>2]=c[G+16>>2]|0;c[s+20>>2]=c[G+20>>2]|0;c[s+24>>2]=c[G+24>>2]|0;G=m+28|0;s=u;c[G>>2]=c[s>>2]|0;c[G+4>>2]=c[s+4>>2]|0;c[G+8>>2]=c[s+8>>2]|0;c[G+12>>2]=c[s+12>>2]|0;c[G+16>>2]=c[s+16>>2]|0;c[G+20>>2]=c[s+20>>2]|0;c[G+24>>2]=c[s+24>>2]|0;a[m+88|0]=0;s=h+8|0;G=h+12|0;e=h+16|0;H=h+20|0;I=h|0;J=h+4|0;K=j+8|0;M=j+12|0;N=j+16|0;O=j+20|0;R=j|0;S=j+4|0;T=m+56|0;U=m+64|0;V=m+68|0;W=m+72|0;X=m+80|0;Y=m+84|0;Z=n+16|0;E=F+.0012499999720603228;_=F+-.0012499999720603228;$=0.0;aa=0;ab=y;y=w;w=C;C=x;L806:while(1){x=1.0-$;ac=x*+g[s>>2]+$*+g[e>>2];ad=x*+g[G>>2]+$*+g[H>>2];ae=x*ab+$*y;af=+Q(ae);ag=+P(ae);ae=+g[I>>2];ah=+g[J>>2];ai=x*+g[K>>2]+$*+g[N>>2];aj=x*+g[M>>2]+$*+g[O>>2];ak=x*w+$*C;x=+Q(ak);al=+P(ak);ak=+g[R>>2];am=+g[S>>2];an=(g[k>>2]=ac-(ag*ae-af*ah),c[k>>2]|0);ao=(g[k>>2]=ad-(af*ae+ag*ah),c[k>>2]|0)|0;c[T>>2]=0|an;c[T+4>>2]=ao;g[U>>2]=af;g[V>>2]=ag;ao=(g[k>>2]=ai-(al*ak-x*am),c[k>>2]|0);an=(g[k>>2]=aj-(x*ak+al*am),c[k>>2]|0)|0;c[W>>2]=0|ao;c[W+4>>2]=an;g[X>>2]=x;g[Y>>2]=al;bl(n,l,m);al=+g[Z>>2];if(al<=0.0){ap=595;break}if(al<E){ap=597;break}bu(o,l,d,h,u,j,$);an=0;al=B;while(1){x=+bx(o,p,q,al);if(x>E){ap=600;break L806}if(x>_){aq=al;break}ao=c[p>>2]|0;ar=c[q>>2]|0;am=+by(o,ao,ar,$);if(am<_){ap=603;break L806}if(am>E){as=al;at=$;au=0;av=am;aw=x}else{ap=605;break L806}while(1){if((au&1|0)==0){ax=(at+as)*.5}else{ax=at+(F-av)*(as-at)/(aw-av)}x=+by(o,ao,ar,ax);am=x-F;if(am>0.0){az=am}else{az=-0.0-am}if(az<.0012499999720603228){aA=au;aB=ax;break}aC=x>F;aD=au+1|0;c[1310726]=(c[1310726]|0)+1|0;if((aD|0)==50){aA=50;aB=al;break}else{as=aC?as:ax;at=aC?ax:at;au=aD;av=aC?x:av;aw=aC?aw:x}}ar=c[1310727]|0;c[1310727]=(ar|0)>(aA|0)?ar:aA;ar=an+1|0;if((ar|0)==8){aq=$;break}else{an=ar;al=aB}}an=aa+1|0;c[1310729]=(c[1310729]|0)+1|0;if((an|0)==20){ap=617;break}$=aq;aa=an;ab=+g[v>>2];y=+g[z>>2];w=+g[A>>2];C=+g[D>>2]}if((ap|0)==600){c[r>>2]=4;g[t>>2]=B}else if((ap|0)==603){c[r>>2]=1;g[t>>2]=$}else if((ap|0)==617){c[r>>2]=1;g[t>>2]=aq;aE=20;aF=c[1310728]|0;aG=(aF|0)>(aE|0);aH=aG?aF:aE;c[1310728]=aH;i=f;return}else if((ap|0)==605){c[r>>2]=3;g[t>>2]=$}else if((ap|0)==595){c[r>>2]=2;g[t>>2]=0.0;aE=aa;aF=c[1310728]|0;aG=(aF|0)>(aE|0);aH=aG?aF:aE;c[1310728]=aH;i=f;return}else if((ap|0)==597){c[r>>2]=3;g[t>>2]=$;aE=aa;aF=c[1310728]|0;aG=(aF|0)>(aE|0);aH=aG?aF:aE;c[1310728]=aH;i=f;return}c[1310729]=(c[1310729]|0)+1|0;aE=aa+1|0;aF=c[1310728]|0;aG=(aF|0)>(aE|0);aH=aG?aF:aE;c[1310728]=aH;i=f;return}function bu(e,f,h,i,j,l,m){e=e|0;f=f|0;h=h|0;i=i|0;j=j|0;l=l|0;m=+m;var n=0,o=0,p=0,q=0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0.0,D=0.0,E=0.0,F=0,G=0,H=0,I=0,J=0.0,K=0.0,L=0.0,M=0.0,O=0,R=0,S=0.0,T=0.0;n=e|0;c[n>>2]=h;o=e+4|0;c[o>>2]=j;p=b[f+4>>1]|0;if(!(p<<16>>16!=0&(p&65535)<3)){ay(5244124,50,5249036,5243528)}q=e+8|0;di(q,i,36);i=e+44|0;di(i,l,36);r=1.0-m;s=r*+g[e+16>>2]+ +g[e+24>>2]*m;t=r*+g[e+20>>2]+ +g[e+28>>2]*m;u=r*+g[e+32>>2]+ +g[e+36>>2]*m;v=+Q(u);w=+P(u);u=+g[q>>2];x=+g[e+12>>2];y=s-(w*u-v*x);s=t-(v*u+w*x);x=r*+g[e+52>>2]+ +g[e+60>>2]*m;u=r*+g[e+56>>2]+ +g[e+64>>2]*m;t=r*+g[e+68>>2]+ +g[e+72>>2]*m;m=+Q(t);r=+P(t);t=+g[i>>2];z=+g[e+48>>2];A=x-(r*t-m*z);x=u-(m*t+r*z);if(p<<16>>16==1){c[e+80>>2]=0;p=c[n>>2]|0;i=d[f+6|0]|0;if((c[p+20>>2]|0)<=(i|0)){ay(5244292,103,5247284,5243996)}q=(c[p+16>>2]|0)+(i<<3)|0;i=c[q+4>>2]|0;z=(c[k>>2]=c[q>>2]|0,+g[k>>2]);t=(c[k>>2]=i,+g[k>>2]);i=c[o>>2]|0;q=d[f+9|0]|0;if((c[i+20>>2]|0)<=(q|0)){ay(5244292,103,5247284,5243996)}p=(c[i+16>>2]|0)+(q<<3)|0;q=c[p+4>>2]|0;u=(c[k>>2]=c[p>>2]|0,+g[k>>2]);B=(c[k>>2]=q,+g[k>>2]);q=e+92|0;C=A+(r*u-m*B)-(y+(w*z-v*t));D=x+(m*u+r*B)-(s+(v*z+w*t));p=q;i=(g[k>>2]=C,c[k>>2]|0);l=(g[k>>2]=D,c[k>>2]|0)|0;c[p>>2]=0|i;c[p+4>>2]=l;t=+N(C*C+D*D);if(t<1.1920928955078125e-7){E=0.0;return+E}z=1.0/t;g[q>>2]=C*z;g[e+96>>2]=D*z;E=t;return+E}q=f+6|0;l=f+7|0;p=e+80|0;if(a[q]<<24>>24==a[l]<<24>>24){c[p>>2]=2;i=d[f+9|0]|0;F=j+20|0;G=c[F>>2]|0;if((G|0)>(i|0)){H=G}else{ay(5244292,103,5247284,5243996);H=c[F>>2]|0}F=j+16|0;j=c[F>>2]|0;G=j+(i<<3)|0;i=c[G+4>>2]|0;t=(c[k>>2]=c[G>>2]|0,+g[k>>2]);z=(c[k>>2]=i,+g[k>>2]);i=d[f+10|0]|0;if((H|0)>(i|0)){I=j}else{ay(5244292,103,5247284,5243996);I=c[F>>2]|0}F=I+(i<<3)|0;i=c[F+4>>2]|0;D=(c[k>>2]=c[F>>2]|0,+g[k>>2]);C=(c[k>>2]=i,+g[k>>2]);i=e+92|0;B=C-z;u=(D-t)*-1.0;F=i;I=(g[k>>2]=B,c[k>>2]|0);j=(g[k>>2]=u,c[k>>2]|0)|0;c[F>>2]=0|I;c[F+4>>2]=j;j=i|0;i=e+96|0;J=+N(B*B+u*u);if(J<1.1920928955078125e-7){K=B;L=u}else{M=1.0/J;J=B*M;g[j>>2]=J;B=u*M;g[i>>2]=B;K=J;L=B}B=(t+D)*.5;D=(z+C)*.5;I=e+84|0;H=(g[k>>2]=B,c[k>>2]|0);G=(g[k>>2]=D,c[k>>2]|0)|0;c[I>>2]=0|H;c[I+4>>2]=G;G=d[q]|0;if((c[h+20>>2]|0)<=(G|0)){ay(5244292,103,5247284,5243996)}I=(c[h+16>>2]|0)+(G<<3)|0;G=c[I+4>>2]|0;C=(c[k>>2]=c[I>>2]|0,+g[k>>2]);z=(c[k>>2]=G,+g[k>>2]);t=(r*K-m*L)*(y+(w*C-v*z)-(A+(r*B-m*D)))+(m*K+r*L)*(s+(v*C+w*z)-(x+(m*B+r*D)));if(t>=0.0){E=t;return+E}D=-0.0- +g[i>>2];i=(g[k>>2]=-0.0- +g[j>>2],c[k>>2]|0);j=(g[k>>2]=D,c[k>>2]|0)|0;c[F>>2]=0|i;c[F+4>>2]=j;E=-0.0-t;return+E}else{c[p>>2]=1;p=c[n>>2]|0;j=d[q]|0;q=c[p+20>>2]|0;if((q|0)>(j|0)){O=p;R=q}else{ay(5244292,103,5247284,5243996);q=c[n>>2]|0;O=q;R=c[q+20>>2]|0}q=(c[p+16>>2]|0)+(j<<3)|0;j=c[q+4>>2]|0;t=(c[k>>2]=c[q>>2]|0,+g[k>>2]);D=(c[k>>2]=j,+g[k>>2]);j=d[l]|0;if((R|0)<=(j|0)){ay(5244292,103,5247284,5243996)}R=(c[O+16>>2]|0)+(j<<3)|0;j=c[R+4>>2]|0;B=(c[k>>2]=c[R>>2]|0,+g[k>>2]);z=(c[k>>2]=j,+g[k>>2]);j=e+92|0;C=z-D;L=(B-t)*-1.0;R=j;O=(g[k>>2]=C,c[k>>2]|0);l=(g[k>>2]=L,c[k>>2]|0)|0;c[R>>2]=0|O;c[R+4>>2]=l;l=j|0;j=e+96|0;K=+N(C*C+L*L);if(K<1.1920928955078125e-7){S=C;T=L}else{J=1.0/K;K=C*J;g[l>>2]=K;C=L*J;g[j>>2]=C;S=K;T=C}C=(t+B)*.5;B=(D+z)*.5;O=e+84|0;e=(g[k>>2]=C,c[k>>2]|0);q=(g[k>>2]=B,c[k>>2]|0)|0;c[O>>2]=0|e;c[O+4>>2]=q;q=c[o>>2]|0;o=d[f+9|0]|0;if((c[q+20>>2]|0)<=(o|0)){ay(5244292,103,5247284,5243996)}f=(c[q+16>>2]|0)+(o<<3)|0;o=c[f+4>>2]|0;z=(c[k>>2]=c[f>>2]|0,+g[k>>2]);D=(c[k>>2]=o,+g[k>>2]);t=(w*S-v*T)*(A+(r*z-m*D)-(y+(w*C-v*B)))+(v*S+w*T)*(x+(m*z+r*D)-(s+(v*C+w*B)));if(t>=0.0){E=t;return+E}B=-0.0- +g[j>>2];j=(g[k>>2]=-0.0- +g[l>>2],c[k>>2]|0);l=(g[k>>2]=B,c[k>>2]|0)|0;c[R>>2]=0|j;c[R+4>>2]=l;E=-0.0-t;return+E}return 0.0}function bv(a){a=a|0;return 1}function bw(a,b,c){a=a|0;b=b|0;c=c|0;return 0}function bx(a,b,d,e){a=a|0;b=b|0;d=d|0;e=+e;var f=0.0,h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0,s=0,t=0,u=0.0,v=0.0,w=0.0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0.0,K=0.0,L=0.0,M=0,N=0,O=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0,$=0;f=1.0-e;h=f*+g[a+16>>2]+ +g[a+24>>2]*e;i=f*+g[a+20>>2]+ +g[a+28>>2]*e;j=f*+g[a+32>>2]+ +g[a+36>>2]*e;l=+Q(j);m=+P(j);j=+g[a+8>>2];n=+g[a+12>>2];o=h-(m*j-l*n);h=i-(l*j+m*n);n=f*+g[a+52>>2]+ +g[a+60>>2]*e;j=f*+g[a+56>>2]+ +g[a+64>>2]*e;i=f*+g[a+68>>2]+ +g[a+72>>2]*e;e=+Q(i);f=+P(i);i=+g[a+44>>2];p=+g[a+48>>2];q=n-(f*i-e*p);n=j-(e*i+f*p);r=c[a+80>>2]|0;if((r|0)==0){s=a+92|0;p=+g[s>>2];t=a+96|0;i=+g[t>>2];j=m*p+l*i;u=p*(-0.0-l)+m*i;v=-0.0-i;i=f*(-0.0-p)+e*v;w=e*p+f*v;x=a|0;y=c[x>>2]|0;z=c[y+16>>2]|0;A=c[y+20>>2]|0;L897:do{if((A|0)>1){v=u*+g[z+4>>2]+j*+g[z>>2];y=1;B=0;while(1){p=j*+g[z+(y<<3)>>2]+u*+g[z+(y<<3)+4>>2];C=p>v;D=C?y:B;E=y+1|0;if((E|0)==(A|0)){F=D;break L897}else{v=C?p:v;y=E;B=D}}}else{F=0}}while(0);c[b>>2]=F;F=a+4|0;A=c[F>>2]|0;z=c[A+16>>2]|0;B=c[A+20>>2]|0;L902:do{if((B|0)>1){u=w*+g[z+4>>2]+i*+g[z>>2];A=1;y=0;while(1){j=i*+g[z+(A<<3)>>2]+w*+g[z+(A<<3)+4>>2];D=j>u;E=D?A:y;C=A+1|0;if((C|0)==(B|0)){G=E;break L902}else{u=D?j:u;A=C;y=E}}}else{G=0}}while(0);c[d>>2]=G;B=c[x>>2]|0;x=c[b>>2]|0;do{if((x|0)>-1){if((c[B+20>>2]|0)>(x|0)){H=G;break}else{I=671;break}}else{I=671}}while(0);if((I|0)==671){ay(5244292,103,5247284,5243996);H=c[d>>2]|0}G=(c[B+16>>2]|0)+(x<<3)|0;x=c[G+4>>2]|0;w=(c[k>>2]=c[G>>2]|0,+g[k>>2]);i=(c[k>>2]=x,+g[k>>2]);x=c[F>>2]|0;do{if((H|0)>-1){if((c[x+20>>2]|0)>(H|0)){break}else{I=674;break}}else{I=674}}while(0);if((I|0)==674){ay(5244292,103,5247284,5243996)}F=(c[x+16>>2]|0)+(H<<3)|0;H=c[F+4>>2]|0;u=(c[k>>2]=c[F>>2]|0,+g[k>>2]);j=(c[k>>2]=H,+g[k>>2]);v=+g[s>>2]*(q+(f*u-e*j)-(o+(m*w-l*i)))+ +g[t>>2]*(n+(e*u+f*j)-(h+(l*w+m*i)));return+v}else if((r|0)==1){i=+g[a+92>>2];w=+g[a+96>>2];j=m*i-l*w;u=l*i+m*w;w=+g[a+84>>2];i=+g[a+88>>2];p=o+(m*w-l*i);J=h+(l*w+m*i);i=-0.0-u;w=f*(-0.0-j)+e*i;K=e*j+f*i;c[b>>2]=-1;t=a+4|0;s=c[t>>2]|0;H=c[s+16>>2]|0;F=c[s+20>>2]|0;do{if((F|0)>1){i=K*+g[H+4>>2]+w*+g[H>>2];s=1;x=0;while(1){L=w*+g[H+(s<<3)>>2]+K*+g[H+(s<<3)+4>>2];G=L>i;M=G?s:x;B=s+1|0;if((B|0)==(F|0)){break}else{i=G?L:i;s=B;x=M}}c[d>>2]=M;x=c[t>>2]|0;if((M|0)>-1){N=M;O=x;I=681;break}else{R=M;S=x;I=682;break}}else{c[d>>2]=0;N=0;O=c[t>>2]|0;I=681;break}}while(0);do{if((I|0)==681){if((c[O+20>>2]|0)>(N|0)){T=N;U=O;break}else{R=N;S=O;I=682;break}}}while(0);if((I|0)==682){ay(5244292,103,5247284,5243996);T=R;U=S}S=(c[U+16>>2]|0)+(T<<3)|0;T=c[S+4>>2]|0;K=(c[k>>2]=c[S>>2]|0,+g[k>>2]);w=(c[k>>2]=T,+g[k>>2]);v=j*(q+(f*K-e*w)-p)+u*(n+(e*K+f*w)-J);return+v}else if((r|0)==2){J=+g[a+92>>2];w=+g[a+96>>2];K=f*J-e*w;u=e*J+f*w;w=+g[a+84>>2];J=+g[a+88>>2];p=q+(f*w-e*J);q=n+(e*w+f*J);J=-0.0-u;f=m*(-0.0-K)+l*J;w=l*K+m*J;c[d>>2]=-1;r=a|0;a=c[r>>2]|0;T=c[a+16>>2]|0;S=c[a+20>>2]|0;do{if((S|0)>1){J=w*+g[T+4>>2]+f*+g[T>>2];a=1;U=0;while(1){e=f*+g[T+(a<<3)>>2]+w*+g[T+(a<<3)+4>>2];R=e>J;V=R?a:U;O=a+1|0;if((O|0)==(S|0)){break}else{J=R?e:J;a=O;U=V}}c[b>>2]=V;U=c[r>>2]|0;if((V|0)>-1){W=V;X=U;I=689;break}else{Y=V;Z=U;I=690;break}}else{c[b>>2]=0;W=0;X=c[r>>2]|0;I=689;break}}while(0);do{if((I|0)==689){if((c[X+20>>2]|0)>(W|0)){_=W;$=X;break}else{Y=W;Z=X;I=690;break}}}while(0);if((I|0)==690){ay(5244292,103,5247284,5243996);_=Y;$=Z}Z=(c[$+16>>2]|0)+(_<<3)|0;_=c[Z+4>>2]|0;w=(c[k>>2]=c[Z>>2]|0,+g[k>>2]);f=(c[k>>2]=_,+g[k>>2]);v=K*(o+(m*w-l*f)-p)+u*(h+(l*w+m*f)-q);return+v}else{ay(5244124,183,5247200,5245872);c[b>>2]=-1;c[d>>2]=-1;v=0.0;return+v}return 0.0}function by(a,b,d,e){a=a|0;b=b|0;d=d|0;e=+e;var f=0.0,h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0,s=0,t=0,u=0,v=0,w=0,x=0.0,y=0.0,z=0.0,A=0.0;f=1.0-e;h=f*+g[a+16>>2]+ +g[a+24>>2]*e;i=f*+g[a+20>>2]+ +g[a+28>>2]*e;j=f*+g[a+32>>2]+ +g[a+36>>2]*e;l=+Q(j);m=+P(j);j=+g[a+8>>2];n=+g[a+12>>2];o=h-(m*j-l*n);h=i-(l*j+m*n);n=f*+g[a+52>>2]+ +g[a+60>>2]*e;j=f*+g[a+56>>2]+ +g[a+64>>2]*e;i=f*+g[a+68>>2]+ +g[a+72>>2]*e;e=+Q(i);f=+P(i);i=+g[a+44>>2];p=+g[a+48>>2];q=n-(f*i-e*p);n=j-(e*i+f*p);r=c[a+80>>2]|0;if((r|0)==0){s=a+92|0;t=a+96|0;u=c[a>>2]|0;do{if((b|0)>-1){if((c[u+20>>2]|0)>(b|0)){break}else{v=701;break}}else{v=701}}while(0);if((v|0)==701){ay(5244292,103,5247284,5243996)}w=(c[u+16>>2]|0)+(b<<3)|0;u=c[w+4>>2]|0;p=(c[k>>2]=c[w>>2]|0,+g[k>>2]);i=(c[k>>2]=u,+g[k>>2]);u=c[a+4>>2]|0;do{if((d|0)>-1){if((c[u+20>>2]|0)>(d|0)){break}else{v=704;break}}else{v=704}}while(0);if((v|0)==704){ay(5244292,103,5247284,5243996)}w=(c[u+16>>2]|0)+(d<<3)|0;u=c[w+4>>2]|0;j=(c[k>>2]=c[w>>2]|0,+g[k>>2]);x=(c[k>>2]=u,+g[k>>2]);y=+g[s>>2]*(q+(f*j-e*x)-(o+(m*p-l*i)))+ +g[t>>2]*(n+(e*j+f*x)-(h+(l*p+m*i)));return+y}else if((r|0)==2){i=+g[a+92>>2];p=+g[a+96>>2];x=f*i-e*p;j=e*i+f*p;p=+g[a+84>>2];i=+g[a+88>>2];z=q+(f*p-e*i);A=n+(e*p+f*i);t=c[a>>2]|0;do{if((b|0)>-1){if((c[t+20>>2]|0)>(b|0)){break}else{v=712;break}}else{v=712}}while(0);if((v|0)==712){ay(5244292,103,5247284,5243996)}s=(c[t+16>>2]|0)+(b<<3)|0;b=c[s+4>>2]|0;i=(c[k>>2]=c[s>>2]|0,+g[k>>2]);p=(c[k>>2]=b,+g[k>>2]);y=x*(o+(m*i-l*p)-z)+j*(h+(l*i+m*p)-A);return+y}else if((r|0)==1){A=+g[a+92>>2];p=+g[a+96>>2];i=m*A-l*p;j=l*A+m*p;p=+g[a+84>>2];A=+g[a+88>>2];z=o+(m*p-l*A);o=h+(l*p+m*A);r=c[a+4>>2]|0;do{if((d|0)>-1){if((c[r+20>>2]|0)>(d|0)){break}else{v=708;break}}else{v=708}}while(0);if((v|0)==708){ay(5244292,103,5247284,5243996)}v=(c[r+16>>2]|0)+(d<<3)|0;d=c[v+4>>2]|0;A=(c[k>>2]=c[v>>2]|0,+g[k>>2]);m=(c[k>>2]=d,+g[k>>2]);y=i*(q+(f*A-e*m)-z)+j*(n+(e*A+f*m)-o);return+y}else{ay(5244124,242,5247132,5245872);y=0.0;return+y}return 0.0}function bz(b,d,e){b=b|0;d=d|0;e=e|0;var f=0,h=0,i=0,j=0,k=0;do{if((e|0)>-1){if(((c[b+16>>2]|0)-1|0)>(e|0)){break}else{f=722;break}}else{f=722}}while(0);if((f|0)==722){ay(5243844,89,5247632,5243808)}c[d+4>>2]=1;g[d+8>>2]=+g[b+8>>2];f=b+12|0;h=(c[f>>2]|0)+(e<<3)|0;i=d+12|0;j=c[h+4>>2]|0;c[i>>2]=c[h>>2]|0;c[i+4>>2]=j;j=(c[f>>2]|0)+(e+1<<3)|0;i=d+20|0;h=c[j+4>>2]|0;c[i>>2]=c[j>>2]|0;c[i+4>>2]=h;h=d+28|0;if((e|0)>0){i=(c[f>>2]|0)+(e-1<<3)|0;j=h;k=c[i+4>>2]|0;c[j>>2]=c[i>>2]|0;c[j+4>>2]=k;a[d+44|0]=1}else{k=b+20|0;j=h;h=c[k+4>>2]|0;c[j>>2]=c[k>>2]|0;c[j+4>>2]=h;a[d+44|0]=a[b+36|0]&1}h=d+36|0;if(((c[b+16>>2]|0)-2|0)>(e|0)){j=(c[f>>2]|0)+(e+2<<3)|0;e=h;f=c[j+4>>2]|0;c[e>>2]=c[j>>2]|0;c[e+4>>2]=f;a[d+45|0]=1;return}else{f=b+28|0;e=h;h=c[f+4>>2]|0;c[e>>2]=c[f>>2]|0;c[e+4>>2]=h;a[d+45|0]=a[b+37|0]&1;return}}function bA(d,e){d=d|0;e=e|0;var f=0,h=0,i=0;f=bM(e,48)|0;if((f|0)==0){h=0}else{c[f>>2]=5250828;c[f+4>>2]=1;g[f+8>>2]=.009999999776482582;e=f+28|0;c[e>>2]=0;c[e+4>>2]=0;c[e+8>>2]=0;c[e+12>>2]=0;b[e+16>>1]=0;h=f}c[h+4>>2]=c[d+4>>2]|0;g[h+8>>2]=+g[d+8>>2];f=d+12|0;e=h+12|0;i=c[f+4>>2]|0;c[e>>2]=c[f>>2]|0;c[e+4>>2]=i;i=d+20|0;e=h+20|0;f=c[i+4>>2]|0;c[e>>2]=c[i>>2]|0;c[e+4>>2]=f;f=d+28|0;e=h+28|0;i=c[f+4>>2]|0;c[e>>2]=c[f>>2]|0;c[e+4>>2]=i;i=d+36|0;e=h+36|0;f=c[i+4>>2]|0;c[e>>2]=c[i>>2]|0;c[e+4>>2]=f;a[h+44|0]=a[d+44|0]&1;a[h+45|0]=a[d+45|0]&1;return h|0}function bB(a){a=a|0;return 1}function bC(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0.0,h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0;f=+g[d+12>>2];h=+g[a+12>>2];i=+g[d+8>>2];j=+g[a+16>>2];l=+g[d>>2];m=l+(f*h-i*j);n=+g[d+4>>2];o=h*i+f*j+n;j=+g[a+20>>2];h=+g[a+24>>2];p=l+(f*j-i*h);l=n+(i*j+f*h);h=+g[a+8>>2];a=b;d=(g[k>>2]=(m<p?m:p)-h,c[k>>2]|0);e=(g[k>>2]=(o<l?o:l)-h,c[k>>2]|0)|0;c[a>>2]=0|d;c[a+4>>2]=e;e=b+8|0;b=(g[k>>2]=h+(m>p?m:p),c[k>>2]|0);a=(g[k>>2]=h+(o>l?o:l),c[k>>2]|0)|0;c[e>>2]=0|b;c[e+4>>2]=a;return}function bD(a,b,d){a=a|0;b=b|0;d=+d;var e=0,f=0;g[b>>2]=0.0;d=(+g[a+16>>2]+ +g[a+24>>2])*.5;e=b+4|0;f=(g[k>>2]=(+g[a+12>>2]+ +g[a+20>>2])*.5,c[k>>2]|0);a=(g[k>>2]=d,c[k>>2]|0)|0;c[e>>2]=0|f;c[e+4>>2]=a;g[b+12>>2]=0.0;return}function bE(a,b,d){a=a|0;b=b|0;d=d|0;var e=0.0,f=0.0,h=0.0,i=0.0,j=0.0,k=0.0,l=0,m=0;e=+g[d>>2]- +g[b>>2];f=+g[d+4>>2]- +g[b+4>>2];h=+g[b+12>>2];i=+g[b+8>>2];j=e*h+f*i;k=h*f+e*(-0.0-i);b=c[a+148>>2]|0;d=0;while(1){if((d|0)>=(b|0)){l=1;m=742;break}if((j- +g[a+20+(d<<3)>>2])*+g[a+84+(d<<3)>>2]+(k- +g[a+20+(d<<3)+4>>2])*+g[a+84+(d<<3)+4>>2]>0.0){l=0;m=743;break}else{d=d+1|0}}if((m|0)==743){return l|0}else if((m|0)==742){return l|0}return 0}function bF(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0.0,h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0,x=0.0,y=0.0,z=0.0,A=0.0;f=+g[d+12>>2];h=+g[a+20>>2];i=+g[d+8>>2];j=+g[a+24>>2];l=+g[d>>2];m=l+(f*h-i*j);n=+g[d+4>>2];o=h*i+f*j+n;d=c[a+148>>2]|0;L1006:do{if((d|0)>1){j=o;h=m;p=o;q=m;e=1;while(1){r=+g[a+20+(e<<3)>>2];s=+g[a+20+(e<<3)+4>>2];t=l+(f*r-i*s);u=r*i+f*s+n;s=h<t?h:t;r=j<u?j:u;v=q>t?q:t;t=p>u?p:u;w=e+1|0;if((w|0)<(d|0)){j=r;h=s;p=t;q=v;e=w}else{x=r;y=s;z=t;A=v;break L1006}}}else{x=o;y=m;z=o;A=m}}while(0);m=+g[a+8>>2];a=b;d=(g[k>>2]=y-m,c[k>>2]|0);e=(g[k>>2]=x-m,c[k>>2]|0)|0;c[a>>2]=0|d;c[a+4>>2]=e;e=b+8|0;b=(g[k>>2]=A+m,c[k>>2]|0);a=(g[k>>2]=z+m,c[k>>2]|0)|0;c[e>>2]=0|b;c[e+4>>2]=a;return}function bG(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0,u=0.0,v=0.0,w=0;h=+g[e>>2];i=+g[d>>2]-h;j=+g[e+4>>2];l=+g[d+4>>2]-j;m=+g[e+12>>2];n=+g[e+8>>2];o=i*m+l*n;p=-0.0-n;q=m*l+i*p;i=+g[d+8>>2]-h;h=+g[d+12>>2]-j;j=m*i+n*h-o;n=i*p+m*h-q;e=a+12|0;f=c[e+4>>2]|0;h=(c[k>>2]=c[e>>2]|0,+g[k>>2]);m=(c[k>>2]=f,+g[k>>2]);f=a+20|0;a=c[f+4>>2]|0;p=(c[k>>2]=c[f>>2]|0,+g[k>>2]);i=p-h;p=(c[k>>2]=a,+g[k>>2])-m;l=-0.0-i;r=i*i+p*p;s=+N(r);if(s<1.1920928955078125e-7){t=p;u=l}else{v=1.0/s;t=p*v;u=v*l}l=(m-q)*u+(h-o)*t;v=n*u+j*t;if(v==0.0){w=0;return w|0}s=l/v;if(s<0.0){w=0;return w|0}if(+g[d+16>>2]<s|r==0.0){w=0;return w|0}v=(i*(o+j*s-h)+p*(q+n*s-m))/r;if(v<0.0|v>1.0){w=0;return w|0}g[b+8>>2]=s;if(l>0.0){d=b;a=(g[k>>2]=-0.0-t,c[k>>2]|0);f=(g[k>>2]=-0.0-u,c[k>>2]|0)|0;c[d>>2]=0|a;c[d+4>>2]=f;w=1;return w|0}else{f=b;b=(g[k>>2]=t,c[k>>2]|0);d=(g[k>>2]=u,c[k>>2]|0)|0;c[f>>2]=0|b;c[f+4>>2]=d;w=1;return w|0}return 0}function bH(a){a=a|0;dg(a);return}function bI(a,b){a=a|0;b=b|0;var d=0,e=0,f=0;d=bM(b,152)|0;if((d|0)==0){e=0}else{c[d>>2]=5250784;c[d+4>>2]=2;g[d+8>>2]=.009999999776482582;c[d+148>>2]=0;g[d+12>>2]=0.0;g[d+16>>2]=0.0;e=d}c[e+4>>2]=c[a+4>>2]|0;g[e+8>>2]=+g[a+8>>2];d=a+12|0;b=e+12|0;f=c[d+4>>2]|0;c[b>>2]=c[d>>2]|0;c[b+4>>2]=f;di(e+20|0,a+20|0,64);di(e+84|0,a+84|0,64);c[e+148>>2]=c[a+148>>2]|0;return e|0}function bJ(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0.0,i=0.0,j=0.0,l=0.0,m=0.0,n=0,o=0.0,p=0.0,q=0.0,r=0.0,s=0,t=0,u=0.0,v=0.0,w=0,x=0.0,y=0,z=0.0;h=+g[e>>2];i=+g[d>>2]-h;j=+g[e+4>>2];l=+g[d+4>>2]-j;f=e+12|0;m=+g[f>>2];n=e+8|0;o=+g[n>>2];p=i*m+l*o;q=-0.0-o;r=m*l+i*q;i=+g[d+8>>2]-h;h=+g[d+12>>2]-j;j=m*i+o*h-p;o=i*q+m*h-r;h=+g[d+16>>2];d=c[a+148>>2]|0;m=0.0;e=0;s=-1;q=h;L1037:while(1){if((e|0)>=(d|0)){t=778;break}i=+g[a+84+(e<<3)>>2];l=+g[a+84+(e<<3)+4>>2];u=(+g[a+20+(e<<3)>>2]-p)*i+(+g[a+20+(e<<3)+4>>2]-r)*l;v=j*i+o*l;L1040:do{if(v==0.0){if(u<0.0){w=0;t=783;break L1037}else{x=m;y=s;z=q}}else{do{if(v<0.0){if(u>=m*v){break}x=u/v;y=e;z=q;break L1040}}while(0);if(v<=0.0){x=m;y=s;z=q;break}if(u>=q*v){x=m;y=s;z=q;break}x=m;y=s;z=u/v}}while(0);if(z<x){w=0;t=786;break}else{m=x;e=e+1|0;s=y;q=z}}if((t|0)==778){if(m<0.0|m>h){ay(5243472,249,5247340,5244172)}if((s|0)<=-1){w=0;return w|0}g[b+8>>2]=m;m=+g[f>>2];h=+g[a+84+(s<<3)>>2];z=+g[n>>2];q=+g[a+84+(s<<3)+4>>2];s=b;b=(g[k>>2]=m*h-z*q,c[k>>2]|0);a=(g[k>>2]=h*z+m*q,c[k>>2]|0)|0;c[s>>2]=0|b;c[s+4>>2]=a;w=1;return w|0}else if((t|0)==783){return w|0}else if((t|0)==786){return w|0}return 0}function bK(a,b,d){a=a|0;b=b|0;d=+d;var e=0,f=0,h=0,i=0,j=0,l=0.0,m=0.0,n=0.0,o=0.0,p=0.0,q=0.0,r=0.0,s=0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0,D=0,E=0,F=0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0.0,N=0.0,O=0.0,P=0.0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0;e=a+148|0;f=c[e>>2]|0;do{if((f|0)>2){h=f;i=790}else{ay(5243472,306,5247456,5243788);j=c[e>>2]|0;if((j|0)>0){h=j;i=790;break}l=1.0/+(j|0);j=b|0;g[j>>2]=d*0.0;m=l*0.0;n=l*0.0;o=0.0;p=0.0;q=0.0;r=0.0;s=j;i=797;break}}while(0);do{if((i|0)==790){l=0.0;t=0.0;e=0;while(1){u=t+ +g[a+20+(e<<3)>>2];v=l+ +g[a+20+(e<<3)+4>>2];f=e+1|0;if((f|0)<(h|0)){l=v;t=u;e=f}else{break}}t=1.0/+(h|0);l=u*t;w=v*t;e=a+20|0;f=a+24|0;t=0.0;x=0.0;j=0;y=0.0;z=0.0;while(1){A=+g[a+20+(j<<3)>>2]-l;B=+g[a+20+(j<<3)+4>>2]-w;C=j+1|0;D=(C|0)<(h|0);if(D){E=a+20+(C<<3)|0;F=a+20+(C<<3)+4|0}else{E=e;F=f}G=+g[E>>2]-l;H=+g[F>>2]-w;I=A*H-B*G;J=I*.5;K=z+J;L=J*.3333333432674408;M=x+(A+G)*L;N=t+(B+H)*L;O=y+I*.0833333358168602*(G*G+(A*A+A*G)+(H*H+(B*B+B*H)));if(D){t=N;x=M;j=C;y=O;z=K}else{break}}z=K*d;j=b|0;g[j>>2]=z;if(K>1.1920928955078125e-7){P=z;Q=w;R=l;S=K;T=O;U=M;V=N;break}else{m=w;n=l;o=K;p=O;q=M;r=N;s=j;i=797;break}}}while(0);if((i|0)==797){ay(5243472,352,5247456,5243448);P=+g[s>>2];Q=m;R=n;S=o;T=p;U=q;V=r}r=1.0/S;S=U*r;U=V*r;r=R+S;R=Q+U;s=b+4|0;i=(g[k>>2]=r,c[k>>2]|0);F=(g[k>>2]=R,c[k>>2]|0)|0;c[s>>2]=0|i;c[s+4>>2]=F;g[b+12>>2]=T*d+P*(r*r+R*R-(S*S+U*U));return}function bL(a){a=a|0;dg(a);return}function bM(b,d){b=b|0;d=d|0;var e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0;if((d|0)==0){e=0;return e|0}do{if((d|0)>0){if((d|0)<=640){break}e=de(d)|0;return e|0}else{ay(5243252,104,5249416,5244764)}}while(0);f=a[d+5251656|0]|0;d=f&255;if((f&255)>=14){ay(5243252,112,5249416,5244088)}f=b+12+(d<<2)|0;g=c[f>>2]|0;if((g|0)!=0){c[f>>2]=c[g>>2]|0;e=g;return e|0}g=b+4|0;h=c[g>>2]|0;i=b+8|0;j=b|0;if((h|0)==(c[i>>2]|0)){b=c[j>>2]|0;k=h+128|0;c[i>>2]=k;i=de(k<<3)|0;c[j>>2]=i;k=b;di(i,k,c[g>>2]<<3);dk((c[j>>2]|0)+(c[g>>2]<<3)|0,0,1024);df(k);l=c[g>>2]|0}else{l=h}h=c[j>>2]|0;j=de(16384)|0;k=h+(l<<3)+4|0;c[k>>2]=j;i=c[5252300+(d<<2)>>2]|0;c[h+(l<<3)>>2]=i;l=16384/(i|0)&-1;if((Z(l,i)|0)<16385){m=j}else{ay(5243252,140,5249416,5243748);m=c[k>>2]|0}j=l-1|0;l=m;L1103:do{if((j|0)>0){m=0;h=l;while(1){d=h+Z(m,i)|0;b=m+1|0;c[d>>2]=h+Z(b,i)|0;d=c[k>>2]|0;if((b|0)==(j|0)){n=d;break L1103}else{m=b;h=d}}}else{n=l}}while(0);c[n+Z(j,i)>>2]=0;c[f>>2]=c[c[k>>2]>>2]|0;c[g>>2]=(c[g>>2]|0)+1|0;e=c[k>>2]|0;return e|0}function bN(b,d){b=b|0;d=d|0;var e=0,f=0,g=0,h=0,i=0;e=b+102796|0;f=c[e>>2]|0;if((f|0)>0){g=f}else{ay(5243068,63,5249276,5243728);g=c[e>>2]|0}f=g-1|0;if((c[b+102412+(f*12&-1)>>2]|0)!=(d|0)){ay(5243068,65,5249276,5243428)}if((a[b+102412+(f*12&-1)+8|0]&1)<<24>>24==0){g=b+102412+(f*12&-1)+4|0;h=b+102400|0;c[h>>2]=(c[h>>2]|0)-(c[g>>2]|0)|0;i=g}else{df(d);i=b+102412+(f*12&-1)+4|0}f=b+102404|0;c[f>>2]=(c[f>>2]|0)-(c[i>>2]|0)|0;c[e>>2]=(c[e>>2]|0)-1|0;return}function bO(a){a=a|0;return}function bP(a){a=a|0;return}function bQ(d,e,f){d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0,n=0,o=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0;h=d+12|0;i=d+64|0;j=e+4|0;k=+g[j>>2];do{if(k==k&!(A=0.0,A!=A)&k>+-p&k<+p){l=+g[e+8>>2];if(l==l&!(A=0.0,A!=A)&l>+-p&l<+p){break}else{m=833;break}}else{m=833}}while(0);if((m|0)==833){ay(5243028,27,5248360,5245508)}n=e+16|0;k=+g[n>>2];do{if(k==k&!(A=0.0,A!=A)&k>+-p&k<+p){l=+g[e+20>>2];if(l==l&!(A=0.0,A!=A)&l>+-p&l<+p){break}else{m=836;break}}else{m=836}}while(0);if((m|0)==836){ay(5243028,28,5248360,5244444)}m=e+12|0;k=+g[m>>2];if(!(k==k&!(A=0.0,A!=A)&k>+-p&k<+p)){ay(5243028,29,5248360,5244028)}o=e+24|0;k=+g[o>>2];if(!(k==k&!(A=0.0,A!=A)&k>+-p&k<+p)){ay(5243028,30,5248360,5243696)}q=e+32|0;k=+g[q>>2];if(k<0.0|k==k&!(A=0.0,A!=A)&k>+-p&k<+p^1){ay(5243028,31,5248360,5243368)}r=e+28|0;k=+g[r>>2];if(k<0.0|k==k&!(A=0.0,A!=A)&k>+-p&k<+p^1){ay(5243028,32,5248360,5243192)}s=d+4|0;b[s>>1]=0;if((a[e+39|0]&1)<<24>>24==0){t=0}else{b[s>>1]=8;t=8}if((a[e+38|0]&1)<<24>>24==0){u=t}else{v=t|16;b[s>>1]=v;u=v}if((a[e+36|0]&1)<<24>>24==0){w=u}else{v=u|4;b[s>>1]=v;w=v}if((a[e+37|0]&1)<<24>>24==0){x=w}else{v=w|2;b[s>>1]=v;x=v}if((a[e+40|0]&1)<<24>>24!=0){b[s>>1]=x|32}c[d+88>>2]=f;f=j;j=h;h=c[f>>2]|0;x=c[f+4>>2]|0;c[j>>2]=h;c[j+4>>2]=x;k=+g[m>>2];g[d+20>>2]=+Q(k);g[d+24>>2]=+P(k);g[d+28>>2]=0.0;g[d+32>>2]=0.0;j=d+36|0;c[j>>2]=h;c[j+4>>2]=x;j=d+44|0;c[j>>2]=h;c[j+4>>2]=x;g[d+52>>2]=+g[m>>2];g[d+56>>2]=+g[m>>2];g[d+60>>2]=0.0;c[d+108>>2]=0;c[d+112>>2]=0;c[d+92>>2]=0;c[d+96>>2]=0;m=n;n=i;i=c[m+4>>2]|0;c[n>>2]=c[m>>2]|0;c[n+4>>2]=i;g[d+72>>2]=+g[o>>2];g[d+132>>2]=+g[r>>2];g[d+136>>2]=+g[q>>2];g[d+140>>2]=+g[e+48>>2];g[d+76>>2]=0.0;g[d+80>>2]=0.0;g[d+84>>2]=0.0;g[d+144>>2]=0.0;q=c[e>>2]|0;c[d>>2]=q;r=d+116|0;if((q|0)==2){g[r>>2]=1.0;g[d+120>>2]=1.0;q=d+124|0;g[q>>2]=0.0;o=d+128|0;g[o>>2]=0.0;i=e+44|0;n=c[i>>2]|0;m=d+148|0;c[m>>2]=n;x=d+100|0;c[x>>2]=0;j=d+104|0;c[j>>2]=0;return}else{g[r>>2]=0.0;g[d+120>>2]=0.0;q=d+124|0;g[q>>2]=0.0;o=d+128|0;g[o>>2]=0.0;i=e+44|0;n=c[i>>2]|0;m=d+148|0;c[m>>2]=n;x=d+100|0;c[x>>2]=0;j=d+104|0;c[j>>2]=0;return}}function bR(a){a=a|0;var d=0,e=0,f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0.0,t=0.0,u=0.0,v=0.0,w=0.0,x=0.0,y=0,z=0.0,A=0.0,B=0.0,C=0,D=0.0,E=0.0,F=0.0,G=0.0,H=0.0,I=0,J=0.0,K=0.0;d=i;i=i+16|0;e=d|0;f=a+116|0;h=a+120|0;j=a+124|0;l=a+128|0;m=a+28|0;g[m>>2]=0.0;g[a+32>>2]=0.0;n=f;c[n>>2]=0;c[n+4>>2]=0;c[n+8>>2]=0;c[n+12>>2]=0;n=c[a>>2]|0;if((n|0)==0|(n|0)==1){o=a+12|0;p=a+36|0;q=c[o>>2]|0;r=c[o+4>>2]|0;c[p>>2]=q;c[p+4>>2]=r;p=a+44|0;c[p>>2]=q;c[p+4>>2]=r;g[a+52>>2]=+g[a+56>>2];i=d;return}else if((n|0)!=2){ay(5243028,284,5248408,5246236)}n=5242944;r=c[n+4>>2]|0;s=(c[k>>2]=c[n>>2]|0,+g[k>>2]);t=(c[k>>2]=r,+g[k>>2]);r=c[a+100>>2]|0;L1170:do{if((r|0)==0){u=t;v=s}else{n=e|0;p=e+4|0;q=e+8|0;o=e+12|0;w=t;x=s;y=r;while(1){z=+g[y>>2];if(z==0.0){A=x;B=w}else{C=c[y+12>>2]|0;aP[c[(c[C>>2]|0)+28>>2]&255](C,e,z);z=+g[n>>2];g[f>>2]=z+ +g[f>>2];D=x+z*+g[p>>2];E=w+z*+g[q>>2];g[j>>2]=+g[o>>2]+ +g[j>>2];A=D;B=E}C=c[y+4>>2]|0;if((C|0)==0){u=B;v=A;break L1170}else{w=B;x=A;y=C}}}}while(0);A=+g[f>>2];if(A>0.0){B=1.0/A;g[h>>2]=B;F=v*B;G=u*B;H=A}else{g[f>>2]=1.0;g[h>>2]=1.0;F=v;G=u;H=1.0}u=+g[j>>2];do{if(u>0.0){if((b[a+4>>1]&16)<<16>>16!=0){I=877;break}v=u-(G*G+F*F)*H;g[j>>2]=v;if(v>0.0){J=v}else{ay(5243028,319,5248408,5245956);J=+g[j>>2]}K=1.0/J;break}else{I=877}}while(0);if((I|0)==877){g[j>>2]=0.0;K=0.0}g[l>>2]=K;l=a+44|0;j=c[l+4>>2]|0;K=(c[k>>2]=c[l>>2]|0,+g[k>>2]);J=(c[k>>2]=j,+g[k>>2]);j=m;m=(g[k>>2]=F,c[k>>2]|0);I=(g[k>>2]=G,c[k>>2]|0)|0;c[j>>2]=0|m;c[j+4>>2]=I;H=+g[a+24>>2];u=+g[a+20>>2];v=+g[a+12>>2]+(H*F-u*G);A=F*u+H*G+ +g[a+16>>2];I=(g[k>>2]=v,c[k>>2]|0);j=0|I;I=(g[k>>2]=A,c[k>>2]|0)|0;c[l>>2]=j;c[l+4>>2]=I;l=a+36|0;c[l>>2]=j;c[l+4>>2]=I;G=+g[a+72>>2];I=a+64|0;g[I>>2]=+g[I>>2]+(A-J)*(-0.0-G);I=a+68|0;g[I>>2]=G*(v-K)+ +g[I>>2];i=d;return}function bS(d,e){d=d|0;e=e|0;var f=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0;f=d+88|0;h=c[f>>2]|0;i=c[h+102868>>2]|0;if((i&2|0)==0){j=h;k=i}else{ay(5243028,153,5248440,5243128);i=c[f>>2]|0;j=i;k=c[i+102868>>2]|0}if((k&2|0)!=0){l=0;return l|0}k=j|0;j=bM(k,44)|0;if((j|0)==0){m=0}else{b[j+32>>1]=1;b[j+34>>1]=-1;b[j+36>>1]=0;c[j+40>>2]=0;c[j+24>>2]=0;c[j+28>>2]=0;c[j>>2]=0;c[j+4>>2]=0;c[j+8>>2]=0;c[j+12>>2]=0;m=j}c[m+40>>2]=c[e+4>>2]|0;g[m+16>>2]=+g[e+8>>2];g[m+20>>2]=+g[e+12>>2];j=m+8|0;c[j>>2]=d;i=m+4|0;c[i>>2]=0;h=m+32|0;n=e+22|0;b[h>>1]=b[n>>1]|0;b[h+2>>1]=b[n+2>>1]|0;b[h+4>>1]=b[n+4>>1]|0;a[m+38|0]=a[e+20|0]&1;n=c[e>>2]|0;h=aR[c[(c[n>>2]|0)+8>>2]&255](n,k)|0;n=m+12|0;c[n>>2]=h;o=aL[c[(c[h>>2]|0)+12>>2]&255](h)|0;h=bM(k,o*28&-1)|0;k=m+24|0;c[k>>2]=h;L1202:do{if((o|0)>0){c[h+16>>2]=0;c[(c[k>>2]|0)+24>>2]=-1;if((o|0)==1){break}else{p=1}while(1){c[(c[k>>2]|0)+(p*28&-1)+16>>2]=0;c[(c[k>>2]|0)+(p*28&-1)+24>>2]=-1;q=p+1|0;if((q|0)==(o|0)){break L1202}else{p=q}}}}while(0);p=m+28|0;c[p>>2]=0;o=m|0;g[o>>2]=+g[e+16>>2];L1207:do{if((b[d+4>>1]&32)<<16>>16!=0){e=(c[f>>2]|0)+102872|0;h=d+12|0;q=c[n>>2]|0;r=aL[c[(c[q>>2]|0)+12>>2]&255](q)|0;c[p>>2]=r;if((r|0)>0){s=0}else{break}while(1){r=c[k>>2]|0;q=r+(s*28&-1)|0;t=c[n>>2]|0;u=q|0;aS[c[(c[t>>2]|0)+24>>2]&255](t,u,h,s);c[r+(s*28&-1)+24>>2]=a9(e,u,q)|0;c[r+(s*28&-1)+16>>2]=m;c[r+(s*28&-1)+20>>2]=s;r=s+1|0;if((r|0)<(c[p>>2]|0)){s=r}else{break L1207}}}}while(0);s=d+100|0;c[i>>2]=c[s>>2]|0;c[s>>2]=m;s=d+104|0;c[s>>2]=(c[s>>2]|0)+1|0;c[j>>2]=d;if(+g[o>>2]>0.0){bR(d)}d=(c[f>>2]|0)+102868|0;c[d>>2]=c[d>>2]|1;l=m;return l|0}function bT(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0;d=c[(c[b+48>>2]|0)+8>>2]|0;e=c[(c[b+52>>2]|0)+8>>2]|0;f=c[a+72>>2]|0;do{if((f|0)!=0){if((c[b+4>>2]&2|0)==0){break}aK[c[(c[f>>2]|0)+12>>2]&255](f,b)}}while(0);f=b+8|0;g=c[f>>2]|0;h=b+12|0;if((g|0)!=0){c[g+12>>2]=c[h>>2]|0}g=c[h>>2]|0;if((g|0)!=0){c[g+8>>2]=c[f>>2]|0}f=a+60|0;if((c[f>>2]|0)==(b|0)){c[f>>2]=c[h>>2]|0}h=b+24|0;f=c[h>>2]|0;g=b+28|0;if((f|0)!=0){c[f+12>>2]=c[g>>2]|0}f=c[g>>2]|0;if((f|0)!=0){c[f+8>>2]=c[h>>2]|0}h=d+112|0;if((b+16|0)==(c[h>>2]|0)){c[h>>2]=c[g>>2]|0}g=b+40|0;h=c[g>>2]|0;d=b+44|0;if((h|0)!=0){c[h+12>>2]=c[d>>2]|0}h=c[d>>2]|0;if((h|0)!=0){c[h+8>>2]=c[g>>2]|0}g=e+112|0;if((b+32|0)!=(c[g>>2]|0)){i=a+76|0;j=c[i>>2]|0;cx(b,j);k=a+64|0;l=c[k>>2]|0;m=l-1|0;c[k>>2]=m;return}c[g>>2]=c[d>>2]|0;i=a+76|0;j=c[i>>2]|0;cx(b,j);k=a+64|0;l=c[k>>2]|0;m=l-1|0;c[k>>2]=m;return}function bU(a,b){a=a|0;b=b|0;var d=0,e=0,f=0;d=c[a>>2]|0;e=c[b>>2]|0;if((d|0)<(e|0)){f=1;return f|0}if((d|0)!=(e|0)){f=0;return f|0}f=(c[a+4>>2]|0)<(c[b+4>>2]|0);return f|0}function bV(d){d=d|0;var e=0,f=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0;e=c[d+60>>2]|0;if((e|0)==0){return}f=d+12|0;h=d+4|0;i=d+72|0;j=d+68|0;k=e;while(1){e=c[k+48>>2]|0;l=c[k+52>>2]|0;m=c[k+56>>2]|0;n=c[k+60>>2]|0;o=c[e+8>>2]|0;p=c[l+8>>2]|0;q=k+4|0;r=c[q>>2]|0;L1263:do{if((r&8|0)==0){s=946}else{do{if((c[p>>2]|0)==2){s=935}else{if((c[o>>2]|0)==2){s=935;break}else{break}}}while(0);L1267:do{if((s|0)==935){s=0;t=c[p+108>>2]|0;L1269:do{if((t|0)!=0){u=t;while(1){if((c[u>>2]|0)==(o|0)){if((a[(c[u+4>>2]|0)+61|0]&1)<<24>>24==0){break L1267}}v=c[u+12>>2]|0;if((v|0)==0){break L1269}else{u=v}}}}while(0);t=c[j>>2]|0;do{if((t|0)==0){w=r}else{if(aM[c[(c[t>>2]|0)+8>>2]&255](t,e,l)|0){w=c[q>>2]|0;break}else{u=c[k+12>>2]|0;bT(d,k);x=u;break L1263}}}while(0);c[q>>2]=w&-9;s=946;break L1263}}while(0);t=c[k+12>>2]|0;bT(d,k);x=t;break}}while(0);do{if((s|0)==946){s=0;if((b[o+4>>1]&2)<<16>>16==0){y=0}else{y=(c[o>>2]|0)!=0}if((b[p+4>>1]&2)<<16>>16==0){z=0}else{z=(c[p>>2]|0)!=0}if(!(y|z)){x=c[k+12>>2]|0;break}q=c[(c[e+24>>2]|0)+(m*28&-1)+24>>2]|0;r=c[(c[l+24>>2]|0)+(n*28&-1)+24>>2]|0;do{if((q|0)>-1){if((c[f>>2]|0)>(q|0)){break}else{s=954;break}}else{s=954}}while(0);if((s|0)==954){s=0;ay(5245460,159,5247576,5245416)}t=c[h>>2]|0;do{if((r|0)>-1){if((c[f>>2]|0)>(r|0)){A=t;break}else{s=957;break}}else{s=957}}while(0);if((s|0)==957){s=0;ay(5245460,159,5247576,5245416);A=c[h>>2]|0}if(+g[A+(r*36&-1)>>2]- +g[t+(q*36&-1)+8>>2]>0.0|+g[A+(r*36&-1)+4>>2]- +g[t+(q*36&-1)+12>>2]>0.0|+g[t+(q*36&-1)>>2]- +g[A+(r*36&-1)+8>>2]>0.0|+g[t+(q*36&-1)+4>>2]- +g[A+(r*36&-1)+12>>2]>0.0){u=c[k+12>>2]|0;bT(d,k);x=u;break}else{cz(k,c[i>>2]|0);x=c[k+12>>2]|0;break}}}while(0);if((x|0)==0){break}else{k=x}}return}function bW(a,b){a=a|0;b=b|0;var d=0,e=0,f=0,g=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0;d=i;i=i+4|0;e=d|0;f=a+52|0;c[f>>2]=0;g=a+40|0;h=c[g>>2]|0;if((h|0)>0){j=a+32|0;k=a+56|0;l=a|0;m=a+12|0;n=a+4|0;o=0;p=h;while(1){h=c[(c[j>>2]|0)+(o<<2)>>2]|0;c[k>>2]=h;if((h|0)==-1){q=p}else{do{if((h|0)>-1){if((c[m>>2]|0)>(h|0)){break}else{r=969;break}}else{r=969}}while(0);if((r|0)==969){r=0;ay(5245460,159,5247576,5245416)}bY(l,a,(c[n>>2]|0)+(h*36&-1)|0);q=c[g>>2]|0}s=o+1|0;if((s|0)<(q|0)){o=s;p=q}else{break}}t=c[f>>2]|0}else{t=0}c[g>>2]=0;g=a+44|0;q=c[g>>2]|0;c[e>>2]=114;bZ(q,q+(t*12&-1)|0,e);if((c[f>>2]|0)<=0){i=d;return}e=a+12|0;t=a+4|0;a=0;L1327:while(1){q=c[g>>2]|0;p=q+(a*12&-1)|0;o=c[p>>2]|0;do{if((o|0)>-1){if((c[e>>2]|0)>(o|0)){break}else{r=977;break}}else{r=977}}while(0);if((r|0)==977){r=0;ay(5245460,153,5247528,5245416)}h=c[t>>2]|0;n=c[h+(o*36&-1)+16>>2]|0;l=q+(a*12&-1)+4|0;m=c[l>>2]|0;do{if((m|0)>-1){if((c[e>>2]|0)>(m|0)){u=h;break}else{r=980;break}}else{r=980}}while(0);if((r|0)==980){r=0;ay(5245460,153,5247528,5245416);u=c[t>>2]|0}bX(b,n,c[u+(m*36&-1)+16>>2]|0);h=c[f>>2]|0;q=a;while(1){o=q+1|0;if((o|0)>=(h|0)){break L1327}k=c[g>>2]|0;if((c[k+(o*12&-1)>>2]|0)!=(c[p>>2]|0)){a=o;continue L1327}if((c[k+(o*12&-1)+4>>2]|0)==(c[l>>2]|0)){q=o}else{a=o;continue L1327}}}i=d;return}function bX(d,e,f){d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0;h=c[e+16>>2]|0;i=c[f+16>>2]|0;j=c[e+20>>2]|0;e=c[f+20>>2]|0;f=c[h+8>>2]|0;k=c[i+8>>2]|0;if((f|0)==(k|0)){return}l=c[k+112>>2]|0;L1348:do{if((l|0)!=0){m=l;while(1){if((c[m>>2]|0)==(f|0)){n=c[m+4>>2]|0;o=c[n+48>>2]|0;p=c[n+52>>2]|0;q=c[n+56>>2]|0;r=c[n+60>>2]|0;if((o|0)==(h|0)&(p|0)==(i|0)&(q|0)==(j|0)&(r|0)==(e|0)){s=1017;break}if((o|0)==(i|0)&(p|0)==(h|0)&(q|0)==(e|0)&(r|0)==(j|0)){s=1022;break}}r=c[m+12>>2]|0;if((r|0)==0){break L1348}else{m=r}}if((s|0)==1022){return}else if((s|0)==1017){return}}}while(0);do{if((c[k>>2]|0)!=2){if((c[f>>2]|0)==2){break}return}}while(0);s=c[k+108>>2]|0;L1363:do{if((s|0)!=0){k=s;while(1){if((c[k>>2]|0)==(f|0)){if((a[(c[k+4>>2]|0)+61|0]&1)<<24>>24==0){break}}l=c[k+12>>2]|0;if((l|0)==0){break L1363}else{k=l}}return}}while(0);f=c[d+68>>2]|0;do{if((f|0)!=0){if(aM[c[(c[f>>2]|0)+8>>2]&255](f,h,i)|0){break}return}}while(0);f=cw(h,j,i,e,c[d+76>>2]|0)|0;if((f|0)==0){return}e=c[(c[f+48>>2]|0)+8>>2]|0;i=c[(c[f+52>>2]|0)+8>>2]|0;c[f+8>>2]=0;j=d+60|0;c[f+12>>2]=c[j>>2]|0;h=c[j>>2]|0;if((h|0)!=0){c[h+8>>2]=f}c[j>>2]=f;j=f+16|0;c[f+20>>2]=f;c[j>>2]=i;c[f+24>>2]=0;h=e+112|0;c[f+28>>2]=c[h>>2]|0;s=c[h>>2]|0;if((s|0)!=0){c[s+8>>2]=j}c[h>>2]=j;j=f+32|0;c[f+36>>2]=f;c[j>>2]=e;c[f+40>>2]=0;h=i+112|0;c[f+44>>2]=c[h>>2]|0;f=c[h>>2]|0;if((f|0)!=0){c[f+8>>2]=j}c[h>>2]=j;j=e+4|0;h=b[j>>1]|0;if((h&2)<<16>>16==0){b[j>>1]=h|2;g[e+144>>2]=0.0}e=i+4|0;h=b[e>>1]|0;if((h&2)<<16>>16==0){b[e>>1]=h|2;g[i+144>>2]=0.0}i=d+64|0;c[i>>2]=(c[i>>2]|0)+1|0;return}function bY(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0;e=i;i=i+1036|0;f=e|0;h=f+4|0;j=f|0;c[j>>2]=h;k=f+1028|0;c[k>>2]=0;l=f+1032|0;c[l>>2]=256;c[(c[j>>2]|0)+(c[k>>2]<<2)>>2]=c[a>>2]|0;f=(c[k>>2]|0)+1|0;c[k>>2]=f;L1395:do{if((f|0)>0){m=a+4|0;n=d|0;o=d+4|0;p=d+8|0;q=d+12|0;r=b+56|0;s=b+52|0;t=b+48|0;u=b+44|0;v=f;while(1){w=v-1|0;c[k>>2]=w;x=c[j>>2]|0;y=c[x+(w<<2)>>2]|0;do{if((y|0)==-1){z=w}else{A=c[m>>2]|0;if(+g[n>>2]- +g[A+(y*36&-1)+8>>2]>0.0|+g[o>>2]- +g[A+(y*36&-1)+12>>2]>0.0|+g[A+(y*36&-1)>>2]- +g[p>>2]>0.0|+g[A+(y*36&-1)+4>>2]- +g[q>>2]>0.0){z=w;break}B=A+(y*36&-1)+24|0;if((c[B>>2]|0)==-1){C=c[r>>2]|0;if((C|0)==(y|0)){z=w;break}D=c[s>>2]|0;if((D|0)==(c[t>>2]|0)){E=c[u>>2]|0;c[t>>2]=D<<1;F=de(D*24&-1)|0;c[u>>2]=F;G=E;di(F,G,(c[s>>2]|0)*12&-1);df(G);H=c[r>>2]|0;I=c[s>>2]|0}else{H=C;I=D}c[(c[u>>2]|0)+(I*12&-1)>>2]=(H|0)>(y|0)?y:H;D=c[r>>2]|0;c[(c[u>>2]|0)+((c[s>>2]|0)*12&-1)+4>>2]=(D|0)<(y|0)?y:D;c[s>>2]=(c[s>>2]|0)+1|0;z=c[k>>2]|0;break}do{if((w|0)==(c[l>>2]|0)){c[l>>2]=w<<1;D=de(w<<3)|0;c[j>>2]=D;C=x;di(D,C,c[k>>2]<<2);if((x|0)==(h|0)){break}df(C)}}while(0);c[(c[j>>2]|0)+(c[k>>2]<<2)>>2]=c[B>>2]|0;C=(c[k>>2]|0)+1|0;c[k>>2]=C;D=A+(y*36&-1)+28|0;do{if((C|0)==(c[l>>2]|0)){G=c[j>>2]|0;c[l>>2]=C<<1;F=de(C<<3)|0;c[j>>2]=F;E=G;di(F,E,c[k>>2]<<2);if((G|0)==(h|0)){break}df(E)}}while(0);c[(c[j>>2]|0)+(c[k>>2]<<2)>>2]=c[D>>2]|0;C=(c[k>>2]|0)+1|0;c[k>>2]=C;z=C}}while(0);if((z|0)>0){v=z}else{break L1395}}}}while(0);z=c[j>>2]|0;if((z|0)==(h|0)){i=e;return}df(z);c[j>>2]=0;i=e;return}function bZ(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,g=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,P=0,Q=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0,ah=0,ai=0,aj=0,ak=0,al=0,am=0,an=0,ao=0,ap=0,aq=0,ar=0,as=0;e=i;i=i+360|0;f=e|0;g=e+12|0;h=e+24|0;j=e+36|0;k=e+48|0;l=e+168|0;m=e+180|0;n=e+192|0;o=e+204|0;p=e+216|0;q=e+228|0;r=e+240|0;s=e+252|0;t=e+264|0;u=e+276|0;v=e+348|0;w=e+120|0;x=e+132|0;y=e+144|0;z=e+156|0;A=e+288|0;B=e+300|0;C=e+324|0;D=e+336|0;E=e+312|0;F=e+60|0;G=e+72|0;H=e+84|0;I=e+96|0;J=e+108|0;K=a;a=b;L1424:while(1){b=a;L=a-12|0;M=L;N=K;L1426:while(1){O=N;P=b-O|0;Q=(P|0)/12&-1;if((Q|0)==0|(Q|0)==1){R=1126;break L1424}else if((Q|0)==3){R=1050;break L1424}else if((Q|0)==5){R=1059;break L1424}else if((Q|0)==2){R=1048;break L1424}else if((Q|0)==4){R=1058;break L1424}if((P|0)<372){R=1065;break L1424}Q=(P|0)/24&-1;S=N+(Q*12&-1)|0;do{if((P|0)>11988){T=(P|0)/48&-1;U=N+(T*12&-1)|0;V=N+((T+Q|0)*12&-1)|0;T=b_(N,U,S,V,d)|0;if(!(aR[c[d>>2]&255](L,V)|0)){W=T;break}X=V;c[z>>2]=c[X>>2]|0;c[z+4>>2]=c[X+4>>2]|0;c[z+8>>2]=c[X+8>>2]|0;c[X>>2]=c[M>>2]|0;c[X+4>>2]=c[M+4>>2]|0;c[X+8>>2]=c[M+8>>2]|0;c[M>>2]=c[z>>2]|0;c[M+4>>2]=c[z+4>>2]|0;c[M+8>>2]=c[z+8>>2]|0;if(!(aR[c[d>>2]&255](V,S)|0)){W=T+1|0;break}V=S;c[x>>2]=c[V>>2]|0;c[x+4>>2]=c[V+4>>2]|0;c[x+8>>2]=c[V+8>>2]|0;c[V>>2]=c[X>>2]|0;c[V+4>>2]=c[X+4>>2]|0;c[V+8>>2]=c[X+8>>2]|0;c[X>>2]=c[x>>2]|0;c[X+4>>2]=c[x+4>>2]|0;c[X+8>>2]=c[x+8>>2]|0;if(!(aR[c[d>>2]&255](S,U)|0)){W=T+2|0;break}X=U;c[w>>2]=c[X>>2]|0;c[w+4>>2]=c[X+4>>2]|0;c[w+8>>2]=c[X+8>>2]|0;c[X>>2]=c[V>>2]|0;c[X+4>>2]=c[V+4>>2]|0;c[X+8>>2]=c[V+8>>2]|0;c[V>>2]=c[w>>2]|0;c[V+4>>2]=c[w+4>>2]|0;c[V+8>>2]=c[w+8>>2]|0;if(!(aR[c[d>>2]&255](U,N)|0)){W=T+3|0;break}U=N;c[y>>2]=c[U>>2]|0;c[y+4>>2]=c[U+4>>2]|0;c[y+8>>2]=c[U+8>>2]|0;c[U>>2]=c[X>>2]|0;c[U+4>>2]=c[X+4>>2]|0;c[U+8>>2]=c[X+8>>2]|0;c[X>>2]=c[y>>2]|0;c[X+4>>2]=c[y+4>>2]|0;c[X+8>>2]=c[y+8>>2]|0;W=T+4|0}else{T=aR[c[d>>2]&255](S,N)|0;X=aR[c[d>>2]&255](L,S)|0;if(!T){if(!X){W=0;break}T=S;c[J>>2]=c[T>>2]|0;c[J+4>>2]=c[T+4>>2]|0;c[J+8>>2]=c[T+8>>2]|0;c[T>>2]=c[M>>2]|0;c[T+4>>2]=c[M+4>>2]|0;c[T+8>>2]=c[M+8>>2]|0;c[M>>2]=c[J>>2]|0;c[M+4>>2]=c[J+4>>2]|0;c[M+8>>2]=c[J+8>>2]|0;if(!(aR[c[d>>2]&255](S,N)|0)){W=1;break}U=N;c[H>>2]=c[U>>2]|0;c[H+4>>2]=c[U+4>>2]|0;c[H+8>>2]=c[U+8>>2]|0;c[U>>2]=c[T>>2]|0;c[U+4>>2]=c[T+4>>2]|0;c[U+8>>2]=c[T+8>>2]|0;c[T>>2]=c[H>>2]|0;c[T+4>>2]=c[H+4>>2]|0;c[T+8>>2]=c[H+8>>2]|0;W=2;break}T=N;if(X){c[F>>2]=c[T>>2]|0;c[F+4>>2]=c[T+4>>2]|0;c[F+8>>2]=c[T+8>>2]|0;c[T>>2]=c[M>>2]|0;c[T+4>>2]=c[M+4>>2]|0;c[T+8>>2]=c[M+8>>2]|0;c[M>>2]=c[F>>2]|0;c[M+4>>2]=c[F+4>>2]|0;c[M+8>>2]=c[F+8>>2]|0;W=1;break}c[G>>2]=c[T>>2]|0;c[G+4>>2]=c[T+4>>2]|0;c[G+8>>2]=c[T+8>>2]|0;X=S;c[T>>2]=c[X>>2]|0;c[T+4>>2]=c[X+4>>2]|0;c[T+8>>2]=c[X+8>>2]|0;c[X>>2]=c[G>>2]|0;c[X+4>>2]=c[G+4>>2]|0;c[X+8>>2]=c[G+8>>2]|0;if(!(aR[c[d>>2]&255](L,S)|0)){W=1;break}c[I>>2]=c[X>>2]|0;c[I+4>>2]=c[X+4>>2]|0;c[I+8>>2]=c[X+8>>2]|0;c[X>>2]=c[M>>2]|0;c[X+4>>2]=c[M+4>>2]|0;c[X+8>>2]=c[M+8>>2]|0;c[M>>2]=c[I>>2]|0;c[M+4>>2]=c[I+4>>2]|0;c[M+8>>2]=c[I+8>>2]|0;W=2}}while(0);do{if(aR[c[d>>2]&255](N,S)|0){Y=L;Z=W}else{Q=L;while(1){_=Q-12|0;if((N|0)==(_|0)){break}if(aR[c[d>>2]&255](_,S)|0){R=1107;break}else{Q=_}}if((R|0)==1107){R=0;Q=N;c[E>>2]=c[Q>>2]|0;c[E+4>>2]=c[Q+4>>2]|0;c[E+8>>2]=c[Q+8>>2]|0;P=_;c[Q>>2]=c[P>>2]|0;c[Q+4>>2]=c[P+4>>2]|0;c[Q+8>>2]=c[P+8>>2]|0;c[P>>2]=c[E>>2]|0;c[P+4>>2]=c[E+4>>2]|0;c[P+8>>2]=c[E+8>>2]|0;Y=_;Z=W+1|0;break}P=N+12|0;if(aR[c[d>>2]&255](N,L)|0){$=P}else{Q=P;while(1){if((Q|0)==(L|0)){R=1125;break L1424}aa=Q+12|0;if(aR[c[d>>2]&255](N,Q)|0){break}else{Q=aa}}P=Q;c[D>>2]=c[P>>2]|0;c[D+4>>2]=c[P+4>>2]|0;c[D+8>>2]=c[P+8>>2]|0;c[P>>2]=c[M>>2]|0;c[P+4>>2]=c[M+4>>2]|0;c[P+8>>2]=c[M+8>>2]|0;c[M>>2]=c[D>>2]|0;c[M+4>>2]=c[D+4>>2]|0;c[M+8>>2]=c[D+8>>2]|0;$=aa}if(($|0)==(L|0)){R=1140;break L1424}else{ab=L;ac=$}while(1){P=ac;while(1){ad=P+12|0;if(aR[c[d>>2]&255](N,P)|0){ae=ab;break}else{P=ad}}while(1){af=ae-12|0;if(aR[c[d>>2]&255](N,af)|0){ae=af}else{break}}if(P>>>0>=af>>>0){N=P;continue L1426}X=P;c[C>>2]=c[X>>2]|0;c[C+4>>2]=c[X+4>>2]|0;c[C+8>>2]=c[X+8>>2]|0;T=af;c[X>>2]=c[T>>2]|0;c[X+4>>2]=c[T+4>>2]|0;c[X+8>>2]=c[T+8>>2]|0;c[T>>2]=c[C>>2]|0;c[T+4>>2]=c[C+4>>2]|0;c[T+8>>2]=c[C+8>>2]|0;ab=af;ac=ad}}}while(0);Q=N+12|0;L1469:do{if(Q>>>0<Y>>>0){T=Y;X=Q;U=Z;V=S;while(1){ag=X;while(1){ah=ag+12|0;if(aR[c[d>>2]&255](ag,V)|0){ag=ah}else{ai=T;break}}while(1){aj=ai-12|0;if(aR[c[d>>2]&255](aj,V)|0){break}else{ai=aj}}if(ag>>>0>aj>>>0){ak=ag;al=U;am=V;break L1469}P=ag;c[B>>2]=c[P>>2]|0;c[B+4>>2]=c[P+4>>2]|0;c[B+8>>2]=c[P+8>>2]|0;an=aj;c[P>>2]=c[an>>2]|0;c[P+4>>2]=c[an+4>>2]|0;c[P+8>>2]=c[an+8>>2]|0;c[an>>2]=c[B>>2]|0;c[an+4>>2]=c[B+4>>2]|0;c[an+8>>2]=c[B+8>>2]|0;T=aj;X=ah;U=U+1|0;V=(V|0)==(ag|0)?aj:V}}else{ak=Q;al=Z;am=S}}while(0);do{if((ak|0)==(am|0)){ao=al}else{if(!(aR[c[d>>2]&255](am,ak)|0)){ao=al;break}S=ak;c[A>>2]=c[S>>2]|0;c[A+4>>2]=c[S+4>>2]|0;c[A+8>>2]=c[S+8>>2]|0;Q=am;c[S>>2]=c[Q>>2]|0;c[S+4>>2]=c[Q+4>>2]|0;c[S+8>>2]=c[Q+8>>2]|0;c[Q>>2]=c[A>>2]|0;c[Q+4>>2]=c[A+4>>2]|0;c[Q+8>>2]=c[A+8>>2]|0;ao=al+1|0}}while(0);if((ao|0)==0){ap=b3(N,ak,d)|0;Q=ak+12|0;if(b3(Q,a,d)|0){R=1119;break}if(ap){N=Q;continue}}Q=ak;if((Q-O|0)>=(b-Q|0)){R=1123;break}bZ(N,ak,d);N=ak+12|0}if((R|0)==1123){R=0;bZ(ak+12|0,a,d);K=N;a=ak;continue}else if((R|0)==1119){R=0;if(ap){R=1141;break}else{K=N;a=ak;continue}}}if((R|0)==1125){i=e;return}else if((R|0)==1126){i=e;return}else if((R|0)==1050){ak=N+12|0;K=q;q=r;r=s;s=t;t=u;u=aR[c[d>>2]&255](ak,N)|0;ap=aR[c[d>>2]&255](L,ak)|0;if(!u){if(!ap){i=e;return}u=ak;c[t>>2]=c[u>>2]|0;c[t+4>>2]=c[u+4>>2]|0;c[t+8>>2]=c[u+8>>2]|0;c[u>>2]=c[M>>2]|0;c[u+4>>2]=c[M+4>>2]|0;c[u+8>>2]=c[M+8>>2]|0;c[M>>2]=c[t>>2]|0;c[M+4>>2]=c[t+4>>2]|0;c[M+8>>2]=c[t+8>>2]|0;if(!(aR[c[d>>2]&255](ak,N)|0)){i=e;return}t=N;c[r>>2]=c[t>>2]|0;c[r+4>>2]=c[t+4>>2]|0;c[r+8>>2]=c[t+8>>2]|0;c[t>>2]=c[u>>2]|0;c[t+4>>2]=c[u+4>>2]|0;c[t+8>>2]=c[u+8>>2]|0;c[u>>2]=c[r>>2]|0;c[u+4>>2]=c[r+4>>2]|0;c[u+8>>2]=c[r+8>>2]|0;i=e;return}r=N;if(ap){c[K>>2]=c[r>>2]|0;c[K+4>>2]=c[r+4>>2]|0;c[K+8>>2]=c[r+8>>2]|0;c[r>>2]=c[M>>2]|0;c[r+4>>2]=c[M+4>>2]|0;c[r+8>>2]=c[M+8>>2]|0;c[M>>2]=c[K>>2]|0;c[M+4>>2]=c[K+4>>2]|0;c[M+8>>2]=c[K+8>>2]|0;i=e;return}c[q>>2]=c[r>>2]|0;c[q+4>>2]=c[r+4>>2]|0;c[q+8>>2]=c[r+8>>2]|0;K=ak;c[r>>2]=c[K>>2]|0;c[r+4>>2]=c[K+4>>2]|0;c[r+8>>2]=c[K+8>>2]|0;c[K>>2]=c[q>>2]|0;c[K+4>>2]=c[q+4>>2]|0;c[K+8>>2]=c[q+8>>2]|0;if(!(aR[c[d>>2]&255](L,ak)|0)){i=e;return}c[s>>2]=c[K>>2]|0;c[s+4>>2]=c[K+4>>2]|0;c[s+8>>2]=c[K+8>>2]|0;c[K>>2]=c[M>>2]|0;c[K+4>>2]=c[M+4>>2]|0;c[K+8>>2]=c[M+8>>2]|0;c[M>>2]=c[s>>2]|0;c[M+4>>2]=c[s+4>>2]|0;c[M+8>>2]=c[s+8>>2]|0;i=e;return}else if((R|0)==1065){s=l;K=N+24|0;ak=N+12|0;q=f;f=g;g=h;h=j;j=k;k=aR[c[d>>2]&255](ak,N)|0;r=aR[c[d>>2]&255](K,ak)|0;do{if(k){ap=N;if(r){c[q>>2]=c[ap>>2]|0;c[q+4>>2]=c[ap+4>>2]|0;c[q+8>>2]=c[ap+8>>2]|0;u=K;c[ap>>2]=c[u>>2]|0;c[ap+4>>2]=c[u+4>>2]|0;c[ap+8>>2]=c[u+8>>2]|0;c[u>>2]=c[q>>2]|0;c[u+4>>2]=c[q+4>>2]|0;c[u+8>>2]=c[q+8>>2]|0;break}c[f>>2]=c[ap>>2]|0;c[f+4>>2]=c[ap+4>>2]|0;c[f+8>>2]=c[ap+8>>2]|0;u=ak;c[ap>>2]=c[u>>2]|0;c[ap+4>>2]=c[u+4>>2]|0;c[ap+8>>2]=c[u+8>>2]|0;c[u>>2]=c[f>>2]|0;c[u+4>>2]=c[f+4>>2]|0;c[u+8>>2]=c[f+8>>2]|0;if(!(aR[c[d>>2]&255](K,ak)|0)){break}c[h>>2]=c[u>>2]|0;c[h+4>>2]=c[u+4>>2]|0;c[h+8>>2]=c[u+8>>2]|0;ap=K;c[u>>2]=c[ap>>2]|0;c[u+4>>2]=c[ap+4>>2]|0;c[u+8>>2]=c[ap+8>>2]|0;c[ap>>2]=c[h>>2]|0;c[ap+4>>2]=c[h+4>>2]|0;c[ap+8>>2]=c[h+8>>2]|0}else{if(!r){break}ap=ak;c[j>>2]=c[ap>>2]|0;c[j+4>>2]=c[ap+4>>2]|0;c[j+8>>2]=c[ap+8>>2]|0;u=K;c[ap>>2]=c[u>>2]|0;c[ap+4>>2]=c[u+4>>2]|0;c[ap+8>>2]=c[u+8>>2]|0;c[u>>2]=c[j>>2]|0;c[u+4>>2]=c[j+4>>2]|0;c[u+8>>2]=c[j+8>>2]|0;if(!(aR[c[d>>2]&255](ak,N)|0)){break}u=N;c[g>>2]=c[u>>2]|0;c[g+4>>2]=c[u+4>>2]|0;c[g+8>>2]=c[u+8>>2]|0;c[u>>2]=c[ap>>2]|0;c[u+4>>2]=c[ap+4>>2]|0;c[u+8>>2]=c[ap+8>>2]|0;c[ap>>2]=c[g>>2]|0;c[ap+4>>2]=c[g+4>>2]|0;c[ap+8>>2]=c[g+8>>2]|0}}while(0);g=N+36|0;if((g|0)==(a|0)){i=e;return}else{aq=K;ar=g}while(1){if(aR[c[d>>2]&255](ar,aq)|0){g=ar;c[s>>2]=c[g>>2]|0;c[s+4>>2]=c[g+4>>2]|0;c[s+8>>2]=c[g+8>>2]|0;g=aq;K=ar;while(1){ak=K;as=g;c[ak>>2]=c[as>>2]|0;c[ak+4>>2]=c[as+4>>2]|0;c[ak+8>>2]=c[as+8>>2]|0;if((g|0)==(N|0)){break}ak=g-12|0;if(aR[c[d>>2]&255](l,ak)|0){K=g;g=ak}else{break}}c[as>>2]=c[s>>2]|0;c[as+4>>2]=c[s+4>>2]|0;c[as+8>>2]=c[s+8>>2]|0}g=ar+12|0;if((g|0)==(a|0)){break}else{aq=ar;ar=g}}i=e;return}else if((R|0)==1059){ar=N+12|0;aq=N+24|0;a=N+36|0;s=m;m=n;n=o;o=p;b_(N,ar,aq,a,d);if(!(aR[c[d>>2]&255](L,a)|0)){i=e;return}p=a;c[o>>2]=c[p>>2]|0;c[o+4>>2]=c[p+4>>2]|0;c[o+8>>2]=c[p+8>>2]|0;c[p>>2]=c[M>>2]|0;c[p+4>>2]=c[M+4>>2]|0;c[p+8>>2]=c[M+8>>2]|0;c[M>>2]=c[o>>2]|0;c[M+4>>2]=c[o+4>>2]|0;c[M+8>>2]=c[o+8>>2]|0;if(!(aR[c[d>>2]&255](a,aq)|0)){i=e;return}a=aq;c[m>>2]=c[a>>2]|0;c[m+4>>2]=c[a+4>>2]|0;c[m+8>>2]=c[a+8>>2]|0;c[a>>2]=c[p>>2]|0;c[a+4>>2]=c[p+4>>2]|0;c[a+8>>2]=c[p+8>>2]|0;c[p>>2]=c[m>>2]|0;c[p+4>>2]=c[m+4>>2]|0;c[p+8>>2]=c[m+8>>2]|0;if(!(aR[c[d>>2]&255](aq,ar)|0)){i=e;return}aq=ar;c[s>>2]=c[aq>>2]|0;c[s+4>>2]=c[aq+4>>2]|0;c[s+8>>2]=c[aq+8>>2]|0;c[aq>>2]=c[a>>2]|0;c[aq+4>>2]=c[a+4>>2]|0;c[aq+8>>2]=c[a+8>>2]|0;c[a>>2]=c[s>>2]|0;c[a+4>>2]=c[s+4>>2]|0;c[a+8>>2]=c[s+8>>2]|0;if(!(aR[c[d>>2]&255](ar,N)|0)){i=e;return}ar=N;c[n>>2]=c[ar>>2]|0;c[n+4>>2]=c[ar+4>>2]|0;c[n+8>>2]=c[ar+8>>2]|0;c[ar>>2]=c[aq>>2]|0;c[ar+4>>2]=c[aq+4>>2]|0;c[ar+8>>2]=c[aq+8>>2]|0;c[aq>>2]=c[n>>2]|0;c[aq+4>>2]=c[n+4>>2]|0;c[aq+8>>2]=c[n+8>>2]|0;i=e;return}else if((R|0)==1048){if(!(aR[c[d>>2]&255](L,N)|0)){i=e;return}n=v;v=N;c[n>>2]=c[v>>2]|0;c[n+4>>2]=c[v+4>>2]|0;c[n+8>>2]=c[v+8>>2]|0;c[v>>2]=c[M>>2]|0;c[v+4>>2]=c[M+4>>2]|0;c[v+8>>2]=c[M+8>>2]|0;c[M>>2]=c[n>>2]|0;c[M+4>>2]=c[n+4>>2]|0;c[M+8>>2]=c[n+8>>2]|0;i=e;return}else if((R|0)==1058){b_(N,N+12|0,N+24|0,L,d);i=e;return}else if((R|0)==1140){i=e;return}else if((R|0)==1141){i=e;return}}function b_(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var g=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0;g=i;i=i+96|0;h=g+60|0;j=g+72|0;k=g+84|0;l=g|0;m=g+12|0;n=g+24|0;o=g+36|0;p=g+48|0;q=aR[c[f>>2]&255](b,a)|0;r=aR[c[f>>2]&255](d,b)|0;do{if(q){s=a;if(r){c[l>>2]=c[s>>2]|0;c[l+4>>2]=c[s+4>>2]|0;c[l+8>>2]=c[s+8>>2]|0;t=d;c[s>>2]=c[t>>2]|0;c[s+4>>2]=c[t+4>>2]|0;c[s+8>>2]=c[t+8>>2]|0;c[t>>2]=c[l>>2]|0;c[t+4>>2]=c[l+4>>2]|0;c[t+8>>2]=c[l+8>>2]|0;u=1;break}c[m>>2]=c[s>>2]|0;c[m+4>>2]=c[s+4>>2]|0;c[m+8>>2]=c[s+8>>2]|0;t=b;c[s>>2]=c[t>>2]|0;c[s+4>>2]=c[t+4>>2]|0;c[s+8>>2]=c[t+8>>2]|0;c[t>>2]=c[m>>2]|0;c[t+4>>2]=c[m+4>>2]|0;c[t+8>>2]=c[m+8>>2]|0;if(!(aR[c[f>>2]&255](d,b)|0)){u=1;break}c[o>>2]=c[t>>2]|0;c[o+4>>2]=c[t+4>>2]|0;c[o+8>>2]=c[t+8>>2]|0;s=d;c[t>>2]=c[s>>2]|0;c[t+4>>2]=c[s+4>>2]|0;c[t+8>>2]=c[s+8>>2]|0;c[s>>2]=c[o>>2]|0;c[s+4>>2]=c[o+4>>2]|0;c[s+8>>2]=c[o+8>>2]|0;u=2}else{if(!r){u=0;break}s=b;c[p>>2]=c[s>>2]|0;c[p+4>>2]=c[s+4>>2]|0;c[p+8>>2]=c[s+8>>2]|0;t=d;c[s>>2]=c[t>>2]|0;c[s+4>>2]=c[t+4>>2]|0;c[s+8>>2]=c[t+8>>2]|0;c[t>>2]=c[p>>2]|0;c[t+4>>2]=c[p+4>>2]|0;c[t+8>>2]=c[p+8>>2]|0;if(!(aR[c[f>>2]&255](b,a)|0)){u=1;break}t=a;c[n>>2]=c[t>>2]|0;c[n+4>>2]=c[t+4>>2]|0;c[n+8>>2]=c[t+8>>2]|0;c[t>>2]=c[s>>2]|0;c[t+4>>2]=c[s+4>>2]|0;c[t+8>>2]=c[s+8>>2]|0;c[s>>2]=c[n>>2]|0;c[s+4>>2]=c[n+4>>2]|0;c[s+8>>2]=c[n+8>>2]|0;u=2}}while(0);if(!(aR[c[f>>2]&255](e,d)|0)){v=u;i=g;return v|0}n=k;k=d;c[n>>2]=c[k>>2]|0;c[n+4>>2]=c[k+4>>2]|0;c[n+8>>2]=c[k+8>>2]|0;p=e;c[k>>2]=c[p>>2]|0;c[k+4>>2]=c[p+4>>2]|0;c[k+8>>2]=c[p+8>>2]|0;c[p>>2]=c[n>>2]|0;c[p+4>>2]=c[n+4>>2]|0;c[p+8>>2]=c[n+8>>2]|0;if(!(aR[c[f>>2]&255](d,b)|0)){v=u+1|0;i=g;return v|0}d=h;h=b;c[d>>2]=c[h>>2]|0;c[d+4>>2]=c[h+4>>2]|0;c[d+8>>2]=c[h+8>>2]|0;c[h>>2]=c[k>>2]|0;c[h+4>>2]=c[k+4>>2]|0;c[h+8>>2]=c[k+8>>2]|0;c[k>>2]=c[d>>2]|0;c[k+4>>2]=c[d+4>>2]|0;c[k+8>>2]=c[d+8>>2]|0;if(!(aR[c[f>>2]&255](b,a)|0)){v=u+2|0;i=g;return v|0}b=j;j=a;c[b>>2]=c[j>>2]|0;c[b+4>>2]=c[j+4>>2]|0;c[b+8>>2]=c[j+8>>2]|0;c[j>>2]=c[h>>2]|0;c[j+4>>2]=c[h+4>>2]|0;c[j+8>>2]=c[h+8>>2]|0;c[h>>2]=c[b>>2]|0;c[h+4>>2]=c[b+4>>2]|0;c[h+8>>2]=c[b+8>>2]|0;v=u+3|0;i=g;return v|0}function b$(a,b){a=a|0;b=b|0;return}function b0(a,b){a=a|0;b=b|0;return}function b1(a,b,c){a=a|0;b=b|0;c=c|0;return}function b2(a,b,c){a=a|0;b=b|0;c=c|0;return}function b3(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,g=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0;e=i;i=i+192|0;f=e|0;g=e+12|0;h=e+24|0;j=e+36|0;k=e+48|0;l=e+60|0;m=e+72|0;n=e+84|0;o=e+96|0;p=e+108|0;q=e+120|0;r=e+132|0;s=e+144|0;t=e+156|0;u=e+168|0;v=e+180|0;w=(b-a|0)/12&-1;if((w|0)==2){x=b-12|0;if(!(aR[c[d>>2]&255](x,a)|0)){y=1;i=e;return y|0}z=u;u=a;c[z>>2]=c[u>>2]|0;c[z+4>>2]=c[u+4>>2]|0;c[z+8>>2]=c[u+8>>2]|0;A=x;c[u>>2]=c[A>>2]|0;c[u+4>>2]=c[A+4>>2]|0;c[u+8>>2]=c[A+8>>2]|0;c[A>>2]=c[z>>2]|0;c[A+4>>2]=c[z+4>>2]|0;c[A+8>>2]=c[z+8>>2]|0;y=1;i=e;return y|0}else if((w|0)==4){b_(a,a+12|0,a+24|0,b-12|0,d);y=1;i=e;return y|0}else if((w|0)==5){z=a+12|0;A=a+24|0;u=a+36|0;x=b-12|0;B=l;l=m;m=n;n=o;b_(a,z,A,u,d);if(!(aR[c[d>>2]&255](x,u)|0)){y=1;i=e;return y|0}o=u;c[n>>2]=c[o>>2]|0;c[n+4>>2]=c[o+4>>2]|0;c[n+8>>2]=c[o+8>>2]|0;C=x;c[o>>2]=c[C>>2]|0;c[o+4>>2]=c[C+4>>2]|0;c[o+8>>2]=c[C+8>>2]|0;c[C>>2]=c[n>>2]|0;c[C+4>>2]=c[n+4>>2]|0;c[C+8>>2]=c[n+8>>2]|0;if(!(aR[c[d>>2]&255](u,A)|0)){y=1;i=e;return y|0}u=A;c[l>>2]=c[u>>2]|0;c[l+4>>2]=c[u+4>>2]|0;c[l+8>>2]=c[u+8>>2]|0;c[u>>2]=c[o>>2]|0;c[u+4>>2]=c[o+4>>2]|0;c[u+8>>2]=c[o+8>>2]|0;c[o>>2]=c[l>>2]|0;c[o+4>>2]=c[l+4>>2]|0;c[o+8>>2]=c[l+8>>2]|0;if(!(aR[c[d>>2]&255](A,z)|0)){y=1;i=e;return y|0}A=z;c[B>>2]=c[A>>2]|0;c[B+4>>2]=c[A+4>>2]|0;c[B+8>>2]=c[A+8>>2]|0;c[A>>2]=c[u>>2]|0;c[A+4>>2]=c[u+4>>2]|0;c[A+8>>2]=c[u+8>>2]|0;c[u>>2]=c[B>>2]|0;c[u+4>>2]=c[B+4>>2]|0;c[u+8>>2]=c[B+8>>2]|0;if(!(aR[c[d>>2]&255](z,a)|0)){y=1;i=e;return y|0}z=a;c[m>>2]=c[z>>2]|0;c[m+4>>2]=c[z+4>>2]|0;c[m+8>>2]=c[z+8>>2]|0;c[z>>2]=c[A>>2]|0;c[z+4>>2]=c[A+4>>2]|0;c[z+8>>2]=c[A+8>>2]|0;c[A>>2]=c[m>>2]|0;c[A+4>>2]=c[m+4>>2]|0;c[A+8>>2]=c[m+8>>2]|0;y=1;i=e;return y|0}else if((w|0)==3){m=a+12|0;A=b-12|0;z=p;p=q;q=r;r=s;s=t;t=aR[c[d>>2]&255](m,a)|0;B=aR[c[d>>2]&255](A,m)|0;if(!t){if(!B){y=1;i=e;return y|0}t=m;c[s>>2]=c[t>>2]|0;c[s+4>>2]=c[t+4>>2]|0;c[s+8>>2]=c[t+8>>2]|0;u=A;c[t>>2]=c[u>>2]|0;c[t+4>>2]=c[u+4>>2]|0;c[t+8>>2]=c[u+8>>2]|0;c[u>>2]=c[s>>2]|0;c[u+4>>2]=c[s+4>>2]|0;c[u+8>>2]=c[s+8>>2]|0;if(!(aR[c[d>>2]&255](m,a)|0)){y=1;i=e;return y|0}s=a;c[q>>2]=c[s>>2]|0;c[q+4>>2]=c[s+4>>2]|0;c[q+8>>2]=c[s+8>>2]|0;c[s>>2]=c[t>>2]|0;c[s+4>>2]=c[t+4>>2]|0;c[s+8>>2]=c[t+8>>2]|0;c[t>>2]=c[q>>2]|0;c[t+4>>2]=c[q+4>>2]|0;c[t+8>>2]=c[q+8>>2]|0;y=1;i=e;return y|0}q=a;if(B){c[z>>2]=c[q>>2]|0;c[z+4>>2]=c[q+4>>2]|0;c[z+8>>2]=c[q+8>>2]|0;B=A;c[q>>2]=c[B>>2]|0;c[q+4>>2]=c[B+4>>2]|0;c[q+8>>2]=c[B+8>>2]|0;c[B>>2]=c[z>>2]|0;c[B+4>>2]=c[z+4>>2]|0;c[B+8>>2]=c[z+8>>2]|0;y=1;i=e;return y|0}c[p>>2]=c[q>>2]|0;c[p+4>>2]=c[q+4>>2]|0;c[p+8>>2]=c[q+8>>2]|0;z=m;c[q>>2]=c[z>>2]|0;c[q+4>>2]=c[z+4>>2]|0;c[q+8>>2]=c[z+8>>2]|0;c[z>>2]=c[p>>2]|0;c[z+4>>2]=c[p+4>>2]|0;c[z+8>>2]=c[p+8>>2]|0;if(!(aR[c[d>>2]&255](A,m)|0)){y=1;i=e;return y|0}c[r>>2]=c[z>>2]|0;c[r+4>>2]=c[z+4>>2]|0;c[r+8>>2]=c[z+8>>2]|0;m=A;c[z>>2]=c[m>>2]|0;c[z+4>>2]=c[m+4>>2]|0;c[z+8>>2]=c[m+8>>2]|0;c[m>>2]=c[r>>2]|0;c[m+4>>2]=c[r+4>>2]|0;c[m+8>>2]=c[r+8>>2]|0;y=1;i=e;return y|0}else if((w|0)==0|(w|0)==1){y=1;i=e;return y|0}else{w=a+24|0;r=a+12|0;m=f;f=g;g=h;h=j;j=k;k=aR[c[d>>2]&255](r,a)|0;z=aR[c[d>>2]&255](w,r)|0;do{if(k){A=a;if(z){c[m>>2]=c[A>>2]|0;c[m+4>>2]=c[A+4>>2]|0;c[m+8>>2]=c[A+8>>2]|0;p=w;c[A>>2]=c[p>>2]|0;c[A+4>>2]=c[p+4>>2]|0;c[A+8>>2]=c[p+8>>2]|0;c[p>>2]=c[m>>2]|0;c[p+4>>2]=c[m+4>>2]|0;c[p+8>>2]=c[m+8>>2]|0;break}c[f>>2]=c[A>>2]|0;c[f+4>>2]=c[A+4>>2]|0;c[f+8>>2]=c[A+8>>2]|0;p=r;c[A>>2]=c[p>>2]|0;c[A+4>>2]=c[p+4>>2]|0;c[A+8>>2]=c[p+8>>2]|0;c[p>>2]=c[f>>2]|0;c[p+4>>2]=c[f+4>>2]|0;c[p+8>>2]=c[f+8>>2]|0;if(!(aR[c[d>>2]&255](w,r)|0)){break}c[h>>2]=c[p>>2]|0;c[h+4>>2]=c[p+4>>2]|0;c[h+8>>2]=c[p+8>>2]|0;A=w;c[p>>2]=c[A>>2]|0;c[p+4>>2]=c[A+4>>2]|0;c[p+8>>2]=c[A+8>>2]|0;c[A>>2]=c[h>>2]|0;c[A+4>>2]=c[h+4>>2]|0;c[A+8>>2]=c[h+8>>2]|0}else{if(!z){break}A=r;c[j>>2]=c[A>>2]|0;c[j+4>>2]=c[A+4>>2]|0;c[j+8>>2]=c[A+8>>2]|0;p=w;c[A>>2]=c[p>>2]|0;c[A+4>>2]=c[p+4>>2]|0;c[A+8>>2]=c[p+8>>2]|0;c[p>>2]=c[j>>2]|0;c[p+4>>2]=c[j+4>>2]|0;c[p+8>>2]=c[j+8>>2]|0;if(!(aR[c[d>>2]&255](r,a)|0)){break}p=a;c[g>>2]=c[p>>2]|0;c[g+4>>2]=c[p+4>>2]|0;c[g+8>>2]=c[p+8>>2]|0;c[p>>2]=c[A>>2]|0;c[p+4>>2]=c[A+4>>2]|0;c[p+8>>2]=c[A+8>>2]|0;c[A>>2]=c[g>>2]|0;c[A+4>>2]=c[g+4>>2]|0;c[A+8>>2]=c[g+8>>2]|0}}while(0);g=a+36|0;if((g|0)==(b|0)){y=1;i=e;return y|0}r=v;j=w;w=0;z=g;while(1){if(aR[c[d>>2]&255](z,j)|0){g=z;c[r>>2]=c[g>>2]|0;c[r+4>>2]=c[g+4>>2]|0;c[r+8>>2]=c[g+8>>2]|0;g=j;h=z;while(1){f=h;D=g;c[f>>2]=c[D>>2]|0;c[f+4>>2]=c[D+4>>2]|0;c[f+8>>2]=c[D+8>>2]|0;if((g|0)==(a|0)){break}f=g-12|0;if(aR[c[d>>2]&255](v,f)|0){h=g;g=f}else{break}}c[D>>2]=c[r>>2]|0;c[D+4>>2]=c[r+4>>2]|0;c[D+8>>2]=c[r+8>>2]|0;g=w+1|0;if((g|0)==8){break}else{E=g}}else{E=w}g=z+12|0;if((g|0)==(b|0)){y=1;F=1212;break}else{j=z;w=E;z=g}}if((F|0)==1212){i=e;return y|0}y=(z+12|0)==(b|0);i=e;return y|0}return 0}function b4(a){a=a|0;dg(a);return}function b5(b,d){b=b|0;d=d|0;var e=0,f=0,g=0,h=0,i=0,j=0;if((c[b+28>>2]|0)!=0){ay(5245880,72,5247836,5246340)}e=b+12|0;f=c[e>>2]|0;g=aL[c[(c[f>>2]|0)+12>>2]&255](f)|0;f=b+24|0;b=c[f>>2]|0;h=b;i=g*28&-1;L1659:do{if((i|0)!=0){do{if((i|0)>0){if((i|0)<=640){break}df(h);break L1659}else{ay(5243252,164,5249456,5244764)}}while(0);g=a[i+5251656|0]|0;if((g&255)>=14){ay(5243252,173,5249456,5244088)}j=d+12+((g&255)<<2)|0;c[b>>2]=c[j>>2]|0;c[j>>2]=b}}while(0);c[f>>2]=0;f=c[e>>2]|0;b=c[f+4>>2]|0;if((b|0)==2){aJ[c[c[f>>2]>>2]&255](f);i=a[5251808]|0;if((i&255)>=14){ay(5243252,173,5249456,5244088)}h=d+12+((i&255)<<2)|0;c[f>>2]=c[h>>2]|0;c[h>>2]=f;c[e>>2]=0;return}else if((b|0)==0){aJ[c[c[f>>2]>>2]&255](f);h=a[5251676]|0;if((h&255)>=14){ay(5243252,173,5249456,5244088)}i=d+12+((h&255)<<2)|0;c[f>>2]=c[i>>2]|0;c[i>>2]=f;c[e>>2]=0;return}else if((b|0)==3){aJ[c[c[f>>2]>>2]&255](f);i=a[5251696]|0;if((i&255)>=14){ay(5243252,173,5249456,5244088)}h=d+12+((i&255)<<2)|0;c[f>>2]=c[h>>2]|0;c[h>>2]=f;c[e>>2]=0;return}else if((b|0)==1){aJ[c[c[f>>2]>>2]&255](f);b=a[5251704]|0;if((b&255)>=14){ay(5243252,173,5249456,5244088)}h=d+12+((b&255)<<2)|0;c[f>>2]=c[h>>2]|0;c[h>>2]=f;c[e>>2]=0;return}else{ay(5245880,115,5247836,5245872);c[e>>2]=0;return}}function b6(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0.0,K=0.0,L=0.0,M=0.0,N=0,O=0,P=0;f=i;i=i+40|0;h=f|0;j=f+16|0;l=f+32|0;m=a+28|0;if((c[m>>2]|0)<=0){i=f;return}n=a+24|0;o=a+12|0;a=h|0;p=j|0;q=h+4|0;r=j+4|0;s=h+8|0;t=j+8|0;u=h+12|0;v=j+12|0;w=e|0;x=d|0;y=e+4|0;z=d+4|0;A=l|0;B=l+4|0;C=b|0;D=b+40|0;E=b+36|0;F=b+32|0;b=0;while(1){G=c[n>>2]|0;H=c[o>>2]|0;I=G+(b*28&-1)+20|0;aS[c[(c[H>>2]|0)+24>>2]&255](H,h,d,c[I>>2]|0);H=c[o>>2]|0;aS[c[(c[H>>2]|0)+24>>2]&255](H,j,e,c[I>>2]|0);I=G+(b*28&-1)|0;J=+g[a>>2];K=+g[p>>2];L=+g[q>>2];M=+g[r>>2];H=I;N=(g[k>>2]=J<K?J:K,c[k>>2]|0);O=(g[k>>2]=L<M?L:M,c[k>>2]|0)|0;c[H>>2]=0|N;c[H+4>>2]=O;M=+g[s>>2];L=+g[t>>2];K=+g[u>>2];J=+g[v>>2];O=G+(b*28&-1)+8|0;H=(g[k>>2]=M>L?M:L,c[k>>2]|0);N=(g[k>>2]=K>J?K:J,c[k>>2]|0)|0;c[O>>2]=0|H;c[O+4>>2]=N;J=+g[y>>2]- +g[z>>2];g[A>>2]=+g[w>>2]- +g[x>>2];g[B>>2]=J;N=c[G+(b*28&-1)+24>>2]|0;if(br(C,N,I,l)|0){I=c[D>>2]|0;if((I|0)==(c[E>>2]|0)){G=c[F>>2]|0;c[E>>2]=I<<1;O=de(I<<3)|0;c[F>>2]=O;H=G;di(O,H,c[D>>2]<<2);df(H);P=c[D>>2]|0}else{P=I}c[(c[F>>2]|0)+(P<<2)>>2]=N;c[D>>2]=(c[D>>2]|0)+1|0}N=b+1|0;if((N|0)<(c[m>>2]|0)){b=N}else{break}}i=f;return}function b7(b,d,e,f,g,h){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;h=h|0;var i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0;i=b+40|0;c[i>>2]=d;c[b+44>>2]=e;c[b+48>>2]=f;c[b+28>>2]=0;c[b+36>>2]=0;c[b+32>>2]=0;j=b|0;c[j>>2]=g;c[b+4>>2]=h;h=d<<2;d=g+102796|0;k=c[d>>2]|0;if((k|0)<32){l=k}else{ay(5243068,38,5249236,5244052);l=c[d>>2]|0}k=g+102412+(l*12&-1)|0;c[g+102412+(l*12&-1)+4>>2]=h;m=g+102400|0;n=c[m>>2]|0;if((n+h|0)>102400){c[k>>2]=de(h)|0;a[g+102412+(l*12&-1)+8|0]=1}else{c[k>>2]=g+n|0;a[g+102412+(l*12&-1)+8|0]=0;c[m>>2]=(c[m>>2]|0)+h|0}m=g+102404|0;l=(c[m>>2]|0)+h|0;c[m>>2]=l;m=g+102408|0;g=c[m>>2]|0;c[m>>2]=(g|0)>(l|0)?g:l;c[d>>2]=(c[d>>2]|0)+1|0;c[b+8>>2]=c[k>>2]|0;k=c[j>>2]|0;d=e<<2;e=k+102796|0;l=c[e>>2]|0;if((l|0)<32){o=l}else{ay(5243068,38,5249236,5244052);o=c[e>>2]|0}l=k+102412+(o*12&-1)|0;c[k+102412+(o*12&-1)+4>>2]=d;g=k+102400|0;m=c[g>>2]|0;if((m+d|0)>102400){c[l>>2]=de(d)|0;a[k+102412+(o*12&-1)+8|0]=1}else{c[l>>2]=k+m|0;a[k+102412+(o*12&-1)+8|0]=0;c[g>>2]=(c[g>>2]|0)+d|0}g=k+102404|0;o=(c[g>>2]|0)+d|0;c[g>>2]=o;g=k+102408|0;k=c[g>>2]|0;c[g>>2]=(k|0)>(o|0)?k:o;c[e>>2]=(c[e>>2]|0)+1|0;c[b+12>>2]=c[l>>2]|0;l=c[j>>2]|0;e=f<<2;f=l+102796|0;o=c[f>>2]|0;if((o|0)<32){p=o}else{ay(5243068,38,5249236,5244052);p=c[f>>2]|0}o=l+102412+(p*12&-1)|0;c[l+102412+(p*12&-1)+4>>2]=e;k=l+102400|0;g=c[k>>2]|0;if((g+e|0)>102400){c[o>>2]=de(e)|0;a[l+102412+(p*12&-1)+8|0]=1}else{c[o>>2]=l+g|0;a[l+102412+(p*12&-1)+8|0]=0;c[k>>2]=(c[k>>2]|0)+e|0}k=l+102404|0;p=(c[k>>2]|0)+e|0;c[k>>2]=p;k=l+102408|0;l=c[k>>2]|0;c[k>>2]=(l|0)>(p|0)?l:p;c[f>>2]=(c[f>>2]|0)+1|0;c[b+16>>2]=c[o>>2]|0;o=c[j>>2]|0;f=(c[i>>2]|0)*12&-1;p=o+102796|0;l=c[p>>2]|0;if((l|0)<32){q=l}else{ay(5243068,38,5249236,5244052);q=c[p>>2]|0}l=o+102412+(q*12&-1)|0;c[o+102412+(q*12&-1)+4>>2]=f;k=o+102400|0;e=c[k>>2]|0;if((e+f|0)>102400){c[l>>2]=de(f)|0;a[o+102412+(q*12&-1)+8|0]=1}else{c[l>>2]=o+e|0;a[o+102412+(q*12&-1)+8|0]=0;c[k>>2]=(c[k>>2]|0)+f|0}k=o+102404|0;q=(c[k>>2]|0)+f|0;c[k>>2]=q;k=o+102408|0;o=c[k>>2]|0;c[k>>2]=(o|0)>(q|0)?o:q;c[p>>2]=(c[p>>2]|0)+1|0;c[b+24>>2]=c[l>>2]|0;l=c[j>>2]|0;j=(c[i>>2]|0)*12&-1;i=l+102796|0;p=c[i>>2]|0;if((p|0)<32){r=p}else{ay(5243068,38,5249236,5244052);r=c[i>>2]|0}p=l+102412+(r*12&-1)|0;c[l+102412+(r*12&-1)+4>>2]=j;q=l+102400|0;o=c[q>>2]|0;if((o+j|0)>102400){c[p>>2]=de(j)|0;a[l+102412+(r*12&-1)+8|0]=1;k=l+102404|0;f=c[k>>2]|0;e=f+j|0;c[k>>2]=e;g=l+102408|0;d=c[g>>2]|0;m=(d|0)>(e|0);h=m?d:e;c[g>>2]=h;n=c[i>>2]|0;s=n+1|0;c[i>>2]=s;t=p|0;u=c[t>>2]|0;v=u;w=b+20|0;c[w>>2]=v;return}else{c[p>>2]=l+o|0;a[l+102412+(r*12&-1)+8|0]=0;c[q>>2]=(c[q>>2]|0)+j|0;k=l+102404|0;f=c[k>>2]|0;e=f+j|0;c[k>>2]=e;g=l+102408|0;d=c[g>>2]|0;m=(d|0)>(e|0);h=m?d:e;c[g>>2]=h;n=c[i>>2]|0;s=n+1|0;c[i>>2]=s;t=p|0;u=c[t>>2]|0;v=u;w=b+20|0;c[w>>2]=v;return}}function b8(d,e,f,h,j){d=d|0;e=e|0;f=f|0;h=h|0;j=j|0;var l=0,m=0,n=0,o=0,p=0,q=0.0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0.0,D=0,E=0.0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0.0,O=0.0,R=0.0,S=0,T=0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0,Z=0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0.0,af=0.0,ag=0;l=i;i=i+148|0;m=l|0;n=l+20|0;o=l+52|0;p=l+96|0;q=+g[f>>2];r=d+28|0;L1744:do{if((c[r>>2]|0)>0){s=d+8|0;t=h|0;u=h+4|0;v=d+20|0;w=d+24|0;x=0;while(1){y=c[(c[s>>2]|0)+(x<<2)>>2]|0;z=y+44|0;A=c[z>>2]|0;B=c[z+4>>2]|0;C=+g[y+56>>2];z=y+64|0;D=c[z+4>>2]|0;E=(c[k>>2]=c[z>>2]|0,+g[k>>2]);F=(c[k>>2]=D,+g[k>>2]);G=+g[y+72>>2];D=y+36|0;c[D>>2]=A;c[D+4>>2]=B;g[y+52>>2]=C;if((c[y>>2]|0)==2){H=+g[y+140>>2];I=+g[y+120>>2];J=1.0-q*+g[y+132>>2];K=J<1.0?J:1.0;J=K<0.0?0.0:K;K=1.0-q*+g[y+136>>2];L=K<1.0?K:1.0;M=(G+q*+g[y+128>>2]*+g[y+84>>2])*(L<0.0?0.0:L);O=(E+q*(H*+g[t>>2]+I*+g[y+76>>2]))*J;R=(F+q*(H*+g[u>>2]+I*+g[y+80>>2]))*J}else{M=G;O=E;R=F}y=(c[v>>2]|0)+(x*12&-1)|0;c[y>>2]=A;c[y+4>>2]=B;g[(c[v>>2]|0)+(x*12&-1)+8>>2]=C;B=(c[w>>2]|0)+(x*12&-1)|0;y=(g[k>>2]=O,c[k>>2]|0);A=(g[k>>2]=R,c[k>>2]|0)|0;c[B>>2]=0|y;c[B+4>>2]=A;g[(c[w>>2]|0)+(x*12&-1)+8>>2]=M;A=x+1|0;if((A|0)<(c[r>>2]|0)){x=A}else{S=v;T=w;break L1744}}}else{S=d+20|0;T=d+24|0}}while(0);h=n;w=f;c[h>>2]=c[w>>2]|0;c[h+4>>2]=c[w+4>>2]|0;c[h+8>>2]=c[w+8>>2]|0;c[h+12>>2]=c[w+12>>2]|0;c[h+16>>2]=c[w+16>>2]|0;c[h+20>>2]=c[w+20>>2]|0;h=c[S>>2]|0;c[n+24>>2]=h;v=c[T>>2]|0;c[n+28>>2]=v;x=o;c[x>>2]=c[w>>2]|0;c[x+4>>2]=c[w+4>>2]|0;c[x+8>>2]=c[w+8>>2]|0;c[x+12>>2]=c[w+12>>2]|0;c[x+16>>2]=c[w+16>>2]|0;c[x+20>>2]=c[w+20>>2]|0;w=d+12|0;c[o+24>>2]=c[w>>2]|0;x=d+36|0;c[o+28>>2]=c[x>>2]|0;c[o+32>>2]=h;c[o+36>>2]=v;c[o+40>>2]=c[d>>2]|0;cB(p,o);cC(p);if((a[f+20|0]&1)<<24>>24!=0){cD(p)}o=d+32|0;L1757:do{if((c[o>>2]|0)>0){v=d+16|0;h=0;while(1){u=c[(c[v>>2]|0)+(h<<2)>>2]|0;aK[c[(c[u>>2]|0)+28>>2]&255](u,n);u=h+1|0;if((u|0)<(c[o>>2]|0)){h=u}else{break L1757}}}}while(0);g[e+12>>2]=0.0;h=f+12|0;L1763:do{if((c[h>>2]|0)>0){v=d+16|0;u=0;while(1){L1767:do{if((c[o>>2]|0)>0){t=0;while(1){s=c[(c[v>>2]|0)+(t<<2)>>2]|0;aK[c[(c[s>>2]|0)+32>>2]&255](s,n);s=t+1|0;if((s|0)<(c[o>>2]|0)){t=s}else{break L1767}}}}while(0);cE(p);t=u+1|0;if((t|0)<(c[h>>2]|0)){u=t}else{break L1763}}}}while(0);h=c[p+48>>2]|0;L1774:do{if((h|0)>0){u=c[p+40>>2]|0;v=c[p+44>>2]|0;t=0;while(1){s=c[v+(c[u+(t*152&-1)+148>>2]<<2)>>2]|0;A=u+(t*152&-1)+144|0;L1778:do{if((c[A>>2]|0)>0){B=0;while(1){g[s+64+(B*20&-1)+8>>2]=+g[u+(t*152&-1)+(B*36&-1)+16>>2];g[s+64+(B*20&-1)+12>>2]=+g[u+(t*152&-1)+(B*36&-1)+20>>2];y=B+1|0;if((y|0)<(c[A>>2]|0)){B=y}else{break L1778}}}}while(0);A=t+1|0;if((A|0)<(h|0)){t=A}else{break L1774}}}}while(0);g[e+16>>2]=0.0;L1783:do{if((c[r>>2]|0)>0){h=0;while(1){t=c[S>>2]|0;u=t+(h*12&-1)|0;v=c[u+4>>2]|0;M=(c[k>>2]=c[u>>2]|0,+g[k>>2]);R=(c[k>>2]=v,+g[k>>2]);O=+g[t+(h*12&-1)+8>>2];t=c[T>>2]|0;v=t+(h*12&-1)|0;A=c[v+4>>2]|0;C=(c[k>>2]=c[v>>2]|0,+g[k>>2]);F=(c[k>>2]=A,+g[k>>2]);E=+g[t+(h*12&-1)+8>>2];G=q*C;J=q*F;I=G*G+J*J;if(I>4.0){J=2.0/+N(I);U=C*J;V=F*J}else{U=C;V=F}F=q*E;if(F*F>2.4674012660980225){if(F>0.0){W=F}else{W=-0.0-F}X=E*(1.5707963705062866/W)}else{X=E}t=(g[k>>2]=M+q*U,c[k>>2]|0);A=(g[k>>2]=R+q*V,c[k>>2]|0)|0;c[u>>2]=0|t;c[u+4>>2]=A;g[(c[S>>2]|0)+(h*12&-1)+8>>2]=O+q*X;A=(c[T>>2]|0)+(h*12&-1)|0;u=(g[k>>2]=U,c[k>>2]|0);t=(g[k>>2]=V,c[k>>2]|0)|0;c[A>>2]=0|u;c[A+4>>2]=t;g[(c[T>>2]|0)+(h*12&-1)+8>>2]=X;t=h+1|0;if((t|0)<(c[r>>2]|0)){h=t}else{break L1783}}}}while(0);h=f+16|0;f=d+16|0;t=0;while(1){if((t|0)>=(c[h>>2]|0)){Y=1;break}A=cF(p)|0;L1800:do{if((c[o>>2]|0)>0){u=1;v=0;while(1){s=c[(c[f>>2]|0)+(v<<2)>>2]|0;B=u&aR[c[(c[s>>2]|0)+36>>2]&255](s,n);s=v+1|0;if((s|0)<(c[o>>2]|0)){u=B;v=s}else{Z=B;break L1800}}}else{Z=1}}while(0);if(A&Z){Y=0;break}else{t=t+1|0}}L1806:do{if((c[r>>2]|0)>0){t=d+8|0;Z=0;while(1){o=c[(c[t>>2]|0)+(Z<<2)>>2]|0;n=(c[S>>2]|0)+(Z*12&-1)|0;f=o+44|0;h=c[n>>2]|0;v=c[n+4>>2]|0;c[f>>2]=h;c[f+4>>2]=v;X=+g[(c[S>>2]|0)+(Z*12&-1)+8>>2];g[o+56>>2]=X;f=(c[T>>2]|0)+(Z*12&-1)|0;n=o+64|0;u=c[f+4>>2]|0;c[n>>2]=c[f>>2]|0;c[n+4>>2]=u;g[o+72>>2]=+g[(c[T>>2]|0)+(Z*12&-1)+8>>2];V=+Q(X);g[o+20>>2]=V;U=+P(X);g[o+24>>2]=U;X=+g[o+28>>2];W=+g[o+32>>2];O=(c[k>>2]=h,+g[k>>2])-(U*X-V*W);R=(c[k>>2]=v,+g[k>>2])-(V*X+U*W);v=o+12|0;o=(g[k>>2]=O,c[k>>2]|0);h=(g[k>>2]=R,c[k>>2]|0)|0;c[v>>2]=0|o;c[v+4>>2]=h;h=Z+1|0;if((h|0)<(c[r>>2]|0)){Z=h}else{break L1806}}}}while(0);g[e+20>>2]=0.0;e=c[p+40>>2]|0;T=d+4|0;L1811:do{if((c[T>>2]|0)!=0){if((c[x>>2]|0)<=0){break}S=m+16|0;Z=0;while(1){t=c[(c[w>>2]|0)+(Z<<2)>>2]|0;A=c[e+(Z*152&-1)+144>>2]|0;c[S>>2]=A;L1816:do{if((A|0)>0){h=0;while(1){g[m+(h<<2)>>2]=+g[e+(Z*152&-1)+(h*36&-1)+16>>2];g[m+8+(h<<2)>>2]=+g[e+(Z*152&-1)+(h*36&-1)+20>>2];v=h+1|0;if((v|0)==(A|0)){break L1816}else{h=v}}}}while(0);A=c[T>>2]|0;aN[c[(c[A>>2]|0)+20>>2]&255](A,t,m);A=Z+1|0;if((A|0)<(c[x>>2]|0)){Z=A}else{break L1811}}}}while(0);if(!j){_=p+32|0;$=c[_>>2]|0;aa=e;bN($,aa);ab=p+36|0;ac=c[ab>>2]|0;ad=ac;bN($,ad);i=l;return}j=c[r>>2]|0;L1825:do{if((j|0)>0){x=d+8|0;R=3.4028234663852886e+38;m=0;while(1){T=c[(c[x>>2]|0)+(m<<2)>>2]|0;L1829:do{if((c[T>>2]|0)==0){ae=R}else{do{if((b[T+4>>1]&4)<<16>>16!=0){O=+g[T+72>>2];if(O*O>.001218469929881394){break}O=+g[T+64>>2];W=+g[T+68>>2];if(O*O+W*W>9999999747378752.0e-20){break}w=T+144|0;W=q+ +g[w>>2];g[w>>2]=W;ae=R<W?R:W;break L1829}}while(0);g[T+144>>2]=0.0;ae=0.0}}while(0);T=m+1|0;t=c[r>>2]|0;if((T|0)<(t|0)){R=ae;m=T}else{af=ae;ag=t;break L1825}}}else{af=3.4028234663852886e+38;ag=j}}while(0);if(!((ag|0)>0&((af<.5|Y)^1))){_=p+32|0;$=c[_>>2]|0;aa=e;bN($,aa);ab=p+36|0;ac=c[ab>>2]|0;ad=ac;bN($,ad);i=l;return}Y=d+8|0;d=0;while(1){ag=c[(c[Y>>2]|0)+(d<<2)>>2]|0;j=ag+4|0;b[j>>1]=b[j>>1]&-3;g[ag+144>>2]=0.0;j=ag+64|0;c[j>>2]=0;c[j+4>>2]=0;c[j+8>>2]=0;c[j+12>>2]=0;c[j+16>>2]=0;c[j+20>>2]=0;j=d+1|0;if((j|0)<(c[r>>2]|0)){d=j}else{break}}_=p+32|0;$=c[_>>2]|0;aa=e;bN($,aa);ab=p+36|0;ac=c[ab>>2]|0;ad=ac;bN($,ad);i=l;return}function b9(b,d){b=b|0;d=d|0;var e=0,f=0,h=0,i=0,j=0;e=b|0;f=b+8|0;c[f>>2]=128;c[b+4>>2]=0;h=de(1024)|0;c[b>>2]=h;dk(h|0,0,c[f>>2]<<3|0);dk(b+12|0,0,56);if((a[5251652]&1)<<24>>24==0){f=0;h=1;while(1){if((f|0)>=14){ay(5243252,73,5249376,5245680)}if((h|0)>(c[5252300+(f<<2)>>2]|0)){i=f+1|0;a[h+5251656|0]=i&255;j=i}else{a[h+5251656|0]=f&255;j=f}i=h+1|0;if((i|0)==641){break}else{f=j;h=i}}a[5251652]=1}c[b+102468>>2]=0;c[b+102472>>2]=0;c[b+102476>>2]=0;c[b+102864>>2]=0;a8(b+102872|0);c[b+102932>>2]=0;c[b+102936>>2]=0;c[b+102940>>2]=5242940;c[b+102944>>2]=5242936;h=b+102948|0;c[b+102980>>2]=0;c[b+102984>>2]=0;j=h;c[j>>2]=0;c[j+4>>2]=0;c[j+8>>2]=0;c[j+12>>2]=0;c[j+16>>2]=0;a[b+102992|0]=1;a[b+102993|0]=1;a[b+102994|0]=0;a[b+102995|0]=1;a[b+102976|0]=1;j=d;d=b+102968|0;f=c[j+4>>2]|0;c[d>>2]=c[j>>2]|0;c[d+4>>2]=f;c[b+102868>>2]=4;g[b+102988>>2]=0.0;c[h>>2]=e;dk(b+102996|0,0,32);return}function ca(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0.0,z=0.0,A=0.0,B=0.0,C=0.0,D=0.0,E=0.0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0,O=0,R=0,S=0,T=0,U=0;f=i;i=i+116|0;h=f|0;j=f+20|0;l=f+64|0;m=a+28|0;n=c[m>>2]|0;if((n|0)>(d|0)){o=n}else{ay(5245588,386,5248040,5246284);o=c[m>>2]|0}if((o|0)>(e|0)){p=o}else{ay(5245588,387,5248040,5245392);p=c[m>>2]|0}L1864:do{if((p|0)>0){o=a+8|0;n=a+20|0;q=a+24|0;r=0;while(1){s=c[(c[o>>2]|0)+(r<<2)>>2]|0;t=s+44|0;u=(c[n>>2]|0)+(r*12&-1)|0;v=c[t+4>>2]|0;c[u>>2]=c[t>>2]|0;c[u+4>>2]=v;g[(c[n>>2]|0)+(r*12&-1)+8>>2]=+g[s+56>>2];v=s+64|0;u=(c[q>>2]|0)+(r*12&-1)|0;t=c[v+4>>2]|0;c[u>>2]=c[v>>2]|0;c[u+4>>2]=t;g[(c[q>>2]|0)+(r*12&-1)+8>>2]=+g[s+72>>2];s=r+1|0;if((s|0)<(c[m>>2]|0)){r=s}else{w=n;x=q;break L1864}}}else{w=a+20|0;x=a+24|0}}while(0);p=a+12|0;c[j+24>>2]=c[p>>2]|0;q=a+36|0;c[j+28>>2]=c[q>>2]|0;c[j+40>>2]=c[a>>2]|0;n=j;r=b;c[n>>2]=c[r>>2]|0;c[n+4>>2]=c[r+4>>2]|0;c[n+8>>2]=c[r+8>>2]|0;c[n+12>>2]=c[r+12>>2]|0;c[n+16>>2]=c[r+16>>2]|0;c[n+20>>2]=c[r+20>>2]|0;c[j+32>>2]=c[w>>2]|0;c[j+36>>2]=c[x>>2]|0;cB(l,j);j=b+16|0;r=0;while(1){if((r|0)>=(c[j>>2]|0)){break}if(cK(l,d,e)|0){break}else{r=r+1|0}}r=a+8|0;j=(c[w>>2]|0)+(d*12&-1)|0;n=(c[(c[r>>2]|0)+(d<<2)>>2]|0)+36|0;o=c[j+4>>2]|0;c[n>>2]=c[j>>2]|0;c[n+4>>2]=o;g[(c[(c[r>>2]|0)+(d<<2)>>2]|0)+52>>2]=+g[(c[w>>2]|0)+(d*12&-1)+8>>2];d=(c[w>>2]|0)+(e*12&-1)|0;o=(c[(c[r>>2]|0)+(e<<2)>>2]|0)+36|0;n=c[d+4>>2]|0;c[o>>2]=c[d>>2]|0;c[o+4>>2]=n;g[(c[(c[r>>2]|0)+(e<<2)>>2]|0)+52>>2]=+g[(c[w>>2]|0)+(e*12&-1)+8>>2];cC(l);e=b+12|0;L1876:do{if((c[e>>2]|0)>0){n=0;while(1){cE(l);o=n+1|0;if((o|0)<(c[e>>2]|0)){n=o}else{break L1876}}}}while(0);y=+g[b>>2];L1881:do{if((c[m>>2]|0)>0){b=0;while(1){e=c[w>>2]|0;n=e+(b*12&-1)|0;o=c[n+4>>2]|0;z=(c[k>>2]=c[n>>2]|0,+g[k>>2]);A=(c[k>>2]=o,+g[k>>2]);B=+g[e+(b*12&-1)+8>>2];e=c[x>>2]|0;o=e+(b*12&-1)|0;d=c[o+4>>2]|0;C=(c[k>>2]=c[o>>2]|0,+g[k>>2]);D=(c[k>>2]=d,+g[k>>2]);E=+g[e+(b*12&-1)+8>>2];F=y*C;G=y*D;H=F*F+G*G;if(H>4.0){G=2.0/+N(H);I=C*G;J=D*G}else{I=C;J=D}D=y*E;if(D*D>2.4674012660980225){if(D>0.0){K=D}else{K=-0.0-D}L=E*(1.5707963705062866/K)}else{L=E}E=z+y*I;z=A+y*J;A=B+y*L;e=(g[k>>2]=E,c[k>>2]|0);d=0|e;e=(g[k>>2]=z,c[k>>2]|0)|0;c[n>>2]=d;c[n+4>>2]=e;g[(c[w>>2]|0)+(b*12&-1)+8>>2]=A;n=(c[x>>2]|0)+(b*12&-1)|0;o=(g[k>>2]=I,c[k>>2]|0);j=0|o;o=(g[k>>2]=J,c[k>>2]|0)|0;c[n>>2]=j;c[n+4>>2]=o;g[(c[x>>2]|0)+(b*12&-1)+8>>2]=L;n=c[(c[r>>2]|0)+(b<<2)>>2]|0;s=n+44|0;c[s>>2]=d;c[s+4>>2]=e;g[n+56>>2]=A;e=n+64|0;c[e>>2]=j;c[e+4>>2]=o;g[n+72>>2]=L;B=+Q(A);g[n+20>>2]=B;D=+P(A);g[n+24>>2]=D;A=+g[n+28>>2];C=+g[n+32>>2];o=n+12|0;n=(g[k>>2]=E-(D*A-B*C),c[k>>2]|0);e=(g[k>>2]=z-(B*A+D*C),c[k>>2]|0)|0;c[o>>2]=0|n;c[o+4>>2]=e;e=b+1|0;if((e|0)<(c[m>>2]|0)){b=e}else{break L1881}}}}while(0);m=c[l+40>>2]|0;r=a+4|0;if((c[r>>2]|0)==0){M=l+32|0;O=c[M>>2]|0;R=m;bN(O,R);S=l+36|0;T=c[S>>2]|0;U=T;bN(O,U);i=f;return}if((c[q>>2]|0)<=0){M=l+32|0;O=c[M>>2]|0;R=m;bN(O,R);S=l+36|0;T=c[S>>2]|0;U=T;bN(O,U);i=f;return}a=h+16|0;x=0;while(1){w=c[(c[p>>2]|0)+(x<<2)>>2]|0;b=c[m+(x*152&-1)+144>>2]|0;c[a>>2]=b;L1902:do{if((b|0)>0){e=0;while(1){g[h+(e<<2)>>2]=+g[m+(x*152&-1)+(e*36&-1)+16>>2];g[h+8+(e<<2)>>2]=+g[m+(x*152&-1)+(e*36&-1)+20>>2];o=e+1|0;if((o|0)==(b|0)){break L1902}else{e=o}}}}while(0);b=c[r>>2]|0;aN[c[(c[b>>2]|0)+20>>2]&255](b,w,h);b=x+1|0;if((b|0)<(c[q>>2]|0)){x=b}else{break}}M=l+32|0;O=c[M>>2]|0;R=m;bN(O,R);S=l+36|0;T=c[S>>2]|0;U=T;bN(O,U);i=f;return}function cb(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0;b=c[a+102952>>2]|0;L1909:do{if((b|0)!=0){d=a|0;e=b;while(1){f=c[e+96>>2]|0;g=c[e+100>>2]|0;while(1){if((g|0)==0){break}h=c[g+4>>2]|0;c[g+28>>2]=0;b5(g,d);g=h}if((f|0)==0){break L1909}else{e=f}}}}while(0);df(c[a+102904>>2]|0);df(c[a+102916>>2]|0);df(c[a+102876>>2]|0);if((c[a+102468>>2]|0)!=0){ay(5243068,32,5249196,5245572)}if((c[a+102864>>2]|0)!=0){ay(5243068,33,5249196,5244576)}b=a+4|0;e=a|0;a=c[e>>2]|0;if((c[b>>2]|0)>0){i=0;j=a}else{k=a;l=k;df(l);return}while(1){df(c[j+(i<<3)+4>>2]|0);a=i+1|0;d=c[e>>2]|0;if((a|0)<(c[b>>2]|0)){i=a;j=d}else{k=d;break}}l=k;df(l);return}function cc(d,e){d=d|0;e=e|0;var f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0,ah=0,ai=0.0,aj=0.0,ak=0.0,al=0.0,am=0.0;f=i;i=i+100|0;h=f|0;j=f+16|0;l=f+68|0;m=d+103008|0;g[m>>2]=0.0;n=d+103012|0;g[n>>2]=0.0;o=d+103016|0;g[o>>2]=0.0;p=d+102960|0;q=d+102872|0;r=d+68|0;b7(j,c[p>>2]|0,c[d+102936>>2]|0,c[d+102964>>2]|0,r,c[d+102944>>2]|0);s=d+102952|0;t=c[s>>2]|0;L1930:do{if((t|0)!=0){u=t;while(1){v=u+4|0;b[v>>1]=b[v>>1]&-2;v=c[u+96>>2]|0;if((v|0)==0){break L1930}else{u=v}}}}while(0);t=c[d+102932>>2]|0;L1934:do{if((t|0)!=0){u=t;while(1){v=u+4|0;c[v>>2]=c[v>>2]&-2;v=c[u+12>>2]|0;if((v|0)==0){break L1934}else{u=v}}}}while(0);t=c[d+102956>>2]|0;L1938:do{if((t|0)!=0){u=t;while(1){a[u+60|0]=0;v=c[u+12>>2]|0;if((v|0)==0){break L1938}else{u=v}}}}while(0);t=c[p>>2]|0;p=t<<2;u=d+102864|0;v=c[u>>2]|0;if((v|0)<32){w=v}else{ay(5243068,38,5249236,5244052);w=c[u>>2]|0}v=d+102480+(w*12&-1)|0;c[d+102480+(w*12&-1)+4>>2]=p;x=d+102468|0;y=c[x>>2]|0;if((y+p|0)>102400){c[v>>2]=de(p)|0;a[d+102480+(w*12&-1)+8|0]=1}else{c[v>>2]=y+(d+68)|0;a[d+102480+(w*12&-1)+8|0]=0;c[x>>2]=(c[x>>2]|0)+p|0}x=d+102472|0;w=(c[x>>2]|0)+p|0;c[x>>2]=w;x=d+102476|0;p=c[x>>2]|0;c[x>>2]=(p|0)>(w|0)?p:w;c[u>>2]=(c[u>>2]|0)+1|0;u=c[v>>2]|0;v=u;w=c[s>>2]|0;L1950:do{if((w|0)!=0){p=j+28|0;x=j+36|0;y=j+32|0;z=j+40|0;A=j+8|0;B=j+48|0;C=j+16|0;D=j+44|0;E=j+12|0;F=d+102968|0;G=d+102976|0;H=l+12|0;I=l+16|0;J=l+20|0;K=w;while(1){L=K+4|0;L1954:do{if((b[L>>1]&35)<<16>>16==34){if((c[K>>2]|0)==0){break}c[p>>2]=0;c[x>>2]=0;c[y>>2]=0;c[v>>2]=K;b[L>>1]=b[L>>1]|1;M=1;while(1){N=M-1|0;O=c[v+(N<<2)>>2]|0;R=O+4|0;if((b[R>>1]&32)<<16>>16==0){ay(5245532,445,5248240,5243972)}S=c[p>>2]|0;if((S|0)<(c[z>>2]|0)){T=S}else{ay(5244808,54,5248164,5244544);T=c[p>>2]|0}c[O+8>>2]=T;c[(c[A>>2]|0)+(c[p>>2]<<2)>>2]=O;c[p>>2]=(c[p>>2]|0)+1|0;S=b[R>>1]|0;if((S&2)<<16>>16==0){b[R>>1]=S|2;g[O+144>>2]=0.0}L1969:do{if((c[O>>2]|0)==0){U=N}else{S=c[O+112>>2]|0;L1971:do{if((S|0)==0){V=N}else{R=N;W=S;while(1){X=c[W+4>>2]|0;Y=X+4|0;do{if((c[Y>>2]&7|0)==6){if((a[(c[X+48>>2]|0)+38|0]&1)<<24>>24!=0){Z=R;break}if((a[(c[X+52>>2]|0)+38|0]&1)<<24>>24!=0){Z=R;break}_=c[x>>2]|0;if((_|0)<(c[D>>2]|0)){$=_}else{ay(5244808,62,5248100,5244664);$=c[x>>2]|0}c[x>>2]=$+1|0;c[(c[E>>2]|0)+($<<2)>>2]=X;c[Y>>2]=c[Y>>2]|1;_=c[W>>2]|0;aa=_+4|0;if((b[aa>>1]&1)<<16>>16!=0){Z=R;break}if((R|0)>=(t|0)){ay(5245532,495,5248240,5243600)}c[v+(R<<2)>>2]=_;b[aa>>1]=b[aa>>1]|1;Z=R+1|0}else{Z=R}}while(0);Y=c[W+12>>2]|0;if((Y|0)==0){V=Z;break L1971}else{R=Z;W=Y}}}}while(0);S=c[O+108>>2]|0;if((S|0)==0){U=V;break}else{ab=V;ac=S}while(1){S=ac+4|0;W=c[S>>2]|0;do{if((a[W+60|0]&1)<<24>>24==0){R=c[ac>>2]|0;Y=R+4|0;if((b[Y>>1]&32)<<16>>16==0){ad=ab;break}X=c[y>>2]|0;if((X|0)<(c[B>>2]|0)){ae=X}else{ay(5244808,68,5248132,5244776);ae=c[y>>2]|0}c[y>>2]=ae+1|0;c[(c[C>>2]|0)+(ae<<2)>>2]=W;a[(c[S>>2]|0)+60|0]=1;if((b[Y>>1]&1)<<16>>16!=0){ad=ab;break}if((ab|0)>=(t|0)){ay(5245532,524,5248240,5243600)}c[v+(ab<<2)>>2]=R;b[Y>>1]=b[Y>>1]|1;ad=ab+1|0}else{ad=ab}}while(0);S=c[ac+12>>2]|0;if((S|0)==0){U=ad;break L1969}else{ab=ad;ac=S}}}}while(0);if((U|0)>0){M=U}else{break}}b8(j,l,e,F,(a[G]&1)<<24>>24!=0);g[m>>2]=+g[H>>2]+ +g[m>>2];g[n>>2]=+g[I>>2]+ +g[n>>2];g[o>>2]=+g[J>>2]+ +g[o>>2];M=c[p>>2]|0;if((M|0)>0){af=0;ag=M}else{break}while(1){M=c[(c[A>>2]|0)+(af<<2)>>2]|0;if((c[M>>2]|0)==0){O=M+4|0;b[O>>1]=b[O>>1]&-2;ah=c[p>>2]|0}else{ah=ag}O=af+1|0;if((O|0)<(ah|0)){af=O;ag=ah}else{break L1954}}}}while(0);L=c[K+96>>2]|0;if((L|0)==0){break L1950}else{K=L}}}}while(0);bN(r,u);u=c[s>>2]|0;L2013:do{if((u|0)!=0){s=h+8|0;r=h+12|0;ah=h;ag=u;while(1){L2017:do{if((b[ag+4>>1]&1)<<16>>16!=0){if((c[ag>>2]|0)==0){break}ai=+g[ag+52>>2];aj=+Q(ai);g[s>>2]=aj;ak=+P(ai);g[r>>2]=ak;ai=+g[ag+28>>2];al=+g[ag+32>>2];am=+g[ag+40>>2]-(aj*ai+ak*al);af=(g[k>>2]=+g[ag+36>>2]-(ak*ai-aj*al),c[k>>2]|0);o=(g[k>>2]=am,c[k>>2]|0)|0;c[ah>>2]=0|af;c[ah+4>>2]=o;o=(c[ag+88>>2]|0)+102872|0;af=c[ag+100>>2]|0;if((af|0)==0){break}n=ag+12|0;m=af;while(1){b6(m,o,h,n);af=c[m+4>>2]|0;if((af|0)==0){break L2017}else{m=af}}}}while(0);m=c[ag+96>>2]|0;if((m|0)==0){break L2013}else{ag=m}}}}while(0);bW(q|0,q);g[d+103020>>2]=0.0;d=j|0;bN(c[d>>2]|0,c[j+20>>2]|0);bN(c[d>>2]|0,c[j+24>>2]|0);bN(c[d>>2]|0,c[j+16>>2]|0);bN(c[d>>2]|0,c[j+12>>2]|0);bN(c[d>>2]|0,c[j+8>>2]|0);i=f;return}function cd(d,e){d=d|0;e=e|0;var f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0.0,ah=0,ai=0,aj=0,ak=0,al=0.0,am=0,an=0,ao=0,ap=0,aq=0,ar=0,as=0,at=0,au=0.0,av=0.0,aw=0.0,ax=0.0,az=0,aA=0.0,aB=0.0,aC=0,aD=0,aE=0.0,aF=0.0,aG=0.0,aH=0.0,aI=0.0,aJ=0,aK=0,aL=0.0,aM=0,aN=0,aO=0,aP=0.0,aQ=0,aR=0,aS=0,aT=0,aU=0,aV=0,aW=0,aX=0,aY=0,aZ=0,a_=0,a$=0,a0=0,a1=0,a2=0.0,a3=0,a4=0,a5=0;f=i;i=i+348|0;h=f|0;j=f+16|0;l=f+68|0;m=f+200|0;n=f+208|0;o=f+244|0;p=f+280|0;q=f+288|0;r=f+324|0;s=d+102872|0;t=d+102944|0;b7(j,64,32,0,d+68|0,c[t>>2]|0);u=d+102995|0;L2028:do{if((a[u]&1)<<24>>24==0){v=d+102932|0}else{w=c[d+102952>>2]|0;L2030:do{if((w|0)!=0){x=w;while(1){y=x+4|0;b[y>>1]=b[y>>1]&-2;g[x+60>>2]=0.0;y=c[x+96>>2]|0;if((y|0)==0){break L2030}else{x=y}}}}while(0);w=d+102932|0;x=c[w>>2]|0;if((x|0)==0){v=w;break}else{z=x}while(1){x=z+4|0;c[x>>2]=c[x>>2]&-34;c[z+128>>2]=0;g[z+132>>2]=1.0;x=c[z+12>>2]|0;if((x|0)==0){v=w;break L2028}else{z=x}}}}while(0);z=n;n=o;o=j+28|0;w=j+36|0;x=j+32|0;y=j+40|0;A=j+8|0;B=j+44|0;C=j+12|0;D=p|0;E=p+4|0;F=q;q=e|0;G=r|0;H=r+4|0;I=r+8|0;J=r+16|0;K=e+12|0;e=r+12|0;L=r+20|0;M=s|0;N=d+102994|0;d=h+8|0;O=h+12|0;R=h;S=l+16|0;T=l+20|0;U=l+24|0;V=l+44|0;W=l+48|0;X=l+52|0;Y=l|0;Z=l+28|0;_=l+56|0;$=l+92|0;aa=l+128|0;ab=m|0;ac=m+4|0;while(1){ad=c[v>>2]|0;if((ad|0)==0){ae=1;af=1645;break}else{ag=1.0;ah=0;ai=ad}while(1){ad=ai+4|0;aj=c[ad>>2]|0;do{if((aj&4|0)==0){ak=ah;al=ag}else{if((c[ai+128>>2]|0)>8){ak=ah;al=ag;break}if((aj&32|0)==0){am=c[ai+48>>2]|0;an=c[ai+52>>2]|0;if((a[am+38|0]&1)<<24>>24!=0){ak=ah;al=ag;break}if((a[an+38|0]&1)<<24>>24!=0){ak=ah;al=ag;break}ao=c[am+8>>2]|0;ap=c[an+8>>2]|0;aq=c[ao>>2]|0;ar=c[ap>>2]|0;if(!((aq|0)==2|(ar|0)==2)){ay(5245532,641,5248196,5243300)}as=b[ao+4>>1]|0;at=b[ap+4>>1]|0;if(!((as&2)<<16>>16!=0&(aq|0)!=0|(at&2)<<16>>16!=0&(ar|0)!=0)){ak=ah;al=ag;break}if(!((as&8)<<16>>16!=0|(aq|0)!=2|((at&8)<<16>>16!=0|(ar|0)!=2))){ak=ah;al=ag;break}ar=ao+28|0;at=ao+60|0;au=+g[at>>2];aq=ap+28|0;as=ap+60|0;av=+g[as>>2];do{if(au<av){if(au<1.0){aw=au}else{ay(5244908,715,5248328,5243160);aw=+g[at>>2]}ax=(av-aw)/(1.0-aw);az=ao+36|0;aA=1.0-ax;aB=aA*+g[ao+40>>2]+ax*+g[ao+48>>2];aC=az;aD=(g[k>>2]=+g[az>>2]*aA+ax*+g[ao+44>>2],c[k>>2]|0);az=(g[k>>2]=aB,c[k>>2]|0)|0;c[aC>>2]=0|aD;c[aC+4>>2]=az;az=ao+52|0;g[az>>2]=aA*+g[az>>2]+ax*+g[ao+56>>2];g[at>>2]=av;aE=av}else{if(av>=au){aE=au;break}if(av<1.0){aF=av}else{ay(5244908,715,5248328,5243160);aF=+g[as>>2]}ax=(au-aF)/(1.0-aF);az=ap+36|0;aA=1.0-ax;aB=aA*+g[ap+40>>2]+ax*+g[ap+48>>2];aC=az;aD=(g[k>>2]=+g[az>>2]*aA+ax*+g[ap+44>>2],c[k>>2]|0);az=(g[k>>2]=aB,c[k>>2]|0)|0;c[aC>>2]=0|aD;c[aC+4>>2]=az;az=ap+52|0;g[az>>2]=aA*+g[az>>2]+ax*+g[ap+56>>2];g[as>>2]=au;aE=au}}while(0);if(aE>=1.0){ay(5245532,676,5248196,5243160)}as=c[ai+56>>2]|0;ap=c[ai+60>>2]|0;c[S>>2]=0;c[T>>2]=0;g[U>>2]=0.0;c[V>>2]=0;c[W>>2]=0;g[X>>2]=0.0;bj(Y,c[am+12>>2]|0,as);bj(Z,c[an+12>>2]|0,ap);di(_,ar,36);di($,aq,36);g[aa>>2]=1.0;bt(m,l);if((c[ab>>2]|0)==3){au=aE+(1.0-aE)*+g[ac>>2];aG=au<1.0?au:1.0}else{aG=1.0}g[ai+132>>2]=aG;c[ad>>2]=c[ad>>2]|32;aH=aG}else{aH=+g[ai+132>>2]}if(aH>=ag){ak=ah;al=ag;break}ak=ai;al=aH}}while(0);ad=c[ai+12>>2]|0;if((ad|0)==0){break}else{ag=al;ah=ak;ai=ad}}if((ak|0)==0|al>.9999988079071045){ae=1;af=1644;break}ad=c[(c[ak+48>>2]|0)+8>>2]|0;aj=c[(c[ak+52>>2]|0)+8>>2]|0;ap=ad+28|0;di(z,ap,36);as=aj+28|0;di(n,as,36);at=ad+60|0;au=+g[at>>2];if(au<1.0){aI=au}else{ay(5244908,715,5248328,5243160);aI=+g[at>>2]}au=(al-aI)/(1.0-aI);ao=ad+36|0;av=1.0-au;az=ad+44|0;aC=ad+48|0;ax=+g[ao>>2]*av+au*+g[az>>2];aA=av*+g[ad+40>>2]+au*+g[aC>>2];aD=ao;ao=(g[k>>2]=ax,c[k>>2]|0);aJ=0|ao;ao=(g[k>>2]=aA,c[k>>2]|0)|0;c[aD>>2]=aJ;c[aD+4>>2]=ao;aD=ad+52|0;aK=ad+56|0;aB=av*+g[aD>>2]+au*+g[aK>>2];g[aD>>2]=aB;g[at>>2]=al;at=ad+44|0;c[at>>2]=aJ;c[at+4>>2]=ao;g[aK>>2]=aB;au=+Q(aB);ao=ad+20|0;g[ao>>2]=au;av=+P(aB);at=ad+24|0;g[at>>2]=av;aJ=ad+28|0;aB=+g[aJ>>2];aD=ad+32|0;aL=+g[aD>>2];aM=ad+12|0;aN=(g[k>>2]=ax-(av*aB-au*aL),c[k>>2]|0);aO=(g[k>>2]=aA-(au*aB+av*aL),c[k>>2]|0)|0;c[aM>>2]=0|aN;c[aM+4>>2]=aO;aO=aj+60|0;aL=+g[aO>>2];if(aL<1.0){aP=aL}else{ay(5244908,715,5248328,5243160);aP=+g[aO>>2]}aL=(al-aP)/(1.0-aP);aN=aj+36|0;av=1.0-aL;aQ=aj+44|0;aR=aj+48|0;aB=+g[aN>>2]*av+aL*+g[aQ>>2];au=av*+g[aj+40>>2]+aL*+g[aR>>2];aS=aN;aN=(g[k>>2]=aB,c[k>>2]|0);aT=0|aN;aN=(g[k>>2]=au,c[k>>2]|0)|0;c[aS>>2]=aT;c[aS+4>>2]=aN;aS=aj+52|0;aU=aj+56|0;aA=av*+g[aS>>2]+aL*+g[aU>>2];g[aS>>2]=aA;g[aO>>2]=al;aO=aj+44|0;c[aO>>2]=aT;c[aO+4>>2]=aN;g[aU>>2]=aA;aL=+Q(aA);aN=aj+20|0;g[aN>>2]=aL;av=+P(aA);aO=aj+24|0;g[aO>>2]=av;aT=aj+28|0;aA=+g[aT>>2];aS=aj+32|0;ax=+g[aS>>2];aV=aj+12|0;aW=(g[k>>2]=aB-(av*aA-aL*ax),c[k>>2]|0);aX=(g[k>>2]=au-(aL*aA+av*ax),c[k>>2]|0)|0;c[aV>>2]=0|aW;c[aV+4>>2]=aX;cz(ak,c[t>>2]|0);aX=ak+4|0;aW=c[aX>>2]|0;c[aX>>2]=aW&-33;aY=ak+128|0;c[aY>>2]=(c[aY>>2]|0)+1|0;if((aW&6|0)!=6){c[aX>>2]=aW&-37;di(ap,z,36);di(as,n,36);ax=+g[aK>>2];av=+Q(ax);g[ao>>2]=av;aA=+P(ax);g[at>>2]=aA;ax=+g[aJ>>2];aL=+g[aD>>2];au=+g[aC>>2]-(av*ax+aA*aL);aC=(g[k>>2]=+g[az>>2]-(aA*ax-av*aL),c[k>>2]|0);az=(g[k>>2]=au,c[k>>2]|0)|0;c[aM>>2]=0|aC;c[aM+4>>2]=az;au=+g[aU>>2];aL=+Q(au);g[aN>>2]=aL;av=+P(au);g[aO>>2]=av;au=+g[aT>>2];ax=+g[aS>>2];aA=+g[aR>>2]-(aL*au+av*ax);aR=(g[k>>2]=+g[aQ>>2]-(av*au-aL*ax),c[k>>2]|0);aQ=(g[k>>2]=aA,c[k>>2]|0)|0;c[aV>>2]=0|aR;c[aV+4>>2]=aQ;continue}aQ=ad+4|0;aV=b[aQ>>1]|0;if((aV&2)<<16>>16==0){b[aQ>>1]=aV|2;g[ad+144>>2]=0.0}aV=aj+4|0;aR=b[aV>>1]|0;if((aR&2)<<16>>16==0){b[aV>>1]=aR|2;g[aj+144>>2]=0.0}c[o>>2]=0;c[w>>2]=0;c[x>>2]=0;aR=c[y>>2]|0;do{if((aR|0)>0){aS=ad+8|0;c[aS>>2]=0;aT=c[A>>2]|0;c[aT>>2]=ad;c[o>>2]=1;if((aR|0)>1){aZ=aS;a_=aT;break}else{a$=aS;a0=aT;af=1590;break}}else{ay(5244808,54,5248164,5244544);aT=ad+8|0;c[aT>>2]=0;aS=c[A>>2]|0;c[aS>>2]=ad;c[o>>2]=1;a$=aT;a0=aS;af=1590;break}}while(0);if((af|0)==1590){af=0;ay(5244808,54,5248164,5244544);aZ=a$;a_=a0}aR=aj+8|0;c[aR>>2]=1;c[a_+4>>2]=aj;c[o>>2]=2;if((c[B>>2]|0)<=0){ay(5244808,62,5248100,5244664)}c[w>>2]=1;c[c[C>>2]>>2]=ak;b[aQ>>1]=b[aQ>>1]|1;b[aV>>1]=b[aV>>1]|1;c[aX>>2]=c[aX>>2]|1;c[D>>2]=ad;c[E>>2]=aj;aS=1;aT=ad;while(1){L2112:do{if((c[aT>>2]|0)==2){aO=c[aT+112>>2]|0;if((aO|0)==0){break}aN=aT+4|0;aU=c[y>>2]|0;az=aO;aO=c[o>>2]|0;while(1){if((aO|0)==(aU|0)){break L2112}aM=c[w>>2]|0;aC=c[B>>2]|0;if((aM|0)==(aC|0)){break L2112}aD=c[az+4>>2]|0;aJ=aD+4|0;L2119:do{if((c[aJ>>2]&1|0)==0){at=c[az>>2]|0;ao=at|0;do{if((c[ao>>2]|0)==2){if((b[aN>>1]&8)<<16>>16!=0){break}if((b[at+4>>1]&8)<<16>>16==0){a1=aO;break L2119}}}while(0);if((a[(c[aD+48>>2]|0)+38|0]&1)<<24>>24!=0){a1=aO;break}if((a[(c[aD+52>>2]|0)+38|0]&1)<<24>>24!=0){a1=aO;break}aK=at+28|0;di(F,aK,36);as=at+4|0;if((b[as>>1]&1)<<16>>16==0){ap=at+60|0;aA=+g[ap>>2];if(aA<1.0){a2=aA}else{ay(5244908,715,5248328,5243160);a2=+g[ap>>2]}aA=(al-a2)/(1.0-a2);aW=at+36|0;ax=1.0-aA;aL=+g[aW>>2]*ax+aA*+g[at+44>>2];au=ax*+g[at+40>>2]+aA*+g[at+48>>2];aY=aW;aW=(g[k>>2]=aL,c[k>>2]|0);a3=0|aW;aW=(g[k>>2]=au,c[k>>2]|0)|0;c[aY>>2]=a3;c[aY+4>>2]=aW;aY=at+52|0;a4=at+56|0;av=ax*+g[aY>>2]+aA*+g[a4>>2];g[aY>>2]=av;g[ap>>2]=al;ap=at+44|0;c[ap>>2]=a3;c[ap+4>>2]=aW;g[a4>>2]=av;aA=+Q(av);g[at+20>>2]=aA;ax=+P(av);g[at+24>>2]=ax;av=+g[at+28>>2];aB=+g[at+32>>2];a4=at+12|0;aW=(g[k>>2]=aL-(ax*av-aA*aB),c[k>>2]|0);ap=(g[k>>2]=au-(aA*av+ax*aB),c[k>>2]|0)|0;c[a4>>2]=0|aW;c[a4+4>>2]=ap}cz(aD,c[t>>2]|0);ap=c[aJ>>2]|0;if((ap&4|0)==0){di(aK,F,36);aB=+g[at+56>>2];ax=+Q(aB);g[at+20>>2]=ax;av=+P(aB);g[at+24>>2]=av;aB=+g[at+28>>2];aA=+g[at+32>>2];au=+g[at+48>>2]-(ax*aB+av*aA);a4=at+12|0;aW=(g[k>>2]=+g[at+44>>2]-(av*aB-ax*aA),c[k>>2]|0);a3=(g[k>>2]=au,c[k>>2]|0)|0;c[a4>>2]=0|aW;c[a4+4>>2]=a3;a1=aO;break}if((ap&2|0)==0){di(aK,F,36);au=+g[at+56>>2];aA=+Q(au);g[at+20>>2]=aA;ax=+P(au);g[at+24>>2]=ax;au=+g[at+28>>2];aB=+g[at+32>>2];av=+g[at+48>>2]-(aA*au+ax*aB);aK=at+12|0;a3=(g[k>>2]=+g[at+44>>2]-(ax*au-aA*aB),c[k>>2]|0);a4=(g[k>>2]=av,c[k>>2]|0)|0;c[aK>>2]=0|a3;c[aK+4>>2]=a4;a1=aO;break}c[aJ>>2]=ap|1;if((aM|0)>=(aC|0)){ay(5244808,62,5248100,5244664)}c[w>>2]=aM+1|0;c[(c[C>>2]|0)+(aM<<2)>>2]=aD;ap=b[as>>1]|0;if((ap&1)<<16>>16!=0){a1=aO;break}b[as>>1]=ap|1;do{if((c[ao>>2]|0)!=0){if((ap&2)<<16>>16!=0){break}b[as>>1]=ap|3;g[at+144>>2]=0.0}}while(0);if((aO|0)>=(aU|0)){ay(5244808,54,5248164,5244544)}c[at+8>>2]=aO;c[(c[A>>2]|0)+(aO<<2)>>2]=at;ap=aO+1|0;c[o>>2]=ap;a1=ap}else{a1=aO}}while(0);aD=c[az+12>>2]|0;if((aD|0)==0){break L2112}else{az=aD;aO=a1}}}}while(0);if((aS|0)>=2){break}aO=c[p+(aS<<2)>>2]|0;aS=aS+1|0;aT=aO}av=(1.0-al)*+g[q>>2];g[G>>2]=av;g[H>>2]=1.0/av;g[I>>2]=1.0;c[J>>2]=20;c[e>>2]=c[K>>2]|0;a[L]=0;ca(j,r,c[aZ>>2]|0,c[aR>>2]|0);aT=c[o>>2]|0;L2157:do{if((aT|0)>0){aS=c[A>>2]|0;ad=0;while(1){aj=c[aS+(ad<<2)>>2]|0;aX=aj+4|0;b[aX>>1]=b[aX>>1]&-2;L2161:do{if((c[aj>>2]|0)==2){av=+g[aj+52>>2];aB=+Q(av);g[d>>2]=aB;aA=+P(av);g[O>>2]=aA;av=+g[aj+28>>2];au=+g[aj+32>>2];ax=+g[aj+40>>2]-(aB*av+aA*au);aX=(g[k>>2]=+g[aj+36>>2]-(aA*av-aB*au),c[k>>2]|0);aV=(g[k>>2]=ax,c[k>>2]|0)|0;c[R>>2]=0|aX;c[R+4>>2]=aV;aV=(c[aj+88>>2]|0)+102872|0;aX=c[aj+100>>2]|0;L2163:do{if((aX|0)!=0){aQ=aj+12|0;aO=aX;while(1){b6(aO,aV,h,aQ);az=c[aO+4>>2]|0;if((az|0)==0){break L2163}else{aO=az}}}}while(0);aV=c[aj+112>>2]|0;if((aV|0)==0){break}else{a5=aV}while(1){aV=(c[a5+4>>2]|0)+4|0;c[aV>>2]=c[aV>>2]&-34;aV=c[a5+12>>2]|0;if((aV|0)==0){break L2161}else{a5=aV}}}}while(0);aj=ad+1|0;if((aj|0)<(aT|0)){ad=aj}else{break L2157}}}}while(0);bW(M,s);if((a[N]&1)<<24>>24!=0){ae=0;af=1643;break}}if((af|0)==1643){a[u]=ae;N=j|0;s=c[N>>2]|0;M=j+20|0;a5=c[M>>2]|0;h=a5;bN(s,h);R=c[N>>2]|0;O=j+24|0;d=c[O>>2]|0;o=d;bN(R,o);aZ=c[N>>2]|0;r=j+16|0;L=c[r>>2]|0;K=L;bN(aZ,K);e=c[N>>2]|0;J=c[C>>2]|0;I=J;bN(e,I);H=c[A>>2]|0;G=H;bN(e,G);i=f;return}else if((af|0)==1644){a[u]=ae;N=j|0;s=c[N>>2]|0;M=j+20|0;a5=c[M>>2]|0;h=a5;bN(s,h);R=c[N>>2]|0;O=j+24|0;d=c[O>>2]|0;o=d;bN(R,o);aZ=c[N>>2]|0;r=j+16|0;L=c[r>>2]|0;K=L;bN(aZ,K);e=c[N>>2]|0;J=c[C>>2]|0;I=J;bN(e,I);H=c[A>>2]|0;G=H;bN(e,G);i=f;return}else if((af|0)==1645){a[u]=ae;N=j|0;s=c[N>>2]|0;M=j+20|0;a5=c[M>>2]|0;h=a5;bN(s,h);R=c[N>>2]|0;O=j+24|0;d=c[O>>2]|0;o=d;bN(R,o);aZ=c[N>>2]|0;r=j+16|0;L=c[r>>2]|0;K=L;bN(aZ,K);e=c[N>>2]|0;J=c[C>>2]|0;I=J;bN(e,I);H=c[A>>2]|0;G=H;bN(e,G);i=f;return}}function ce(a){a=a|0;return}function cf(a){a=a|0;return}function cg(a){a=a|0;return}function ch(a,c,d){a=a|0;c=c|0;d=d|0;var e=0;a=b[c+36>>1]|0;if(!(a<<16>>16!=b[d+36>>1]<<16>>16|a<<16>>16==0)){e=a<<16>>16>0;return e|0}if((b[d+32>>1]&b[c+34>>1])<<16>>16==0){e=0;return e|0}e=(b[d+34>>1]&b[c+32>>1])<<16>>16!=0;return e|0}function ci(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,h=0,i=0,j=0.0,k=0.0,l=0.0,m=0.0,n=0,o=0.0,p=0.0,q=0.0,r=0.0,s=0.0,t=0.0;f=c[(c[a+48>>2]|0)+12>>2]|0;h=c[(c[a+52>>2]|0)+12>>2]|0;a=b+60|0;c[a>>2]=0;i=f+12|0;j=+g[d+12>>2];k=+g[i>>2];l=+g[d+8>>2];m=+g[f+16>>2];n=h+12|0;o=+g[e+12>>2];p=+g[n>>2];q=+g[e+8>>2];r=+g[h+16>>2];s=+g[e>>2]+(o*p-q*r)-(+g[d>>2]+(j*k-l*m));t=p*q+o*r+ +g[e+4>>2]-(k*l+j*m+ +g[d+4>>2]);m=+g[f+8>>2]+ +g[h+8>>2];if(s*s+t*t>m*m){return}c[b+56>>2]=0;h=i;i=b+48|0;f=c[h+4>>2]|0;c[i>>2]=c[h>>2]|0;c[i+4>>2]=f;g[b+40>>2]=0.0;g[b+44>>2]=0.0;c[a>>2]=1;a=n;n=b;f=c[a+4>>2]|0;c[n>>2]=c[a>>2]|0;c[n+4>>2]=f;c[b+16>>2]=0;return}function cj(b,d,e,f){b=b|0;d=+d;e=e|0;f=f|0;var h=0,j=0,k=0,l=0,m=0,n=0,o=0.0,p=0,q=0,r=0,s=0;h=i;i=i+24|0;j=h|0;k=b+102868|0;l=c[k>>2]|0;if((l&1|0)==0){m=l}else{l=b+102872|0;bW(l|0,l);l=c[k>>2]&-2;c[k>>2]=l;m=l}c[k>>2]=m|2;m=j|0;g[m>>2]=d;c[j+12>>2]=e;c[j+16>>2]=f;f=d>0.0;if(f){g[j+4>>2]=1.0/d}else{g[j+4>>2]=0.0}e=b+102988|0;g[j+8>>2]=+g[e>>2]*d;a[j+20|0]=a[b+102992|0]&1;bV(b+102872|0);g[b+103e3>>2]=0.0;if(!((a[b+102995|0]&1)<<24>>24==0|f^1)){cc(b,j);g[b+103004>>2]=0.0}do{if((a[b+102993|0]&1)<<24>>24==0){n=1672}else{d=+g[m>>2];if(d<=0.0){o=d;break}cd(b,j);g[b+103024>>2]=0.0;n=1672;break}}while(0);if((n|0)==1672){o=+g[m>>2]}if(o>0.0){g[e>>2]=+g[j+4>>2]}j=c[k>>2]|0;if((j&4|0)==0){p=j;q=p&-3;c[k>>2]=q;r=b+102996|0;g[r>>2]=0.0;i=h;return}e=c[b+102952>>2]|0;if((e|0)==0){p=j;q=p&-3;c[k>>2]=q;r=b+102996|0;g[r>>2]=0.0;i=h;return}else{s=e}while(1){g[s+76>>2]=0.0;g[s+80>>2]=0.0;g[s+84>>2]=0.0;e=c[s+96>>2]|0;if((e|0)==0){break}else{s=e}}p=c[k>>2]|0;q=p&-3;c[k>>2]=q;r=b+102996|0;g[r>>2]=0.0;i=h;return}function ck(a){a=a|0;dg(a);return}function cl(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0,l=0,m=0.0,n=0.0,o=0;h=bM(f,144)|0;if((h|0)==0){i=0;j=i|0;return j|0}f=h;k=h;c[k>>2]=5250532;c[h+4>>2]=4;c[h+48>>2]=a;l=h+52|0;c[l>>2]=d;c[h+56>>2]=b;c[h+60>>2]=e;c[h+124>>2]=0;c[h+128>>2]=0;dk(h+8|0,0,40);g[h+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);m=+g[a+20>>2];n=+g[d+20>>2];g[h+140>>2]=m>n?m:n;c[k>>2]=5250628;if((c[(c[a+12>>2]|0)+4>>2]|0)==3){o=d}else{ay(5245212,43,5248868,5246160);o=c[l>>2]|0}if((c[(c[o+12>>2]|0)+4>>2]|0)==0){i=f;j=i|0;return j|0}ay(5245212,44,5248868,5245168);i=f;j=i|0;return j|0}function cm(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cn(a,d,e,f){a=a|0;d=d|0;e=e|0;f=f|0;var h=0,j=0,k=0,l=0;h=i;i=i+48|0;j=h|0;k=c[(c[a+48>>2]|0)+12>>2]|0;c[j>>2]=5250828;c[j+4>>2]=1;g[j+8>>2]=.009999999776482582;l=j+28|0;c[l>>2]=0;c[l+4>>2]=0;c[l+8>>2]=0;c[l+12>>2]=0;b[l+16>>1]=0;bz(k,j,c[a+56>>2]|0);bc(d,j,e,c[(c[a+52>>2]|0)+12>>2]|0,f);i=h;return}function co(a){a=a|0;dg(a);return}function cp(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0,l=0,m=0.0,n=0.0,o=0;h=bM(f,144)|0;if((h|0)==0){i=0;j=i|0;return j|0}f=h;k=h;c[k>>2]=5250532;c[h+4>>2]=4;c[h+48>>2]=a;l=h+52|0;c[l>>2]=d;c[h+56>>2]=b;c[h+60>>2]=e;c[h+124>>2]=0;c[h+128>>2]=0;dk(h+8|0,0,40);g[h+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);m=+g[a+20>>2];n=+g[d+20>>2];g[h+140>>2]=m>n?m:n;c[k>>2]=5250580;if((c[(c[a+12>>2]|0)+4>>2]|0)==3){o=d}else{ay(5245056,43,5248700,5246160);o=c[l>>2]|0}if((c[(c[o+12>>2]|0)+4>>2]|0)==2){i=f;j=i|0;return j|0}ay(5245056,44,5248700,5245124);i=f;j=i|0;return j|0}function cq(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cr(a,d,e,f){a=a|0;d=d|0;e=e|0;f=f|0;var h=0,j=0,k=0,l=0,m=0;h=i;i=i+300|0;j=h|0;k=h+252|0;l=c[(c[a+48>>2]|0)+12>>2]|0;c[k>>2]=5250828;c[k+4>>2]=1;g[k+8>>2]=.009999999776482582;m=k+28|0;c[m>>2]=0;c[m+4>>2]=0;c[m+8>>2]=0;c[m+12>>2]=0;b[m+16>>1]=0;bz(l,k,c[a+56>>2]|0);bd(j,d,k,e,c[(c[a+52>>2]|0)+12>>2]|0,f);i=h;return}function cs(a){a=a|0;dg(a);return}function ct(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0;e=bM(f,144)|0;if((e|0)==0){h=0;i=h|0;return i|0}f=e;b=e;c[b>>2]=5250532;c[e+4>>2]=4;c[e+48>>2]=a;j=e+52|0;c[j>>2]=d;c[e+56>>2]=0;c[e+60>>2]=0;c[e+124>>2]=0;c[e+128>>2]=0;dk(e+8|0,0,40);g[e+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);k=+g[a+20>>2];l=+g[d+20>>2];g[e+140>>2]=k>l?k:l;c[b>>2]=5250760;if((c[(c[a+12>>2]|0)+4>>2]|0)==0){m=d}else{ay(5244996,44,5249716,5246116);m=c[j>>2]|0}if((c[(c[m+12>>2]|0)+4>>2]|0)==0){h=f;i=h|0;return i|0}ay(5244996,45,5249716,5245168);h=f;i=h|0;return i|0}function cu(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cv(a){a=a|0;dg(a);return}function cw(b,d,e,f,g){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;var h=0,i=0,j=0,k=0;if((a[5251456]&1)<<24>>24==0){c[1312865]=60;c[1312866]=86;a[5251468]=1;c[1312889]=28;c[1312890]=134;a[5251564]=1;c[1312871]=28;c[1312872]=134;a[5251492]=0;c[1312895]=132;c[1312896]=94;a[5251588]=1;c[1312877]=130;c[1312878]=102;a[5251516]=1;c[1312868]=130;c[1312869]=102;a[5251480]=0;c[1312883]=124;c[1312884]=34;a[5251540]=1;c[1312892]=124;c[1312893]=34;a[5251576]=0;c[1312901]=8;c[1312902]=126;a[5251612]=1;c[1312874]=8;c[1312875]=126;a[5251504]=0;c[1312907]=138;c[1312908]=104;a[5251636]=1;c[1312898]=138;c[1312899]=104;a[5251600]=0;a[5251456]=1}h=c[(c[b+12>>2]|0)+4>>2]|0;i=c[(c[e+12>>2]|0)+4>>2]|0;if(h>>>0>=4){ay(5244944,80,5247944,5246072)}if(i>>>0>=4){ay(5244944,81,5247944,5245308)}j=c[5251460+(h*48&-1)+(i*12&-1)>>2]|0;if((j|0)==0){k=0;return k|0}if((a[5251460+(h*48&-1)+(i*12&-1)+8|0]&1)<<24>>24==0){k=aH[j&255](e,f,b,d,g)|0;return k|0}else{k=aH[j&255](b,d,e,f,g)|0;return k|0}return 0}function cx(d,e){d=d|0;e=e|0;var f=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0;if((a[5251456]&1)<<24>>24==0){ay(5244944,103,5247880,5244252)}f=d+48|0;do{if((c[d+124>>2]|0)>0){h=c[(c[f>>2]|0)+8>>2]|0;i=h+4|0;j=b[i>>1]|0;if((j&2)<<16>>16==0){b[i>>1]=j|2;g[h+144>>2]=0.0}h=d+52|0;j=c[(c[h>>2]|0)+8>>2]|0;i=j+4|0;k=b[i>>1]|0;if((k&2)<<16>>16!=0){l=h;break}b[i>>1]=k|2;g[j+144>>2]=0.0;l=h}else{l=d+52|0}}while(0);h=c[(c[(c[f>>2]|0)+12>>2]|0)+4>>2]|0;f=c[(c[(c[l>>2]|0)+12>>2]|0)+4>>2]|0;if((h|0)>-1&(f|0)<4){m=5251460+(h*48&-1)+(f*12&-1)+4|0;n=c[m>>2]|0;aK[n&255](d,e);return}ay(5244944,114,5247880,5243928);ay(5244944,115,5247880,5243928);m=5251460+(h*48&-1)+(f*12&-1)+4|0;n=c[m>>2]|0;aK[n&255](d,e);return}function cy(a){a=a|0;return}function cz(d,e){d=d|0;e=e|0;var f=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0;f=i;i=i+192|0;h=f|0;j=f+92|0;k=f+104|0;l=f+128|0;m=d+64|0;di(l,m,64);n=d+4|0;o=c[n>>2]|0;c[n>>2]=o|4;p=o>>>1;o=c[d+48>>2]|0;q=c[d+52>>2]|0;r=((a[q+38|0]|a[o+38|0])&1)<<24>>24!=0;s=c[o+8>>2]|0;t=c[q+8>>2]|0;u=s+12|0;v=t+12|0;do{if(r){w=c[o+12>>2]|0;x=c[q+12>>2]|0;y=c[d+56>>2]|0;z=c[d+60>>2]|0;c[h+16>>2]=0;c[h+20>>2]=0;g[h+24>>2]=0.0;c[h+44>>2]=0;c[h+48>>2]=0;g[h+52>>2]=0.0;bj(h|0,w,y);bj(h+28|0,x,z);z=h+56|0;x=u;c[z>>2]=c[x>>2]|0;c[z+4>>2]=c[x+4>>2]|0;c[z+8>>2]=c[x+8>>2]|0;c[z+12>>2]=c[x+12>>2]|0;x=h+72|0;z=v;c[x>>2]=c[z>>2]|0;c[x+4>>2]=c[z+4>>2]|0;c[x+8>>2]=c[z+8>>2]|0;c[x+12>>2]=c[z+12>>2]|0;a[h+88|0]=1;b[j+4>>1]=0;bl(k,j,h);z=+g[k+16>>2]<11920928955078125.0e-22&1;c[d+124>>2]=0;A=z;B=p&1}else{aS[c[c[d>>2]>>2]&255](d,m,u,v);z=d+124|0;x=(c[z>>2]|0)>0;y=x&1;L2314:do{if(x){w=c[l+60>>2]|0;C=0;while(1){D=d+64+(C*20&-1)+8|0;g[D>>2]=0.0;E=d+64+(C*20&-1)+12|0;g[E>>2]=0.0;F=c[d+64+(C*20&-1)+16>>2]|0;G=0;while(1){if((G|0)>=(w|0)){break}if((c[l+(G*20&-1)+16>>2]|0)==(F|0)){H=1760;break}else{G=G+1|0}}if((H|0)==1760){H=0;g[D>>2]=+g[l+(G*20&-1)+8>>2];g[E>>2]=+g[l+(G*20&-1)+12>>2]}F=C+1|0;if((F|0)<(c[z>>2]|0)){C=F}else{break L2314}}}}while(0);z=p&1;if(!(x^(z|0)!=0)){A=y;B=z;break}C=s+4|0;w=b[C>>1]|0;if((w&2)<<16>>16==0){b[C>>1]=w|2;g[s+144>>2]=0.0}w=t+4|0;C=b[w>>1]|0;if((C&2)<<16>>16!=0){A=y;B=z;break}b[w>>1]=C|2;g[t+144>>2]=0.0;A=y;B=z}}while(0);t=A<<24>>24!=0;A=c[n>>2]|0;c[n>>2]=t?A|2:A&-3;A=t^1;n=(e|0)==0;if(!((B|0)!=0|A|n)){aK[c[(c[e>>2]|0)+8>>2]&255](e,d)}if(!(t|(B|0)==0|n)){aK[c[(c[e>>2]|0)+12>>2]&255](e,d)}if(r|A|n){i=f;return}aN[c[(c[e>>2]|0)+16>>2]&255](e,d,l);i=f;return}function cA(a){a=a|0;dg(a);return}function cB(b,d){b=b|0;d=d|0;var e=0,f=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0.0,q=0.0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0;e=b;f=d;c[e>>2]=c[f>>2]|0;c[e+4>>2]=c[f+4>>2]|0;c[e+8>>2]=c[f+8>>2]|0;c[e+12>>2]=c[f+12>>2]|0;c[e+16>>2]=c[f+16>>2]|0;c[e+20>>2]=c[f+20>>2]|0;f=c[d+40>>2]|0;e=b+32|0;c[e>>2]=f;h=c[d+28>>2]|0;i=b+48|0;c[i>>2]=h;j=h*88&-1;h=f+102796|0;k=c[h>>2]|0;if((k|0)<32){l=k}else{ay(5243068,38,5249236,5244052);l=c[h>>2]|0}k=f+102412+(l*12&-1)|0;c[f+102412+(l*12&-1)+4>>2]=j;m=f+102400|0;n=c[m>>2]|0;if((n+j|0)>102400){c[k>>2]=de(j)|0;a[f+102412+(l*12&-1)+8|0]=1}else{c[k>>2]=f+n|0;a[f+102412+(l*12&-1)+8|0]=0;c[m>>2]=(c[m>>2]|0)+j|0}m=f+102404|0;l=(c[m>>2]|0)+j|0;c[m>>2]=l;m=f+102408|0;f=c[m>>2]|0;c[m>>2]=(f|0)>(l|0)?f:l;c[h>>2]=(c[h>>2]|0)+1|0;h=b+36|0;c[h>>2]=c[k>>2]|0;k=c[e>>2]|0;e=(c[i>>2]|0)*152&-1;l=k+102796|0;f=c[l>>2]|0;if((f|0)<32){o=f}else{ay(5243068,38,5249236,5244052);o=c[l>>2]|0}f=k+102412+(o*12&-1)|0;c[k+102412+(o*12&-1)+4>>2]=e;m=k+102400|0;j=c[m>>2]|0;if((j+e|0)>102400){c[f>>2]=de(e)|0;a[k+102412+(o*12&-1)+8|0]=1}else{c[f>>2]=k+j|0;a[k+102412+(o*12&-1)+8|0]=0;c[m>>2]=(c[m>>2]|0)+e|0}m=k+102404|0;o=(c[m>>2]|0)+e|0;c[m>>2]=o;m=k+102408|0;k=c[m>>2]|0;c[m>>2]=(k|0)>(o|0)?k:o;c[l>>2]=(c[l>>2]|0)+1|0;l=b+40|0;c[l>>2]=c[f>>2]|0;c[b+24>>2]=c[d+32>>2]|0;c[b+28>>2]=c[d+36>>2]|0;f=c[d+24>>2]|0;d=b+44|0;c[d>>2]=f;if((c[i>>2]|0)<=0){return}o=b+20|0;k=b+8|0;b=0;m=f;while(1){f=c[m+(b<<2)>>2]|0;e=c[f+48>>2]|0;j=c[f+52>>2]|0;p=+g[(c[e+12>>2]|0)+8>>2];q=+g[(c[j+12>>2]|0)+8>>2];n=c[e+8>>2]|0;e=c[j+8>>2]|0;j=c[f+124>>2]|0;r=(j|0)>0;if(!r){ay(5244848,71,5249552,5246056)}s=c[l>>2]|0;g[s+(b*152&-1)+136>>2]=+g[f+136>>2];g[s+(b*152&-1)+140>>2]=+g[f+140>>2];t=n+8|0;c[s+(b*152&-1)+112>>2]=c[t>>2]|0;u=e+8|0;c[s+(b*152&-1)+116>>2]=c[u>>2]|0;v=n+120|0;g[s+(b*152&-1)+120>>2]=+g[v>>2];w=e+120|0;g[s+(b*152&-1)+124>>2]=+g[w>>2];x=n+128|0;g[s+(b*152&-1)+128>>2]=+g[x>>2];y=e+128|0;g[s+(b*152&-1)+132>>2]=+g[y>>2];c[s+(b*152&-1)+148>>2]=b;c[s+(b*152&-1)+144>>2]=j;dk(s+(b*152&-1)+80|0,0,32);z=c[h>>2]|0;c[z+(b*88&-1)+32>>2]=c[t>>2]|0;c[z+(b*88&-1)+36>>2]=c[u>>2]|0;g[z+(b*88&-1)+40>>2]=+g[v>>2];g[z+(b*88&-1)+44>>2]=+g[w>>2];w=n+28|0;n=z+(b*88&-1)+48|0;v=c[w+4>>2]|0;c[n>>2]=c[w>>2]|0;c[n+4>>2]=v;v=e+28|0;e=z+(b*88&-1)+56|0;n=c[v+4>>2]|0;c[e>>2]=c[v>>2]|0;c[e+4>>2]=n;g[z+(b*88&-1)+64>>2]=+g[x>>2];g[z+(b*88&-1)+68>>2]=+g[y>>2];y=f+104|0;x=z+(b*88&-1)+16|0;n=c[y+4>>2]|0;c[x>>2]=c[y>>2]|0;c[x+4>>2]=n;n=f+112|0;x=z+(b*88&-1)+24|0;y=c[n+4>>2]|0;c[x>>2]=c[n>>2]|0;c[x+4>>2]=y;c[z+(b*88&-1)+84>>2]=j;g[z+(b*88&-1)+76>>2]=p;g[z+(b*88&-1)+80>>2]=q;c[z+(b*88&-1)+72>>2]=c[f+120>>2]|0;L2365:do{if(r){y=0;while(1){if((a[o]&1)<<24>>24==0){g[s+(b*152&-1)+(y*36&-1)+16>>2]=0.0;g[s+(b*152&-1)+(y*36&-1)+20>>2]=0.0}else{g[s+(b*152&-1)+(y*36&-1)+16>>2]=+g[k>>2]*+g[f+64+(y*20&-1)+8>>2];g[s+(b*152&-1)+(y*36&-1)+20>>2]=+g[k>>2]*+g[f+64+(y*20&-1)+12>>2]}g[s+(b*152&-1)+(y*36&-1)+24>>2]=0.0;g[s+(b*152&-1)+(y*36&-1)+28>>2]=0.0;g[s+(b*152&-1)+(y*36&-1)+32>>2]=0.0;x=f+64+(y*20&-1)|0;n=z+(b*88&-1)+(y<<3)|0;e=s+(b*152&-1)+(y*36&-1)|0;c[e>>2]=0;c[e+4>>2]=0;c[e+8>>2]=0;c[e+12>>2]=0;e=c[x+4>>2]|0;c[n>>2]=c[x>>2]|0;c[n+4>>2]=e;e=y+1|0;if((e|0)==(j|0)){break L2365}else{y=e}}}}while(0);j=b+1|0;if((j|0)>=(c[i>>2]|0)){break}b=j;m=c[d>>2]|0}return}function cC(a){a=a|0;var b=0,d=0,e=0,f=0,h=0,j=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0.0,z=0.0,A=0,B=0,C=0,D=0.0,E=0.0,F=0.0,G=0.0,H=0,I=0,J=0.0,K=0.0,L=0.0,M=0.0,N=0.0,O=0.0,R=0.0,S=0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0.0,_=0.0,$=0.0,aa=0.0,ab=0.0,ac=0.0,ad=0,ae=0,af=0,ag=0.0,ah=0.0,ai=0.0;b=i;i=i+56|0;d=b|0;e=b+16|0;f=b+32|0;h=a+48|0;if((c[h>>2]|0)<=0){i=b;return}j=a+40|0;l=a+36|0;m=a+44|0;n=a+24|0;o=a+28|0;a=d+8|0;p=d+12|0;q=e+8|0;r=e+12|0;s=d;t=e;u=f;v=0;while(1){w=c[j>>2]|0;x=c[l>>2]|0;y=+g[x+(v*88&-1)+76>>2];z=+g[x+(v*88&-1)+80>>2];A=c[(c[m>>2]|0)+(c[w+(v*152&-1)+148>>2]<<2)>>2]|0;B=c[w+(v*152&-1)+112>>2]|0;C=c[w+(v*152&-1)+116>>2]|0;D=+g[w+(v*152&-1)+120>>2];E=+g[w+(v*152&-1)+124>>2];F=+g[w+(v*152&-1)+128>>2];G=+g[w+(v*152&-1)+132>>2];H=x+(v*88&-1)+48|0;I=c[H+4>>2]|0;J=(c[k>>2]=c[H>>2]|0,+g[k>>2]);K=(c[k>>2]=I,+g[k>>2]);I=x+(v*88&-1)+56|0;x=c[I+4>>2]|0;L=(c[k>>2]=c[I>>2]|0,+g[k>>2]);M=(c[k>>2]=x,+g[k>>2]);x=c[n>>2]|0;I=x+(B*12&-1)|0;H=c[I+4>>2]|0;N=(c[k>>2]=c[I>>2]|0,+g[k>>2]);O=(c[k>>2]=H,+g[k>>2]);R=+g[x+(B*12&-1)+8>>2];H=c[o>>2]|0;I=H+(B*12&-1)|0;S=c[I+4>>2]|0;T=(c[k>>2]=c[I>>2]|0,+g[k>>2]);U=(c[k>>2]=S,+g[k>>2]);V=+g[H+(B*12&-1)+8>>2];B=x+(C*12&-1)|0;S=c[B+4>>2]|0;W=(c[k>>2]=c[B>>2]|0,+g[k>>2]);X=(c[k>>2]=S,+g[k>>2]);Y=+g[x+(C*12&-1)+8>>2];x=H+(C*12&-1)|0;S=c[x+4>>2]|0;Z=(c[k>>2]=c[x>>2]|0,+g[k>>2]);_=(c[k>>2]=S,+g[k>>2]);$=+g[H+(C*12&-1)+8>>2];if((c[A+124>>2]|0)<=0){ay(5244848,168,5249608,5245280)}aa=+Q(R);g[a>>2]=aa;ab=+P(R);g[p>>2]=ab;R=+Q(Y);g[q>>2]=R;ac=+P(Y);g[r>>2]=ac;C=(g[k>>2]=N-(J*ab-K*aa),c[k>>2]|0);H=(g[k>>2]=O-(K*ab+J*aa),c[k>>2]|0)|0;c[s>>2]=0|C;c[s+4>>2]=H;H=(g[k>>2]=W-(L*ac-M*R),c[k>>2]|0);C=(g[k>>2]=X-(M*ac+L*R),c[k>>2]|0)|0;c[t>>2]=0|H;c[t+4>>2]=C;bi(f,A+64|0,d,y,e,z);A=w+(v*152&-1)+72|0;C=A;H=c[u+4>>2]|0;c[C>>2]=c[u>>2]|0;c[C+4>>2]=H;H=w+(v*152&-1)+144|0;C=c[H>>2]|0;do{if((C|0)>0){S=w+(v*152&-1)+76|0;x=A|0;z=D+E;y=-0.0-$;R=-0.0-V;B=w+(v*152&-1)+140|0;I=0;while(1){L=+g[f+8+(I<<3)>>2];ac=L-N;M=+g[f+8+(I<<3)+4>>2];ad=w+(v*152&-1)+(I*36&-1)|0;ae=(g[k>>2]=ac,c[k>>2]|0);af=(g[k>>2]=M-O,c[k>>2]|0)|0;c[ad>>2]=0|ae;c[ad+4>>2]=af;aa=L-W;af=w+(v*152&-1)+(I*36&-1)+8|0;ad=(g[k>>2]=aa,c[k>>2]|0);ae=(g[k>>2]=M-X,c[k>>2]|0)|0;c[af>>2]=0|ad;c[af+4>>2]=ae;M=+g[S>>2];L=+g[w+(v*152&-1)+(I*36&-1)+4>>2];J=+g[x>>2];ab=ac*M-L*J;K=+g[w+(v*152&-1)+(I*36&-1)+12>>2];Y=M*aa-J*K;J=z+ab*F*ab+Y*G*Y;if(J>0.0){ag=1.0/J}else{ag=0.0}g[w+(v*152&-1)+(I*36&-1)+24>>2]=ag;J=+g[S>>2];Y=+g[x>>2]*-1.0;ab=ac*Y-J*L;M=Y*aa-J*K;J=z+ab*F*ab+M*G*M;if(J>0.0){ah=1.0/J}else{ah=0.0}g[w+(v*152&-1)+(I*36&-1)+28>>2]=ah;ae=w+(v*152&-1)+(I*36&-1)+32|0;g[ae>>2]=0.0;J=+g[x>>2]*(Z+K*y-T-L*R)+ +g[S>>2]*(_+$*aa-U-V*ac);if(J<-1.0){g[ae>>2]=J*(-0.0- +g[B>>2])}ae=I+1|0;if((ae|0)==(C|0)){break}else{I=ae}}if((c[H>>2]|0)!=2){break}R=+g[w+(v*152&-1)+76>>2];y=+g[A>>2];z=+g[w+(v*152&-1)>>2]*R- +g[w+(v*152&-1)+4>>2]*y;J=R*+g[w+(v*152&-1)+8>>2]-y*+g[w+(v*152&-1)+12>>2];ac=R*+g[w+(v*152&-1)+36>>2]-y*+g[w+(v*152&-1)+40>>2];aa=R*+g[w+(v*152&-1)+44>>2]-y*+g[w+(v*152&-1)+48>>2];y=D+E;R=F*z;L=G*J;K=y+z*R+J*L;J=y+ac*F*ac+aa*G*aa;z=y+R*ac+L*aa;aa=K*J-z*z;if(K*K>=aa*1.0e3){c[H>>2]=1;break}g[w+(v*152&-1)+96>>2]=K;g[w+(v*152&-1)+100>>2]=z;g[w+(v*152&-1)+104>>2]=z;g[w+(v*152&-1)+108>>2]=J;if(aa!=0.0){ai=1.0/aa}else{ai=aa}aa=z*(-0.0-ai);g[w+(v*152&-1)+80>>2]=J*ai;g[w+(v*152&-1)+84>>2]=aa;g[w+(v*152&-1)+88>>2]=aa;g[w+(v*152&-1)+92>>2]=K*ai}}while(0);w=v+1|0;if((w|0)<(c[h>>2]|0)){v=w}else{break}}i=b;return}
+function cD(a){a=a|0;var b=0,d=0,e=0,f=0,h=0,i=0,j=0.0,l=0.0,m=0.0,n=0.0,o=0,p=0,q=0,r=0,s=0.0,t=0.0,u=0.0,v=0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0.0,D=0.0,E=0.0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0.0,N=0.0,O=0.0,P=0.0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0.0;b=a+48|0;if((c[b>>2]|0)<=0){return}d=a+40|0;e=a+28|0;a=0;while(1){f=c[d>>2]|0;h=c[f+(a*152&-1)+112>>2]|0;i=c[f+(a*152&-1)+116>>2]|0;j=+g[f+(a*152&-1)+120>>2];l=+g[f+(a*152&-1)+128>>2];m=+g[f+(a*152&-1)+124>>2];n=+g[f+(a*152&-1)+132>>2];o=c[f+(a*152&-1)+144>>2]|0;p=c[e>>2]|0;q=p+(h*12&-1)|0;r=c[q+4>>2]|0;s=(c[k>>2]=c[q>>2]|0,+g[k>>2]);t=(c[k>>2]=r,+g[k>>2]);u=+g[p+(h*12&-1)+8>>2];r=p+(i*12&-1)|0;v=c[r+4>>2]|0;w=(c[k>>2]=c[r>>2]|0,+g[k>>2]);x=(c[k>>2]=v,+g[k>>2]);y=+g[p+(i*12&-1)+8>>2];p=f+(a*152&-1)+72|0;v=c[p+4>>2]|0;z=(c[k>>2]=c[p>>2]|0,+g[k>>2]);A=(c[k>>2]=v,+g[k>>2]);B=z*-1.0;L2413:do{if((o|0)>0){C=t;D=s;E=x;F=w;G=u;H=y;v=0;while(1){I=+g[f+(a*152&-1)+(v*36&-1)+16>>2];J=+g[f+(a*152&-1)+(v*36&-1)+20>>2];K=z*I+A*J;L=A*I+B*J;J=G-l*(+g[f+(a*152&-1)+(v*36&-1)>>2]*L- +g[f+(a*152&-1)+(v*36&-1)+4>>2]*K);I=D-j*K;M=C-j*L;N=H+n*(L*+g[f+(a*152&-1)+(v*36&-1)+8>>2]-K*+g[f+(a*152&-1)+(v*36&-1)+12>>2]);O=F+m*K;K=E+m*L;p=v+1|0;if((p|0)==(o|0)){P=M;Q=I;R=K;S=O;T=J;U=N;break L2413}else{C=M;D=I;E=K;F=O;G=J;H=N;v=p}}}else{P=t;Q=s;R=x;S=w;T=u;U=y}}while(0);o=(g[k>>2]=Q,c[k>>2]|0);f=(g[k>>2]=P,c[k>>2]|0)|0;c[q>>2]=0|o;c[q+4>>2]=f;g[(c[e>>2]|0)+(h*12&-1)+8>>2]=T;f=(c[e>>2]|0)+(i*12&-1)|0;o=(g[k>>2]=S,c[k>>2]|0);v=(g[k>>2]=R,c[k>>2]|0)|0;c[f>>2]=0|o;c[f+4>>2]=v;g[(c[e>>2]|0)+(i*12&-1)+8>>2]=U;v=a+1|0;if((v|0)<(c[b>>2]|0)){a=v}else{break}}return}function cE(a){a=a|0;var b=0,d=0,e=0,f=0,h=0,i=0,j=0,l=0.0,m=0.0,n=0.0,o=0.0,p=0,q=0,r=0,s=0,t=0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0,C=0.0,D=0.0,E=0.0,F=0.0,G=0.0,H=0.0,I=0,J=0.0,K=0.0,L=0,M=0.0,N=0.0,O=0.0,P=0.0,Q=0.0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0.0,_=0.0,$=0.0,aa=0.0,ab=0.0,ac=0.0,ad=0.0,ae=0.0,af=0.0,ag=0.0,ah=0.0,ai=0.0,aj=0.0;b=a+48|0;if((c[b>>2]|0)<=0){return}d=a+40|0;e=a+28|0;a=0;while(1){f=c[d>>2]|0;h=f+(a*152&-1)|0;i=c[f+(a*152&-1)+112>>2]|0;j=c[f+(a*152&-1)+116>>2]|0;l=+g[f+(a*152&-1)+120>>2];m=+g[f+(a*152&-1)+128>>2];n=+g[f+(a*152&-1)+124>>2];o=+g[f+(a*152&-1)+132>>2];p=f+(a*152&-1)+144|0;q=c[p>>2]|0;r=c[e>>2]|0;s=r+(i*12&-1)|0;t=c[s+4>>2]|0;u=(c[k>>2]=c[s>>2]|0,+g[k>>2]);v=(c[k>>2]=t,+g[k>>2]);w=+g[r+(i*12&-1)+8>>2];t=r+(j*12&-1)|0;s=c[t+4>>2]|0;x=(c[k>>2]=c[t>>2]|0,+g[k>>2]);y=(c[k>>2]=s,+g[k>>2]);z=+g[r+(j*12&-1)+8>>2];r=f+(a*152&-1)+72|0;s=c[r+4>>2]|0;A=(c[k>>2]=c[r>>2]|0,+g[k>>2]);B=(c[k>>2]=s,+g[k>>2]);C=A*-1.0;D=+g[f+(a*152&-1)+136>>2];do{if((q-1|0)>>>0<2){E=v;F=u;G=y;H=x;I=0;J=z;K=w;L=1836}else{ay(5244848,311,5249664,5244216);if((q|0)>0){E=v;F=u;G=y;H=x;I=0;J=z;K=w;L=1836;break}else{M=v;N=u;O=y;P=x;Q=z;R=w;break}}}while(0);L2426:do{if((L|0)==1836){while(1){L=0;w=+g[f+(a*152&-1)+(I*36&-1)+12>>2];z=+g[f+(a*152&-1)+(I*36&-1)+8>>2];x=+g[f+(a*152&-1)+(I*36&-1)+4>>2];y=+g[f+(a*152&-1)+(I*36&-1)>>2];u=D*+g[f+(a*152&-1)+(I*36&-1)+16>>2];s=f+(a*152&-1)+(I*36&-1)+20|0;v=+g[s>>2];S=v+ +g[f+(a*152&-1)+(I*36&-1)+28>>2]*(-0.0-(B*(H+w*(-0.0-J)-F-x*(-0.0-K))+C*(G+J*z-E-K*y)));T=-0.0-u;U=S<u?S:u;u=U<T?T:U;U=u-v;g[s>>2]=u;u=B*U;v=C*U;U=F-l*u;T=E-l*v;S=K-m*(y*v-x*u);x=H+n*u;y=G+n*v;V=J+o*(z*v-w*u);s=I+1|0;if((s|0)==(q|0)){M=T;N=U;O=y;P=x;Q=V;R=S;break L2426}else{E=T;F=U;G=y;H=x;I=s;J=V;K=S;L=1836}}}}while(0);L2430:do{if((c[p>>2]|0)==1){C=+g[f+(a*152&-1)+12>>2];D=+g[f+(a*152&-1)+8>>2];S=+g[f+(a*152&-1)+4>>2];V=+g[h>>2];q=f+(a*152&-1)+16|0;x=+g[q>>2];y=x+(A*(P+C*(-0.0-Q)-N-S*(-0.0-R))+B*(O+Q*D-M-R*V)- +g[f+(a*152&-1)+32>>2])*(-0.0- +g[f+(a*152&-1)+24>>2]);U=y>0.0?y:0.0;y=U-x;g[q>>2]=U;U=A*y;x=B*y;W=R-m*(V*x-S*U);X=Q+o*(D*x-C*U);Y=P+n*U;Z=O+n*x;_=N-l*U;$=M-l*x}else{q=f+(a*152&-1)+16|0;x=+g[q>>2];s=f+(a*152&-1)+52|0;U=+g[s>>2];if(x<0.0|U<0.0){ay(5244848,406,5249664,5243900)}C=-0.0-Q;D=+g[f+(a*152&-1)+12>>2];S=+g[f+(a*152&-1)+8>>2];V=-0.0-R;y=+g[f+(a*152&-1)+4>>2];T=+g[h>>2];u=+g[f+(a*152&-1)+48>>2];w=+g[f+(a*152&-1)+44>>2];v=+g[f+(a*152&-1)+40>>2];z=+g[f+(a*152&-1)+36>>2];aa=+g[f+(a*152&-1)+104>>2];ab=+g[f+(a*152&-1)+100>>2];ac=A*(P+D*C-N-y*V)+B*(O+Q*S-M-R*T)- +g[f+(a*152&-1)+32>>2]-(x*+g[f+(a*152&-1)+96>>2]+U*aa);ad=A*(P+u*C-N-v*V)+B*(O+Q*w-M-R*z)- +g[f+(a*152&-1)+68>>2]-(x*ab+U*+g[f+(a*152&-1)+108>>2]);V=+g[f+(a*152&-1)+80>>2]*ac+ +g[f+(a*152&-1)+88>>2]*ad;C=ac*+g[f+(a*152&-1)+84>>2]+ad*+g[f+(a*152&-1)+92>>2];ae=-0.0-V;af=-0.0-C;if(!(V>-0.0|C>-0.0)){C=ae-x;V=af-U;ag=A*C;ah=B*C;C=A*V;ai=B*V;V=ag+C;aj=ah+ai;g[q>>2]=ae;g[s>>2]=af;W=R-m*(T*ah-y*ag+(z*ai-v*C));X=Q+o*(S*ah-D*ag+(w*ai-u*C));Y=P+n*V;Z=O+n*aj;_=N-l*V;$=M-l*aj;break}aj=ac*(-0.0- +g[f+(a*152&-1)+24>>2]);do{if(aj>=0.0){if(ad+aj*ab<0.0){break}V=aj-x;C=0.0-U;ai=A*V;ag=B*V;V=A*C;ah=B*C;C=V+ai;af=ah+ag;g[q>>2]=aj;g[s>>2]=0.0;W=R-m*(ag*T-ai*y+(ah*z-V*v));X=Q+o*(ag*S-ai*D+(ah*w-V*u));Y=P+n*C;Z=O+n*af;_=N-l*C;$=M-l*af;break L2430}}while(0);aj=ad*(-0.0- +g[f+(a*152&-1)+60>>2]);do{if(aj>=0.0){if(ac+aj*aa<0.0){break}ab=0.0-x;af=aj-U;C=A*ab;V=B*ab;ab=A*af;ah=B*af;af=C+ab;ai=V+ah;g[q>>2]=0.0;g[s>>2]=aj;W=R-m*(V*T-C*y+(ah*z-ab*v));X=Q+o*(V*S-C*D+(ah*w-ab*u));Y=P+n*af;Z=O+n*ai;_=N-l*af;$=M-l*ai;break L2430}}while(0);if(ac<0.0|ad<0.0){W=R;X=Q;Y=P;Z=O;_=N;$=M;break}aj=0.0-x;aa=0.0-U;ai=A*aj;af=B*aj;aj=A*aa;ab=B*aa;aa=ai+aj;ah=af+ab;g[q>>2]=0.0;g[s>>2]=0.0;W=R-m*(af*T-ai*y+(ab*z-aj*v));X=Q+o*(af*S-ai*D+(ab*w-aj*u));Y=P+n*aa;Z=O+n*ah;_=N-l*aa;$=M-l*ah}}while(0);f=(c[e>>2]|0)+(i*12&-1)|0;h=(g[k>>2]=_,c[k>>2]|0);p=(g[k>>2]=$,c[k>>2]|0)|0;c[f>>2]=0|h;c[f+4>>2]=p;g[(c[e>>2]|0)+(i*12&-1)+8>>2]=W;p=(c[e>>2]|0)+(j*12&-1)|0;f=(g[k>>2]=Y,c[k>>2]|0);h=(g[k>>2]=Z,c[k>>2]|0)|0;c[p>>2]=0|f;c[p+4>>2]=h;g[(c[e>>2]|0)+(j*12&-1)+8>>2]=X;h=a+1|0;if((h|0)<(c[b>>2]|0)){a=h}else{break}}return}function cF(a){a=a|0;var b=0,d=0,e=0,f=0,h=0,j=0.0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0.0,y=0,z=0,A=0,B=0,C=0,D=0,E=0.0,F=0.0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0,N=0.0,O=0.0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0.0,_=0.0,$=0.0,aa=0.0,ab=0.0,ac=0.0,ad=0.0,ae=0.0,af=0,ag=0.0,ah=0.0,ai=0.0,aj=0.0,ak=0.0,al=0.0,am=0.0,an=0.0,ao=0.0,ap=0.0,aq=0.0,ar=0.0,as=0.0,at=0.0,au=0.0,av=0.0,aw=0.0,ax=0.0,ay=0.0,az=0.0,aA=0.0,aB=0;b=i;i=i+52|0;d=b|0;e=b+16|0;f=b+32|0;h=a+48|0;if((c[h>>2]|0)<=0){j=0.0;l=j>=-.014999999664723873;i=b;return l|0}m=a+36|0;n=a+24|0;a=d+8|0;o=d+12|0;p=e+8|0;q=e+12|0;r=d;s=e;t=f;u=f+8|0;v=f+16|0;w=0;x=0.0;while(1){y=c[m>>2]|0;z=y+(w*88&-1)|0;A=c[y+(w*88&-1)+32>>2]|0;B=c[y+(w*88&-1)+36>>2]|0;C=y+(w*88&-1)+48|0;D=c[C+4>>2]|0;E=(c[k>>2]=c[C>>2]|0,+g[k>>2]);F=(c[k>>2]=D,+g[k>>2]);G=+g[y+(w*88&-1)+40>>2];H=+g[y+(w*88&-1)+64>>2];D=y+(w*88&-1)+56|0;C=c[D+4>>2]|0;I=(c[k>>2]=c[D>>2]|0,+g[k>>2]);J=(c[k>>2]=C,+g[k>>2]);K=+g[y+(w*88&-1)+44>>2];L=+g[y+(w*88&-1)+68>>2];C=c[y+(w*88&-1)+84>>2]|0;y=c[n>>2]|0;D=y+(A*12&-1)|0;M=c[D+4>>2]|0;N=(c[k>>2]=c[D>>2]|0,+g[k>>2]);O=(c[k>>2]=M,+g[k>>2]);R=+g[y+(A*12&-1)+8>>2];M=y+(B*12&-1)|0;D=c[M+4>>2]|0;S=(c[k>>2]=c[M>>2]|0,+g[k>>2]);T=(c[k>>2]=D,+g[k>>2]);U=+g[y+(B*12&-1)+8>>2];if((C|0)>0){V=G+K;W=O;X=N;Y=T;Z=S;D=0;_=U;$=R;aa=x;while(1){ab=+Q($);g[a>>2]=ab;ac=+P($);g[o>>2]=ac;ad=+Q(_);g[p>>2]=ad;ae=+P(_);g[q>>2]=ae;M=(g[k>>2]=X-(E*ac-F*ab),c[k>>2]|0);af=(g[k>>2]=W-(F*ac+E*ab),c[k>>2]|0)|0;c[r>>2]=0|M;c[r+4>>2]=af;af=(g[k>>2]=Z-(I*ae-J*ad),c[k>>2]|0);M=(g[k>>2]=Y-(J*ae+I*ad),c[k>>2]|0)|0;c[s>>2]=0|af;c[s+4>>2]=M;cJ(f,z,d,e,D);M=c[t+4>>2]|0;ad=(c[k>>2]=c[t>>2]|0,+g[k>>2]);ae=(c[k>>2]=M,+g[k>>2]);M=c[u+4>>2]|0;ab=(c[k>>2]=c[u>>2]|0,+g[k>>2]);ac=(c[k>>2]=M,+g[k>>2]);ag=+g[v>>2];ah=ab-X;ai=ac-W;aj=ab-Z;ab=ac-Y;ak=aa<ag?aa:ag;ac=(ag+.004999999888241291)*.20000000298023224;ag=ac<0.0?ac:0.0;ac=ae*ah-ad*ai;al=ae*aj-ad*ab;am=al*L*al+(V+ac*H*ac);if(am>0.0){an=(-0.0-(ag<-.20000000298023224?-.20000000298023224:ag))/am}else{an=0.0}am=ad*an;ad=ae*an;ao=X-G*am;ap=W-G*ad;aq=$-H*(ah*ad-ai*am);ar=Z+K*am;as=Y+K*ad;at=_+L*(aj*ad-ab*am);M=D+1|0;if((M|0)==(C|0)){break}else{W=ap;X=ao;Y=as;Z=ar;D=M;_=at;$=aq;aa=ak}}au=ap;av=ao;aw=as;ax=ar;ay=at;az=aq;aA=ak;aB=c[n>>2]|0}else{au=O;av=N;aw=T;ax=S;ay=U;az=R;aA=x;aB=y}D=aB+(A*12&-1)|0;C=(g[k>>2]=av,c[k>>2]|0);z=(g[k>>2]=au,c[k>>2]|0)|0;c[D>>2]=0|C;c[D+4>>2]=z;g[(c[n>>2]|0)+(A*12&-1)+8>>2]=az;z=(c[n>>2]|0)+(B*12&-1)|0;D=(g[k>>2]=ax,c[k>>2]|0);C=(g[k>>2]=aw,c[k>>2]|0)|0;c[z>>2]=0|D;c[z+4>>2]=C;g[(c[n>>2]|0)+(B*12&-1)+8>>2]=ay;C=w+1|0;if((C|0)<(c[h>>2]|0)){w=C;x=aA}else{j=aA;break}}l=j>=-.014999999664723873;i=b;return l|0}function cG(a){a=a|0;return}function cH(a){a=a|0;return}function cI(a){a=a|0;return}function cJ(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0.0,l=0.0,m=0,n=0.0,o=0.0,p=0.0,q=0.0,r=0,s=0,t=0,u=0.0,v=0.0,w=0.0,x=0.0,y=0.0,z=0.0,A=0.0,B=0.0;if((c[b+84>>2]|0)<=0){ay(5244848,617,5248576,5243552)}h=c[b+72>>2]|0;if((h|0)==1){i=d+12|0;j=+g[i>>2];l=+g[b+16>>2];m=d+8|0;n=+g[m>>2];o=+g[b+20>>2];p=j*l-n*o;q=l*n+j*o;r=a;s=(g[k>>2]=p,c[k>>2]|0);t=(g[k>>2]=q,c[k>>2]|0)|0;c[r>>2]=0|s;c[r+4>>2]=t;o=+g[i>>2];j=+g[b+24>>2];n=+g[m>>2];l=+g[b+28>>2];u=+g[e+12>>2];v=+g[b+(f<<3)>>2];w=+g[e+8>>2];x=+g[b+(f<<3)+4>>2];y=+g[e>>2]+(u*v-w*x);z=v*w+u*x+ +g[e+4>>2];g[a+16>>2]=p*(y-(+g[d>>2]+(o*j-n*l)))+(z-(j*n+o*l+ +g[d+4>>2]))*q- +g[b+76>>2]- +g[b+80>>2];m=a+8|0;i=(g[k>>2]=y,c[k>>2]|0);t=(g[k>>2]=z,c[k>>2]|0)|0;c[m>>2]=0|i;c[m+4>>2]=t;return}else if((h|0)==2){t=e+12|0;z=+g[t>>2];y=+g[b+16>>2];m=e+8|0;q=+g[m>>2];l=+g[b+20>>2];o=z*y-q*l;n=y*q+z*l;i=a;r=(g[k>>2]=o,c[k>>2]|0);s=(g[k>>2]=n,c[k>>2]|0)|0;c[i>>2]=0|r;c[i+4>>2]=s;l=+g[t>>2];z=+g[b+24>>2];q=+g[m>>2];y=+g[b+28>>2];j=+g[d+12>>2];p=+g[b+(f<<3)>>2];x=+g[d+8>>2];u=+g[b+(f<<3)+4>>2];w=+g[d>>2]+(j*p-x*u);v=p*x+j*u+ +g[d+4>>2];g[a+16>>2]=o*(w-(+g[e>>2]+(l*z-q*y)))+(v-(z*q+l*y+ +g[e+4>>2]))*n- +g[b+76>>2]- +g[b+80>>2];f=a+8|0;m=(g[k>>2]=w,c[k>>2]|0);t=(g[k>>2]=v,c[k>>2]|0)|0;c[f>>2]=0|m;c[f+4>>2]=t;t=(g[k>>2]=-0.0-o,c[k>>2]|0);f=(g[k>>2]=-0.0-n,c[k>>2]|0)|0;c[i>>2]=0|t;c[i+4>>2]=f;return}else if((h|0)==0){n=+g[d+12>>2];o=+g[b+24>>2];v=+g[d+8>>2];w=+g[b+28>>2];y=+g[d>>2]+(n*o-v*w);l=o*v+n*w+ +g[d+4>>2];w=+g[e+12>>2];n=+g[b>>2];v=+g[e+8>>2];o=+g[b+4>>2];q=+g[e>>2]+(w*n-v*o);z=n*v+w*o+ +g[e+4>>2];o=q-y;w=z-l;e=a;d=(g[k>>2]=o,c[k>>2]|0);h=(g[k>>2]=w,c[k>>2]|0)|0;c[e>>2]=0|d;c[e+4>>2]=h;v=+N(o*o+w*w);if(v<1.1920928955078125e-7){A=o;B=w}else{n=1.0/v;v=o*n;g[a>>2]=v;u=w*n;g[a+4>>2]=u;A=v;B=u}h=a+8|0;e=(g[k>>2]=(y+q)*.5,c[k>>2]|0);d=(g[k>>2]=(l+z)*.5,c[k>>2]|0)|0;c[h>>2]=0|e;c[h+4>>2]=d;g[a+16>>2]=o*A+w*B- +g[b+76>>2]- +g[b+80>>2];return}else{return}}function cK(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,h=0,j=0,l=0,m=0.0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0.0,A=0,B=0,C=0,D=0,E=0,F=0,G=0.0,H=0.0,I=0.0,J=0.0,K=0.0,L=0.0,M=0.0,N=0.0,O=0,R=0.0,S=0.0,T=0.0,U=0.0,V=0.0,W=0.0,X=0.0,Y=0.0,Z=0.0,_=0.0,$=0.0,aa=0.0,ab=0.0,ac=0.0,ad=0.0,ae=0.0,af=0.0,ag=0.0,ah=0,ai=0.0,aj=0.0,ak=0.0,al=0.0,am=0.0,an=0.0,ao=0.0,ap=0.0,aq=0.0,ar=0.0,as=0.0,at=0.0,au=0.0,av=0.0,aw=0.0,ax=0.0,ay=0.0,az=0.0,aA=0.0,aB=0.0,aC=0.0,aD=0;e=i;i=i+52|0;f=e|0;h=e+16|0;j=e+32|0;l=a+48|0;if((c[l>>2]|0)<=0){m=0.0;n=m>=-.007499999832361937;i=e;return n|0}o=a+36|0;p=a+24|0;a=f+8|0;q=f+12|0;r=h+8|0;s=h+12|0;t=f;u=h;v=j;w=j+8|0;x=j+16|0;y=0;z=0.0;while(1){A=c[o>>2]|0;B=A+(y*88&-1)|0;C=c[A+(y*88&-1)+32>>2]|0;D=c[A+(y*88&-1)+36>>2]|0;E=A+(y*88&-1)+48|0;F=c[E+4>>2]|0;G=(c[k>>2]=c[E>>2]|0,+g[k>>2]);H=(c[k>>2]=F,+g[k>>2]);F=A+(y*88&-1)+56|0;E=c[F+4>>2]|0;I=(c[k>>2]=c[F>>2]|0,+g[k>>2]);J=(c[k>>2]=E,+g[k>>2]);E=c[A+(y*88&-1)+84>>2]|0;if((C|0)==(b|0)|(C|0)==(d|0)){K=+g[A+(y*88&-1)+40>>2];L=+g[A+(y*88&-1)+64>>2]}else{K=0.0;L=0.0}M=+g[A+(y*88&-1)+44>>2];N=+g[A+(y*88&-1)+68>>2];A=c[p>>2]|0;F=A+(C*12&-1)|0;O=c[F+4>>2]|0;R=(c[k>>2]=c[F>>2]|0,+g[k>>2]);S=(c[k>>2]=O,+g[k>>2]);T=+g[A+(C*12&-1)+8>>2];O=A+(D*12&-1)|0;F=c[O+4>>2]|0;U=(c[k>>2]=c[O>>2]|0,+g[k>>2]);V=(c[k>>2]=F,+g[k>>2]);W=+g[A+(D*12&-1)+8>>2];if((E|0)>0){X=K+M;Y=S;Z=R;_=V;$=U;aa=T;ab=W;F=0;ac=z;while(1){ad=+Q(aa);g[a>>2]=ad;ae=+P(aa);g[q>>2]=ae;af=+Q(ab);g[r>>2]=af;ag=+P(ab);g[s>>2]=ag;O=(g[k>>2]=Z-(G*ae-H*ad),c[k>>2]|0);ah=(g[k>>2]=Y-(H*ae+G*ad),c[k>>2]|0)|0;c[t>>2]=0|O;c[t+4>>2]=ah;ah=(g[k>>2]=$-(I*ag-J*af),c[k>>2]|0);O=(g[k>>2]=_-(J*ag+I*af),c[k>>2]|0)|0;c[u>>2]=0|ah;c[u+4>>2]=O;cJ(j,B,f,h,F);O=c[v+4>>2]|0;af=(c[k>>2]=c[v>>2]|0,+g[k>>2]);ag=(c[k>>2]=O,+g[k>>2]);O=c[w+4>>2]|0;ad=(c[k>>2]=c[w>>2]|0,+g[k>>2]);ae=(c[k>>2]=O,+g[k>>2]);ai=+g[x>>2];aj=ad-Z;ak=ae-Y;al=ad-$;ad=ae-_;am=ac<ai?ac:ai;ae=(ai+.004999999888241291)*.75;ai=ae<0.0?ae:0.0;ae=ag*aj-af*ak;an=ag*al-af*ad;ao=an*N*an+(X+ae*L*ae);if(ao>0.0){ap=(-0.0-(ai<-.20000000298023224?-.20000000298023224:ai))/ao}else{ap=0.0}ao=af*ap;af=ag*ap;aq=Z-K*ao;ar=Y-K*af;as=aa-L*(aj*af-ak*ao);at=$+M*ao;au=_+M*af;av=ab+N*(al*af-ad*ao);O=F+1|0;if((O|0)==(E|0)){break}else{Y=ar;Z=aq;_=au;$=at;aa=as;ab=av;F=O;ac=am}}aw=ar;ax=aq;ay=au;az=at;aA=as;aB=av;aC=am;aD=c[p>>2]|0}else{aw=S;ax=R;ay=V;az=U;aA=T;aB=W;aC=z;aD=A}F=aD+(C*12&-1)|0;E=(g[k>>2]=ax,c[k>>2]|0);B=(g[k>>2]=aw,c[k>>2]|0)|0;c[F>>2]=0|E;c[F+4>>2]=B;g[(c[p>>2]|0)+(C*12&-1)+8>>2]=aA;B=(c[p>>2]|0)+(D*12&-1)|0;F=(g[k>>2]=az,c[k>>2]|0);E=(g[k>>2]=ay,c[k>>2]|0)|0;c[B>>2]=0|F;c[B+4>>2]=E;g[(c[p>>2]|0)+(D*12&-1)+8>>2]=aB;E=y+1|0;if((E|0)<(c[l>>2]|0)){y=E;z=aC}else{m=aC;break}}n=m>=-.007499999832361937;i=e;return n|0}function cL(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0;e=bM(f,144)|0;if((e|0)==0){h=0;i=h|0;return i|0}f=e;b=e;c[b>>2]=5250532;c[e+4>>2]=4;c[e+48>>2]=a;j=e+52|0;c[j>>2]=d;c[e+56>>2]=0;c[e+60>>2]=0;c[e+124>>2]=0;c[e+128>>2]=0;dk(e+8|0,0,40);g[e+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);k=+g[a+20>>2];l=+g[d+20>>2];g[e+140>>2]=k>l?k:l;c[b>>2]=5250652;if((c[(c[a+12>>2]|0)+4>>2]|0)==1){m=d}else{ay(5244700,41,5248960,5246012);m=c[j>>2]|0}if((c[(c[m+12>>2]|0)+4>>2]|0)==0){h=f;i=h|0;return i|0}ay(5244700,42,5248960,5245168);h=f;i=h|0;return i|0}function cM(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cN(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;bc(b,c[(c[a+48>>2]|0)+12>>2]|0,d,c[(c[a+52>>2]|0)+12>>2]|0,e);return}function cO(a){a=a|0;dg(a);return}function cP(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0;e=bM(f,144)|0;if((e|0)==0){h=0;i=h|0;return i|0}f=e;b=e;c[b>>2]=5250532;c[e+4>>2]=4;c[e+48>>2]=a;j=e+52|0;c[j>>2]=d;c[e+56>>2]=0;c[e+60>>2]=0;c[e+124>>2]=0;c[e+128>>2]=0;dk(e+8|0,0,40);g[e+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);k=+g[a+20>>2];l=+g[d+20>>2];g[e+140>>2]=k>l?k:l;c[b>>2]=5250604;if((c[(c[a+12>>2]|0)+4>>2]|0)==1){m=d}else{ay(5244596,41,5248792,5246012);m=c[j>>2]|0}if((c[(c[m+12>>2]|0)+4>>2]|0)==2){h=f;i=h|0;return i|0}ay(5244596,42,5248792,5245124);h=f;i=h|0;return i|0}function cQ(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cR(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,g=0;f=i;i=i+252|0;g=f|0;bd(g,b,c[(c[a+48>>2]|0)+12>>2]|0,d,c[(c[a+52>>2]|0)+12>>2]|0,e);i=f;return}function cS(a){a=a|0;dg(a);return}function cT(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0;e=bM(f,144)|0;if((e|0)==0){h=0;i=h|0;return i|0}f=e;b=e;c[b>>2]=5250532;c[e+4>>2]=4;c[e+48>>2]=a;j=e+52|0;c[j>>2]=d;c[e+56>>2]=0;c[e+60>>2]=0;c[e+124>>2]=0;c[e+128>>2]=0;dk(e+8|0,0,40);g[e+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);k=+g[a+20>>2];l=+g[d+20>>2];g[e+140>>2]=k>l?k:l;c[b>>2]=5250556;if((c[(c[a+12>>2]|0)+4>>2]|0)==2){m=d}else{ay(5244476,41,5248496,5245968);m=c[j>>2]|0}if((c[(c[m+12>>2]|0)+4>>2]|0)==0){h=f;i=h|0;return i|0}ay(5244476,42,5248496,5245168);h=f;i=h|0;return i|0}function cU(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function cV(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;ba(b,c[(c[a+48>>2]|0)+12>>2]|0,d,c[(c[a+52>>2]|0)+12>>2]|0,e);return}function cW(a){a=a|0;dg(a);return}function cX(a){a=a|0;return}function cY(a){a=a|0;return}function cZ(a){a=a|0;return}function c_(a){a=a|0;return}function c$(a){a=a|0;return}function c0(b,d,e,f){b=b|0;d=d|0;e=e|0;f=f|0;var g=0;if((c[d+8>>2]|0)!=(b|0)){return}b=d+16|0;g=c[b>>2]|0;if((g|0)==0){c[b>>2]=e;c[d+24>>2]=f;c[d+36>>2]=1;return}if((g|0)!=(e|0)){e=d+36|0;c[e>>2]=(c[e>>2]|0)+1|0;c[d+24>>2]=2;a[d+54|0]=1;return}e=d+24|0;if((c[e>>2]|0)!=2){return}c[e>>2]=f;return}function c1(b,d,e,f,g){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;if((c[d+8>>2]|0)==(b|0)){if((c[d+4>>2]|0)!=(e|0)){return}g=d+28|0;if((c[g>>2]|0)==1){return}c[g>>2]=f;return}if((c[d>>2]|0)!=(b|0)){return}do{if((c[d+16>>2]|0)!=(e|0)){b=d+20|0;if((c[b>>2]|0)==(e|0)){break}c[d+32>>2]=f;c[b>>2]=e;b=d+40|0;c[b>>2]=(c[b>>2]|0)+1|0;do{if((c[d+36>>2]|0)==1){if((c[d+24>>2]|0)!=2){break}a[d+54|0]=1}}while(0);c[d+44>>2]=4;return}}while(0);if((f|0)!=1){return}c[d+32>>2]=1;return}function c2(b,d,e,f,g,h){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;h=h|0;var i=0;if((c[d+8>>2]|0)!=(b|0)){return}a[d+53|0]=1;if((c[d+4>>2]|0)!=(f|0)){return}a[d+52|0]=1;f=d+16|0;b=c[f>>2]|0;if((b|0)==0){c[f>>2]=e;c[d+24>>2]=g;c[d+36>>2]=1;if(!((c[d+48>>2]|0)==1&(g|0)==1)){return}a[d+54|0]=1;return}if((b|0)!=(e|0)){e=d+36|0;c[e>>2]=(c[e>>2]|0)+1|0;a[d+54|0]=1;return}e=d+24|0;b=c[e>>2]|0;if((b|0)==2){c[e>>2]=g;i=g}else{i=b}if(!((c[d+48>>2]|0)==1&(i|0)==1)){return}a[d+54|0]=1;return}function c3(a,b,d,e,f){a=a|0;b=b|0;d=d|0;e=e|0;f=f|0;var h=0,i=0,j=0,k=0.0,l=0.0,m=0;e=bM(f,144)|0;if((e|0)==0){h=0;i=h|0;return i|0}f=e;b=e;c[b>>2]=5250532;c[e+4>>2]=4;c[e+48>>2]=a;j=e+52|0;c[j>>2]=d;c[e+56>>2]=0;c[e+60>>2]=0;c[e+124>>2]=0;c[e+128>>2]=0;dk(e+8|0,0,40);g[e+136>>2]=+N(+g[a+16>>2]*+g[d+16>>2]);k=+g[a+20>>2];l=+g[d+20>>2];g[e+140>>2]=k>l?k:l;c[b>>2]=5250712;if((c[(c[a+12>>2]|0)+4>>2]|0)==2){m=d}else{ay(5244384,44,5249312,5245968);m=c[j>>2]|0}if((c[(c[m+12>>2]|0)+4>>2]|0)==2){h=f;i=h|0;return i|0}ay(5244384,45,5249312,5245124);h=f;i=h|0;return i|0}function c4(b,d){b=b|0;d=d|0;var e=0,f=0;aJ[c[(c[b>>2]|0)+4>>2]&255](b);e=a[5251800]|0;if((e&255)>=14){ay(5243252,173,5249456,5244088)}f=d+12+((e&255)<<2)|0;c[b>>2]=c[f>>2]|0;c[f>>2]=b;return}function c5(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;bf(b,c[(c[a+48>>2]|0)+12>>2]|0,d,c[(c[a+52>>2]|0)+12>>2]|0,e);return}function c6(a){a=a|0;dg(a);return}function c7(a){a=a|0;dg(a);return}function c8(a){a=a|0;dg(a);return}function c9(a,b,d){a=a|0;b=b|0;d=d|0;var e=0,f=0,g=0,h=0;e=i;i=i+56|0;f=e|0;if((a|0)==(b|0)){g=1;i=e;return g|0}if((b|0)==0){g=0;i=e;return g|0}h=db(b,5251304,5251292,-1)|0;b=h;if((h|0)==0){g=0;i=e;return g|0}dk(f|0,0,56);c[f>>2]=b;c[f+8>>2]=a;c[f+12>>2]=-1;c[f+48>>2]=1;aS[c[(c[h>>2]|0)+28>>2]&255](b,f,c[d>>2]|0,1);if((c[f+24>>2]|0)!=1){g=0;i=e;return g|0}c[d>>2]=c[f+16>>2]|0;g=1;i=e;return g|0}function da(b,d,e,f){b=b|0;d=d|0;e=e|0;f=f|0;var g=0;if((b|0)!=(c[d+8>>2]|0)){g=c[b+8>>2]|0;aS[c[(c[g>>2]|0)+28>>2]&255](g,d,e,f);return}g=d+16|0;b=c[g>>2]|0;if((b|0)==0){c[g>>2]=e;c[d+24>>2]=f;c[d+36>>2]=1;return}if((b|0)!=(e|0)){e=d+36|0;c[e>>2]=(c[e>>2]|0)+1|0;c[d+24>>2]=2;a[d+54|0]=1;return}e=d+24|0;if((c[e>>2]|0)!=2){return}c[e>>2]=f;return}function db(a,b,d,e){a=a|0;b=b|0;d=d|0;e=e|0;var f=0,g=0,h=0,j=0,k=0,l=0,m=0,n=0,o=0;f=i;i=i+56|0;g=f|0;h=c[a>>2]|0;j=a+(c[h-8>>2]|0)|0;k=c[h-4>>2]|0;h=k;c[g>>2]=d;c[g+4>>2]=a;c[g+8>>2]=b;c[g+12>>2]=e;e=g+16|0;b=g+20|0;a=g+24|0;l=g+28|0;m=g+32|0;n=g+40|0;dk(e|0,0,39);if((k|0)==(d|0)){c[g+48>>2]=1;aQ[c[(c[k>>2]|0)+20>>2]&255](h,g,j,j,1,0);i=f;return((c[a>>2]|0)==1?j:0)|0}aI[c[(c[k>>2]|0)+24>>2]&255](h,g,j,1,0);j=c[g+36>>2]|0;if((j|0)==0){if((c[n>>2]|0)!=1){o=0;i=f;return o|0}if((c[l>>2]|0)!=1){o=0;i=f;return o|0}o=(c[m>>2]|0)==1?c[b>>2]|0:0;i=f;return o|0}else if((j|0)==1){do{if((c[a>>2]|0)!=1){if((c[n>>2]|0)!=0){o=0;i=f;return o|0}if((c[l>>2]|0)!=1){o=0;i=f;return o|0}if((c[m>>2]|0)==1){break}else{o=0}i=f;return o|0}}while(0);o=c[e>>2]|0;i=f;return o|0}else{o=0;i=f;return o|0}return 0}function dc(b,d,e,f,g){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;var h=0,i=0,j=0,k=0,l=0,m=0,n=0;h=b|0;if((h|0)==(c[d+8>>2]|0)){if((c[d+4>>2]|0)!=(e|0)){return}i=d+28|0;if((c[i>>2]|0)==1){return}c[i>>2]=f;return}if((h|0)!=(c[d>>2]|0)){h=c[b+8>>2]|0;aI[c[(c[h>>2]|0)+24>>2]&255](h,d,e,f,g);return}do{if((c[d+16>>2]|0)!=(e|0)){h=d+20|0;if((c[h>>2]|0)==(e|0)){break}c[d+32>>2]=f;i=d+44|0;if((c[i>>2]|0)==4){return}j=d+52|0;a[j]=0;k=d+53|0;a[k]=0;l=c[b+8>>2]|0;aQ[c[(c[l>>2]|0)+20>>2]&255](l,d,e,e,1,g);do{if((a[k]&1)<<24>>24==0){m=0;n=2070}else{if((a[j]&1)<<24>>24==0){m=1;n=2070;break}else{break}}}while(0);L2726:do{if((n|0)==2070){c[h>>2]=e;j=d+40|0;c[j>>2]=(c[j>>2]|0)+1|0;do{if((c[d+36>>2]|0)==1){if((c[d+24>>2]|0)!=2){n=2073;break}a[d+54|0]=1;if(m){break L2726}else{break}}else{n=2073}}while(0);if((n|0)==2073){if(m){break}}c[i>>2]=4;return}}while(0);c[i>>2]=3;return}}while(0);if((f|0)!=1){return}c[d+32>>2]=1;return}function dd(b,d,e,f,g,h){b=b|0;d=d|0;e=e|0;f=f|0;g=g|0;h=h|0;var i=0,j=0;if((b|0)!=(c[d+8>>2]|0)){i=c[b+8>>2]|0;aQ[c[(c[i>>2]|0)+20>>2]&255](i,d,e,f,g,h);return}a[d+53|0]=1;if((c[d+4>>2]|0)!=(f|0)){return}a[d+52|0]=1;f=d+16|0;h=c[f>>2]|0;if((h|0)==0){c[f>>2]=e;c[d+24>>2]=g;c[d+36>>2]=1;if(!((c[d+48>>2]|0)==1&(g|0)==1)){return}a[d+54|0]=1;return}if((h|0)!=(e|0)){e=d+36|0;c[e>>2]=(c[e>>2]|0)+1|0;a[d+54|0]=1;return}e=d+24|0;h=c[e>>2]|0;if((h|0)==2){c[e>>2]=g;j=g}else{j=h}if(!((c[d+48>>2]|0)==1&(j|0)==1)){return}a[d+54|0]=1;return}function de(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0,P=0,Q=0,R=0,S=0,T=0,U=0,V=0,W=0,X=0,Y=0,Z=0,_=0,$=0,aa=0,ab=0,ac=0,ad=0,ae=0,af=0,ag=0,ah=0,aj=0,ak=0,al=0,am=0,an=0,ap=0,aq=0,ar=0,as=0,at=0,au=0,av=0,aw=0,ax=0,ay=0,az=0,aA=0,aD=0,aE=0,aG=0,aH=0,aI=0,aJ=0,aK=0,aL=0;do{if(a>>>0<245){if(a>>>0<11){b=16}else{b=a+11&-8}d=b>>>3;e=c[1311617]|0;f=e>>>(d>>>0);if((f&3|0)!=0){g=(f&1^1)+d|0;h=g<<1;i=5246508+(h<<2)|0;j=5246508+(h+2<<2)|0;h=c[j>>2]|0;k=h+8|0;l=c[k>>2]|0;do{if((i|0)==(l|0)){c[1311617]=e&(1<<g^-1)}else{if(l>>>0<(c[1311621]|0)>>>0){ai();return 0}m=l+12|0;if((c[m>>2]|0)==(h|0)){c[m>>2]=i;c[j>>2]=l;break}else{ai();return 0}}}while(0);l=g<<3;c[h+4>>2]=l|3;j=h+(l|4)|0;c[j>>2]=c[j>>2]|1;n=k;return n|0}if(b>>>0<=(c[1311619]|0)>>>0){o=b;break}if((f|0)!=0){j=2<<d;l=f<<d&(j|-j);j=(l&-l)-1|0;l=j>>>12&16;i=j>>>(l>>>0);j=i>>>5&8;m=i>>>(j>>>0);i=m>>>2&4;p=m>>>(i>>>0);m=p>>>1&2;q=p>>>(m>>>0);p=q>>>1&1;r=(j|l|i|m|p)+(q>>>(p>>>0))|0;p=r<<1;q=5246508+(p<<2)|0;m=5246508+(p+2<<2)|0;p=c[m>>2]|0;i=p+8|0;l=c[i>>2]|0;do{if((q|0)==(l|0)){c[1311617]=e&(1<<r^-1)}else{if(l>>>0<(c[1311621]|0)>>>0){ai();return 0}j=l+12|0;if((c[j>>2]|0)==(p|0)){c[j>>2]=q;c[m>>2]=l;break}else{ai();return 0}}}while(0);l=r<<3;m=l-b|0;c[p+4>>2]=b|3;q=p;e=q+b|0;c[q+(b|4)>>2]=m|1;c[q+l>>2]=m;l=c[1311619]|0;if((l|0)!=0){q=c[1311622]|0;d=l>>>3;l=d<<1;f=5246508+(l<<2)|0;k=c[1311617]|0;h=1<<d;do{if((k&h|0)==0){c[1311617]=k|h;s=f;t=5246508+(l+2<<2)|0}else{d=5246508+(l+2<<2)|0;g=c[d>>2]|0;if(g>>>0>=(c[1311621]|0)>>>0){s=g;t=d;break}ai();return 0}}while(0);c[t>>2]=q;c[s+12>>2]=q;c[q+8>>2]=s;c[q+12>>2]=f}c[1311619]=m;c[1311622]=e;n=i;return n|0}l=c[1311618]|0;if((l|0)==0){o=b;break}h=(l&-l)-1|0;l=h>>>12&16;k=h>>>(l>>>0);h=k>>>5&8;p=k>>>(h>>>0);k=p>>>2&4;r=p>>>(k>>>0);p=r>>>1&2;d=r>>>(p>>>0);r=d>>>1&1;g=c[5246772+((h|l|k|p|r)+(d>>>(r>>>0))<<2)>>2]|0;r=g;d=g;p=(c[g+4>>2]&-8)-b|0;while(1){g=c[r+16>>2]|0;if((g|0)==0){k=c[r+20>>2]|0;if((k|0)==0){break}else{u=k}}else{u=g}g=(c[u+4>>2]&-8)-b|0;k=g>>>0<p>>>0;r=u;d=k?u:d;p=k?g:p}r=d;i=c[1311621]|0;if(r>>>0<i>>>0){ai();return 0}e=r+b|0;m=e;if(r>>>0>=e>>>0){ai();return 0}e=c[d+24>>2]|0;f=c[d+12>>2]|0;L2947:do{if((f|0)==(d|0)){q=d+20|0;g=c[q>>2]|0;do{if((g|0)==0){k=d+16|0;l=c[k>>2]|0;if((l|0)==0){v=0;break L2947}else{w=l;x=k;break}}else{w=g;x=q}}while(0);while(1){q=w+20|0;g=c[q>>2]|0;if((g|0)!=0){w=g;x=q;continue}q=w+16|0;g=c[q>>2]|0;if((g|0)==0){break}else{w=g;x=q}}if(x>>>0<i>>>0){ai();return 0}else{c[x>>2]=0;v=w;break}}else{q=c[d+8>>2]|0;if(q>>>0<i>>>0){ai();return 0}g=q+12|0;if((c[g>>2]|0)!=(d|0)){ai();return 0}k=f+8|0;if((c[k>>2]|0)==(d|0)){c[g>>2]=f;c[k>>2]=q;v=f;break}else{ai();return 0}}}while(0);L2969:do{if((e|0)!=0){f=d+28|0;i=5246772+(c[f>>2]<<2)|0;do{if((d|0)==(c[i>>2]|0)){c[i>>2]=v;if((v|0)!=0){break}c[1311618]=c[1311618]&(1<<c[f>>2]^-1);break L2969}else{if(e>>>0<(c[1311621]|0)>>>0){ai();return 0}q=e+16|0;if((c[q>>2]|0)==(d|0)){c[q>>2]=v}else{c[e+20>>2]=v}if((v|0)==0){break L2969}}}while(0);if(v>>>0<(c[1311621]|0)>>>0){ai();return 0}c[v+24>>2]=e;f=c[d+16>>2]|0;do{if((f|0)!=0){if(f>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[v+16>>2]=f;c[f+24>>2]=v;break}}}while(0);f=c[d+20>>2]|0;if((f|0)==0){break}if(f>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[v+20>>2]=f;c[f+24>>2]=v;break}}}while(0);if(p>>>0<16){e=p+b|0;c[d+4>>2]=e|3;f=r+(e+4|0)|0;c[f>>2]=c[f>>2]|1}else{c[d+4>>2]=b|3;c[r+(b|4)>>2]=p|1;c[r+(p+b|0)>>2]=p;f=c[1311619]|0;if((f|0)!=0){e=c[1311622]|0;i=f>>>3;f=i<<1;q=5246508+(f<<2)|0;k=c[1311617]|0;g=1<<i;do{if((k&g|0)==0){c[1311617]=k|g;y=q;z=5246508+(f+2<<2)|0}else{i=5246508+(f+2<<2)|0;l=c[i>>2]|0;if(l>>>0>=(c[1311621]|0)>>>0){y=l;z=i;break}ai();return 0}}while(0);c[z>>2]=e;c[y+12>>2]=e;c[e+8>>2]=y;c[e+12>>2]=q}c[1311619]=p;c[1311622]=m}f=d+8|0;if((f|0)==0){o=b;break}else{n=f}return n|0}else{if(a>>>0>4294967231){o=-1;break}f=a+11|0;g=f&-8;k=c[1311618]|0;if((k|0)==0){o=g;break}r=-g|0;i=f>>>8;do{if((i|0)==0){A=0}else{if(g>>>0>16777215){A=31;break}f=(i+1048320|0)>>>16&8;l=i<<f;h=(l+520192|0)>>>16&4;j=l<<h;l=(j+245760|0)>>>16&2;B=(14-(h|f|l)|0)+(j<<l>>>15)|0;A=g>>>((B+7|0)>>>0)&1|B<<1}}while(0);i=c[5246772+(A<<2)>>2]|0;L2777:do{if((i|0)==0){C=0;D=r;E=0}else{if((A|0)==31){F=0}else{F=25-(A>>>1)|0}d=0;m=r;p=i;q=g<<F;e=0;while(1){B=c[p+4>>2]&-8;l=B-g|0;if(l>>>0<m>>>0){if((B|0)==(g|0)){C=p;D=l;E=p;break L2777}else{G=p;H=l}}else{G=d;H=m}l=c[p+20>>2]|0;B=c[p+16+(q>>>31<<2)>>2]|0;j=(l|0)==0|(l|0)==(B|0)?e:l;if((B|0)==0){C=G;D=H;E=j;break L2777}else{d=G;m=H;p=B;q=q<<1;e=j}}}}while(0);if((E|0)==0&(C|0)==0){i=2<<A;r=k&(i|-i);if((r|0)==0){o=g;break}i=(r&-r)-1|0;r=i>>>12&16;e=i>>>(r>>>0);i=e>>>5&8;q=e>>>(i>>>0);e=q>>>2&4;p=q>>>(e>>>0);q=p>>>1&2;m=p>>>(q>>>0);p=m>>>1&1;I=c[5246772+((i|r|e|q|p)+(m>>>(p>>>0))<<2)>>2]|0}else{I=E}L2792:do{if((I|0)==0){J=D;K=C}else{p=I;m=D;q=C;while(1){e=(c[p+4>>2]&-8)-g|0;r=e>>>0<m>>>0;i=r?e:m;e=r?p:q;r=c[p+16>>2]|0;if((r|0)!=0){p=r;m=i;q=e;continue}r=c[p+20>>2]|0;if((r|0)==0){J=i;K=e;break L2792}else{p=r;m=i;q=e}}}}while(0);if((K|0)==0){o=g;break}if(J>>>0>=((c[1311619]|0)-g|0)>>>0){o=g;break}k=K;q=c[1311621]|0;if(k>>>0<q>>>0){ai();return 0}m=k+g|0;p=m;if(k>>>0>=m>>>0){ai();return 0}e=c[K+24>>2]|0;i=c[K+12>>2]|0;L2805:do{if((i|0)==(K|0)){r=K+20|0;d=c[r>>2]|0;do{if((d|0)==0){j=K+16|0;B=c[j>>2]|0;if((B|0)==0){L=0;break L2805}else{M=B;N=j;break}}else{M=d;N=r}}while(0);while(1){r=M+20|0;d=c[r>>2]|0;if((d|0)!=0){M=d;N=r;continue}r=M+16|0;d=c[r>>2]|0;if((d|0)==0){break}else{M=d;N=r}}if(N>>>0<q>>>0){ai();return 0}else{c[N>>2]=0;L=M;break}}else{r=c[K+8>>2]|0;if(r>>>0<q>>>0){ai();return 0}d=r+12|0;if((c[d>>2]|0)!=(K|0)){ai();return 0}j=i+8|0;if((c[j>>2]|0)==(K|0)){c[d>>2]=i;c[j>>2]=r;L=i;break}else{ai();return 0}}}while(0);L2827:do{if((e|0)!=0){i=K+28|0;q=5246772+(c[i>>2]<<2)|0;do{if((K|0)==(c[q>>2]|0)){c[q>>2]=L;if((L|0)!=0){break}c[1311618]=c[1311618]&(1<<c[i>>2]^-1);break L2827}else{if(e>>>0<(c[1311621]|0)>>>0){ai();return 0}r=e+16|0;if((c[r>>2]|0)==(K|0)){c[r>>2]=L}else{c[e+20>>2]=L}if((L|0)==0){break L2827}}}while(0);if(L>>>0<(c[1311621]|0)>>>0){ai();return 0}c[L+24>>2]=e;i=c[K+16>>2]|0;do{if((i|0)!=0){if(i>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[L+16>>2]=i;c[i+24>>2]=L;break}}}while(0);i=c[K+20>>2]|0;if((i|0)==0){break}if(i>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[L+20>>2]=i;c[i+24>>2]=L;break}}}while(0);do{if(J>>>0<16){e=J+g|0;c[K+4>>2]=e|3;i=k+(e+4|0)|0;c[i>>2]=c[i>>2]|1}else{c[K+4>>2]=g|3;c[k+(g|4)>>2]=J|1;c[k+(J+g|0)>>2]=J;i=J>>>3;if(J>>>0<256){e=i<<1;q=5246508+(e<<2)|0;r=c[1311617]|0;j=1<<i;do{if((r&j|0)==0){c[1311617]=r|j;O=q;P=5246508+(e+2<<2)|0}else{i=5246508+(e+2<<2)|0;d=c[i>>2]|0;if(d>>>0>=(c[1311621]|0)>>>0){O=d;P=i;break}ai();return 0}}while(0);c[P>>2]=p;c[O+12>>2]=p;c[k+(g+8|0)>>2]=O;c[k+(g+12|0)>>2]=q;break}e=m;j=J>>>8;do{if((j|0)==0){Q=0}else{if(J>>>0>16777215){Q=31;break}r=(j+1048320|0)>>>16&8;i=j<<r;d=(i+520192|0)>>>16&4;B=i<<d;i=(B+245760|0)>>>16&2;l=(14-(d|r|i)|0)+(B<<i>>>15)|0;Q=J>>>((l+7|0)>>>0)&1|l<<1}}while(0);j=5246772+(Q<<2)|0;c[k+(g+28|0)>>2]=Q;c[k+(g+20|0)>>2]=0;c[k+(g+16|0)>>2]=0;q=c[1311618]|0;l=1<<Q;if((q&l|0)==0){c[1311618]=q|l;c[j>>2]=e;c[k+(g+24|0)>>2]=j;c[k+(g+12|0)>>2]=e;c[k+(g+8|0)>>2]=e;break}if((Q|0)==31){R=0}else{R=25-(Q>>>1)|0}l=J<<R;q=c[j>>2]|0;while(1){if((c[q+4>>2]&-8|0)==(J|0)){break}S=q+16+(l>>>31<<2)|0;j=c[S>>2]|0;if((j|0)==0){T=2257;break}else{l=l<<1;q=j}}if((T|0)==2257){if(S>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[S>>2]=e;c[k+(g+24|0)>>2]=q;c[k+(g+12|0)>>2]=e;c[k+(g+8|0)>>2]=e;break}}l=q+8|0;j=c[l>>2]|0;i=c[1311621]|0;if(q>>>0<i>>>0){ai();return 0}if(j>>>0<i>>>0){ai();return 0}else{c[j+12>>2]=e;c[l>>2]=e;c[k+(g+8|0)>>2]=j;c[k+(g+12|0)>>2]=q;c[k+(g+24|0)>>2]=0;break}}}while(0);k=K+8|0;if((k|0)==0){o=g;break}else{n=k}return n|0}}while(0);K=c[1311619]|0;if(o>>>0<=K>>>0){S=K-o|0;J=c[1311622]|0;if(S>>>0>15){R=J;c[1311622]=R+o|0;c[1311619]=S;c[R+(o+4|0)>>2]=S|1;c[R+K>>2]=S;c[J+4>>2]=o|3}else{c[1311619]=0;c[1311622]=0;c[J+4>>2]=K|3;S=J+(K+4|0)|0;c[S>>2]=c[S>>2]|1}n=J+8|0;return n|0}J=c[1311620]|0;if(o>>>0<J>>>0){S=J-o|0;c[1311620]=S;J=c[1311623]|0;K=J;c[1311623]=K+o|0;c[K+(o+4|0)>>2]=S|1;c[J+4>>2]=o|3;n=J+8|0;return n|0}do{if((c[1310720]|0)==0){J=ao(8)|0;if((J-1&J|0)==0){c[1310722]=J;c[1310721]=J;c[1310723]=-1;c[1310724]=2097152;c[1310725]=0;c[1311728]=0;c[1310720]=aF(0)&-16^1431655768;break}else{ai();return 0}}}while(0);J=o+48|0;S=c[1310722]|0;K=o+47|0;R=S+K|0;Q=-S|0;S=R&Q;if(S>>>0<=o>>>0){n=0;return n|0}O=c[1311727]|0;do{if((O|0)!=0){P=c[1311725]|0;L=P+S|0;if(L>>>0<=P>>>0|L>>>0>O>>>0){n=0}else{break}return n|0}}while(0);L3036:do{if((c[1311728]&4|0)==0){O=c[1311623]|0;L3038:do{if((O|0)==0){T=2287}else{L=O;P=5246916;while(1){U=P|0;M=c[U>>2]|0;if(M>>>0<=L>>>0){V=P+4|0;if((M+(c[V>>2]|0)|0)>>>0>L>>>0){break}}M=c[P+8>>2]|0;if((M|0)==0){T=2287;break L3038}else{P=M}}if((P|0)==0){T=2287;break}L=R-(c[1311620]|0)&Q;if(L>>>0>=2147483647){W=0;break}q=aB(L|0)|0;e=(q|0)==((c[U>>2]|0)+(c[V>>2]|0)|0);X=e?q:-1;Y=e?L:0;Z=q;_=L;T=2296;break}}while(0);do{if((T|0)==2287){O=aB(0)|0;if((O|0)==-1){W=0;break}g=O;L=c[1310721]|0;q=L-1|0;if((q&g|0)==0){$=S}else{$=(S-g|0)+(q+g&-L)|0}L=c[1311725]|0;g=L+$|0;if(!($>>>0>o>>>0&$>>>0<2147483647)){W=0;break}q=c[1311727]|0;if((q|0)!=0){if(g>>>0<=L>>>0|g>>>0>q>>>0){W=0;break}}q=aB($|0)|0;g=(q|0)==(O|0);X=g?O:-1;Y=g?$:0;Z=q;_=$;T=2296;break}}while(0);L3058:do{if((T|0)==2296){q=-_|0;if((X|0)!=-1){aa=Y;ab=X;T=2307;break L3036}do{if((Z|0)!=-1&_>>>0<2147483647&_>>>0<J>>>0){g=c[1310722]|0;O=(K-_|0)+g&-g;if(O>>>0>=2147483647){ac=_;break}if((aB(O|0)|0)==-1){aB(q|0);W=Y;break L3058}else{ac=O+_|0;break}}else{ac=_}}while(0);if((Z|0)==-1){W=Y}else{aa=ac;ab=Z;T=2307;break L3036}}}while(0);c[1311728]=c[1311728]|4;ad=W;T=2304;break}else{ad=0;T=2304}}while(0);do{if((T|0)==2304){if(S>>>0>=2147483647){break}W=aB(S|0)|0;Z=aB(0)|0;if(!((Z|0)!=-1&(W|0)!=-1&W>>>0<Z>>>0)){break}ac=Z-W|0;Z=ac>>>0>(o+40|0)>>>0;Y=Z?W:-1;if((Y|0)==-1){break}else{aa=Z?ac:ad;ab=Y;T=2307;break}}}while(0);do{if((T|0)==2307){ad=(c[1311725]|0)+aa|0;c[1311725]=ad;if(ad>>>0>(c[1311726]|0)>>>0){c[1311726]=ad}ad=c[1311623]|0;L3078:do{if((ad|0)==0){S=c[1311621]|0;if((S|0)==0|ab>>>0<S>>>0){c[1311621]=ab}c[1311729]=ab;c[1311730]=aa;c[1311732]=0;c[1311626]=c[1310720]|0;c[1311625]=-1;S=0;while(1){Y=S<<1;ac=5246508+(Y<<2)|0;c[5246508+(Y+3<<2)>>2]=ac;c[5246508+(Y+2<<2)>>2]=ac;ac=S+1|0;if((ac|0)==32){break}else{S=ac}}S=ab+8|0;if((S&7|0)==0){ae=0}else{ae=-S&7}S=(aa-40|0)-ae|0;c[1311623]=ab+ae|0;c[1311620]=S;c[ab+(ae+4|0)>>2]=S|1;c[ab+(aa-36|0)>>2]=40;c[1311624]=c[1310724]|0}else{S=5246916;while(1){af=c[S>>2]|0;ag=S+4|0;ah=c[ag>>2]|0;if((ab|0)==(af+ah|0)){T=2319;break}ac=c[S+8>>2]|0;if((ac|0)==0){break}else{S=ac}}do{if((T|0)==2319){if((c[S+12>>2]&8|0)!=0){break}ac=ad;if(!(ac>>>0>=af>>>0&ac>>>0<ab>>>0)){break}c[ag>>2]=ah+aa|0;ac=c[1311623]|0;Y=(c[1311620]|0)+aa|0;Z=ac;W=ac+8|0;if((W&7|0)==0){aj=0}else{aj=-W&7}W=Y-aj|0;c[1311623]=Z+aj|0;c[1311620]=W;c[Z+(aj+4|0)>>2]=W|1;c[Z+(Y+4|0)>>2]=40;c[1311624]=c[1310724]|0;break L3078}}while(0);if(ab>>>0<(c[1311621]|0)>>>0){c[1311621]=ab}S=ab+aa|0;Y=5246916;while(1){ak=Y|0;if((c[ak>>2]|0)==(S|0)){T=2329;break}Z=c[Y+8>>2]|0;if((Z|0)==0){break}else{Y=Z}}do{if((T|0)==2329){if((c[Y+12>>2]&8|0)!=0){break}c[ak>>2]=ab;S=Y+4|0;c[S>>2]=(c[S>>2]|0)+aa|0;S=ab+8|0;if((S&7|0)==0){al=0}else{al=-S&7}S=ab+(aa+8|0)|0;if((S&7|0)==0){am=0}else{am=-S&7}S=ab+(am+aa|0)|0;Z=S;W=al+o|0;ac=ab+W|0;_=ac;K=(S-(ab+al|0)|0)-o|0;c[ab+(al+4|0)>>2]=o|3;do{if((Z|0)==(c[1311623]|0)){J=(c[1311620]|0)+K|0;c[1311620]=J;c[1311623]=_;c[ab+(W+4|0)>>2]=J|1}else{if((Z|0)==(c[1311622]|0)){J=(c[1311619]|0)+K|0;c[1311619]=J;c[1311622]=_;c[ab+(W+4|0)>>2]=J|1;c[ab+(J+W|0)>>2]=J;break}J=aa+4|0;X=c[ab+(J+am|0)>>2]|0;if((X&3|0)==1){$=X&-8;V=X>>>3;L3113:do{if(X>>>0<256){U=c[ab+((am|8)+aa|0)>>2]|0;Q=c[ab+((aa+12|0)+am|0)>>2]|0;R=5246508+(V<<1<<2)|0;do{if((U|0)!=(R|0)){if(U>>>0<(c[1311621]|0)>>>0){ai();return 0}if((c[U+12>>2]|0)==(Z|0)){break}ai();return 0}}while(0);if((Q|0)==(U|0)){c[1311617]=c[1311617]&(1<<V^-1);break}do{if((Q|0)==(R|0)){an=Q+8|0}else{if(Q>>>0<(c[1311621]|0)>>>0){ai();return 0}q=Q+8|0;if((c[q>>2]|0)==(Z|0)){an=q;break}ai();return 0}}while(0);c[U+12>>2]=Q;c[an>>2]=U}else{R=S;q=c[ab+((am|24)+aa|0)>>2]|0;P=c[ab+((aa+12|0)+am|0)>>2]|0;L3115:do{if((P|0)==(R|0)){O=am|16;g=ab+(J+O|0)|0;L=c[g>>2]|0;do{if((L|0)==0){e=ab+(O+aa|0)|0;M=c[e>>2]|0;if((M|0)==0){ap=0;break L3115}else{aq=M;ar=e;break}}else{aq=L;ar=g}}while(0);while(1){g=aq+20|0;L=c[g>>2]|0;if((L|0)!=0){aq=L;ar=g;continue}g=aq+16|0;L=c[g>>2]|0;if((L|0)==0){break}else{aq=L;ar=g}}if(ar>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[ar>>2]=0;ap=aq;break}}else{g=c[ab+((am|8)+aa|0)>>2]|0;if(g>>>0<(c[1311621]|0)>>>0){ai();return 0}L=g+12|0;if((c[L>>2]|0)!=(R|0)){ai();return 0}O=P+8|0;if((c[O>>2]|0)==(R|0)){c[L>>2]=P;c[O>>2]=g;ap=P;break}else{ai();return 0}}}while(0);if((q|0)==0){break}P=ab+((aa+28|0)+am|0)|0;U=5246772+(c[P>>2]<<2)|0;do{if((R|0)==(c[U>>2]|0)){c[U>>2]=ap;if((ap|0)!=0){break}c[1311618]=c[1311618]&(1<<c[P>>2]^-1);break L3113}else{if(q>>>0<(c[1311621]|0)>>>0){ai();return 0}Q=q+16|0;if((c[Q>>2]|0)==(R|0)){c[Q>>2]=ap}else{c[q+20>>2]=ap}if((ap|0)==0){break L3113}}}while(0);if(ap>>>0<(c[1311621]|0)>>>0){ai();return 0}c[ap+24>>2]=q;R=am|16;P=c[ab+(R+aa|0)>>2]|0;do{if((P|0)!=0){if(P>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[ap+16>>2]=P;c[P+24>>2]=ap;break}}}while(0);P=c[ab+(J+R|0)>>2]|0;if((P|0)==0){break}if(P>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[ap+20>>2]=P;c[P+24>>2]=ap;break}}}while(0);as=ab+(($|am)+aa|0)|0;at=$+K|0}else{as=Z;at=K}J=as+4|0;c[J>>2]=c[J>>2]&-2;c[ab+(W+4|0)>>2]=at|1;c[ab+(at+W|0)>>2]=at;J=at>>>3;if(at>>>0<256){V=J<<1;X=5246508+(V<<2)|0;P=c[1311617]|0;q=1<<J;do{if((P&q|0)==0){c[1311617]=P|q;au=X;av=5246508+(V+2<<2)|0}else{J=5246508+(V+2<<2)|0;U=c[J>>2]|0;if(U>>>0>=(c[1311621]|0)>>>0){au=U;av=J;break}ai();return 0}}while(0);c[av>>2]=_;c[au+12>>2]=_;c[ab+(W+8|0)>>2]=au;c[ab+(W+12|0)>>2]=X;break}V=ac;q=at>>>8;do{if((q|0)==0){aw=0}else{if(at>>>0>16777215){aw=31;break}P=(q+1048320|0)>>>16&8;$=q<<P;J=($+520192|0)>>>16&4;U=$<<J;$=(U+245760|0)>>>16&2;Q=(14-(J|P|$)|0)+(U<<$>>>15)|0;aw=at>>>((Q+7|0)>>>0)&1|Q<<1}}while(0);q=5246772+(aw<<2)|0;c[ab+(W+28|0)>>2]=aw;c[ab+(W+20|0)>>2]=0;c[ab+(W+16|0)>>2]=0;X=c[1311618]|0;Q=1<<aw;if((X&Q|0)==0){c[1311618]=X|Q;c[q>>2]=V;c[ab+(W+24|0)>>2]=q;c[ab+(W+12|0)>>2]=V;c[ab+(W+8|0)>>2]=V;break}if((aw|0)==31){ax=0}else{ax=25-(aw>>>1)|0}Q=at<<ax;X=c[q>>2]|0;while(1){if((c[X+4>>2]&-8|0)==(at|0)){break}ay=X+16+(Q>>>31<<2)|0;q=c[ay>>2]|0;if((q|0)==0){T=2402;break}else{Q=Q<<1;X=q}}if((T|0)==2402){if(ay>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[ay>>2]=V;c[ab+(W+24|0)>>2]=X;c[ab+(W+12|0)>>2]=V;c[ab+(W+8|0)>>2]=V;break}}Q=X+8|0;q=c[Q>>2]|0;$=c[1311621]|0;if(X>>>0<$>>>0){ai();return 0}if(q>>>0<$>>>0){ai();return 0}else{c[q+12>>2]=V;c[Q>>2]=V;c[ab+(W+8|0)>>2]=q;c[ab+(W+12|0)>>2]=X;c[ab+(W+24|0)>>2]=0;break}}}while(0);n=ab+(al|8)|0;return n|0}}while(0);Y=ad;W=5246916;while(1){az=c[W>>2]|0;if(az>>>0<=Y>>>0){aA=c[W+4>>2]|0;aD=az+aA|0;if(aD>>>0>Y>>>0){break}}W=c[W+8>>2]|0}W=az+(aA-39|0)|0;if((W&7|0)==0){aE=0}else{aE=-W&7}W=az+((aA-47|0)+aE|0)|0;ac=W>>>0<(ad+16|0)>>>0?Y:W;W=ac+8|0;_=ab+8|0;if((_&7|0)==0){aG=0}else{aG=-_&7}_=(aa-40|0)-aG|0;c[1311623]=ab+aG|0;c[1311620]=_;c[ab+(aG+4|0)>>2]=_|1;c[ab+(aa-36|0)>>2]=40;c[1311624]=c[1310724]|0;c[ac+4>>2]=27;c[W>>2]=c[1311729]|0;c[W+4>>2]=c[5246920>>2]|0;c[W+8>>2]=c[5246924>>2]|0;c[W+12>>2]=c[5246928>>2]|0;c[1311729]=ab;c[1311730]=aa;c[1311732]=0;c[1311731]=W;W=ac+28|0;c[W>>2]=7;L3232:do{if((ac+32|0)>>>0<aD>>>0){_=W;while(1){K=_+4|0;c[K>>2]=7;if((_+8|0)>>>0<aD>>>0){_=K}else{break L3232}}}}while(0);if((ac|0)==(Y|0)){break}W=ac-ad|0;_=Y+(W+4|0)|0;c[_>>2]=c[_>>2]&-2;c[ad+4>>2]=W|1;c[Y+W>>2]=W;_=W>>>3;if(W>>>0<256){K=_<<1;Z=5246508+(K<<2)|0;S=c[1311617]|0;q=1<<_;do{if((S&q|0)==0){c[1311617]=S|q;aH=Z;aI=5246508+(K+2<<2)|0}else{_=5246508+(K+2<<2)|0;Q=c[_>>2]|0;if(Q>>>0>=(c[1311621]|0)>>>0){aH=Q;aI=_;break}ai();return 0}}while(0);c[aI>>2]=ad;c[aH+12>>2]=ad;c[ad+8>>2]=aH;c[ad+12>>2]=Z;break}K=ad;q=W>>>8;do{if((q|0)==0){aJ=0}else{if(W>>>0>16777215){aJ=31;break}S=(q+1048320|0)>>>16&8;Y=q<<S;ac=(Y+520192|0)>>>16&4;_=Y<<ac;Y=(_+245760|0)>>>16&2;Q=(14-(ac|S|Y)|0)+(_<<Y>>>15)|0;aJ=W>>>((Q+7|0)>>>0)&1|Q<<1}}while(0);q=5246772+(aJ<<2)|0;c[ad+28>>2]=aJ;c[ad+20>>2]=0;c[ad+16>>2]=0;Z=c[1311618]|0;Q=1<<aJ;if((Z&Q|0)==0){c[1311618]=Z|Q;c[q>>2]=K;c[ad+24>>2]=q;c[ad+12>>2]=ad;c[ad+8>>2]=ad;break}if((aJ|0)==31){aK=0}else{aK=25-(aJ>>>1)|0}Q=W<<aK;Z=c[q>>2]|0;while(1){if((c[Z+4>>2]&-8|0)==(W|0)){break}aL=Z+16+(Q>>>31<<2)|0;q=c[aL>>2]|0;if((q|0)==0){T=2437;break}else{Q=Q<<1;Z=q}}if((T|0)==2437){if(aL>>>0<(c[1311621]|0)>>>0){ai();return 0}else{c[aL>>2]=K;c[ad+24>>2]=Z;c[ad+12>>2]=ad;c[ad+8>>2]=ad;break}}Q=Z+8|0;W=c[Q>>2]|0;q=c[1311621]|0;if(Z>>>0<q>>>0){ai();return 0}if(W>>>0<q>>>0){ai();return 0}else{c[W+12>>2]=K;c[Q>>2]=K;c[ad+8>>2]=W;c[ad+12>>2]=Z;c[ad+24>>2]=0;break}}}while(0);ad=c[1311620]|0;if(ad>>>0<=o>>>0){break}W=ad-o|0;c[1311620]=W;ad=c[1311623]|0;Q=ad;c[1311623]=Q+o|0;c[Q+(o+4|0)>>2]=W|1;c[ad+4>>2]=o|3;n=ad+8|0;return n|0}}while(0);c[aC()>>2]=12;n=0;return n|0}function df(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0,q=0,r=0,s=0,t=0,u=0,v=0,w=0,x=0,y=0,z=0,A=0,B=0,C=0,D=0,E=0,F=0,G=0,H=0,I=0,J=0,K=0,L=0,M=0,N=0,O=0;if((a|0)==0){return}b=a-8|0;d=b;e=c[1311621]|0;if(b>>>0<e>>>0){ai()}f=c[a-4>>2]|0;g=f&3;if((g|0)==1){ai()}h=f&-8;i=a+(h-8|0)|0;j=i;L3295:do{if((f&1|0)==0){k=c[b>>2]|0;if((g|0)==0){return}l=-8-k|0;m=a+l|0;n=m;o=k+h|0;if(m>>>0<e>>>0){ai()}if((n|0)==(c[1311622]|0)){p=a+(h-4|0)|0;if((c[p>>2]&3|0)!=3){q=n;r=o;break}c[1311619]=o;c[p>>2]=c[p>>2]&-2;c[a+(l+4|0)>>2]=o|1;c[i>>2]=o;return}p=k>>>3;if(k>>>0<256){k=c[a+(l+8|0)>>2]|0;s=c[a+(l+12|0)>>2]|0;t=5246508+(p<<1<<2)|0;do{if((k|0)!=(t|0)){if(k>>>0<e>>>0){ai()}if((c[k+12>>2]|0)==(n|0)){break}ai()}}while(0);if((s|0)==(k|0)){c[1311617]=c[1311617]&(1<<p^-1);q=n;r=o;break}do{if((s|0)==(t|0)){u=s+8|0}else{if(s>>>0<e>>>0){ai()}v=s+8|0;if((c[v>>2]|0)==(n|0)){u=v;break}ai()}}while(0);c[k+12>>2]=s;c[u>>2]=k;q=n;r=o;break}t=m;p=c[a+(l+24|0)>>2]|0;v=c[a+(l+12|0)>>2]|0;L3329:do{if((v|0)==(t|0)){w=a+(l+20|0)|0;x=c[w>>2]|0;do{if((x|0)==0){y=a+(l+16|0)|0;z=c[y>>2]|0;if((z|0)==0){A=0;break L3329}else{B=z;C=y;break}}else{B=x;C=w}}while(0);while(1){w=B+20|0;x=c[w>>2]|0;if((x|0)!=0){B=x;C=w;continue}w=B+16|0;x=c[w>>2]|0;if((x|0)==0){break}else{B=x;C=w}}if(C>>>0<e>>>0){ai()}else{c[C>>2]=0;A=B;break}}else{w=c[a+(l+8|0)>>2]|0;if(w>>>0<e>>>0){ai()}x=w+12|0;if((c[x>>2]|0)!=(t|0)){ai()}y=v+8|0;if((c[y>>2]|0)==(t|0)){c[x>>2]=v;c[y>>2]=w;A=v;break}else{ai()}}}while(0);if((p|0)==0){q=n;r=o;break}v=a+(l+28|0)|0;m=5246772+(c[v>>2]<<2)|0;do{if((t|0)==(c[m>>2]|0)){c[m>>2]=A;if((A|0)!=0){break}c[1311618]=c[1311618]&(1<<c[v>>2]^-1);q=n;r=o;break L3295}else{if(p>>>0<(c[1311621]|0)>>>0){ai()}k=p+16|0;if((c[k>>2]|0)==(t|0)){c[k>>2]=A}else{c[p+20>>2]=A}if((A|0)==0){q=n;r=o;break L3295}}}while(0);if(A>>>0<(c[1311621]|0)>>>0){ai()}c[A+24>>2]=p;t=c[a+(l+16|0)>>2]|0;do{if((t|0)!=0){if(t>>>0<(c[1311621]|0)>>>0){ai()}else{c[A+16>>2]=t;c[t+24>>2]=A;break}}}while(0);t=c[a+(l+20|0)>>2]|0;if((t|0)==0){q=n;r=o;break}if(t>>>0<(c[1311621]|0)>>>0){ai()}else{c[A+20>>2]=t;c[t+24>>2]=A;q=n;r=o;break}}else{q=d;r=h}}while(0);d=q;if(d>>>0>=i>>>0){ai()}A=a+(h-4|0)|0;e=c[A>>2]|0;if((e&1|0)==0){ai()}do{if((e&2|0)==0){if((j|0)==(c[1311623]|0)){B=(c[1311620]|0)+r|0;c[1311620]=B;c[1311623]=q;c[q+4>>2]=B|1;if((q|0)==(c[1311622]|0)){c[1311622]=0;c[1311619]=0}if(B>>>0<=(c[1311624]|0)>>>0){return}dh(0);return}if((j|0)==(c[1311622]|0)){B=(c[1311619]|0)+r|0;c[1311619]=B;c[1311622]=q;c[q+4>>2]=B|1;c[d+B>>2]=B;return}B=(e&-8)+r|0;C=e>>>3;L3400:do{if(e>>>0<256){u=c[a+h>>2]|0;g=c[a+(h|4)>>2]|0;b=5246508+(C<<1<<2)|0;do{if((u|0)!=(b|0)){if(u>>>0<(c[1311621]|0)>>>0){ai()}if((c[u+12>>2]|0)==(j|0)){break}ai()}}while(0);if((g|0)==(u|0)){c[1311617]=c[1311617]&(1<<C^-1);break}do{if((g|0)==(b|0)){D=g+8|0}else{if(g>>>0<(c[1311621]|0)>>>0){ai()}f=g+8|0;if((c[f>>2]|0)==(j|0)){D=f;break}ai()}}while(0);c[u+12>>2]=g;c[D>>2]=u}else{b=i;f=c[a+(h+16|0)>>2]|0;t=c[a+(h|4)>>2]|0;L3402:do{if((t|0)==(b|0)){p=a+(h+12|0)|0;v=c[p>>2]|0;do{if((v|0)==0){m=a+(h+8|0)|0;k=c[m>>2]|0;if((k|0)==0){E=0;break L3402}else{F=k;G=m;break}}else{F=v;G=p}}while(0);while(1){p=F+20|0;v=c[p>>2]|0;if((v|0)!=0){F=v;G=p;continue}p=F+16|0;v=c[p>>2]|0;if((v|0)==0){break}else{F=v;G=p}}if(G>>>0<(c[1311621]|0)>>>0){ai()}else{c[G>>2]=0;E=F;break}}else{p=c[a+h>>2]|0;if(p>>>0<(c[1311621]|0)>>>0){ai()}v=p+12|0;if((c[v>>2]|0)!=(b|0)){ai()}m=t+8|0;if((c[m>>2]|0)==(b|0)){c[v>>2]=t;c[m>>2]=p;E=t;break}else{ai()}}}while(0);if((f|0)==0){break}t=a+(h+20|0)|0;u=5246772+(c[t>>2]<<2)|0;do{if((b|0)==(c[u>>2]|0)){c[u>>2]=E;if((E|0)!=0){break}c[1311618]=c[1311618]&(1<<c[t>>2]^-1);break L3400}else{if(f>>>0<(c[1311621]|0)>>>0){ai()}g=f+16|0;if((c[g>>2]|0)==(b|0)){c[g>>2]=E}else{c[f+20>>2]=E}if((E|0)==0){break L3400}}}while(0);if(E>>>0<(c[1311621]|0)>>>0){ai()}c[E+24>>2]=f;b=c[a+(h+8|0)>>2]|0;do{if((b|0)!=0){if(b>>>0<(c[1311621]|0)>>>0){ai()}else{c[E+16>>2]=b;c[b+24>>2]=E;break}}}while(0);b=c[a+(h+12|0)>>2]|0;if((b|0)==0){break}if(b>>>0<(c[1311621]|0)>>>0){ai()}else{c[E+20>>2]=b;c[b+24>>2]=E;break}}}while(0);c[q+4>>2]=B|1;c[d+B>>2]=B;if((q|0)!=(c[1311622]|0)){H=B;break}c[1311619]=B;return}else{c[A>>2]=e&-2;c[q+4>>2]=r|1;c[d+r>>2]=r;H=r}}while(0);r=H>>>3;if(H>>>0<256){d=r<<1;e=5246508+(d<<2)|0;A=c[1311617]|0;E=1<<r;do{if((A&E|0)==0){c[1311617]=A|E;I=e;J=5246508+(d+2<<2)|0}else{r=5246508+(d+2<<2)|0;h=c[r>>2]|0;if(h>>>0>=(c[1311621]|0)>>>0){I=h;J=r;break}ai()}}while(0);c[J>>2]=q;c[I+12>>2]=q;c[q+8>>2]=I;c[q+12>>2]=e;return}e=q;I=H>>>8;do{if((I|0)==0){K=0}else{if(H>>>0>16777215){K=31;break}J=(I+1048320|0)>>>16&8;d=I<<J;E=(d+520192|0)>>>16&4;A=d<<E;d=(A+245760|0)>>>16&2;r=(14-(E|J|d)|0)+(A<<d>>>15)|0;K=H>>>((r+7|0)>>>0)&1|r<<1}}while(0);I=5246772+(K<<2)|0;c[q+28>>2]=K;c[q+20>>2]=0;c[q+16>>2]=0;r=c[1311618]|0;d=1<<K;do{if((r&d|0)==0){c[1311618]=r|d;c[I>>2]=e;c[q+24>>2]=I;c[q+12>>2]=q;c[q+8>>2]=q}else{if((K|0)==31){L=0}else{L=25-(K>>>1)|0}A=H<<L;J=c[I>>2]|0;while(1){if((c[J+4>>2]&-8|0)==(H|0)){break}M=J+16+(A>>>31<<2)|0;E=c[M>>2]|0;if((E|0)==0){N=2616;break}else{A=A<<1;J=E}}if((N|0)==2616){if(M>>>0<(c[1311621]|0)>>>0){ai()}else{c[M>>2]=e;c[q+24>>2]=J;c[q+12>>2]=q;c[q+8>>2]=q;break}}A=J+8|0;B=c[A>>2]|0;E=c[1311621]|0;if(J>>>0<E>>>0){ai()}if(B>>>0<E>>>0){ai()}else{c[B+12>>2]=e;c[A>>2]=e;c[q+8>>2]=B;c[q+12>>2]=J;c[q+24>>2]=0;break}}}while(0);q=(c[1311625]|0)-1|0;c[1311625]=q;if((q|0)==0){O=5246924}else{return}while(1){q=c[O>>2]|0;if((q|0)==0){break}else{O=q+8|0}}c[1311625]=-1;return}function dg(a){a=a|0;if((a|0)==0){return}df(a);return}function dh(a){a=a|0;var b=0,d=0,e=0,f=0,g=0,h=0,i=0,j=0,k=0,l=0,m=0,n=0,o=0,p=0;do{if((c[1310720]|0)==0){b=ao(8)|0;if((b-1&b|0)==0){c[1310722]=b;c[1310721]=b;c[1310723]=-1;c[1310724]=2097152;c[1310725]=0;c[1311728]=0;c[1310720]=aF(0)&-16^1431655768;break}else{ai();return 0}}}while(0);if(a>>>0>=4294967232){d=0;e=d&1;return e|0}b=c[1311623]|0;if((b|0)==0){d=0;e=d&1;return e|0}f=c[1311620]|0;do{if(f>>>0>(a+40|0)>>>0){g=c[1310722]|0;h=Z(((((((-40-a|0)-1|0)+f|0)+g|0)>>>0)/(g>>>0)>>>0)-1|0,g);i=b;j=5246916;while(1){k=c[j>>2]|0;if(k>>>0<=i>>>0){if((k+(c[j+4>>2]|0)|0)>>>0>i>>>0){l=j;break}}k=c[j+8>>2]|0;if((k|0)==0){l=0;break}else{j=k}}if((c[l+12>>2]&8|0)!=0){break}j=aB(0)|0;i=l+4|0;if((j|0)!=((c[l>>2]|0)+(c[i>>2]|0)|0)){break}k=aB(-(h>>>0>2147483646?-2147483648-g|0:h)|0)|0;m=aB(0)|0;if(!((k|0)!=-1&m>>>0<j>>>0)){break}k=j-m|0;if((j|0)==(m|0)){break}c[i>>2]=(c[i>>2]|0)-k|0;c[1311725]=(c[1311725]|0)-k|0;i=c[1311623]|0;n=(c[1311620]|0)-k|0;k=i;o=i+8|0;if((o&7|0)==0){p=0}else{p=-o&7}o=n-p|0;c[1311623]=k+p|0;c[1311620]=o;c[k+(p+4|0)>>2]=o|1;c[k+(n+4|0)>>2]=40;c[1311624]=c[1310724]|0;d=(j|0)!=(m|0);e=d&1;return e|0}}while(0);if((c[1311620]|0)>>>0<=(c[1311624]|0)>>>0){d=0;e=d&1;return e|0}c[1311624]=-1;d=0;e=d&1;return e|0}function di(b,d,e){b=b|0;d=d|0;e=e|0;var f=0;f=b|0;if((b&3)==(d&3)){while(b&3){if((e|0)==0)return f|0;a[b]=a[d]|0;b=b+1|0;d=d+1|0;e=e-1|0}while((e|0)>=4){c[b>>2]=c[d>>2]|0;b=b+4|0;d=d+4|0;e=e-4|0}}while((e|0)>0){a[b]=a[d]|0;b=b+1|0;d=d+1|0;e=e-1|0}return f|0}function dj(b){b=b|0;var c=0;c=b;while(a[c]|0!=0){c=c+1|0}return c-b|0}function dk(b,d,e){b=b|0;d=d|0;e=e|0;var f=0,g=0,h=0;f=b+e|0;if((e|0)>=20){d=d&255;e=b&3;g=d|d<<8|d<<16|d<<24;h=f&~3;if(e){e=b+4-e|0;while((b|0)<(e|0)){a[b]=d;b=b+1|0}}while((b|0)<(h|0)){c[b>>2]=g;b=b+4|0}}while((b|0)<(f|0)){a[b]=d;b=b+1|0}}function dl(){au()}function dm(a,b,c,d,e,f){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;f=f|0;return aH[a&255](b|0,c|0,d|0,e|0,f|0)|0}function dn(a,b,c,d,e,f){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;f=f|0;aI[a&255](b|0,c|0,d|0,e|0,f|0)}function dp(a,b){a=a|0;b=b|0;aJ[a&255](b|0)}function dq(a,b,c){a=a|0;b=b|0;c=c|0;aK[a&255](b|0,c|0)}function dr(a,b){a=a|0;b=b|0;return aL[a&255](b|0)|0}function ds(a,b,c,d){a=a|0;b=b|0;c=c|0;d=d|0;return aM[a&255](b|0,c|0,d|0)|0}function dt(a,b,c,d){a=a|0;b=b|0;c=c|0;d=d|0;aN[a&255](b|0,c|0,d|0)}function du(a){a=a|0;aO[a&255]()}function dv(a,b,c,d){a=a|0;b=b|0;c=c|0;d=+d;aP[a&255](b|0,c|0,+d)}function dw(a,b,c,d,e,f,g){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;f=f|0;g=g|0;aQ[a&255](b|0,c|0,d|0,e|0,f|0,g|0)}function dx(a,b,c){a=a|0;b=b|0;c=c|0;return aR[a&255](b|0,c|0)|0}function dy(a,b,c,d,e){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;aS[a&255](b|0,c|0,d|0,e|0)}function dz(a,b,c,d,e){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;_(0);return 0}function dA(a,b,c,d,e){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;_(1)}function dB(a){a=a|0;_(2)}function dC(a,b){a=a|0;b=b|0;_(3)}function dD(a){a=a|0;_(4);return 0}function dE(a,b,c){a=a|0;b=b|0;c=c|0;_(5);return 0}function dF(a,b,c){a=a|0;b=b|0;c=c|0;_(6)}function dG(){_(7)}function dH(a,b,c){a=a|0;b=b|0;c=+c;_(8)}function dI(a,b,c,d,e,f){a=a|0;b=b|0;c=c|0;d=d|0;e=e|0;f=f|0;_(9)}function dJ(a,b){a=a|0;b=b|0;_(10);return 0}function dK(a,b,c,d){a=a|0;b=b|0;c=c|0;d=d|0;_(11)}
+// EMSCRIPTEN_END_FUNCS
+var aH=[dz,dz,dz,dz,dz,dz,dz,dz,cl,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,cT,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,ct,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,bG,dz,dz,dz,dz,dz,dz,dz,dz,dz,bJ,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,cP,dz,dz,dz,dz,dz,cL,dz,c3,dz,dz,dz,dz,dz,cp,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz,dz];var aI=[dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,c1,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dc,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA,dA];var aJ=[dB,dB,cH,dB,dB,dB,cs,dB,dB,dB,c_,dB,dB,dB,dB,dB,cS,dB,ck,dB,cG,dB,dB,dB,cO,dB,cf,dB,dB,dB,dB,dB,c7,dB,dB,dB,dB,dB,cW,dB,dB,dB,dB,dB,dB,dB,cA,dB,dB,dB,dB,dB,dB,dB,a6,dB,bP,dB,dB,dB,dB,dB,cv,dB,c6,dB,dB,dB,c8,dB,cI,dB,b4,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,cY,dB,cg,dB,dB,dB,dB,dB,dB,dB,dB,dB,bH,dB,dB,dB,dB,dB,dB,dB,cy,dB,a5,dB,bL,dB,dB,dB,dB,dB,cX,dB,dB,dB,dB,dB,dB,dB,bO,dB,dB,dB,cZ,dB,c$,dB,dB,dB,dB,dB,dB,dB,co,dB,ce,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB,dB];var aK=[dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,cQ,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,cu,dC,b0,dC,dC,dC,dC,dC,c4,dC,dC,dC,dC,dC,dC,dC,cM,dC,cq,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,b$,dC,dC,dC,dC,dC,dC,dC,dC,dC,cm,dC,dC,dC,dC,dC,dC,dC,cU,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC,dC];var aL=[dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,bv,dD,dD,dD,dD,dD,dD,dD,bB,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD,dD];var aM=[dE,dE,dE,dE,bE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,bw,dE,dE,dE,dE,dE,dE,dE,dE,dE,c9,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,ch,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE,dE];var aN=[dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,b2,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,b1,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF,dF];var aO=[dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dl,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG,dG];var aP=[dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,bD,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,bK,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH,dH];var aQ=[dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,c2,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dd,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI,dI];var aR=[dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,bA,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,bI,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,bU,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ,dJ];var aS=[dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,ci,dK,dK,dK,dK,dK,dK,dK,cR,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,bC,dK,dK,dK,dK,dK,dK,dK,c0,dK,dK,dK,dK,dK,bF,dK,dK,dK,dK,dK,dK,dK,c5,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,da,dK,dK,dK,cN,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,cr,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,cV,dK,dK,dK,dK,dK,cn,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK,dK];return{_strlen:dj,_free:df,_main:a7,_memset:dk,_malloc:de,_memcpy:di,stackAlloc:aT,stackSave:aU,stackRestore:aV,setThrew:aW,setTempRet0:aX,setTempRet1:aY,setTempRet2:aZ,setTempRet3:a_,setTempRet4:a$,setTempRet5:a0,setTempRet6:a1,setTempRet7:a2,setTempRet8:a3,setTempRet9:a4,dynCall_iiiiii:dm,dynCall_viiiii:dn,dynCall_vi:dp,dynCall_vii:dq,dynCall_ii:dr,dynCall_iiii:ds,dynCall_viii:dt,dynCall_v:du,dynCall_viif:dv,dynCall_viiiiii:dw,dynCall_iii:dx,dynCall_viiii:dy}})
+// EMSCRIPTEN_END_ASM
+({ Math: Math, Int8Array: Int8Array, Int16Array: Int16Array, Int32Array: Int32Array, Uint8Array: Uint8Array, Uint16Array: Uint16Array, Uint32Array: Uint32Array, Float32Array: Float32Array, Float64Array: Float64Array }, { abort: abort, assert: assert, asmPrintInt: asmPrintInt, asmPrintFloat: asmPrintFloat, copyTempDouble: copyTempDouble, copyTempFloat: copyTempFloat, min: Math_min, _llvm_lifetime_end: _llvm_lifetime_end, _cosf: _cosf, _floorf: _floorf, _abort: _abort, _fprintf: _fprintf, _printf: _printf, __reallyNegative: __reallyNegative, _sqrtf: _sqrtf, _fputc: _fputc, _sysconf: _sysconf, _clock: _clock, ___setErrNo: ___setErrNo, _fwrite: _fwrite, _write: _write, _exit: _exit, ___cxa_pure_virtual: ___cxa_pure_virtual, __formatString: __formatString, __ZSt9terminatev: __ZSt9terminatev, _sinf: _sinf, ___assert_func: ___assert_func, _pwrite: _pwrite, _putchar: _putchar, _sbrk: _sbrk, ___errno_location: ___errno_location, ___gxx_personality_v0: ___gxx_personality_v0, _llvm_lifetime_start: _llvm_lifetime_start, _time: _time, __exit: __exit, STACKTOP: STACKTOP, STACK_MAX: STACK_MAX, tempDoublePtr: tempDoublePtr, ABORT: ABORT, NaN: NaN, Infinity: Infinity, __ZTVN10__cxxabiv120__si_class_type_infoE: __ZTVN10__cxxabiv120__si_class_type_infoE, __ZTVN10__cxxabiv117__class_type_infoE: __ZTVN10__cxxabiv117__class_type_infoE }, buffer);
+var _strlen = Module["_strlen"] = asm._strlen;
+var _free = Module["_free"] = asm._free;
+var _main = Module["_main"] = asm._main;
+var _memset = Module["_memset"] = asm._memset;
+var _malloc = Module["_malloc"] = asm._malloc;
+var _memcpy = Module["_memcpy"] = asm._memcpy;
+var dynCall_iiiiii = Module["dynCall_iiiiii"] = asm.dynCall_iiiiii;
+var dynCall_viiiii = Module["dynCall_viiiii"] = asm.dynCall_viiiii;
+var dynCall_vi = Module["dynCall_vi"] = asm.dynCall_vi;
+var dynCall_vii = Module["dynCall_vii"] = asm.dynCall_vii;
+var dynCall_ii = Module["dynCall_ii"] = asm.dynCall_ii;
+var dynCall_iiii = Module["dynCall_iiii"] = asm.dynCall_iiii;
+var dynCall_viii = Module["dynCall_viii"] = asm.dynCall_viii;
+var dynCall_v = Module["dynCall_v"] = asm.dynCall_v;
+var dynCall_viif = Module["dynCall_viif"] = asm.dynCall_viif;
+var dynCall_viiiiii = Module["dynCall_viiiiii"] = asm.dynCall_viiiiii;
+var dynCall_iii = Module["dynCall_iii"] = asm.dynCall_iii;
+var dynCall_viiii = Module["dynCall_viiii"] = asm.dynCall_viiii;
+Runtime.stackAlloc = function(size) { return asm.stackAlloc(size) };
+Runtime.stackSave = function() { return asm.stackSave() };
+Runtime.stackRestore = function(top) { asm.stackRestore(top) };
+// Warning: printing of i64 values may be slightly rounded! No deep i64 math used, so precise i64 code not included
+var i64Math = null;
+// === Auto-generated postamble setup entry stuff ===
+Module.callMain = function callMain(args) {
+  var argc = args.length+1;
+  function pad() {
+    for (var i = 0; i < 4-1; i++) {
+      argv.push(0);
+    }
+  }
+  var argv = [allocate(intArrayFromString("/bin/this.program"), 'i8', ALLOC_STATIC) ];
+  pad();
+  for (var i = 0; i < argc-1; i = i + 1) {
+    argv.push(allocate(intArrayFromString(args[i]), 'i8', ALLOC_STATIC));
+    pad();
+  }
+  argv.push(0);
+  argv = allocate(argv, 'i32', ALLOC_STATIC);
+  var ret;
+  var initialStackTop = STACKTOP;
+  try {
+    ret = Module['_main'](argc, argv, 0);
+  }
+  catch(e) {
+    if (e.name == 'ExitStatus') {
+      return e.status;
+    } else if (e == 'SimulateInfiniteLoop') {
+      Module['noExitRuntime'] = true;
+    } else {
+      throw e;
+    }
+  } finally {
+    STACKTOP = initialStackTop;
+  }
+  return ret;
+}
+function run(args) {
+  args = args || Module['arguments'];
+  if (runDependencies > 0) {
+    Module.printErr('run() called, but dependencies remain, so not running');
+    return 0;
+  }
+  if (Module['preRun']) {
+    if (typeof Module['preRun'] == 'function') Module['preRun'] = [Module['preRun']];
+    var toRun = Module['preRun'];
+    Module['preRun'] = [];
+    for (var i = toRun.length-1; i >= 0; i--) {
+      toRun[i]();
+    }
+    if (runDependencies > 0) {
+      // a preRun added a dependency, run will be called later
+      return 0;
+    }
+  }
+  function doRun() {
+    var ret = 0;
+    calledRun = true;
+    if (Module['_main']) {
+      preMain();
+      ret = Module.callMain(args);
+      if (!Module['noExitRuntime']) {
+        exitRuntime();
       }
-      v && e++;
-      j = b[e + 1];
-      if (-1 != "d,i,u,o,x,X,p".split(",").indexOf(String.fromCharCode(j))) {
-        k = 100 == j || 105 == j;
-        v = v || 4;
-        h = d("i" + 8 * v);
-        4 >= v && (h = (k ? Kb : Jb)(h & Math.pow(256, v) - 1, 8 * v));
-        var x = Math.abs(h), w, k = "";
-        if (100 == j || 105 == j) w = Kb(h, 8 * v).toString(10); else if (117 == j) w = Jb(h, 8 * v).toString(10), h = Math.abs(h); else if (111 == j) w = (n ? "0" : "") + x.toString(8); else if (120 == j || 88 == j) {
-          k = n ? "0x" : "";
-          if (0 > h) {
-            h = -h;
-            w = (x - 1).toString(16);
-            n = [];
-            for (x = 0; x < w.length; x++) n.push((15 - parseInt(w[x], 16)).toString(16));
-            for (w = n.join(""); w.length < 2 * v; ) w = "f" + w;
-          } else w = x.toString(16);
-          88 == j && (k = k.toUpperCase(), w = w.toUpperCase());
-        } else 112 == j && (0 === x ? w = "(nil)" : (k = "0x", w = x.toString(16)));
-        if (r) for (; w.length < q; ) w = "0" + w;
-        for (l && (k = 0 > h ? "-" + k : "+" + k); k.length + w.length < u; ) m ? w += " " : p ? w = "0" + w : k = " " + k;
-        w = k + w;
-        w.split("").forEach((function(c) {
-          i.push(c.charCodeAt(0));
-        }));
-      } else if (-1 != "f,F,e,E,g,G".split(",").indexOf(String.fromCharCode(j))) {
-        h = d(4 === v ? "float" : "double");
-        if (isNaN(h)) w = "nan", p = ea; else if (isFinite(h)) {
-          r = ea;
-          v = Math.min(q, 20);
-          if (103 == j || 71 == j) r = ca, q = q || 1, v = parseInt(h.toExponential(v).split("e")[1], 10), q > v && -4 <= v ? (j = (103 == j ? "f" : "F").charCodeAt(0), q -= v + 1) : (j = (103 == j ? "e" : "E").charCodeAt(0), q--), v = Math.min(q, 20);
-          if (101 == j || 69 == j) w = h.toExponential(v), /[eE][-+]\d$/.test(w) && (w = w.slice(0, -1) + "0" + w.slice(-1)); else if (102 == j || 70 == j) w = h.toFixed(v);
-          k = w.split("e");
-          if (r && !n) for (; 1 < k[0].length && -1 != k[0].indexOf(".") && ("0" == k[0].slice(-1) || "." == k[0].slice(-1)); ) k[0] = k[0].slice(0, -1); else for (n && -1 == w.indexOf(".") && (k[0] += "."); q > v++; ) k[0] += "0";
-          w = k[0] + (1 < k.length ? "e" + k[1] : "");
-          69 == j && (w = w.toUpperCase());
-          l && 0 <= h && (w = "+" + w);
-        } else w = (0 > h ? "-" : "") + "inf", p = ea;
-        for (; w.length < u; ) w = m ? w + " " : p && ("-" == w[0] || "+" == w[0]) ? w[0] + "0" + w.slice(1) : (p ? "0" : " ") + w;
-        97 > j && (w = w.toUpperCase());
-        w.split("").forEach((function(c) {
-          i.push(c.charCodeAt(0));
-        }));
-      } else if (115 == j) {
-        (l = d("i8*")) ? (l = Fb(l), r && l.length > q && (l = l.slice(0, q))) : l = ob("(null)", ca);
-        if (!m) for (; l.length < u--; ) i.push(32);
-        i = i.concat(l);
-        if (m) for (; l.length < u--; ) i.push(32);
-      } else if (99 == j) {
-        for (m && i.push(d("i8")); 0 < --u; ) i.push(32);
-        m || i.push(d("i8"));
-      } else if (110 == j) m = d("i32*"), b[m] = i.length; else if (37 == j) i.push(h); else for (x = k; x < e + 2; x++) i.push(b[x]);
-      e += 2;
-    } else i.push(h), e += 1;
-  }
-  return i;
-}
-
-function xc(c, f) {
-  var d = b[zc], e = fp(c, f), g = Ma.W();
-  var i = A(e, "i8", s), e = 1 * e.length;
-  if (0 == e) d = 0; else if (i = Ic(d, i, e), -1 == i) {
-    if (Jc[d]) Jc[d].error = ca;
-    d = -1;
-  } else d = Math.floor(i / 1);
-  Ma.V(g);
-  return d;
-}
-
-var Zc = Math.sqrt;
-
-function O(c, f, d, e) {
-  throw "Assertion failed: " + lb(e) + ", at: " + [ lb(c), f, lb(d) ];
-}
-
-var Ih = Math.sin, Jh = Math.cos, qh = Math.floor;
-
-function kb(c) {
-  return Ma.D(c || 1);
-}
-
-var Ji = xc;
-
-function Oi(c) {
-  var f = Ma.q({
-    g: [ "i32", "i32" ]
-  }), d = Date.now();
-  b[c + f[0]] = Math.floor(d / 1e3);
-  b[c + f[1]] = Math.floor(1e3 * (d - 1e3 * Math.floor(d / 1e3)));
-}
-
-((function(c, f, d) {
-  if (!ep) {
-    ep = ca;
-    bp();
-    c || (c = (function() {
-      if (!c.l || !c.l.length) {
-        var d;
-        "undefined" != typeof window && "function" == typeof window.prompt ? d = window.prompt("Input: ") : "function" == typeof readline && (d = readline());
-        d || (d = "");
-        c.l = ob(d + "\n", ca);
+    }
+    if (Module['postRun']) {
+      if (typeof Module['postRun'] == 'function') Module['postRun'] = [Module['postRun']];
+      while (Module['postRun'].length > 0) {
+        Module['postRun'].pop()();
       }
-      return c.l.shift();
-    }));
-    f || (f = (function(c) {
-      c === da || 10 === c ? (f.B(f.buffer.join("")), f.buffer = []) : f.buffer.push(String.fromCharCode(c));
-    }));
-    if (!f.B) f.B = (function(c) {
-      console && console.log ? console.log(c) : print(c);
-    });
-    if (!f.buffer) f.buffer = [];
-    d || (d = f);
-    cp("tmp", ca);
-    var e = cp("dev", ea), g = dp(e, "stdin", c), i = dp(e, "stdout", da, f), d = dp(e, "stderr", da, d);
-    dp(e, "tty", c, f);
-    Jc[1] = {
-      path: "/dev/stdin",
-      object: g,
-      position: 0,
-      v: ca,
-      i: ea,
-      u: ea,
-      error: ea,
-      r: ea,
-      F: []
-    };
-    Jc[2] = {
-      path: "/dev/stdout",
-      object: i,
-      position: 0,
-      v: ea,
-      i: ca,
-      u: ea,
-      error: ea,
-      r: ea,
-      F: []
-    };
-    Jc[3] = {
-      path: "/dev/stderr",
-      object: d,
-      position: 0,
-      v: ea,
-      i: ca,
-      u: ea,
-      error: ea,
-      r: ea,
-      F: []
-    };
-    Uo = A([ 1 ], "void*", t);
-    zc = A([ 2 ], "void*", t);
-    Vo = A([ 3 ], "void*", t);
-    Jc[Uo] = Jc[1];
-    Jc[zc] = Jc[2];
-    Jc[Vo] = Jc[3];
-    A([ A([ 0, Uo, zc, Vo ], "void*", t) ], "void*", t);
-  }
-}))();
-
-bb.push({
-  n: (function() {
-    ep && (0 < Jc[2].object.d.buffer.length && Jc[2].object.d(10), 0 < Jc[3].object.d.buffer.length && Jc[3].object.d(10));
-  })
-});
-
-So(0);
-
-var Hc = A([ 0 ], "i8", t);
-
-Module.I = (function(c) {
-  function f() {
-    for (var c = 0; 0 > c; c++) e.push(0);
-  }
-  var d = c.length + 1, e = [ A(ob("/bin/this.program"), "i8", t) ];
-  f();
-  for (var g = 0; g < d - 1; g += 1) e.push(A(ob(c[g]), "i8", t)), f();
-  e.push(0);
-  e = A(e, "i32", t);
-  return Lb();
-});
-
-var yc, Wb, gp, hp, ip, ad, bd, cd, Yd, Zd, he, ie, ye, Fe, Ge, ne, oe, qe, Ae, yg, Re, Oe, Pe, Qe, Be, te, Le, Me, Te, Ag, Bg, vg, wg, xg, Pg, Ng, Ig, Jg, Kg, Sg, Tg, Ug, Vg, Wg, Xg, Yg, Zg, $g, ah, eh, oh, ph, mh, nh, gh, hh, ih, Hh, th, rh, sh, vh, xh, Nh, Mh, Oh, yh, zh, Qh, Gh, Fh, jp, kp, lp, mp, np, op, lc, pp, qp, Xh, Yh, Zh, ai, bi, ci, bc, rp, sp, ii, ji, ei, fi, gi, hi, ti, mi, ni, ui, li, tp, up, vp, ue, ab = (function() {
-  b[pj] = wp + 2;
-  bb.push({
-    n: 4,
-    k: pj
-  });
-  b[qj] = xp + 2;
-  bb.push({
-    n: 6,
-    k: qj
-  });
-}), Ai, Bi, Ci, Di, Li, Mi, Fi, Gi, Hi, Si, Ti, Ui, Vi, Wi, Xi, Yi, Zi, jj, ij, aj, bj, cj, pj, qj, Gj, Og, Jj, Kj, Lj, Fj, xp, yp, zp, Sj, Tj, Uj, Vj, jk, kk, lk, mk, ok, pk, wk, Pk, Qk, Rk, Vk, Wk, Yk, Ej, al, bl, Ik, Sk, Tk, Mk, Nk, Jk, Kk, wp, Ap, Bp, gl, hl, il, Cp, Dp, Ep, Fp, nl, ol, pl, jl, Gp, Hp, tl, ul, vl, wl, Ip, Jp, Cl, Dl, yl, zl, Al, Bl, El, Fl, Gl, Hl, Il, Kl, Ll, Ml, Nl, Ol, Rl, Sl, Tl, Vl, Wl, Yl, Zl, $l, Kp, Lp, fm, gm, hm, am, Mp, Np, jm, km, lm, kl, Op, Pp, om, pm, qm, mm, ql, Qp, Rp, dm, tm, zm, Sp, Tp, Up, Vp, Im, Km, Lm, Mm, Wp, Xp, Qm, Rm, Sm, Tm, Um, Ym, Zm, $m, Yp, Zp, dn, pe, cn, en, fn, $p, hn, jn, kn, ln, mn, nn, on, qn, rn, aq, bq, cq, xn, Gn, Kn, Ln, On, dq, eq, Rn, Qn, Sn, Tn, Xn, Yn, Zn, $n, ao, an, fq, gq, co, jo, Jn, ko, lo, hq, xq, oo, so, to, yq, zq, vo, zo, In, Aq, Bq, Fo, Jo, um, vm, wm, xm, ym, Hn, Mn, Nn, mo, Am, Bm, Cm, Cq, Dq;
-
-yc = A([ 37, 102, 10, 0 ], "i8", t);
-
-Wb = A([ 0, 0, 36, 38, 40, 40, 40, 40, 40, 40 ], "i8*", t);
-
-A(1, "void*", t);
-
-hp = A([ 55, 98, 50, 83, 104, 97, 112, 101, 0 ], "i8", t);
-
-ip = A(2, "i8*", t);
-
-ad = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 67, 111, 108, 108, 105, 100, 101, 69, 100, 103, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-bd = A([ 118, 111, 105, 100, 32, 98, 50, 67, 111, 108, 108, 105, 100, 101, 69, 100, 103, 101, 65, 110, 100, 67, 105, 114, 99, 108, 101, 40, 98, 50, 77, 97, 110, 105, 102, 111, 108, 100, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 69, 100, 103, 101, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 67, 105, 114, 99, 108, 101, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 41, 0 ], "i8", t);
-
-cd = A([ 100, 101, 110, 32, 62, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-Yd = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 67, 111, 108, 108, 105, 100, 101, 80, 111, 108, 121, 103, 111, 110, 46, 99, 112, 112, 0 ], "i8", t);
-
-Zd = A([ 118, 111, 105, 100, 32, 98, 50, 70, 105, 110, 100, 73, 110, 99, 105, 100, 101, 110, 116, 69, 100, 103, 101, 40, 98, 50, 67, 108, 105, 112, 86, 101, 114, 116, 101, 120, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 41, 0 ], "i8", t);
-
-he = A([ 48, 32, 60, 61, 32, 101, 100, 103, 101, 49, 32, 38, 38, 32, 101, 100, 103, 101, 49, 32, 60, 32, 112, 111, 108, 121, 49, 45, 62, 109, 95, 118, 101, 114, 116, 101, 120, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-ie = A([ 102, 108, 111, 97, 116, 51, 50, 32, 98, 50, 69, 100, 103, 101, 83, 101, 112, 97, 114, 97, 116, 105, 111, 110, 40, 99, 111, 110, 115, 116, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 41, 0 ], "i8", t);
-
-ye = A(1, "i32", t);
-
-Fe = A(1, "i32", t);
-
-Ge = A(1, "i32", t);
-
-ne = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-oe = A([ 118, 111, 105, 100, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 58, 58, 83, 101, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 83, 104, 97, 112, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-qe = A([ 48, 32, 60, 61, 32, 105, 110, 100, 101, 120, 32, 38, 38, 32, 105, 110, 100, 101, 120, 32, 60, 32, 99, 104, 97, 105, 110, 45, 62, 109, 95, 99, 111, 117, 110, 116, 0 ], "i8", t);
-
-Ae = A([ 118, 111, 105, 100, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 40, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 79, 117, 116, 112, 117, 116, 32, 42, 44, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 67, 97, 99, 104, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 73, 110, 112, 117, 116, 32, 42, 41, 0 ], "i8", t);
-
-yg = A([ 102, 108, 111, 97, 116, 51, 50, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 58, 58, 71, 101, 116, 77, 101, 116, 114, 105, 99, 40, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Re = A([ 118, 111, 105, 100, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 58, 58, 71, 101, 116, 87, 105, 116, 110, 101, 115, 115, 80, 111, 105, 110, 116, 115, 40, 98, 50, 86, 101, 99, 50, 32, 42, 44, 32, 98, 50, 86, 101, 99, 50, 32, 42, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Oe = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 46, 104, 0 ], "i8", t);
-
-Pe = A([ 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 58, 58, 71, 101, 116, 86, 101, 114, 116, 101, 120, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Qe = A([ 48, 32, 60, 61, 32, 105, 110, 100, 101, 120, 32, 38, 38, 32, 105, 110, 100, 101, 120, 32, 60, 32, 109, 95, 99, 111, 117, 110, 116, 0 ], "i8", t);
-
-Be = A([ 98, 50, 86, 101, 99, 50, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 58, 58, 71, 101, 116, 83, 101, 97, 114, 99, 104, 68, 105, 114, 101, 99, 116, 105, 111, 110, 40, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-te = A([ 98, 50, 86, 101, 99, 50, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 58, 58, 71, 101, 116, 67, 108, 111, 115, 101, 115, 116, 80, 111, 105, 110, 116, 40, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Le = A([ 118, 111, 105, 100, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 58, 58, 82, 101, 97, 100, 67, 97, 99, 104, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 67, 97, 99, 104, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 41, 0 ], "i8", t);
-
-Me = A([ 99, 97, 99, 104, 101, 45, 62, 99, 111, 117, 110, 116, 32, 60, 61, 32, 51, 0 ], "i8", t);
-
-Te = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-Ag = A([ 105, 110, 116, 51, 50, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 65, 108, 108, 111, 99, 97, 116, 101, 78, 111, 100, 101, 40, 41, 0 ], "i8", t);
-
-Bg = A([ 109, 95, 110, 111, 100, 101, 67, 111, 117, 110, 116, 32, 61, 61, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-vg = A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 70, 114, 101, 101, 78, 111, 100, 101, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-wg = A([ 48, 32, 60, 61, 32, 110, 111, 100, 101, 73, 100, 32, 38, 38, 32, 110, 111, 100, 101, 73, 100, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-xg = A([ 48, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 68, 101, 115, 116, 114, 111, 121, 80, 114, 111, 120, 121, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Pg = A([ 109, 95, 110, 111, 100, 101, 115, 91, 112, 114, 111, 120, 121, 73, 100, 93, 46, 73, 115, 76, 101, 97, 102, 40, 41, 0 ], "i8", t);
-
-Ng = A([ 98, 111, 111, 108, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 77, 111, 118, 101, 80, 114, 111, 120, 121, 40, 105, 110, 116, 51, 50, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 65, 65, 66, 66, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 41, 0 ], "i8", t);
-
-Ig = A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 73, 110, 115, 101, 114, 116, 76, 101, 97, 102, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Jg = A([ 99, 104, 105, 108, 100, 49, 32, 33, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-Kg = A([ 99, 104, 105, 108, 100, 50, 32, 33, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-Sg = A([ 105, 110, 116, 51, 50, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 66, 97, 108, 97, 110, 99, 101, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Tg = A([ 105, 65, 32, 33, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-Ug = A([ 48, 32, 60, 61, 32, 105, 66, 32, 38, 38, 32, 105, 66, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Vg = A([ 48, 32, 60, 61, 32, 105, 67, 32, 38, 38, 32, 105, 67, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Wg = A([ 48, 32, 60, 61, 32, 105, 70, 32, 38, 38, 32, 105, 70, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Xg = A([ 48, 32, 60, 61, 32, 105, 71, 32, 38, 38, 32, 105, 71, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Yg = A([ 109, 95, 110, 111, 100, 101, 115, 91, 67, 45, 62, 112, 97, 114, 101, 110, 116, 93, 46, 99, 104, 105, 108, 100, 50, 32, 61, 61, 32, 105, 65, 0 ], "i8", t);
-
-Zg = A([ 48, 32, 60, 61, 32, 105, 68, 32, 38, 38, 32, 105, 68, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-$g = A([ 48, 32, 60, 61, 32, 105, 69, 32, 38, 38, 32, 105, 69, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-ah = A([ 109, 95, 110, 111, 100, 101, 115, 91, 66, 45, 62, 112, 97, 114, 101, 110, 116, 93, 46, 99, 104, 105, 108, 100, 50, 32, 61, 61, 32, 105, 65, 0 ], "i8", t);
-
-A([ 105, 110, 116, 51, 50, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 67, 111, 109, 112, 117, 116, 101, 72, 101, 105, 103, 104, 116, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 86, 97, 108, 105, 100, 97, 116, 101, 83, 116, 114, 117, 99, 116, 117, 114, 101, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 109, 95, 110, 111, 100, 101, 115, 91, 105, 110, 100, 101, 120, 93, 46, 112, 97, 114, 101, 110, 116, 32, 61, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-A([ 99, 104, 105, 108, 100, 49, 32, 61, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-A([ 99, 104, 105, 108, 100, 50, 32, 61, 61, 32, 40, 45, 49, 41, 0 ], "i8", t);
-
-A([ 110, 111, 100, 101, 45, 62, 104, 101, 105, 103, 104, 116, 32, 61, 61, 32, 48, 0 ], "i8", t);
-
-A([ 48, 32, 60, 61, 32, 99, 104, 105, 108, 100, 49, 32, 38, 38, 32, 99, 104, 105, 108, 100, 49, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-A([ 48, 32, 60, 61, 32, 99, 104, 105, 108, 100, 50, 32, 38, 38, 32, 99, 104, 105, 108, 100, 50, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-A([ 109, 95, 110, 111, 100, 101, 115, 91, 99, 104, 105, 108, 100, 49, 93, 46, 112, 97, 114, 101, 110, 116, 32, 61, 61, 32, 105, 110, 100, 101, 120, 0 ], "i8", t);
-
-A([ 109, 95, 110, 111, 100, 101, 115, 91, 99, 104, 105, 108, 100, 50, 93, 46, 112, 97, 114, 101, 110, 116, 32, 61, 61, 32, 105, 110, 100, 101, 120, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 86, 97, 108, 105, 100, 97, 116, 101, 77, 101, 116, 114, 105, 99, 115, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 110, 111, 100, 101, 45, 62, 104, 101, 105, 103, 104, 116, 32, 61, 61, 32, 104, 101, 105, 103, 104, 116, 0 ], "i8", t);
-
-A([ 97, 97, 98, 98, 46, 108, 111, 119, 101, 114, 66, 111, 117, 110, 100, 32, 61, 61, 32, 110, 111, 100, 101, 45, 62, 97, 97, 98, 98, 46, 108, 111, 119, 101, 114, 66, 111, 117, 110, 100, 0 ], "i8", t);
-
-A([ 97, 97, 98, 98, 46, 117, 112, 112, 101, 114, 66, 111, 117, 110, 100, 32, 61, 61, 32, 110, 111, 100, 101, 45, 62, 97, 97, 98, 98, 46, 117, 112, 112, 101, 114, 66, 111, 117, 110, 100, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 86, 97, 108, 105, 100, 97, 116, 101, 40, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 48, 32, 60, 61, 32, 102, 114, 101, 101, 73, 110, 100, 101, 120, 32, 38, 38, 32, 102, 114, 101, 101, 73, 110, 100, 101, 120, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-A([ 71, 101, 116, 72, 101, 105, 103, 104, 116, 40, 41, 32, 61, 61, 32, 67, 111, 109, 112, 117, 116, 101, 72, 101, 105, 103, 104, 116, 40, 41, 0 ], "i8", t);
-
-A([ 109, 95, 110, 111, 100, 101, 67, 111, 117, 110, 116, 32, 43, 32, 102, 114, 101, 101, 67, 111, 117, 110, 116, 32, 61, 61, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-A([ 105, 110, 116, 51, 50, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 71, 101, 116, 77, 97, 120, 66, 97, 108, 97, 110, 99, 101, 40, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 110, 111, 100, 101, 45, 62, 73, 115, 76, 101, 97, 102, 40, 41, 32, 61, 61, 32, 102, 97, 108, 115, 101, 0 ], "i8", t);
-
-eh = A(1, "i32", t);
-
-oh = A(1, "i32", t);
-
-ph = A(1, "i32", t);
-
-mh = A(1, "i32", t);
-
-nh = A(1, "i32", t);
-
-gh = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 84, 105, 109, 101, 79, 102, 73, 109, 112, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-hh = A([ 118, 111, 105, 100, 32, 98, 50, 84, 105, 109, 101, 79, 102, 73, 109, 112, 97, 99, 116, 40, 98, 50, 84, 79, 73, 79, 117, 116, 112, 117, 116, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 79, 73, 73, 110, 112, 117, 116, 32, 42, 41, 0 ], "i8", t);
-
-ih = A([ 116, 97, 114, 103, 101, 116, 32, 62, 32, 116, 111, 108, 101, 114, 97, 110, 99, 101, 0 ], "i8", t);
-
-Hh = A([ 102, 108, 111, 97, 116, 51, 50, 32, 98, 50, 83, 101, 112, 97, 114, 97, 116, 105, 111, 110, 70, 117, 110, 99, 116, 105, 111, 110, 58, 58, 69, 118, 97, 108, 117, 97, 116, 101, 40, 105, 110, 116, 51, 50, 44, 32, 105, 110, 116, 51, 50, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-th = A([ 102, 108, 111, 97, 116, 51, 50, 32, 98, 50, 83, 101, 112, 97, 114, 97, 116, 105, 111, 110, 70, 117, 110, 99, 116, 105, 111, 110, 58, 58, 70, 105, 110, 100, 77, 105, 110, 83, 101, 112, 97, 114, 97, 116, 105, 111, 110, 40, 105, 110, 116, 51, 50, 32, 42, 44, 32, 105, 110, 116, 51, 50, 32, 42, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-rh = A([ 102, 108, 111, 97, 116, 51, 50, 32, 98, 50, 83, 101, 112, 97, 114, 97, 116, 105, 111, 110, 70, 117, 110, 99, 116, 105, 111, 110, 58, 58, 73, 110, 105, 116, 105, 97, 108, 105, 122, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 83, 105, 109, 112, 108, 101, 120, 67, 97, 99, 104, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 83, 119, 101, 101, 112, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 80, 114, 111, 120, 121, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 83, 119, 101, 101, 112, 32, 38, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-sh = A([ 48, 32, 60, 32, 99, 111, 117, 110, 116, 32, 38, 38, 32, 99, 111, 117, 110, 116, 32, 60, 32, 51, 0 ], "i8", t);
-
-vh = A([ 0, 0, 42, 44, 46, 48, 50, 52, 54, 56 ], "i8*", t);
-
-A(1, "void*", t);
-
-xh = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 83, 104, 97, 112, 101, 115, 47, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 58, 58, 67, 114, 101, 97, 116, 101, 76, 111, 111, 112, 40, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Nh = A([ 109, 95, 118, 101, 114, 116, 105, 99, 101, 115, 32, 61, 61, 32, 95, 95, 110, 117, 108, 108, 32, 38, 38, 32, 109, 95, 99, 111, 117, 110, 116, 32, 61, 61, 32, 48, 0 ], "i8", t);
-
-Mh = A([ 118, 111, 105, 100, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 58, 58, 67, 114, 101, 97, 116, 101, 67, 104, 97, 105, 110, 40, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Oh = A([ 99, 111, 117, 110, 116, 32, 62, 61, 32, 50, 0 ], "i8", t);
-
-yh = A([ 118, 111, 105, 100, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 58, 58, 71, 101, 116, 67, 104, 105, 108, 100, 69, 100, 103, 101, 40, 98, 50, 69, 100, 103, 101, 83, 104, 97, 112, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-zh = A([ 48, 32, 60, 61, 32, 105, 110, 100, 101, 120, 32, 38, 38, 32, 105, 110, 100, 101, 120, 32, 60, 32, 109, 95, 99, 111, 117, 110, 116, 32, 45, 32, 49, 0 ], "i8", t);
-
-Qh = A([ 118, 105, 114, 116, 117, 97, 108, 32, 98, 111, 111, 108, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 58, 58, 82, 97, 121, 67, 97, 115, 116, 40, 98, 50, 82, 97, 121, 67, 97, 115, 116, 79, 117, 116, 112, 117, 116, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 82, 97, 121, 67, 97, 115, 116, 73, 110, 112, 117, 116, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Gh = A([ 99, 104, 105, 108, 100, 73, 110, 100, 101, 120, 32, 60, 32, 109, 95, 99, 111, 117, 110, 116, 0 ], "i8", t);
-
-Fh = A([ 118, 105, 114, 116, 117, 97, 108, 32, 118, 111, 105, 100, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 58, 58, 67, 111, 109, 112, 117, 116, 101, 65, 65, 66, 66, 40, 98, 50, 65, 65, 66, 66, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-kp = A([ 49, 50, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 0 ], "i8", t);
-
-lp = A(3, "i8*", t);
-
-mp = A([ 0, 0, 58, 60, 62, 64, 66, 68, 70, 72 ], "i8*", t);
-
-A(1, "void*", t);
-
-np = A([ 49, 51, 98, 50, 67, 105, 114, 99, 108, 101, 83, 104, 97, 112, 101, 0 ], "i8", t);
-
-op = A(3, "i8*", t);
-
-lc = A([ 0, 0, 74, 76, 78, 80, 82, 84, 86, 88 ], "i8*", t);
-
-A(1, "void*", t);
-
-pp = A([ 49, 49, 98, 50, 69, 100, 103, 101, 83, 104, 97, 112, 101, 0 ], "i8", t);
-
-qp = A(3, "i8*", t);
-
-Xh = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 83, 104, 97, 112, 101, 115, 47, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 58, 58, 83, 101, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 51, 32, 60, 61, 32, 99, 111, 117, 110, 116, 32, 38, 38, 32, 99, 111, 117, 110, 116, 32, 60, 61, 32, 56, 0 ], "i8", t);
-
-A([ 101, 100, 103, 101, 46, 76, 101, 110, 103, 116, 104, 83, 113, 117, 97, 114, 101, 100, 40, 41, 32, 62, 32, 49, 46, 49, 57, 50, 48, 57, 50, 57, 48, 69, 45, 48, 55, 70, 32, 42, 32, 49, 46, 49, 57, 50, 48, 57, 50, 57, 48, 69, 45, 48, 55, 70, 0 ], "i8", t);
-
-Yh = A([ 118, 105, 114, 116, 117, 97, 108, 32, 98, 111, 111, 108, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 58, 58, 82, 97, 121, 67, 97, 115, 116, 40, 98, 50, 82, 97, 121, 67, 97, 115, 116, 79, 117, 116, 112, 117, 116, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 82, 97, 121, 67, 97, 115, 116, 73, 110, 112, 117, 116, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Zh = A([ 48, 46, 48, 102, 32, 60, 61, 32, 108, 111, 119, 101, 114, 32, 38, 38, 32, 108, 111, 119, 101, 114, 32, 60, 61, 32, 105, 110, 112, 117, 116, 46, 109, 97, 120, 70, 114, 97, 99, 116, 105, 111, 110, 0 ], "i8", t);
-
-ai = A([ 118, 105, 114, 116, 117, 97, 108, 32, 118, 111, 105, 100, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 58, 58, 67, 111, 109, 112, 117, 116, 101, 77, 97, 115, 115, 40, 98, 50, 77, 97, 115, 115, 68, 97, 116, 97, 32, 42, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-bi = A([ 109, 95, 118, 101, 114, 116, 101, 120, 67, 111, 117, 110, 116, 32, 62, 61, 32, 51, 0 ], "i8", t);
-
-ci = A([ 97, 114, 101, 97, 32, 62, 32, 49, 46, 49, 57, 50, 48, 57, 50, 57, 48, 69, 45, 48, 55, 70, 0 ], "i8", t);
-
-bc = A([ 0, 0, 90, 92, 94, 96, 98, 100, 102, 104 ], "i8*", t);
-
-A(1, "void*", t);
-
-rp = A([ 49, 52, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 0 ], "i8", t);
-
-sp = A(3, "i8*", t);
-
-A([ 98, 50, 86, 101, 99, 50, 32, 67, 111, 109, 112, 117, 116, 101, 67, 101, 110, 116, 114, 111, 105, 100, 40, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 99, 111, 117, 110, 116, 32, 62, 61, 32, 51, 0 ], "i8", t);
-
-ii = A([ 16, 32, 64, 96, 128, 160, 192, 224, 256, 320, 384, 448, 512, 640 ], "i32", t);
-
-ji = A(641, "i8", t);
-
-ei = A(1, "i8", t);
-
-fi = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 109, 109, 111, 110, 47, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 46, 99, 112, 112, 0 ], "i8", t);
-
-gi = A([ 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 40, 41, 0 ], "i8", t);
-
-hi = A([ 106, 32, 60, 32, 98, 50, 95, 98, 108, 111, 99, 107, 83, 105, 122, 101, 115, 0 ], "i8", t);
-
-ti = A([ 118, 111, 105, 100, 32, 42, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 65, 108, 108, 111, 99, 97, 116, 101, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-mi = A([ 48, 32, 60, 32, 115, 105, 122, 101, 0 ], "i8", t);
-
-ni = A([ 48, 32, 60, 61, 32, 105, 110, 100, 101, 120, 32, 38, 38, 32, 105, 110, 100, 101, 120, 32, 60, 32, 98, 50, 95, 98, 108, 111, 99, 107, 83, 105, 122, 101, 115, 0 ], "i8", t);
-
-ui = A([ 98, 108, 111, 99, 107, 67, 111, 117, 110, 116, 32, 42, 32, 98, 108, 111, 99, 107, 83, 105, 122, 101, 32, 60, 61, 32, 98, 50, 95, 99, 104, 117, 110, 107, 83, 105, 122, 101, 0 ], "i8", t);
-
-li = A([ 118, 111, 105, 100, 32, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 70, 114, 101, 101, 40, 118, 111, 105, 100, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-tp = A([ 0, 0, 106, 108, 40, 40, 40, 40, 40, 40 ], "i8*", t);
-
-A(1, "void*", t);
-
-up = A([ 54, 98, 50, 68, 114, 97, 119, 0 ], "i8", t);
-
-vp = A(2, "i8*", t);
-
-ue = A(2, "float", t);
-
-A([ 2, 2, 1 ], "i32", t);
-
-Ai = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 109, 109, 111, 110, 47, 98, 50, 83, 116, 97, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 46, 99, 112, 112, 0 ], "i8", t);
-
-Bi = A([ 98, 50, 83, 116, 97, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 126, 98, 50, 83, 116, 97, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 40, 41, 0 ], "i8", t);
-
-Ci = A([ 109, 95, 105, 110, 100, 101, 120, 32, 61, 61, 32, 48, 0 ], "i8", t);
-
-Di = A([ 109, 95, 101, 110, 116, 114, 121, 67, 111, 117, 110, 116, 32, 61, 61, 32, 48, 0 ], "i8", t);
-
-Li = A([ 118, 111, 105, 100, 32, 42, 98, 50, 83, 116, 97, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 65, 108, 108, 111, 99, 97, 116, 101, 40, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Mi = A([ 109, 95, 101, 110, 116, 114, 121, 67, 111, 117, 110, 116, 32, 60, 32, 98, 50, 95, 109, 97, 120, 83, 116, 97, 99, 107, 69, 110, 116, 114, 105, 101, 115, 0 ], "i8", t);
-
-Fi = A([ 118, 111, 105, 100, 32, 98, 50, 83, 116, 97, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 58, 58, 70, 114, 101, 101, 40, 118, 111, 105, 100, 32, 42, 41, 0 ], "i8", t);
-
-Gi = A([ 109, 95, 101, 110, 116, 114, 121, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Hi = A([ 112, 32, 61, 61, 32, 101, 110, 116, 114, 121, 45, 62, 100, 97, 116, 97, 0 ], "i8", t);
-
-Si = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 98, 50, 66, 111, 100, 121, 46, 99, 112, 112, 0 ], "i8", t);
-
-Ti = A([ 98, 50, 66, 111, 100, 121, 58, 58, 98, 50, 66, 111, 100, 121, 40, 99, 111, 110, 115, 116, 32, 98, 50, 66, 111, 100, 121, 68, 101, 102, 32, 42, 44, 32, 98, 50, 87, 111, 114, 108, 100, 32, 42, 41, 0 ], "i8", t);
-
-Ui = A([ 98, 100, 45, 62, 112, 111, 115, 105, 116, 105, 111, 110, 46, 73, 115, 86, 97, 108, 105, 100, 40, 41, 0 ], "i8", t);
-
-Vi = A([ 98, 100, 45, 62, 108, 105, 110, 101, 97, 114, 86, 101, 108, 111, 99, 105, 116, 121, 46, 73, 115, 86, 97, 108, 105, 100, 40, 41, 0 ], "i8", t);
-
-Wi = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 98, 100, 45, 62, 97, 110, 103, 108, 101, 41, 0 ], "i8", t);
-
-Xi = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 98, 100, 45, 62, 97, 110, 103, 117, 108, 97, 114, 86, 101, 108, 111, 99, 105, 116, 121, 41, 0 ], "i8", t);
-
-Yi = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 98, 100, 45, 62, 97, 110, 103, 117, 108, 97, 114, 68, 97, 109, 112, 105, 110, 103, 41, 32, 38, 38, 32, 98, 100, 45, 62, 97, 110, 103, 117, 108, 97, 114, 68, 97, 109, 112, 105, 110, 103, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-Zi = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 98, 100, 45, 62, 108, 105, 110, 101, 97, 114, 68, 97, 109, 112, 105, 110, 103, 41, 32, 38, 38, 32, 98, 100, 45, 62, 108, 105, 110, 101, 97, 114, 68, 97, 109, 112, 105, 110, 103, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 83, 101, 116, 84, 121, 112, 101, 40, 98, 50, 66, 111, 100, 121, 84, 121, 112, 101, 41, 0 ], "i8", t);
-
-jj = A([ 109, 95, 119, 111, 114, 108, 100, 45, 62, 73, 115, 76, 111, 99, 107, 101, 100, 40, 41, 32, 61, 61, 32, 102, 97, 108, 115, 101, 0 ], "i8", t);
-
-ij = A([ 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 98, 50, 66, 111, 100, 121, 58, 58, 67, 114, 101, 97, 116, 101, 70, 105, 120, 116, 117, 114, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 68, 101, 115, 116, 114, 111, 121, 70, 105, 120, 116, 117, 114, 101, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-A([ 102, 105, 120, 116, 117, 114, 101, 45, 62, 109, 95, 98, 111, 100, 121, 32, 61, 61, 32, 116, 104, 105, 115, 0 ], "i8", t);
-
-A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-A([ 102, 111, 117, 110, 100, 0 ], "i8", t);
-
-aj = A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 82, 101, 115, 101, 116, 77, 97, 115, 115, 68, 97, 116, 97, 40, 41, 0 ], "i8", t);
-
-bj = A([ 109, 95, 116, 121, 112, 101, 32, 61, 61, 32, 98, 50, 95, 100, 121, 110, 97, 109, 105, 99, 66, 111, 100, 121, 0 ], "i8", t);
-
-cj = A([ 109, 95, 73, 32, 62, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 83, 101, 116, 77, 97, 115, 115, 68, 97, 116, 97, 40, 99, 111, 110, 115, 116, 32, 98, 50, 77, 97, 115, 115, 68, 97, 116, 97, 32, 42, 41, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 83, 101, 116, 84, 114, 97, 110, 115, 102, 111, 114, 109, 40, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 66, 111, 100, 121, 58, 58, 83, 101, 116, 65, 99, 116, 105, 118, 101, 40, 98, 111, 111, 108, 41, 0 ], "i8", t);
-
-A([ 32, 32, 98, 50, 66, 111, 100, 121, 68, 101, 102, 32, 98, 100, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 116, 121, 112, 101, 32, 61, 32, 98, 50, 66, 111, 100, 121, 84, 121, 112, 101, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 112, 111, 115, 105, 116, 105, 111, 110, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 110, 103, 108, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 108, 105, 110, 101, 97, 114, 86, 101, 108, 111, 99, 105, 116, 121, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 110, 103, 117, 108, 97, 114, 86, 101, 108, 111, 99, 105, 116, 121, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 108, 105, 110, 101, 97, 114, 68, 97, 109, 112, 105, 110, 103, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 110, 103, 117, 108, 97, 114, 68, 97, 109, 112, 105, 110, 103, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 108, 108, 111, 119, 83, 108, 101, 101, 112, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 119, 97, 107, 101, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 102, 105, 120, 101, 100, 82, 111, 116, 97, 116, 105, 111, 110, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 98, 117, 108, 108, 101, 116, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 97, 99, 116, 105, 118, 101, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 100, 46, 103, 114, 97, 118, 105, 116, 121, 83, 99, 97, 108, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 98, 111, 100, 105, 101, 115, 91, 37, 100, 93, 32, 61, 32, 109, 95, 119, 111, 114, 108, 100, 45, 62, 67, 114, 101, 97, 116, 101, 66, 111, 100, 121, 40, 38, 98, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 123, 10, 0 ], "i8", t);
-
-A([ 32, 32, 125, 10, 0 ], "i8", t);
-
-pj = A(1, "i32 (...)**", t);
-
-qj = A(1, "i32 (...)**", t);
-
-Gj = A([ 118, 111, 105, 100, 32, 42, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 71, 101, 116, 85, 115, 101, 114, 68, 97, 116, 97, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-Og = A([ 48, 32, 60, 61, 32, 112, 114, 111, 120, 121, 73, 100, 32, 38, 38, 32, 112, 114, 111, 120, 121, 73, 100, 32, 60, 32, 109, 95, 110, 111, 100, 101, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Jj = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 109, 109, 111, 110, 47, 98, 50, 71, 114, 111, 119, 97, 98, 108, 101, 83, 116, 97, 99, 107, 46, 104, 0 ], "i8", t);
-
-Kj = A([ 105, 110, 116, 32, 98, 50, 71, 114, 111, 119, 97, 98, 108, 101, 83, 116, 97, 99, 107, 60, 105, 110, 116, 44, 32, 50, 53, 54, 62, 58, 58, 80, 111, 112, 40, 41, 0 ], "i8", t);
-
-Lj = A([ 109, 95, 99, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Fj = A([ 99, 111, 110, 115, 116, 32, 98, 50, 65, 65, 66, 66, 32, 38, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 71, 101, 116, 70, 97, 116, 65, 65, 66, 66, 40, 105, 110, 116, 51, 50, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-xp = A([ 0, 0, 6, 110, 112, 114, 116, 118 ], "i8*", t);
-
-A(1, "void*", t);
-
-yp = A([ 49, 55, 98, 50, 67, 111, 110, 116, 97, 99, 116, 76, 105, 115, 116, 101, 110, 101, 114, 0 ], "i8", t);
-
-zp = A(2, "i8*", t);
-
-Sj = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 98, 50, 70, 105, 120, 116, 117, 114, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-Tj = A([ 118, 111, 105, 100, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 58, 58, 68, 101, 115, 116, 114, 111, 121, 40, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 32, 42, 41, 0 ], "i8", t);
-
-Uj = A([ 109, 95, 112, 114, 111, 120, 121, 67, 111, 117, 110, 116, 32, 61, 61, 32, 48, 0 ], "i8", t);
-
-Vj = A([ 118, 111, 105, 100, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 58, 58, 67, 114, 101, 97, 116, 101, 80, 114, 111, 120, 105, 101, 115, 40, 98, 50, 66, 114, 111, 97, 100, 80, 104, 97, 115, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 41, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 68, 101, 102, 32, 102, 100, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 102, 114, 105, 99, 116, 105, 111, 110, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 114, 101, 115, 116, 105, 116, 117, 116, 105, 111, 110, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 100, 101, 110, 115, 105, 116, 121, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 105, 115, 83, 101, 110, 115, 111, 114, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 102, 105, 108, 116, 101, 114, 46, 99, 97, 116, 101, 103, 111, 114, 121, 66, 105, 116, 115, 32, 61, 32, 117, 105, 110, 116, 49, 54, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 102, 105, 108, 116, 101, 114, 46, 109, 97, 115, 107, 66, 105, 116, 115, 32, 61, 32, 117, 105, 110, 116, 49, 54, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 102, 105, 108, 116, 101, 114, 46, 103, 114, 111, 117, 112, 73, 110, 100, 101, 120, 32, 61, 32, 105, 110, 116, 49, 54, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 67, 105, 114, 99, 108, 101, 83, 104, 97, 112, 101, 32, 115, 104, 97, 112, 101, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 114, 97, 100, 105, 117, 115, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 112, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 69, 100, 103, 101, 83, 104, 97, 112, 101, 32, 115, 104, 97, 112, 101, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 118, 101, 114, 116, 101, 120, 48, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 118, 101, 114, 116, 101, 120, 49, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 118, 101, 114, 116, 101, 120, 50, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 118, 101, 114, 116, 101, 120, 51, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 104, 97, 115, 86, 101, 114, 116, 101, 120, 48, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 104, 97, 115, 86, 101, 114, 116, 101, 120, 51, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 80, 111, 108, 121, 103, 111, 110, 83, 104, 97, 112, 101, 32, 115, 104, 97, 112, 101, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 86, 101, 99, 50, 32, 118, 115, 91, 37, 100, 93, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 118, 115, 91, 37, 100, 93, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 83, 101, 116, 40, 118, 115, 44, 32, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 50, 67, 104, 97, 105, 110, 83, 104, 97, 112, 101, 32, 115, 104, 97, 112, 101, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 67, 114, 101, 97, 116, 101, 67, 104, 97, 105, 110, 40, 118, 115, 44, 32, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 112, 114, 101, 118, 86, 101, 114, 116, 101, 120, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 110, 101, 120, 116, 86, 101, 114, 116, 101, 120, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 104, 97, 115, 80, 114, 101, 118, 86, 101, 114, 116, 101, 120, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 115, 104, 97, 112, 101, 46, 109, 95, 104, 97, 115, 78, 101, 120, 116, 86, 101, 114, 116, 101, 120, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-A([ 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 102, 100, 46, 115, 104, 97, 112, 101, 32, 61, 32, 38, 115, 104, 97, 112, 101, 59, 10, 0 ], "i8", t);
-
-A([ 32, 32, 32, 32, 98, 111, 100, 105, 101, 115, 91, 37, 100, 93, 45, 62, 67, 114, 101, 97, 116, 101, 70, 105, 120, 116, 117, 114, 101, 40, 38, 102, 100, 41, 59, 10, 0 ], "i8", t);
-
-jk = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 98, 50, 73, 115, 108, 97, 110, 100, 46, 99, 112, 112, 0 ], "i8", t);
-
-kk = A([ 118, 111, 105, 100, 32, 98, 50, 73, 115, 108, 97, 110, 100, 58, 58, 83, 111, 108, 118, 101, 84, 79, 73, 40, 99, 111, 110, 115, 116, 32, 98, 50, 84, 105, 109, 101, 83, 116, 101, 112, 32, 38, 44, 32, 105, 110, 116, 51, 50, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-lk = A([ 116, 111, 105, 73, 110, 100, 101, 120, 65, 32, 60, 32, 109, 95, 98, 111, 100, 121, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-mk = A([ 116, 111, 105, 73, 110, 100, 101, 120, 66, 32, 60, 32, 109, 95, 98, 111, 100, 121, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-ok = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 98, 50, 87, 111, 114, 108, 100, 46, 99, 112, 112, 0 ], "i8", t);
-
-pk = A([ 98, 50, 66, 111, 100, 121, 32, 42, 98, 50, 87, 111, 114, 108, 100, 58, 58, 67, 114, 101, 97, 116, 101, 66, 111, 100, 121, 40, 99, 111, 110, 115, 116, 32, 98, 50, 66, 111, 100, 121, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-wk = A([ 73, 115, 76, 111, 99, 107, 101, 100, 40, 41, 32, 61, 61, 32, 102, 97, 108, 115, 101, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 87, 111, 114, 108, 100, 58, 58, 68, 101, 115, 116, 114, 111, 121, 66, 111, 100, 121, 40, 98, 50, 66, 111, 100, 121, 32, 42, 41, 0 ], "i8", t);
-
-A([ 109, 95, 98, 111, 100, 121, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-A([ 98, 50, 74, 111, 105, 110, 116, 32, 42, 98, 50, 87, 111, 114, 108, 100, 58, 58, 67, 114, 101, 97, 116, 101, 74, 111, 105, 110, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 87, 111, 114, 108, 100, 58, 58, 68, 101, 115, 116, 114, 111, 121, 74, 111, 105, 110, 116, 40, 98, 50, 74, 111, 105, 110, 116, 32, 42, 41, 0 ], "i8", t);
-
-A([ 109, 95, 106, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Pk = A([ 118, 111, 105, 100, 32, 98, 50, 87, 111, 114, 108, 100, 58, 58, 83, 111, 108, 118, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 84, 105, 109, 101, 83, 116, 101, 112, 32, 38, 41, 0 ], "i8", t);
-
-Qk = A([ 98, 45, 62, 73, 115, 65, 99, 116, 105, 118, 101, 40, 41, 32, 61, 61, 32, 116, 114, 117, 101, 0 ], "i8", t);
-
-Rk = A([ 115, 116, 97, 99, 107, 67, 111, 117, 110, 116, 32, 60, 32, 115, 116, 97, 99, 107, 83, 105, 122, 101, 0 ], "i8", t);
-
-Vk = A([ 118, 111, 105, 100, 32, 98, 50, 87, 111, 114, 108, 100, 58, 58, 83, 111, 108, 118, 101, 84, 79, 73, 40, 99, 111, 110, 115, 116, 32, 98, 50, 84, 105, 109, 101, 83, 116, 101, 112, 32, 38, 41, 0 ], "i8", t);
-
-Wk = A([ 116, 121, 112, 101, 65, 32, 61, 61, 32, 98, 50, 95, 100, 121, 110, 97, 109, 105, 99, 66, 111, 100, 121, 32, 124, 124, 32, 116, 121, 112, 101, 66, 32, 61, 61, 32, 98, 50, 95, 100, 121, 110, 97, 109, 105, 99, 66, 111, 100, 121, 0 ], "i8", t);
-
-Yk = A([ 97, 108, 112, 104, 97, 48, 32, 60, 32, 49, 46, 48, 102, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 87, 111, 114, 108, 100, 58, 58, 68, 114, 97, 119, 83, 104, 97, 112, 101, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 67, 111, 108, 111, 114, 32, 38, 41, 0 ], "i8", t);
-
-A([ 118, 101, 114, 116, 101, 120, 67, 111, 117, 110, 116, 32, 60, 61, 32, 56, 0 ], "i8", t);
-
-A([ 98, 50, 86, 101, 99, 50, 32, 103, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-A([ 109, 95, 119, 111, 114, 108, 100, 45, 62, 83, 101, 116, 71, 114, 97, 118, 105, 116, 121, 40, 103, 41, 59, 10, 0 ], "i8", t);
-
-A([ 98, 50, 66, 111, 100, 121, 42, 42, 32, 98, 111, 100, 105, 101, 115, 32, 61, 32, 40, 98, 50, 66, 111, 100, 121, 42, 42, 41, 98, 50, 65, 108, 108, 111, 99, 40, 37, 100, 32, 42, 32, 115, 105, 122, 101, 111, 102, 40, 98, 50, 66, 111, 100, 121, 42, 41, 41, 59, 10, 0 ], "i8", t);
-
-A([ 98, 50, 74, 111, 105, 110, 116, 42, 42, 32, 106, 111, 105, 110, 116, 115, 32, 61, 32, 40, 98, 50, 74, 111, 105, 110, 116, 42, 42, 41, 98, 50, 65, 108, 108, 111, 99, 40, 37, 100, 32, 42, 32, 115, 105, 122, 101, 111, 102, 40, 98, 50, 74, 111, 105, 110, 116, 42, 41, 41, 59, 10, 0 ], "i8", t);
-
-A([ 123, 10, 0 ], "i8", t);
-
-A([ 125, 10, 0 ], "i8", t);
-
-A([ 98, 50, 70, 114, 101, 101, 40, 106, 111, 105, 110, 116, 115, 41, 59, 10, 0 ], "i8", t);
-
-A([ 98, 50, 70, 114, 101, 101, 40, 98, 111, 100, 105, 101, 115, 41, 59, 10, 0 ], "i8", t);
-
-A([ 106, 111, 105, 110, 116, 115, 32, 61, 32, 78, 85, 76, 76, 59, 10, 0 ], "i8", t);
-
-A([ 98, 111, 100, 105, 101, 115, 32, 61, 32, 78, 85, 76, 76, 59, 10, 0 ], "i8", t);
-
-Ej = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 108, 108, 105, 115, 105, 111, 110, 47, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 46, 104, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 68, 121, 110, 97, 109, 105, 99, 84, 114, 101, 101, 58, 58, 82, 97, 121, 67, 97, 115, 116, 40, 98, 50, 87, 111, 114, 108, 100, 82, 97, 121, 67, 97, 115, 116, 87, 114, 97, 112, 112, 101, 114, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 82, 97, 121, 67, 97, 115, 116, 73, 110, 112, 117, 116, 32, 38, 41, 32, 99, 111, 110, 115, 116, 0 ], "i8", t);
-
-A([ 114, 46, 76, 101, 110, 103, 116, 104, 83, 113, 117, 97, 114, 101, 100, 40, 41, 32, 62, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-al = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 67, 111, 109, 109, 111, 110, 47, 98, 50, 77, 97, 116, 104, 46, 104, 0 ], "i8", t);
-
-bl = A([ 118, 111, 105, 100, 32, 98, 50, 83, 119, 101, 101, 112, 58, 58, 65, 100, 118, 97, 110, 99, 101, 40, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-Ik = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 98, 50, 73, 115, 108, 97, 110, 100, 46, 104, 0 ], "i8", t);
-
-Sk = A([ 118, 111, 105, 100, 32, 98, 50, 73, 115, 108, 97, 110, 100, 58, 58, 65, 100, 100, 40, 98, 50, 74, 111, 105, 110, 116, 32, 42, 41, 0 ], "i8", t);
-
-Tk = A([ 109, 95, 106, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 60, 32, 109, 95, 106, 111, 105, 110, 116, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Mk = A([ 118, 111, 105, 100, 32, 98, 50, 73, 115, 108, 97, 110, 100, 58, 58, 65, 100, 100, 40, 98, 50, 67, 111, 110, 116, 97, 99, 116, 32, 42, 41, 0 ], "i8", t);
-
-Nk = A([ 109, 95, 99, 111, 110, 116, 97, 99, 116, 67, 111, 117, 110, 116, 32, 60, 32, 109, 95, 99, 111, 110, 116, 97, 99, 116, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-Jk = A([ 118, 111, 105, 100, 32, 98, 50, 73, 115, 108, 97, 110, 100, 58, 58, 65, 100, 100, 40, 98, 50, 66, 111, 100, 121, 32, 42, 41, 0 ], "i8", t);
-
-Kk = A([ 109, 95, 98, 111, 100, 121, 67, 111, 117, 110, 116, 32, 60, 32, 109, 95, 98, 111, 100, 121, 67, 97, 112, 97, 99, 105, 116, 121, 0 ], "i8", t);
-
-wp = A([ 0, 0, 4, 120, 122 ], "i8*", t);
-
-A(1, "void*", t);
-
-Ap = A([ 49, 53, 98, 50, 67, 111, 110, 116, 97, 99, 116, 70, 105, 108, 116, 101, 114, 0 ], "i8", t);
-
-Bp = A(2, "i8*", t);
-
-gl = A([ 0, 0, 124, 126, 128 ], "i8*", t);
-
-A(1, "void*", t);
-
-hl = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-il = A([ 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Cp = A([ 50, 51, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Dp = A([ 57, 98, 50, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Ep = A(2, "i8*", t);
-
-Fp = A(3, "i8*", t);
-
-nl = A([ 0, 0, 130, 132, 134 ], "i8*", t);
-
-A(1, "void*", t);
-
-ol = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-pl = A([ 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-jl = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 65, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 99, 104, 97, 105, 110, 0 ], "i8", t);
-
-Gp = A([ 50, 52, 98, 50, 67, 104, 97, 105, 110, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Hp = A(3, "i8*", t);
-
-tl = A([ 0, 0, 136, 138, 140 ], "i8*", t);
-
-A(1, "void*", t);
-
-ul = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-vl = A([ 98, 50, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-wl = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 65, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 99, 105, 114, 99, 108, 101, 0 ], "i8", t);
-
-Ip = A([ 49, 53, 98, 50, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Jp = A(3, "i8*", t);
-
-Cl = A(48, "%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8;%class.b2Contact.289* (%class.b2Fixture.281*, i32, %class.b2Fixture.281*, i32, %class.b2BlockAllocator.74*)*;void (%class.b2Contact.289*, %class.b2BlockAllocator.74*)*;i8".split(";"), t);
-
-Dl = A(1, "i8", t);
-
-yl = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-zl = A([ 115, 116, 97, 116, 105, 99, 32, 118, 111, 105, 100, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 58, 58, 65, 100, 100, 84, 121, 112, 101, 40, 98, 50, 67, 111, 110, 116, 97, 99, 116, 67, 114, 101, 97, 116, 101, 70, 99, 110, 32, 42, 44, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 68, 101, 115, 116, 114, 111, 121, 70, 99, 110, 32, 42, 44, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 84, 121, 112, 101, 44, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 84, 121, 112, 101, 41, 0 ], "i8", t);
-
-Al = A([ 48, 32, 60, 61, 32, 116, 121, 112, 101, 49, 32, 38, 38, 32, 116, 121, 112, 101, 49, 32, 60, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 116, 121, 112, 101, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-Bl = A([ 48, 32, 60, 61, 32, 116, 121, 112, 101, 50, 32, 38, 38, 32, 116, 121, 112, 101, 50, 32, 60, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 116, 121, 112, 101, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-El = A([ 115, 116, 97, 116, 105, 99, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 32, 42, 98, 50, 67, 111, 110, 116, 97, 99, 116, 58, 58, 67, 114, 101, 97, 116, 101, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 105, 110, 116, 51, 50, 44, 32, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 32, 42, 41, 0 ], "i8", t);
-
-Fl = A([ 115, 116, 97, 116, 105, 99, 32, 118, 111, 105, 100, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 58, 58, 68, 101, 115, 116, 114, 111, 121, 40, 98, 50, 67, 111, 110, 116, 97, 99, 116, 32, 42, 44, 32, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 32, 42, 41, 0 ], "i8", t);
-
-Gl = A([ 115, 95, 105, 110, 105, 116, 105, 97, 108, 105, 122, 101, 100, 32, 61, 61, 32, 116, 114, 117, 101, 0 ], "i8", t);
-
-Hl = A([ 48, 32, 60, 61, 32, 116, 121, 112, 101, 65, 32, 38, 38, 32, 116, 121, 112, 101, 66, 32, 60, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 116, 121, 112, 101, 67, 111, 117, 110, 116, 0 ], "i8", t);
-
-Il = A([ 0, 0, 40, 142, 144 ], "i8*", t);
-
-A(1, "void*", t);
-
-Kl = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 46, 99, 112, 112, 0 ], "i8", t);
-
-Ll = A([ 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 58, 58, 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 40, 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-Ml = A([ 112, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Nl = A([ 118, 111, 105, 100, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 58, 58, 73, 110, 105, 116, 105, 97, 108, 105, 122, 101, 86, 101, 108, 111, 99, 105, 116, 121, 67, 111, 110, 115, 116, 114, 97, 105, 110, 116, 115, 40, 41, 0 ], "i8", t);
-
-Ol = A([ 109, 97, 110, 105, 102, 111, 108, 100, 45, 62, 112, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Rl = A([ 118, 111, 105, 100, 32, 98, 50, 67, 111, 110, 116, 97, 99, 116, 83, 111, 108, 118, 101, 114, 58, 58, 83, 111, 108, 118, 101, 86, 101, 108, 111, 99, 105, 116, 121, 67, 111, 110, 115, 116, 114, 97, 105, 110, 116, 115, 40, 41, 0 ], "i8", t);
-
-Sl = A([ 112, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 61, 61, 32, 49, 32, 124, 124, 32, 112, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 61, 61, 32, 50, 0 ], "i8", t);
-
-Tl = A([ 97, 46, 120, 32, 62, 61, 32, 48, 46, 48, 102, 32, 38, 38, 32, 97, 46, 121, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-Vl = A([ 118, 111, 105, 100, 32, 98, 50, 80, 111, 115, 105, 116, 105, 111, 110, 83, 111, 108, 118, 101, 114, 77, 97, 110, 105, 102, 111, 108, 100, 58, 58, 73, 110, 105, 116, 105, 97, 108, 105, 122, 101, 40, 98, 50, 67, 111, 110, 116, 97, 99, 116, 80, 111, 115, 105, 116, 105, 111, 110, 67, 111, 110, 115, 116, 114, 97, 105, 110, 116, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 84, 114, 97, 110, 115, 102, 111, 114, 109, 32, 38, 44, 32, 105, 110, 116, 51, 50, 41, 0 ], "i8", t);
-
-Wl = A([ 112, 99, 45, 62, 112, 111, 105, 110, 116, 67, 111, 117, 110, 116, 32, 62, 32, 48, 0 ], "i8", t);
-
-Yl = A([ 0, 0, 146, 148, 150 ], "i8*", t);
-
-A(1, "void*", t);
-
-Zl = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 69, 100, 103, 101, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-$l = A([ 98, 50, 69, 100, 103, 101, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 69, 100, 103, 101, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-Kp = A([ 50, 50, 98, 50, 69, 100, 103, 101, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Lp = A(3, "i8*", t);
-
-fm = A([ 0, 0, 152, 154, 156 ], "i8*", t);
-
-A(1, "void*", t);
-
-gm = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 69, 100, 103, 101, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-hm = A([ 98, 50, 69, 100, 103, 101, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 69, 100, 103, 101, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-am = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 65, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 101, 100, 103, 101, 0 ], "i8", t);
-
-Mp = A([ 50, 51, 98, 50, 69, 100, 103, 101, 65, 110, 100, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Np = A(3, "i8*", t);
-
-jm = A([ 0, 0, 158, 160, 162 ], "i8*", t);
-
-A(1, "void*", t);
-
-km = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 80, 111, 108, 121, 103, 111, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-lm = A([ 98, 50, 80, 111, 108, 121, 103, 111, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 80, 111, 108, 121, 103, 111, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-kl = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 66, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 99, 105, 114, 99, 108, 101, 0 ], "i8", t);
-
-Op = A([ 50, 53, 98, 50, 80, 111, 108, 121, 103, 111, 110, 65, 110, 100, 67, 105, 114, 99, 108, 101, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Pp = A(3, "i8*", t);
-
-om = A([ 0, 0, 164, 166, 168 ], "i8*", t);
-
-A(1, "void*", t);
-
-pm = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 67, 111, 110, 116, 97, 99, 116, 115, 47, 98, 50, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-qm = A([ 98, 50, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 58, 58, 98, 50, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 40, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 44, 32, 98, 50, 70, 105, 120, 116, 117, 114, 101, 32, 42, 41, 0 ], "i8", t);
-
-mm = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 65, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 112, 111, 108, 121, 103, 111, 110, 0 ], "i8", t);
-
-ql = A([ 109, 95, 102, 105, 120, 116, 117, 114, 101, 66, 45, 62, 71, 101, 116, 84, 121, 112, 101, 40, 41, 32, 61, 61, 32, 98, 50, 83, 104, 97, 112, 101, 58, 58, 101, 95, 112, 111, 108, 121, 103, 111, 110, 0 ], "i8", t);
-
-Qp = A([ 49, 54, 98, 50, 80, 111, 108, 121, 103, 111, 110, 67, 111, 110, 116, 97, 99, 116, 0 ], "i8", t);
-
-Rp = A(3, "i8*", t);
-
-dm = A([ 0, 0, 170, 172, 174, 176, 178, 180, 182, 184, 186, 188 ], "i8*", t);
-
-A(1, "void*", t);
-
-tm = A([ 32, 32, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-zm = A([ 32, 32, 106, 100, 46, 108, 101, 110, 103, 116, 104, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Sp = A([ 49, 53, 98, 50, 68, 105, 115, 116, 97, 110, 99, 101, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Tp = A([ 55, 98, 50, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Up = A(2, "i8*", t);
-
-Vp = A(3, "i8*", t);
-
-Im = A([ 0, 0, 190, 192, 194, 196, 198, 200, 202, 204, 206, 208 ], "i8*", t);
-
-A(1, "void*", t);
-
-A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 70, 114, 105, 99, 116, 105, 111, 110, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 70, 114, 105, 99, 116, 105, 111, 110, 74, 111, 105, 110, 116, 58, 58, 83, 101, 116, 77, 97, 120, 70, 111, 114, 99, 101, 40, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 102, 111, 114, 99, 101, 41, 32, 38, 38, 32, 102, 111, 114, 99, 101, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 70, 114, 105, 99, 116, 105, 111, 110, 74, 111, 105, 110, 116, 58, 58, 83, 101, 116, 77, 97, 120, 84, 111, 114, 113, 117, 101, 40, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 116, 111, 114, 113, 117, 101, 41, 32, 38, 38, 32, 116, 111, 114, 113, 117, 101, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-Km = A([ 32, 32, 98, 50, 70, 114, 105, 99, 116, 105, 111, 110, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-Lm = A([ 32, 32, 106, 100, 46, 109, 97, 120, 70, 111, 114, 99, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Mm = A([ 32, 32, 106, 100, 46, 109, 97, 120, 84, 111, 114, 113, 117, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Wp = A([ 49, 53, 98, 50, 70, 114, 105, 99, 116, 105, 111, 110, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Xp = A(3, "i8*", t);
-
-Qm = A([ 0, 0, 210, 212, 214, 216, 218, 220, 222, 224, 226, 228 ], "i8*", t);
-
-A(1, "void*", t);
-
-Rm = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-Sm = A([ 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 58, 58, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-Tm = A([ 109, 95, 116, 121, 112, 101, 65, 32, 61, 61, 32, 101, 95, 114, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 32, 124, 124, 32, 109, 95, 116, 121, 112, 101, 65, 32, 61, 61, 32, 101, 95, 112, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Um = A([ 109, 95, 116, 121, 112, 101, 66, 32, 61, 61, 32, 101, 95, 114, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 32, 124, 124, 32, 109, 95, 116, 121, 112, 101, 66, 32, 61, 61, 32, 101, 95, 112, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 58, 58, 83, 101, 116, 82, 97, 116, 105, 111, 40, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 114, 97, 116, 105, 111, 41, 0 ], "i8", t);
-
-Ym = A([ 32, 32, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-Zm = A([ 32, 32, 106, 100, 46, 106, 111, 105, 110, 116, 49, 32, 61, 32, 106, 111, 105, 110, 116, 115, 91, 37, 100, 93, 59, 10, 0 ], "i8", t);
-
-$m = A([ 32, 32, 106, 100, 46, 106, 111, 105, 110, 116, 50, 32, 61, 32, 106, 111, 105, 110, 116, 115, 91, 37, 100, 93, 59, 10, 0 ], "i8", t);
-
-Yp = A([ 49, 49, 98, 50, 71, 101, 97, 114, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Zp = A(3, "i8*", t);
-
-dn = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 115, 116, 97, 116, 105, 99, 32, 98, 50, 74, 111, 105, 110, 116, 32, 42, 98, 50, 74, 111, 105, 110, 116, 58, 58, 67, 114, 101, 97, 116, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 44, 32, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 32, 42, 41, 0 ], "i8", t);
-
-pe = A([ 102, 97, 108, 115, 101, 0 ], "i8", t);
-
-A([ 115, 116, 97, 116, 105, 99, 32, 118, 111, 105, 100, 32, 98, 50, 74, 111, 105, 110, 116, 58, 58, 68, 101, 115, 116, 114, 111, 121, 40, 98, 50, 74, 111, 105, 110, 116, 32, 42, 44, 32, 98, 50, 66, 108, 111, 99, 107, 65, 108, 108, 111, 99, 97, 116, 111, 114, 32, 42, 41, 0 ], "i8", t);
-
-cn = A([ 0, 0, 40, 40, 40, 40, 230, 232, 234, 40, 40, 40 ], "i8*", t);
-
-A(1, "void*", t);
-
-en = A([ 98, 50, 74, 111, 105, 110, 116, 58, 58, 98, 50, 74, 111, 105, 110, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-fn = A([ 100, 101, 102, 45, 62, 98, 111, 100, 121, 65, 32, 33, 61, 32, 100, 101, 102, 45, 62, 98, 111, 100, 121, 66, 0 ], "i8", t);
-
-$p = A([ 47, 47, 32, 68, 117, 109, 112, 32, 105, 115, 32, 110, 111, 116, 32, 115, 117, 112, 112, 111, 114, 116, 101, 100, 32, 102, 111, 114, 32, 116, 104, 105, 115, 32, 106, 111, 105, 110, 116, 32, 116, 121, 112, 101, 46, 10, 0 ], "i8", t);
-
-hn = A([ 0, 0, 236, 238, 240, 242, 244, 246, 248, 250, 252, 254 ], "i8*", t);
-
-A(1, "void*", t);
-
-jn = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-kn = A([ 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 58, 58, 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-ln = A([ 100, 101, 102, 45, 62, 116, 97, 114, 103, 101, 116, 46, 73, 115, 86, 97, 108, 105, 100, 40, 41, 0 ], "i8", t);
-
-mn = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 100, 101, 102, 45, 62, 109, 97, 120, 70, 111, 114, 99, 101, 41, 32, 38, 38, 32, 100, 101, 102, 45, 62, 109, 97, 120, 70, 111, 114, 99, 101, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-nn = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 100, 101, 102, 45, 62, 102, 114, 101, 113, 117, 101, 110, 99, 121, 72, 122, 41, 32, 38, 38, 32, 100, 101, 102, 45, 62, 102, 114, 101, 113, 117, 101, 110, 99, 121, 72, 122, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-on = A([ 98, 50, 73, 115, 86, 97, 108, 105, 100, 40, 100, 101, 102, 45, 62, 100, 97, 109, 112, 105, 110, 103, 82, 97, 116, 105, 111, 41, 32, 38, 38, 32, 100, 101, 102, 45, 62, 100, 97, 109, 112, 105, 110, 103, 82, 97, 116, 105, 111, 32, 62, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-qn = A([ 118, 105, 114, 116, 117, 97, 108, 32, 118, 111, 105, 100, 32, 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 58, 58, 73, 110, 105, 116, 86, 101, 108, 111, 99, 105, 116, 121, 67, 111, 110, 115, 116, 114, 97, 105, 110, 116, 115, 40, 99, 111, 110, 115, 116, 32, 98, 50, 83, 111, 108, 118, 101, 114, 68, 97, 116, 97, 32, 38, 41, 0 ], "i8", t);
-
-rn = A([ 100, 32, 43, 32, 104, 32, 42, 32, 107, 32, 62, 32, 49, 46, 49, 57, 50, 48, 57, 50, 57, 48, 69, 45, 48, 55, 70, 0 ], "i8", t);
-
-aq = A([ 49, 50, 98, 50, 77, 111, 117, 115, 101, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-bq = A(3, "i8*", t);
-
-cq = A([ 77, 111, 117, 115, 101, 32, 106, 111, 105, 110, 116, 32, 100, 117, 109, 112, 105, 110, 103, 32, 105, 115, 32, 110, 111, 116, 32, 115, 117, 112, 112, 111, 114, 116, 101, 100, 46, 10, 0 ], "i8", t);
-
-xn = A([ 0, 0, 256, 258, 260, 262, 264, 266, 268, 270, 272, 274 ], "i8*", t);
-
-A(1, "void*", t);
-
-A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 80, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 80, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 58, 58, 83, 101, 116, 76, 105, 109, 105, 116, 115, 40, 102, 108, 111, 97, 116, 51, 50, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-Gn = A([ 32, 32, 98, 50, 80, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-Kn = A([ 32, 32, 106, 100, 46, 108, 111, 119, 101, 114, 84, 114, 97, 110, 115, 108, 97, 116, 105, 111, 110, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Ln = A([ 32, 32, 106, 100, 46, 117, 112, 112, 101, 114, 84, 114, 97, 110, 115, 108, 97, 116, 105, 111, 110, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-On = A([ 32, 32, 106, 100, 46, 109, 97, 120, 77, 111, 116, 111, 114, 70, 111, 114, 99, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-dq = A([ 49, 54, 98, 50, 80, 114, 105, 115, 109, 97, 116, 105, 99, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-eq = A(3, "i8*", t);
-
-Rn = A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 68, 101, 102, 58, 58, 73, 110, 105, 116, 105, 97, 108, 105, 122, 101, 40, 98, 50, 66, 111, 100, 121, 32, 42, 44, 32, 98, 50, 66, 111, 100, 121, 32, 42, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 44, 32, 99, 111, 110, 115, 116, 32, 98, 50, 86, 101, 99, 50, 32, 38, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 114, 97, 116, 105, 111, 32, 62, 32, 49, 46, 49, 57, 50, 48, 57, 50, 57, 48, 69, 45, 48, 55, 70, 0 ], "i8", t);
-
-Qn = A([ 0, 0, 276, 278, 280, 282, 284, 286, 288, 290, 292, 294 ], "i8*", t);
-
-A(1, "void*", t);
-
-Sn = A([ 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 58, 58, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 40, 99, 111, 110, 115, 116, 32, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-Tn = A([ 100, 101, 102, 45, 62, 114, 97, 116, 105, 111, 32, 33, 61, 32, 48, 46, 48, 102, 0 ], "i8", t);
-
-Xn = A([ 32, 32, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-Yn = A([ 32, 32, 106, 100, 46, 103, 114, 111, 117, 110, 100, 65, 110, 99, 104, 111, 114, 65, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-Zn = A([ 32, 32, 106, 100, 46, 103, 114, 111, 117, 110, 100, 65, 110, 99, 104, 111, 114, 66, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-$n = A([ 32, 32, 106, 100, 46, 108, 101, 110, 103, 116, 104, 65, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-ao = A([ 32, 32, 106, 100, 46, 108, 101, 110, 103, 116, 104, 66, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-an = A([ 32, 32, 106, 100, 46, 114, 97, 116, 105, 111, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-fq = A([ 49, 51, 98, 50, 80, 117, 108, 108, 101, 121, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-gq = A(3, "i8*", t);
-
-co = A([ 0, 0, 296, 298, 300, 302, 304, 306, 308, 310, 312, 314 ], "i8*", t);
-
-A(1, "void*", t);
-
-A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 68, 121, 110, 97, 109, 105, 99, 115, 47, 74, 111, 105, 110, 116, 115, 47, 98, 50, 82, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 82, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 58, 58, 83, 101, 116, 76, 105, 109, 105, 116, 115, 40, 102, 108, 111, 97, 116, 51, 50, 44, 32, 102, 108, 111, 97, 116, 51, 50, 41, 0 ], "i8", t);
-
-A([ 108, 111, 119, 101, 114, 32, 60, 61, 32, 117, 112, 112, 101, 114, 0 ], "i8", t);
-
-jo = A([ 32, 32, 98, 50, 82, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-Jn = A([ 32, 32, 106, 100, 46, 101, 110, 97, 98, 108, 101, 76, 105, 109, 105, 116, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-ko = A([ 32, 32, 106, 100, 46, 108, 111, 119, 101, 114, 65, 110, 103, 108, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-lo = A([ 32, 32, 106, 100, 46, 117, 112, 112, 101, 114, 65, 110, 103, 108, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-hq = A([ 49, 53, 98, 50, 82, 101, 118, 111, 108, 117, 116, 101, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-xq = A(3, "i8*", t);
-
-oo = A([ 0, 0, 316, 318, 320, 322, 324, 326, 328, 330, 332, 334 ], "i8*", t);
-
-A(1, "void*", t);
-
-so = A([ 32, 32, 98, 50, 82, 111, 112, 101, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-to = A([ 32, 32, 106, 100, 46, 109, 97, 120, 76, 101, 110, 103, 116, 104, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-yq = A([ 49, 49, 98, 50, 82, 111, 112, 101, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-zq = A(3, "i8*", t);
-
-vo = A([ 0, 0, 336, 338, 340, 342, 344, 346, 348, 350, 352, 354 ], "i8*", t);
-
-A(1, "void*", t);
-
-zo = A([ 32, 32, 98, 50, 87, 101, 108, 100, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-In = A([ 32, 32, 106, 100, 46, 114, 101, 102, 101, 114, 101, 110, 99, 101, 65, 110, 103, 108, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Aq = A([ 49, 49, 98, 50, 87, 101, 108, 100, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Bq = A(3, "i8*", t);
-
-Fo = A([ 0, 0, 356, 358, 360, 362, 364, 366, 368, 370, 372, 374 ], "i8*", t);
-
-A(1, "void*", t);
-
-Jo = A([ 32, 32, 98, 50, 87, 104, 101, 101, 108, 74, 111, 105, 110, 116, 68, 101, 102, 32, 106, 100, 59, 10, 0 ], "i8", t);
-
-um = A([ 32, 32, 106, 100, 46, 98, 111, 100, 121, 65, 32, 61, 32, 98, 111, 100, 105, 101, 115, 91, 37, 100, 93, 59, 10, 0 ], "i8", t);
-
-vm = A([ 32, 32, 106, 100, 46, 98, 111, 100, 121, 66, 32, 61, 32, 98, 111, 100, 105, 101, 115, 91, 37, 100, 93, 59, 10, 0 ], "i8", t);
-
-wm = A([ 32, 32, 106, 100, 46, 99, 111, 108, 108, 105, 100, 101, 67, 111, 110, 110, 101, 99, 116, 101, 100, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-xm = A([ 32, 32, 106, 100, 46, 108, 111, 99, 97, 108, 65, 110, 99, 104, 111, 114, 65, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-ym = A([ 32, 32, 106, 100, 46, 108, 111, 99, 97, 108, 65, 110, 99, 104, 111, 114, 66, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-Hn = A([ 32, 32, 106, 100, 46, 108, 111, 99, 97, 108, 65, 120, 105, 115, 65, 46, 83, 101, 116, 40, 37, 46, 49, 53, 108, 101, 102, 44, 32, 37, 46, 49, 53, 108, 101, 102, 41, 59, 10, 0 ], "i8", t);
-
-Mn = A([ 32, 32, 106, 100, 46, 101, 110, 97, 98, 108, 101, 77, 111, 116, 111, 114, 32, 61, 32, 98, 111, 111, 108, 40, 37, 100, 41, 59, 10, 0 ], "i8", t);
-
-Nn = A([ 32, 32, 106, 100, 46, 109, 111, 116, 111, 114, 83, 112, 101, 101, 100, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-mo = A([ 32, 32, 106, 100, 46, 109, 97, 120, 77, 111, 116, 111, 114, 84, 111, 114, 113, 117, 101, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Am = A([ 32, 32, 106, 100, 46, 102, 114, 101, 113, 117, 101, 110, 99, 121, 72, 122, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Bm = A([ 32, 32, 106, 100, 46, 100, 97, 109, 112, 105, 110, 103, 82, 97, 116, 105, 111, 32, 61, 32, 37, 46, 49, 53, 108, 101, 102, 59, 10, 0 ], "i8", t);
-
-Cm = A([ 32, 32, 106, 111, 105, 110, 116, 115, 91, 37, 100, 93, 32, 61, 32, 109, 95, 119, 111, 114, 108, 100, 45, 62, 67, 114, 101, 97, 116, 101, 74, 111, 105, 110, 116, 40, 38, 106, 100, 41, 59, 10, 0 ], "i8", t);
-
-Cq = A([ 49, 50, 98, 50, 87, 104, 101, 101, 108, 74, 111, 105, 110, 116, 0 ], "i8", t);
-
-Dq = A(3, "i8*", t);
-
-A([ 66, 111, 120, 50, 68, 95, 118, 50, 46, 50, 46, 49, 47, 66, 111, 120, 50, 68, 47, 82, 111, 112, 101, 47, 98, 50, 82, 111, 112, 101, 46, 99, 112, 112, 0 ], "i8", t);
-
-A([ 118, 111, 105, 100, 32, 98, 50, 82, 111, 112, 101, 58, 58, 73, 110, 105, 116, 105, 97, 108, 105, 122, 101, 40, 99, 111, 110, 115, 116, 32, 98, 50, 82, 111, 112, 101, 68, 101, 102, 32, 42, 41, 0 ], "i8", t);
-
-A([ 100, 101, 102, 45, 62, 99, 111, 117, 110, 116, 32, 62, 61, 32, 51, 0 ], "i8", t);
-
-b[Wb + 1] = ip;
-
-gp = A([ 1, 0 ], [ "i8*", 0 ], t);
-
-b[ip] = gp + 2;
-
-b[ip + 1] = hp;
-
-b[vh + 1] = lp;
-
-jp = A([ 2, 0 ], [ "i8*", 0 ], t);
-
-b[lp] = jp + 2;
-
-b[lp + 1] = kp;
-
-b[lp + 2] = ip;
-
-b[mp + 1] = op;
-
-b[op] = jp + 2;
-
-b[op + 1] = np;
-
-b[op + 2] = ip;
-
-b[lc + 1] = qp;
-
-b[qp] = jp + 2;
-
-b[qp + 1] = pp;
-
-b[qp + 2] = ip;
-
-b[bc + 1] = sp;
-
-b[sp] = jp + 2;
-
-b[sp + 1] = rp;
-
-b[sp + 2] = ip;
-
-b[tp + 1] = vp;
-
-b[vp] = gp + 2;
-
-b[vp + 1] = up;
-
-b[xp + 1] = zp;
-
-b[zp] = gp + 2;
-
-b[zp + 1] = yp;
-
-b[wp + 1] = Bp;
-
-b[Bp] = gp + 2;
-
-b[Bp + 1] = Ap;
-
-b[gl + 1] = Fp;
-
-b[Ep] = gp + 2;
-
-b[Ep + 1] = Dp;
-
-b[Fp] = jp + 2;
-
-b[Fp + 1] = Cp;
-
-b[Fp + 2] = Ep;
-
-b[nl + 1] = Hp;
-
-b[Hp] = jp + 2;
-
-b[Hp + 1] = Gp;
-
-b[Hp + 2] = Ep;
-
-b[tl + 1] = Jp;
-
-b[Jp] = jp + 2;
-
-b[Jp + 1] = Ip;
-
-b[Jp + 2] = Ep;
-
-b[Il + 1] = Ep;
-
-b[Yl + 1] = Lp;
-
-b[Lp] = jp + 2;
-
-b[Lp + 1] = Kp;
-
-b[Lp + 2] = Ep;
-
-b[fm + 1] = Np;
-
-b[Np] = jp + 2;
-
-b[Np + 1] = Mp;
-
-b[Np + 2] = Ep;
-
-b[jm + 1] = Pp;
-
-b[Pp] = jp + 2;
-
-b[Pp + 1] = Op;
-
-b[Pp + 2] = Ep;
-
-b[om + 1] = Rp;
-
-b[Rp] = jp + 2;
-
-b[Rp + 1] = Qp;
-
-b[Rp + 2] = Ep;
-
-b[dm + 1] = Vp;
-
-b[Up] = gp + 2;
-
-b[Up + 1] = Tp;
-
-b[Vp] = jp + 2;
-
-b[Vp + 1] = Sp;
-
-b[Vp + 2] = Up;
-
-b[Im + 1] = Xp;
-
-b[Xp] = jp + 2;
-
-b[Xp + 1] = Wp;
-
-b[Xp + 2] = Up;
-
-b[Qm + 1] = Zp;
-
-b[Zp] = jp + 2;
-
-b[Zp + 1] = Yp;
-
-b[Zp + 2] = Up;
-
-b[cn + 1] = Up;
-
-b[hn + 1] = bq;
-
-b[bq] = jp + 2;
-
-b[bq + 1] = aq;
-
-b[bq + 2] = Up;
-
-b[xn + 1] = eq;
-
-b[eq] = jp + 2;
-
-b[eq + 1] = dq;
-
-b[eq + 2] = Up;
-
-b[Qn + 1] = gq;
-
-b[gq] = jp + 2;
-
-b[gq + 1] = fq;
-
-b[gq + 2] = Up;
-
-b[co + 1] = xq;
-
-b[xq] = jp + 2;
-
-b[xq + 1] = hq;
-
-b[xq + 2] = Up;
-
-b[oo + 1] = zq;
-
-b[zq] = jp + 2;
-
-b[zq + 1] = yq;
-
-b[zq + 2] = Up;
-
-b[vo + 1] = Bq;
-
-b[Bq] = jp + 2;
-
-b[Bq + 1] = Aq;
-
-b[Bq + 2] = Up;
-
-b[Fo + 1] = Dq;
-
-b[Dq] = jp + 2;
-
-b[Dq + 1] = Cq;
-
-b[Dq + 2] = Up;
-
-mb = [ 0, 0, (function(c, f) {
-  var d, e;
-  d = b[c] < b[f] ? 1 : 2;
-  1 == d ? e = 1 : 2 == d && (d = b[c] == b[f] ? 3 : 4, 3 == d ? e = b[c + 1] < b[f + 1] : 4 == d && (e = 0));
-  return e;
-}), 0, ia(), 0, ia(), 0, (function(c, f, d, e, g) {
-  e = Lh(g, 144);
-  if (0 == e) var i = 0, f = 2; else f = 1;
-  1 == f && (sl(e, c, d), i = e);
-  return i;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  e = Lh(g, 144);
-  if (0 == e) var i = 0, f = 2; else f = 1;
-  1 == f && (im(e, c, d), i = e);
-  return i;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  e = Lh(g, 144);
-  if (0 == e) var i = 0, f = 2; else f = 1;
-  1 == f && (nm(e, c, d), i = e);
-  return i;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  e = Lh(g, 144);
-  if (0 == e) var i = 0, f = 2; else f = 1;
-  1 == f && (Xl(e, c, d), i = e);
-  return i;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  e = Lh(g, 144);
-  if (0 == e) var i = 0, f = 2; else f = 1;
-  1 == f && (em(e, c, d), i = e);
-  return i;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  var i;
-  i = Lh(g, 144);
-  if (0 == i) var h = 0, g = 2; else g = 1;
-  1 == g && (el(i, c, f, d, e), h = i);
-  return h;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, (function(c, f, d, e, g) {
-  var i;
-  i = Lh(g, 144);
-  if (0 == i) var h = 0, g = 2; else g = 1;
-  1 == g && (ml(i, c, f, d, e), h = i);
-  return h;
-}), 0, (function(c, f) {
-  mb[b[b[c] + 1]](c);
-  ki(f, c, 144);
-}), 0, ia(), 0, ia(), 0, (function() {
-  throw "Pure virtual function called!";
-}), 0, uh, 0, (function(c) {
-  uh(c);
-}), 0, Kh, 0, (function(c) {
-  return b[c + 4] - 1;
-}), 0, na(0), 0, Ph, 0, Eh, 0, (function(c, f) {
-  o[f] = 0;
-  cc(f + 1);
-  o[f + 3] = 0;
-}), 0, ia(), 0, ia(), 0, (function(c, f) {
-  var d, e;
-  e = Lh(f, 20);
-  if (0 == e) {
-    var g = 0;
-    d = 2;
-  } else d = 1;
-  1 == d && (b[e] = Wb + 2, b[e] = mp + 2, b[e + 1] = 0, o[e + 2] = 0, cc(e + 3), g = e);
-  d = g;
-  Sh(d, c);
-  e = d + 3;
-  g = c + 3;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  return d;
-}), 0, na(1), 0, (function(c, f, d) {
-  var e = a;
-  a += 6;
-  var g = e + 2, i = e + 4;
-  S(g, f + 2, c + 3);
-  N(e, f, g);
-  C(i, d, e);
-  c = J(i, i) <= o[c + 2] * o[c + 2];
-  a = e;
-  return c;
-}), 0, Th, 0, (function(c, f, d) {
-  var e = a;
-  a += 4;
-  var g = e + 2;
-  S(g, d + 2, c + 3);
-  N(e, d, g);
-  nc(f, o[e] - o[c + 2], o[e + 1] - o[c + 2]);
-  nc(f + 2, o[e] + o[c + 2], o[e + 1] + o[c + 2]);
-  a = e;
-}), 0, (function(c, f, d) {
-  o[f] = 3.1415927410125732 * d * o[c + 2] * o[c + 2];
-  var d = f + 1, e = c + 3;
-  b[d] = b[e];
-  o[d] = o[e];
-  b[d + 1] = b[e + 1];
-  o[d + 1] = o[e + 1];
-  o[f + 3] = o[f] * (.5 * o[c + 2] * o[c + 2] + J(c + 3, c + 3));
-}), 0, ia(), 0, ia(), 0, (function(c, f) {
-  var d, e;
-  e = Lh(f, 48);
-  if (0 == e) {
-    var g = 0;
-    d = 2;
-  } else d = 1;
-  1 == d && (dc(e), g = e);
-  d = g;
-  Sh(d, c);
-  e = d + 3;
-  g = c + 3;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = d + 5;
-  g = c + 5;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = d + 7;
-  g = c + 7;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = d + 9;
-  g = c + 9;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  b[d + 11] = b[c + 11] & 1;
-  b[d + 12] = b[c + 12] & 1;
-  return d;
-}), 0, na(1), 0, na(0), 0, Rh, 0, (function(c, f, d) {
-  var e = a;
-  a += 14;
-  var g = e + 2, i = e + 4, h = e + 6, j = e + 8, k = e + 10, l = e + 12;
-  Pc(e, d, c + 3);
-  Pc(g, d, c + 5);
-  Qg(i, e, g);
-  Rg(h, e, g);
-  oc(j, o[c + 2], o[c + 2]);
-  C(k, i, j);
-  b[f] = b[k];
-  o[f] = o[k];
-  b[f + 1] = b[k + 1];
-  o[f + 1] = o[k + 1];
-  c = f + 2;
-  N(l, h, j);
-  b[c] = b[l];
-  o[c] = o[l];
-  b[c + 1] = b[l + 1];
-  o[c + 1] = o[l + 1];
-  a = e;
-}), 0, (function(c, f) {
-  var d = a;
-  a += 4;
-  var e = d + 2;
-  o[f] = 0;
-  var g = f + 1;
-  N(e, c + 3, c + 5);
-  K(d, .5, e);
-  b[g] = b[d];
-  o[g] = o[d];
-  b[g + 1] = b[d + 1];
-  o[g + 1] = o[d + 1];
-  o[f + 3] = 0;
-  a = d;
-}), 0, ia(), 0, ia(), 0, (function(c, f) {
-  var d, e;
-  e = Lh(f, 152);
-  if (0 == e) {
-    var g = 0;
-    d = 2;
-  } else d = 1;
-  1 == d && (Vb(e), g = e);
-  d = g;
-  Sh(d, c);
-  e = d + 3;
-  g = c + 3;
-  b[e] = b[g];
-  o[e] = o[g];
-  b[e + 1] = b[g + 1];
-  o[e + 1] = o[g + 1];
-  e = g = c + 5;
-  for (var g = g + 16, i = d + 5; e < g; e++, i++) b[i] = b[e], o[i] = o[e];
-  e = g = c + 21;
-  g += 16;
-  for (i = d + 21; e < g; e++, i++) b[i] = b[e], o[i] = o[e];
-  b[d + 37] = b[c + 37];
-  return d;
-}), 0, na(1), 0, (function(c, f, d) {
-  var e = a;
-  a += 6;
-  var g, i, h = e + 2, j, k = e + 4;
-  j = f + 2;
-  C(h, d, f);
-  Od(e, j, h);
-  f = 0;
-  d = c + 37;
-  h = c + 21;
-  for (c += 5; ; ) {
-    if (f >= b[d]) {
-      g = 5;
-      break;
     }
-    j = h + (f << 1);
-    C(k, e, c + (f << 1));
-    j = J(j, k);
-    if (0 < j) {
-      g = 3;
-      break;
-    }
-    f += 1;
+    return ret;
   }
-  5 == g ? i = 1 : 3 == g && (i = 0);
-  a = e;
-  return i;
-}), 0, Wh, 0, Uh, 0, $h, 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, dl, 0, ll, 0, ia(), 0, ia(), 0, rl, 0, ia(), 0, ia(), 0, (function(c, f, d, e) {
-  Uc(f, Zk(b[c + 12]), d, Zk(b[c + 13]), e);
-}), 0, ia(), 0, ia(), 0, ia(), 0, ia(), 0, (function(c, f, d, e) {
-  $c(f, Zk(b[c + 12]), d, Zk(b[c + 13]), e);
-}), 0, ia(), 0, ia(), 0, (function(c, f, d, e) {
-  var g = Zk(b[c + 12]), c = Zk(b[c + 13]), i = a;
-  a += 63;
-  dd(i, f, g, d, c, e);
-  a = i;
-}), 0, ia(), 0, ia(), 0, (function(c, f, d, e) {
-  Vc(f, Zk(b[c + 12]), d, Zk(b[c + 13]), e);
-}), 0, ia(), 0, ia(), 0, (function(c, f, d, e) {
-  Td(f, Zk(b[c + 12]), d, Zk(b[c + 13]), e);
-}), 0, ia(), 0, ia(), 0, (function(c, f) {
-  rm(c, b[f + 12], f + 21);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 23);
-}), 0, (function(c, f, d) {
-  K(c, d * o[f + 26], f + 30);
-}), 0, na(0), 0, sm, 0, ia(), 0, ia(), 0, Dm, 0, Fm, 0, Gm, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 18);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 20);
-}), 0, (function(c, f, d) {
-  K(c, d, f + 22);
-}), 0, (function(c, f) {
-  return f * o[c + 24];
-}), 0, Jm, 0, ia(), 0, ia(), 0, Nm, 0, Om, 0, na(1), 0, (function(c, f) {
-  rm(c, b[f + 12], f + 24);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 26);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 2;
-  K(e, o[f + 40], f + 61);
-  K(c, d, e);
-  a = e;
-}), 0, (function(c, f) {
-  return f * o[c + 40] * o[c + 65];
-}), 0, Xm, 0, ia(), 0, ia(), 0, Vm, 0, Wm, 0, bn, 0, (function() {
-  U($p, A(1, "i32", s));
-}), 0, ia(), 0, ia(), 0, (function(c, f) {
-  var d = f + 20;
-  b[c] = b[d];
-  o[c] = o[d];
-  b[c + 1] = b[d + 1];
-  o[c + 1] = o[d + 1];
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 18);
-}), 0, (function(c, f, d) {
-  K(c, d, f + 25);
-}), 0, na(0), 0, (function() {
-  U(cq, A(1, "i32", s));
-}), 0, ia(), 0, ia(), 0, pn, 0, sn, 0, na(1), 0, (function(c, f) {
-  rm(c, b[f + 12], f + 18);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 20);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 6;
-  var g = e + 2, i = e + 4;
-  K(g, o[f + 27], f + 50);
-  K(i, o[f + 30] + o[f + 29], f + 48);
-  N(e, g, i);
-  K(c, d, e);
-  a = e;
-}), 0, (function(c, f) {
-  return f * o[c + 28];
-}), 0, Fn, 0, ia(), 0, ia(), 0, yn, 0, Cn, 0, En, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 24);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 26);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 2;
-  K(e, o[f + 30], f + 35);
-  K(c, d, e);
-  a = e;
-}), 0, na(0), 0, Wn, 0, ia(), 0, ia(), 0, Un, 0, Vn, 0, eo, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 18);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 20);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 2;
-  oc(e, o[f + 22], o[f + 23]);
-  K(c, d, e);
-  a = e;
-}), 0, (function(c, f) {
-  return f * o[c + 24];
-}), 0, io, 0, ia(), 0, ia(), 0, fo, 0, go, 0, ho, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 18);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 20);
-}), 0, (function(c, f, d) {
-  K(c, d * o[f + 24], f + 27);
-}), 0, na(0), 0, ro, 0, ia(), 0, ia(), 0, po, 0, qo, 0, wo, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 21);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 23);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 2;
-  oc(e, o[f + 27], o[f + 28]);
-  K(c, d, e);
-  a = e;
-}), 0, (function(c, f) {
-  return f * o[c + 29];
-}), 0, yo, 0, ia(), 0, ia(), 0, xo, 0, Co, 0, Do, 0, (function(c, f) {
-  rm(c, b[f + 12], f + 20);
-}), 0, (function(c, f) {
-  rm(c, b[f + 13], f + 22);
-}), 0, (function(c, f, d) {
-  var e = a;
-  a += 6;
-  var g = e + 2, i = e + 4;
-  K(g, o[f + 28], f + 46);
-  K(i, o[f + 30], f + 44);
-  N(e, g, i);
-  K(c, d, e);
-  a = e;
-}), 0, (function(c, f) {
-  return f * o[c + 29];
-}), 0, Io, 0, ia(), 0, ia(), 0, Go, 0, Ho, 0, Ko, 0, Lc, 0, ia(), 0, Mc, 0, ia(), 0, di, 0, (function(c) {
-  var f;
-  f = 0;
-  var d = c + 1, c = f < b[d] ? 1 : 3;
-  a : do if (1 == c) for (;;) if (f += 1, f >= b[d]) break a; while (0);
-}), 0, yi, 0, zi, 0, (function(c) {
-  Ni(c);
-}), 0, Qi, 0, ia(), 0, oj, 0, kj, 0, Xj, 0, Wj, 0, pc, 0, Kc, 0, el, 0, ml, 0, sl, 0, ak, 0, hk, 0, Xl, 0, em, 0, im, 0, nm, 0, bm, 0, Hm, 0, Pm, 0, gn, 0, wn, 0, Pn, 0, bo, 0, no, 0, uo, 0, Eo, 0, (function(c) {
-  b[c] = 0;
-  b[c + 1] = 0;
-  b[c + 2] = 0;
-  b[c + 3] = 0;
-  b[c + 4] = 0;
-  b[c + 5] = 0;
-  b[c + 6] = 0;
-  cc(c + 7);
-  o[c + 10] = 1;
-  o[c + 11] = .10000000149011612;
-}), 0, ia(), 0 ];
-
-Module.FUNCTION_TABLE = mb;
-
-function Eq(c) {
-  c = c || Module.arguments;
-  ab();
-  var f = da;
-  if (Module._main) {
-    for (f = Module.I(c); 0 < bb.length; ) {
-      var c = bb.pop(), d = c.n;
-      "number" === typeof d && (d = mb[d]);
-      d(c.k === ba ? da : c.k);
-    }
-    $a();
+  if (Module['setStatus']) {
+    Module['setStatus']('Running...');
+    setTimeout(function() {
+      setTimeout(function() {
+        Module['setStatus']('');
+      }, 1);
+      doRun();
+    }, 1);
+    return 0;
+  } else {
+    return doRun();
   }
-  return f;
 }
-
-Module.run = Eq;
-
-try {
-  Xo = ea;
-} catch (Fq) {}
-
-Module.noInitialRun || Eq();
+Module['run'] = Module.run = run;
+// {{PRE_RUN_ADDITIONS}}
+if (Module['preInit']) {
+  if (typeof Module['preInit'] == 'function') Module['preInit'] = [Module['preInit']];
+  while (Module['preInit'].length > 0) {
+    Module['preInit'].pop()();
+  }
+}
+initRuntime();
+var shouldRunNow = true;
+if (Module['noInitialRun']) {
+  shouldRunNow = false;
+}
+if (shouldRunNow) {
+  run();
+}
+// {{POST_RUN_ADDITIONS}}
+  // {{MODULE_ADDITIONS}}

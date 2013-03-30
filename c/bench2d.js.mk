@@ -2,8 +2,9 @@
 
 # You'll likely need to edit these for your particular directory layout.
 EMSCRIPTEN=~/src/emscripten/emscripten.py
-LLVM=~/llvm/bin
+LLVM=/usr/local/bin
 EMCC=~/src/emscripten/emcc -IBox2D_v2.2.1
+HEAP=67108864
 
 OBJECTS = bench2d_main.bc \
 Bench2d.bc \
@@ -62,7 +63,7 @@ bench2d.bc: $(OBJECTS)
 	$(LLVM)/llvm-link -o $@ $(OBJECTS)
 
 bench2d.js: bench2d.bc
-	$(EMCC) -O3 -s USE_TYPED_ARRAYS=1 -s QUANTUM_SIZE=1 -s TOTAL_MEMORY=150000000 $< -o $@
+	$(EMCC) -O2 -s ASM_JS=1 -s TOTAL_MEMORY=$(HEAP) $< -o $@
 
 clean:
 	rm bench2d.js bench2d.bc $(OBJECTS)
