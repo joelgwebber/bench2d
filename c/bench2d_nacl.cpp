@@ -1,13 +1,14 @@
 #include <cstdio>
 #include <string>
+#include <stdlib.h>
+
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
 
-const char* const kBenchString = "bench";
-const char* const kReplyString = "Benchmarks complete.";
+#include "Bench2d.h"
 
-void bench();
+const char* const kBenchString = "bench";
 
 class Bench2dInstance : public pp::Instance {
  public:
@@ -21,8 +22,10 @@ class Bench2dInstance : public pp::Instance {
     std::string message = var_message.AsString();
     pp::Var var_reply;
     if (message == kBenchString) {
-      bench();
-      var_reply = pp::Var(kReplyString);
+      result_t result = bench();
+      char msg[256];
+      sprintf(msg, "Benchmark complete.\n  ms/frame: %f +/- %f\n", result.mean, result.stddev);
+      var_reply = pp::Var(msg);
       PostMessage(var_reply);
     }
   }

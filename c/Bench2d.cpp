@@ -1,19 +1,36 @@
-#include <Box2D/Box2D.h>
-
 #include <cstdio>
 #include <time.h>
+#include <math.h>
+
+#include "Box2D/Box2D.h"
+#include "Bench2d.h"
 
 using namespace std;
 
-// Turn this on to include the y-position of the top box in the output.
-#define DEBUG 0
-
-#define WARMUP 64
-#define FRAMES 256
-
 const int e_count = 40;
 
-void bench() {
+result_t measure(clock_t times[FRAMES]) {
+  float values[FRAMES];
+  result_t r;
+
+	float total = 0;
+	for (int i = 0; i < FRAMES; ++i) {
+		values[i] = (float)times[i] / CLOCKS_PER_SEC * 1000;
+		total += values[i];
+	}
+  r.mean = total / FRAMES;
+
+  float variance = 0;
+	for (int i = 0; i < FRAMES; ++i) {
+		float diff = values[i] - r.mean;
+		variance += diff * diff;
+	}
+  r.stddev = sqrt(variance / FRAMES);
+
+  return r;
+}
+
+result_t bench() {
 	// Define the gravity vector.
 	b2Vec2 gravity(0.0f, -10.0f);
 
@@ -73,16 +90,10 @@ void bench() {
 		times[i] = end - start;
 #if DEBUG
     printf("%f :: ", topBody->GetPosition().y);
-#endif
 		printf("%f\n", (float32)(end - start) / CLOCKS_PER_SEC * 1000);
+#endif
 	}
 
-	printf("\n");
-
-	clock_t total = 0;
-	for (int32 i = 0; i < FRAMES; ++i) {
-		total += times[i];
-	}
-	printf("%f\n", (float32)total / FRAMES / CLOCKS_PER_SEC * 1000);
+  return measure(times);
 }
 

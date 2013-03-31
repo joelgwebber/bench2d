@@ -9,12 +9,12 @@
 
     function moduleDidLoad() {
       Bench2dModule = document.getElementById('Bench2d');
-      updateStatus('SUCCESS');
+      updateStatus('Loaded. Running benchmark');
       Bench2dModule.postMessage('bench');
     }
 
     function handleMessage(message_event) {
-      alert(message_event.data);
+      updateStatus(message_event.data);
     }
 
     function pageDidLoad() {
@@ -30,28 +30,23 @@
         statusText = opt_message;
       var statusField = document.getElementById('status_field');
       if (statusField) {
-        statusField.innerHTML = statusText;
+        statusField.innerText = statusText;
       }
     }
   </script>
 </head>
 
 <body onload="pageDidLoad()">
-  <p>Because I'm feeling too lazy to punt strings back out of the NaCl code, the benchmark output is all going to the old-school printf() console.
-  If you're on Linux, you probably know where to find this. If you're on a Mac, it'll be sitting in Console.app. If you're on Windows, you're on your own.</p>
-  <p>
-    <div id="listener">
-      <script type="text/javascript">
-        var listener = document.getElementById('listener');
-        listener.addEventListener('load', moduleDidLoad, true);
-        listener.addEventListener('message', handleMessage, true);
-      </script>
+  <div id="listener">
+    <script type="text/javascript">
+      var listener = document.getElementById('listener');
+      listener.addEventListener('load', moduleDidLoad, true);
+      listener.addEventListener('message', handleMessage, true);
+    </script>
 
-      <embed name="nacl_module" id="Bench2d" width=0 height=0 src="bench2d.nmf" type="application/x-nacl"/>
-    </div>
-  </p>
+    <embed name="nacl_module" id="Bench2d" width=0 height=0 src="bench2d.nmf" type="application/x-nacl"/>
+  </div>
 
-  <h2>Status</h2>
   <div id="status_field"></div>
 </body>
 </html>
