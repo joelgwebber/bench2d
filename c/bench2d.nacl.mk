@@ -1,7 +1,6 @@
 PROJECT=bench2d
 NACL_SDK_ROOT=/opt/nacl_sdk/pepper_26
 LDFLAGS := -lppapi_cpp -lppapi
-# OPTS := -g -O0
 OPTS := -O3
 WARNINGS := -Wno-long-long -Wswitch-enum -pedantic
 CXXFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 -I$(NACL_SDK_ROOT)/include $(WARNINGS) $(OPTS)
