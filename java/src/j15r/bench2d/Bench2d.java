@@ -10,6 +10,8 @@ import org.jbox2d.dynamics.BodyType;
 import org.jbox2d.dynamics.World;
 
 public class Bench2d {
+  static final boolean DEBUG = false;
+
   static final int FRAMES = 256;
   static final int PYRAMID_SIZE = 40;
 
@@ -22,21 +24,35 @@ public class Bench2d {
 	World world;
   Body groundBody;
 
+  public float mean(float[] values) {
+    float total = 0;
+    for (int i = 0; i < FRAMES; ++i) {
+      total += values[i];
+    }
+    return total / FRAMES;
+  }
+
+  public float stddev(float[] values, float mean) {
+    float variance = 0;
+    for (int i = 0; i < values.length; ++i) {
+      float diff = values[i] - mean;
+      variance += diff * diff;
+    }
+    return (float) Math.sqrt(variance / FRAMES);
+  }
+
   public void bench() {
-    int[] times = new int[FRAMES];
+    float[] times = new float[FRAMES];
     for (int i = 0; i < FRAMES; ++i) {
       long begin = new Date().getTime();
       step();
       long end = new Date().getTime();
-      times[i] = (int)(end - begin);
+      times[i] = (float)(end - begin);
       log("" + times[i]);
     }
 
-    int total = 0;
-    for (int i = 0; i < FRAMES; ++i) {
-      total += times[i];
-    }
-    log("Average: " + (float) total / FRAMES);
+    float mean = mean(times);
+    System.out.println("Benchmark complete.\nms/frame: " + mean + " +/- " + stddev(times, mean));
   }
 
   void warmup() {
@@ -91,6 +107,8 @@ public class Bench2d {
 	}
 
 	void log(String msg) {
-    System.out.println(msg);
+    if (DEBUG) {
+      System.out.println(msg);
+    }
 	}
 }

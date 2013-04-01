@@ -46,7 +46,6 @@
         var ground:b2Body = world.CreateBody(bd);
         ground.CreateFixture(fd);
 
-
         var a:Number = .5;
         shape = new b2PolygonShape();
         shape.SetAsBox(a, a);
@@ -86,13 +85,33 @@
         }
       }
 
-      protected function run():void {
-        var start:int = getTimer();
-        for (var i:int = 0; i < FRAMES; i++) {
-          step();
+      public function mean(values : Array) : Number {
+        var total:Number = 0;
+        for (var i:int = 0; i < values.length; ++i) {
+          total += values[i];
         }
-        var end:int = getTimer();
-        Alert.show('' + ((end - start) / FRAMES) + ' ms/frame');
+        return total / values.length;
+      }
+
+      public function stddev(values : Array, mean : Number) : Number {
+        var variance : Number = 0;
+        for (var i:int = 0; i < values.length; ++i) {
+          var diff:Number = values[i] - mean;
+          variance += diff * diff;
+        }
+        return Math.sqrt(variance / values.length);
+      }
+
+      protected function run():void {
+        var times:Array = new Array();
+        for (var i:int = 0; i < FRAMES; i++) {
+          var start:Number = getTimer();
+          step();
+          times[i] = getTimer() - start;
+        }
+
+        var mean:Number = mean(times);
+        Alert.show("Benchmark complete.\nms/frame: " + mean + " +/- " + stddev(times, mean));
       }
 
 			protected function main(event:FlexEvent):void {
@@ -102,7 +121,4 @@
 			}
 		]]>
 	</fx:Script>
-
-  <s:TextArea id="echo" color="black" text='wtf?!' width='100%' height='480'/>
 </s:Application>
-
