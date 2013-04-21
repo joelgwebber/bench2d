@@ -1,0 +1,5 @@
+name: bench2d
+dependencies:
+  box2d:
+    git: https://github.com/google/dartbox2d.git
+  browser: any
