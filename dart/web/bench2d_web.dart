@@ -1,6 +1,8 @@
 import 'dart:html';
 import 'dart:math';
-import 'bench2d.dart';
+import 'dart:async';
+import 'package:box2d/box2d_browser.dart';
+import '../bench2d.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //
@@ -20,14 +22,12 @@ import 'bench2d.dart';
 class Bench2dWeb extends Bench2d {
   static final int CANVAS_WIDTH = 900;
   static final int CANVAS_HEIGHT = 600;
-
   static final num _VIEWPORT_SCALE = 10;
 
   CanvasElement canvas;
   CanvasRenderingContext2D ctx;
   ViewportTransform viewport;
   DebugDraw debugDraw;
-
 
   /**
    * Creates the canvas and readies the demo for animation. Must be called
@@ -57,7 +57,7 @@ class Bench2dWeb extends Bench2d {
   }
 
   void render(num delta) {
-    step();
+    super.step();
 
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     world.drawDebugData();
@@ -71,8 +71,8 @@ class Bench2dWeb extends Bench2d {
 
 void main() {
   // Render version
-  final bench2d = new Bench2d()
-    ..initializeAnimation();
+  final bench2d = new Bench2dWeb()
+    ..initializeAnimation()
     ..runAnimation();
 }
 

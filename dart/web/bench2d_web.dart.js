@@ -17,6 +17,25 @@ $$.ListIterable = {"": "IterableBase;",
   get$iterator: function(_) {
     return $.ListIterator$(this, $.getRuntimeTypeArgument(this, this.$asListIterable, 0));
   },
+  forEach$1: function(_, action) {
+    var $length, i;
+    $length = this.get$length(this);
+    if (typeof $length !== "number")
+      return this.forEach$1$bailout1(1, action, $length);
+    for (i = 0; i < $length; ++i) {
+      action.call$1(this.elementAt$1(this, i));
+      if ($length !== this.get$length(this))
+        throw $.wrapException($.ConcurrentModificationError$(this));
+    }
+  },
+  forEach$1$bailout1: function(state0, action, $length) {
+    var t1, i;
+    for (t1 = $.getInterceptor($length), i = 0; $.JSNumber_methods.$lt(i, $length); ++i) {
+      action.call$1(this.elementAt$1(this, i));
+      if (t1.$eq($length, this.get$length(this)) !== true)
+        throw $.wrapException($.ConcurrentModificationError$(this));
+    }
+  },
   skip$1: function(_, count) {
     return $.SubListIterable$(this, count, null, null);
   },
@@ -38,14 +57,19 @@ $$.ListIterable = {"": "IterableBase;",
     }
     return result;
   },
+  toList$0: function($receiver) {
+    return this.toList$1$growable($receiver, true);
+  },
   $asIterableBase: null,
-  $asIterable: null
+  $asIterable: function() {
+    return null;
+  }
 };
 
-$$.SubListIterable = {"": "ListIterable;_iterable,_liblib$_start,_endOrLength",
+$$.SubListIterable = {"": "ListIterable;_iterable,_start,_endOrLength",
   get$_endIndex: function() {
     var $length, t1;
-    $length = $.get$length$as(this._iterable);
+    $length = $.get$length$asx(this._iterable);
     t1 = this._endOrLength;
     if (t1 == null || $.JSNull_methods.$gt(t1, $length))
       return $length;
@@ -53,18 +77,20 @@ $$.SubListIterable = {"": "ListIterable;_iterable,_liblib$_start,_endOrLength",
   },
   get$_startIndex: function() {
     var $length, t1;
-    $length = $.get$length$as(this._iterable);
-    t1 = this._liblib$_start;
-    if ($.JSInt_methods.$gt(t1, $length))
+    $length = $.get$length$asx(this._iterable);
+    t1 = this._start;
+    if ($.$gt$n(t1, $length))
       return $length;
     return t1;
   },
   get$length: function(_) {
     var $length, t1, t2;
-    $length = $.get$length$as(this._iterable);
+    $length = $.get$length$asx(this._iterable);
     if (typeof $length !== "number")
       return this.get$length$bailout2(1, $length);
-    t1 = this._liblib$_start;
+    t1 = this._start;
+    if (typeof t1 !== "number")
+      return this.get$length$bailout2(2, $length, t1);
     if (t1 >= $length)
       return 0;
     t2 = this._endOrLength;
@@ -72,15 +98,23 @@ $$.SubListIterable = {"": "ListIterable;_iterable,_liblib$_start,_endOrLength",
       return $length - t1;
     return $.JSNull_methods.$sub(t2, t1);
   },
-  get$length$bailout2: function(state0, $length) {
-    var t1, t2;
-    t1 = this._liblib$_start;
-    if ($.JSInt_methods.$ge(t1, $length))
-      return 0;
-    t2 = this._endOrLength;
-    if (t2 == null || $.JSNull_methods.$ge(t2, $length))
-      return $.$sub$n($length, t1);
-    return $.JSNull_methods.$sub(t2, t1);
+  get$length$bailout2: function(state0, $length, t1) {
+    switch (state0) {
+      case 0:
+        $length = $.get$length$asx(this._iterable);
+      case 1:
+        state0 = 0;
+        t1 = this._start;
+      case 2:
+        var t2;
+        state0 = 0;
+        if ($.$ge$n(t1, $length))
+          return 0;
+        t2 = this._endOrLength;
+        if (t2 == null || $.JSNull_methods.$ge(t2, $length))
+          return $.$sub$n($length, t1);
+        return $.JSNull_methods.$sub(t2, t1);
+    }
   },
   elementAt$1: function(_, index) {
     var t1, realIndex;
@@ -97,7 +131,7 @@ $$.SubListIterable = {"": "ListIterable;_iterable,_liblib$_start,_endOrLength",
       t1 = true;
     if (t1)
       throw $.wrapException($.RangeError$range(index, 0, this.get$length(this)));
-    return $.elementAt$1$a(this._iterable, realIndex);
+    return $.elementAt$1$ax(this._iterable, realIndex);
   },
   elementAt$1$bailout2: function(state0, index, t1, realIndex) {
     switch (state0) {
@@ -119,47 +153,90 @@ $$.SubListIterable = {"": "ListIterable;_iterable,_liblib$_start,_endOrLength",
           t1 = true;
         if (t1)
           throw $.wrapException($.RangeError$range(index, 0, this.get$length(this)));
-        return $.elementAt$1$a(this._iterable, realIndex);
+        return $.elementAt$1$ax(this._iterable, realIndex);
     }
   },
   skip$1: function(_, count) {
-    if (count < 0)
+    if ($.$lt$n(count, 0))
       throw $.wrapException($.ArgumentError$(count));
-    return $.SubListIterable$(this._iterable, this._liblib$_start + count, this._endOrLength, null);
+    return $.SubListIterable$(this._iterable, $.$add$ns(this._start, count), this._endOrLength, null);
   },
   $asListIterable: null,
-  $asIterable: null
+  $asIterable: function() {
+    return null;
+  }
 };
 
-$$.ListIterator = {"": "Object;_iterable,_length,_index,_current",
+$$.ListIterator = {"": "Object;_iterable,_liblib$_length,_index,_liblib$_current",
   get$current: function() {
-    return this._current;
+    return this._liblib$_current;
   },
   moveNext$0: function() {
     var t1, t2, t3;
-    t1 = this._length;
+    t1 = this._liblib$_length;
     t2 = this._iterable;
-    if ($.$eq(t1, $.get$length$as(t2)) !== true)
+    if ($.$eq(t1, $.get$length$asx(t2)) !== true)
       throw $.wrapException($.ConcurrentModificationError$(t2));
     t3 = this._index;
     if (t3 === t1) {
-      this._current = null;
+      this._liblib$_current = null;
       return false;
     }
-    this._current = $.elementAt$1$a(t2, t3);
+    this._liblib$_current = $.elementAt$1$ax(t2, t3);
     this._index = this._index + 1;
     return true;
   }
 };
 
+$$.MappedIterable = {"": "IterableBase;_iterable,_f",
+  _f$1: function(arg0) {
+    return this._f.call$1(arg0);
+  },
+  get$iterator: function(_) {
+    var t1 = this._iterable;
+    return $.MappedIterator$(t1.get$iterator(t1), this._f, $.getRuntimeTypeArgument(this, this.$asMappedIterable, 0), $.getRuntimeTypeArgument(this, this.$asMappedIterable, 1));
+  },
+  get$length: function(_) {
+    var t1 = this._iterable;
+    return t1.get$length(t1);
+  },
+  elementAt$1: function(_, index) {
+    var t1 = this._iterable;
+    return this._f$1(t1.elementAt$1(t1, index));
+  },
+  $asIterableBase: function (S, T) { return [T]; },
+  $asIterable: function() {
+    return function (S, T) { return [T]; };
+  }
+};
+
+$$.MappedIterator = {"": "Iterator;_liblib$_current,_liblib$_iterator,_f",
+  _f$1: function(arg0) {
+    return this._f.call$1(arg0);
+  },
+  moveNext$0: function() {
+    var t1 = this._liblib$_iterator;
+    if (t1.moveNext$0() === true) {
+      this._liblib$_current = this._f$1(t1.get$current());
+      return true;
+    }
+    this._liblib$_current = null;
+    return false;
+  },
+  get$current: function() {
+    return this._liblib$_current;
+  },
+  $asIterator: function (S, T) { return [T]; }
+};
+
 $$.SkipIterable = {"": "IterableBase;_iterable,_skipCount",
   skip$1: function(_, n) {
-    if (n < 0)
+    if (!(typeof n === "number" && Math.floor(n) === n) || n < 0)
       throw $.wrapException($.ArgumentError$(n));
     return $.SkipIterable$(this._iterable, $.$add$ns(this._skipCount, n), $.getRuntimeTypeArgument(this, this.$asSkipIterable, 0));
   },
   get$iterator: function(_) {
-    return $.SkipIterator$($.get$iterator$a(this._iterable), this._skipCount, $.getRuntimeTypeArgument(this, this.$asSkipIterable, 0));
+    return $.SkipIterator$($.get$iterator$ax(this._iterable), this._skipCount, $.getRuntimeTypeArgument(this, this.$asSkipIterable, 0));
   },
   SkipIterable$2: function(_iterable, _skipCount, E) {
     var t1 = this._skipCount;
@@ -167,13 +244,15 @@ $$.SkipIterable = {"": "IterableBase;_iterable,_skipCount",
       throw $.wrapException($.ArgumentError$(t1));
   },
   $asIterableBase: null,
-  $asIterable: null
+  $asIterable: function() {
+    return null;
+  }
 };
 
-$$.SkipIterator = {"": "Iterator;_iterator,_skipCount",
+$$.SkipIterator = {"": "Iterator;_liblib$_iterator,_skipCount",
   moveNext$0: function() {
     var t1, i, t2;
-    t1 = this._iterator;
+    t1 = this._liblib$_iterator;
     i = 0;
     while (true) {
       t2 = this._skipCount;
@@ -190,7 +269,7 @@ $$.SkipIterator = {"": "Iterator;_iterator,_skipCount",
   moveNext$0$bailout1: function(state0, t1, i, t2) {
     switch (state0) {
       case 0:
-        t1 = this._iterator;
+        t1 = this._liblib$_iterator;
         i = 0;
       case 1:
         L0:
@@ -210,7 +289,7 @@ $$.SkipIterator = {"": "Iterator;_iterator,_skipCount",
     }
   },
   get$current: function() {
-    return this._iterator.get$current();
+    return this._liblib$_iterator.get$current();
   },
   SkipIterator$2: function(_iterator, _skipCount, E) {
   },
@@ -233,7 +312,81 @@ $$.ToString__emitPair_anon = {"": "Closure;box_0,result_1,visiting_2",
   $isFunction: true
 };
 
-$$.LinkedHashMapCell = {"": "Object;_key<,_value@,_next,_previous"};
+$$.HashMap_values_anon = {"": "Closure;this_0",
+  call$1: function(each) {
+    return $.$index$asx(this.this_0, each);
+  },
+  $isFunction: true
+};
+
+$$.HashMap_addAll_anon = {"": "Closure;this_0",
+  call$2: function(key, value) {
+    $.$indexSet$ax(this.this_0, key, value);
+  },
+  $isFunction: true
+};
+
+$$.HashMapKeyIterable = {"": "IterableBase;_map",
+  get$length: function(_) {
+    return this._map._liblib0$_length;
+  },
+  get$iterator: function(_) {
+    var t1 = this._map;
+    return $.HashMapKeyIterator$(t1, t1._computeKeys$0(), $.getRuntimeTypeArgument(this, this.$asHashMapKeyIterable, 0));
+  },
+  forEach$1: function(_, f) {
+    var t1, keys, $length, i;
+    t1 = this._map;
+    keys = t1._computeKeys$0();
+    for ($length = keys.length, i = 0; i < $length; ++i) {
+      f.call$1(keys[i]);
+      if (keys !== t1._keys)
+        throw $.wrapException($.ConcurrentModificationError$(t1));
+    }
+  },
+  $asIterableBase: null,
+  $asIterable: function() {
+    return null;
+  }
+};
+
+$$.HashMapKeyIterator = {"": "Object;_map,_keys,_offset,_liblib0$_current",
+  get$current: function() {
+    return this._liblib0$_current;
+  },
+  moveNext$0: function() {
+    var keys, offset, t1;
+    keys = this._keys;
+    offset = this._offset;
+    t1 = this._map;
+    if (keys !== t1._keys)
+      throw $.wrapException($.ConcurrentModificationError$(t1));
+    else if (offset >= keys.length) {
+      this._liblib0$_current = null;
+      return false;
+    } else {
+      this._liblib0$_current = keys[offset];
+      this._offset = offset + 1;
+      return true;
+    }
+  }
+};
+
+$$.LinkedHashMap_values_anon = {"": "Closure;this_0",
+  call$1: function(each) {
+    return $.$index$asx(this.this_0, each);
+  },
+  $isFunction: true
+};
+
+$$.LinkedHashMap_addAll_anon = {"": "Closure;this_0",
+  call$2: function(key, value) {
+    $.$indexSet$ax(this.this_0, key, value);
+  },
+  $isFunction: true
+};
+
+$$.LinkedHashMapCell = {"": "Object;_key<,_value@,_liblib0$_next@,_previous"};
 
 $$.LinkedHashMapKeyIterable = {"": "IterableBase;_map",
   get$length: function(_) {
@@ -243,8 +396,22 @@ $$.LinkedHashMapKeyIterable = {"": "IterableBase;_map",
     var t1 = this._map;
     return $.LinkedHashMapKeyIterator$(t1, t1._modifications, $.getRuntimeTypeArgument(this, this.$asLinkedHashMapKeyIterable, 0));
   },
+  forEach$1: function(_, f) {
+    var t1, cell, modifications;
+    t1 = this._map;
+    cell = t1._first;
+    modifications = t1._modifications;
+    for (; cell != null;) {
+      f.call$1(cell.get$_key());
+      if (modifications !== t1._modifications)
+        throw $.wrapException($.ConcurrentModificationError$(t1));
+      cell = cell.get$_liblib0$_next();
+    }
+  },
   $asIterableBase: null,
-  $asIterable: null
+  $asIterable: function() {
+    return null;
+  }
 };
 
 $$.LinkedHashMapKeyIterator = {"": "Object;_map,_modifications,_cell,_liblib0$_current",
@@ -261,8 +428,8 @@ $$.LinkedHashMapKeyIterator = {"": "Object;_map,_modifications,_cell,_liblib0$_c
         this._liblib0$_current = null;
         return false;
       } else {
-        this._liblib0$_current = t1._key;
-        this._cell = this._cell._next;
+        this._liblib0$_current = t1.get$_key();
+        this._cell = this._cell.get$_liblib0$_next();
         return true;
       }
     }
@@ -332,6 +499,855 @@ $$.JSNull = {"": "Interceptor;",
   }
 };
 
+$$.CloseToken = {"": "Object;", $isCloseToken: true};
+
+$$.JsIsolateSink = {"": "EventSink;_isClosed,_port<",
+  add$1: function(_, message) {
+    this._port.send$1(message);
+  },
+  $eq: function(_, other) {
+    if (other == null)
+      return false;
+    return typeof other === "object" && other !== null && !!$.getInterceptor(other).$isIsolateSink && $.$eq(this._port, other.get$_port()) === true;
+  },
+  get$hashCode: function(_) {
+    return $.$add$ns($.get$hashCode$(this._port), 499);
+  },
+  $isJsIsolateSink: true,
+  $asEventSink: function () { return [null]; },
+  $asIsolateSink: null,
+  $isIsolateSink: true
+};
+
+$$._Manager = {"": "Object;nextIsolateId@,currentManagerId,nextManagerId,currentContext<,rootContext,topEventLoop<,fromCommandLine,isWorker<,supportsWorkers,isolates,mainManager,managers",
+  get$useWorkers: function() {
+    return this.supportsWorkers;
+  },
+  get$needSerialization: function() {
+    return this.get$useWorkers();
+  },
+  _nativeDetectEnvironment$0: function() {
+    var t1, t2;
+    t1 = $.get$globalWindow() == null;
+    this.isWorker = t1 && $.get$globalPostMessageDefined() === true;
+    if (this.isWorker !== true)
+      t2 = $.get$globalWorker() != null && $.get$IsolateNatives_thisScript() != null;
+    else
+      t2 = true;
+    this.supportsWorkers = t2;
+    this.fromCommandLine = t1 && this.isWorker !== true;
+  },
+  _nativeInitWorkerMessageHandler$0: function() {
+    var $function = function (e) { $.IsolateNatives__processWorkerMessage.call$2(this.mainManager, e); };
+    $.get$globalThis().onmessage = $function;
+    $.get$globalThis().dartPrint = function (object) {};
+  },
+  maybeCloseWorker$0: function() {
+    if (this.isWorker === true) {
+      var t1 = this.isolates;
+      t1 = t1.get$isEmpty(t1) && this.topEventLoop.activeTimerCount === 0;
+    } else
+      t1 = false;
+    if (t1) {
+      t1 = this.mainManager;
+      t1.postMessage$1(t1, $._serializeMessage($.makeLiteralMap(["command", "close"])));
+    }
+  },
+  _Manager$0: function() {
+    this._nativeDetectEnvironment$0();
+    this.topEventLoop = $._EventLoop$();
+    this.isolates = $.Map_Map($.$int, $._IsolateContext);
+    this.managers = $.Map_Map($.$int, $._ManagerStub);
+    if (this.isWorker === true) {
+      this.mainManager = $._MainManagerStub$();
+      this._nativeInitWorkerMessageHandler$0();
+    }
+  }
+};
+
+$$._IsolateContext = {"": "Object;id>,ports,isolateStatics",
+  eval$1: function(code) {
+    var old, result;
+    old = $globalState.currentContext;
+    $globalState.currentContext = this;
+    $ = this.isolateStatics;
+    result = null;
+    try {
+      result = code.call$0();
+    } finally {
+      $globalState.currentContext = old;
+      if (old != null)
+        old._setGlobals$0();
+    }
+    return result;
+  },
+  _setGlobals$0: function() {
+    $ = this.isolateStatics;
+  },
+  lookup$1: function(portId) {
+    var t1 = this.ports;
+    return t1.$index(t1, portId);
+  },
+  register$2: function(_, portId, port) {
+    var t1;
+    if (this.ports.containsKey$1(portId) === true)
+      throw $.wrapException($._ExceptionImplementation$("Registry: ports must be registered only once."));
+    t1 = this.ports;
+    t1.$indexSet(t1, portId, port);
+    t1 = $globalState.isolates;
+    t1.$indexSet(t1, this.id, this);
+  },
+  unregister$1: function(portId) {
+    var t1 = this.ports;
+    t1.remove$1(t1, portId);
+    t1 = this.ports;
+    if (t1.get$isEmpty(t1)) {
+      t1 = $globalState.isolates;
+      t1.remove$1(t1, this.id);
+    }
+  },
+  _IsolateContext$0: function() {
+    var t1, t2;
+    t1 = $._globalState();
+    t2 = t1.get$nextIsolateId();
+    t1.set$nextIsolateId(t2 + 1);
+    this.id = t2;
+    this.ports = $.Map_Map($.$int, $.ReceivePort);
+    this.isolateStatics = new Isolate();
+  }
+};
+
+$$._EventLoop = {"": "Object;events,activeTimerCount",
+  enqueue$3: function(isolate, fn, msg) {
+    this.events.addLast$1($._IsolateEvent$(isolate, fn, msg));
+  },
+  dequeue$0: function() {
+    var t1 = this.events;
+    if (t1.get$isEmpty(t1))
+      return;
+    return t1.removeFirst$0();
+  },
+  checkOpenReceivePortsFromCommandLine$0: function() {
+    if ($globalState.rootContext != null)
+      if ($globalState.isolates.containsKey$1($globalState.rootContext.id) === true)
+        if ($globalState.fromCommandLine === true) {
+          var t1 = $globalState.rootContext.ports;
+          t1 = t1.get$isEmpty(t1);
+        } else
+          t1 = false;
+      else
+        t1 = false;
+    else
+      t1 = false;
+    if (t1)
+      throw $.wrapException($._ExceptionImplementation$("Program exited with open ReceivePorts."));
+  },
+  runIteration$0: function() {
+    var $event = this.dequeue$0();
+    if ($event == null) {
+      this.checkOpenReceivePortsFromCommandLine$0();
+      $globalState.maybeCloseWorker$0();
+      return false;
+    }
+    $event.process$0();
+    return true;
+  },
+  _runHelper$0: function() {
+    if ($.get$globalWindow() != null)
+      new $._EventLoop__runHelper_next(this).call$0();
+    else
+      for (; this.runIteration$0();)
+        ;
+  },
+  run$0: function() {
+    var e, trace, exception, t1;
+    if ($globalState.isWorker !== true)
+      this._runHelper$0();
+    else
+      try {
+        this._runHelper$0();
+      } catch (exception) {
+        t1 = $.unwrapException(exception);
+        e = t1;
+        trace = $.getTraceFromException(exception);
+        t1 = $globalState.mainManager;
+        t1.postMessage$1(t1, $._serializeMessage($.makeLiteralMap(["command", "error", "msg", $.S(e) + "\n" + $.S(trace)])));
+      }
+
+  }
+};
+
+$$._EventLoop__runHelper_next = {"": "Closure;this_0",
+  call$0: function() {
+    if (!this.this_0.runIteration$0())
+      return;
+    $.Timer_run(this);
+  },
+  $isFunction: true
+};
+
+$$._IsolateEvent = {"": "Object;isolate,fn,message",
+  process$0: function() {
+    this.isolate.eval$1(this.fn);
+  }
+};
+
+$$._MainManagerStub = {"": "Object;",
+  get$id: function(_) {
+    return 0;
+  },
+  postMessage$1: function(_, msg) {
+    $.get$globalThis().postMessage(msg);
+  },
+  terminate$0: function(_) {
+  }
+};
+
+$$.IsolateNatives__processWorkerMessage_anon = {"": "Closure;entryPoint_0,replyTo_1",
+  call$0: function() {
+    var t1, t2;
+    t1 = this.entryPoint_0;
+    t2 = this.replyTo_1;
+    $.lazyPort = $.ReceivePortImpl$();
+    t2.send$2("spawned", $._Isolate_port().toSendPort$0());
+    t1.call$0();
+  },
+  $isFunction: true
+};
+
+$$._BaseSendPort = {"": "Object;_isolateId<",
+  _checkReplyTo$1: function(replyTo) {
+    if (replyTo != null && !(typeof replyTo === "object" && replyTo !== null && !!$.getInterceptor(replyTo).$is_NativeJsSendPort) && !(typeof replyTo === "object" && replyTo !== null && !!$.getInterceptor(replyTo).$is_WorkerSendPort) && true)
+      throw $.wrapException($._ExceptionImplementation$("SendPort.send: Illegal replyTo port type"));
+  },
+  call$1: function(message) {
+    var completer, port;
+    completer = $._CompleterImpl$(null);
+    port = $.ReceivePortImpl$();
+    this.send$2(message, port.toSendPort$0());
+    port.receive$1(new $._BaseSendPort_call_anon(completer, port));
+    return completer.future;
+  },
+  $isFunction: true,
+  $isSendPort: true
+};
+
+$$._BaseSendPort_call_anon = {"": "Closure;completer_0,port_1",
+  call$2: function(value, ignoreReplyTo) {
+    var t1 = this.port_1;
+    t1.close$0(t1);
+    t1 = this.completer_0;
+    if (typeof value === "object" && value !== null && !!$.getInterceptor(value).$isException)
+      t1.completeError$1(value);
+    else
+      t1.complete$1(t1, value);
+  },
+  $isFunction: true
+};
+
+$$._NativeJsSendPort = {"": "_BaseSendPort;_receivePort<,_isolateId",
+  send$2: function(message, replyTo) {
+    $._waitForPendingPorts([message, replyTo], new $._NativeJsSendPort_send_anon(this, message, replyTo));
+  },
+  send$1: function(message) {
+    return this.send$2(message, null);
+  },
+  $eq: function(_, other) {
+    if (other == null)
+      return false;
+    return typeof other === "object" && other !== null && !!$.getInterceptor(other).$is_NativeJsSendPort && $.$eq(this._receivePort, other._receivePort) === true;
+  },
+  get$hashCode: function(_) {
+    return this._receivePort.get$_id();
+  },
+  $is_NativeJsSendPort: true,
+  $isSendPort: true
+};
+
+$$._NativeJsSendPort_send_anon = {"": "Closure;this_1,message_2,replyTo_3",
+  call$0: function() {
+    var t1, t2, t3, t4, isolate, shouldSerialize, msg;
+    t1 = {};
+    t2 = this.this_1;
+    t3 = this.replyTo_3;
+    t2._checkReplyTo$1(t3);
+    t4 = $globalState.isolates;
+    isolate = t4.$index(t4, t2.get$_isolateId());
+    if (isolate == null)
+      return;
+    if (t2.get$_receivePort().get$_callback() == null)
+      return;
+    shouldSerialize = $globalState.currentContext != null && $.$eq($.get$id$x($globalState.currentContext), t2.get$_isolateId()) !== true;
+    msg = this.message_2;
+    t1.msg_0 = msg;
+    t1.reply_1 = t3;
+    if (shouldSerialize) {
+      t1.msg_0 = $._serializeMessage(t1.msg_0);
+      t1.reply_1 = $._serializeMessage(t1.reply_1);
+    }
+    $globalState.topEventLoop.enqueue$3(isolate, new $._NativeJsSendPort_send__anon(t1, t2, shouldSerialize), "receive " + $.S(msg));
+  },
+  $isFunction: true
+};
+
+$$._NativeJsSendPort_send__anon = {"": "Closure;box_0,this_4,shouldSerialize_5",
+  call$0: function() {
+    var t1, t2;
+    t1 = this.this_4;
+    if (t1.get$_receivePort().get$_callback() != null) {
+      if (this.shouldSerialize_5) {
+        t2 = this.box_0;
+        t2.msg_0 = $._deserializeMessage(t2.msg_0);
+        t2.reply_1 = $._deserializeMessage(t2.reply_1);
+      }
+      t1 = t1.get$_receivePort();
+      t2 = this.box_0;
+      t1._callback$2(t2.msg_0, t2.reply_1);
+    }
+  },
+  $isFunction: true
+};
+
+$$._WorkerSendPort = {"": "_BaseSendPort;_workerId<,_receivePortId,_isolateId",
+  send$2: function(message, replyTo) {
+    $._waitForPendingPorts([message, replyTo], new $._WorkerSendPort_send_anon(this, message, replyTo));
+  },
+  send$1: function(message) {
+    return this.send$2(message, null);
+  },
+  $eq: function(_, other) {
+    var t1;
+    if (other == null)
+      return false;
+    if (typeof other === "object" && other !== null && !!$.getInterceptor(other).$is_WorkerSendPort)
+      t1 = $.$eq(this._workerId, other._workerId) === true && $.$eq(this._isolateId, other._isolateId) === true && $.$eq(this._receivePortId, other._receivePortId) === true;
+    else
+      t1 = false;
+    return t1;
+  },
+  get$hashCode: function(_) {
+    var t1, t2, t3;
+    t1 = $.$shl$n(this._workerId, 16);
+    t2 = $.$shl$n(this._isolateId, 8);
+    t3 = this._receivePortId;
+    if (typeof t3 !== "number")
+      throw $.iae(t3);
+    return (t1 ^ t2 ^ t3) >>> 0;
+  },
+  $is_WorkerSendPort: true,
+  $isSendPort: true
+};
+
+$$._WorkerSendPort_send_anon = {"": "Closure;this_0,message_1,replyTo_2",
+  call$0: function() {
+    var t1, t2, workerMessage, manager;
+    t1 = this.this_0;
+    t2 = this.replyTo_2;
+    t1._checkReplyTo$1(t2);
+    workerMessage = $._serializeMessage($.makeLiteralMap(["command", "message", "port", t1, "msg", this.message_1, "replyTo", t2]));
+    if ($globalState.isWorker === true) {
+      t1 = $globalState.mainManager;
+      t1.postMessage$1(t1, workerMessage);
+    } else {
+      t2 = $globalState.managers;
+      manager = t2.$index(t2, t1.get$_workerId());
+      if (manager != null)
+        $.postMessage$1$x(manager, workerMessage);
+    }
+  },
+  $isFunction: true
+};
+
+$$.ReceivePortImpl = {"": "Object;_id<,_callback<",
+  _callback$2: function(arg0, arg1) {
+    return this._callback.call$2(arg0, arg1);
+  },
+  receive$1: function(onMessage) {
+    this._callback = onMessage;
+  },
+  close$0: function(_) {
+    this._callback = null;
+    $globalState.currentContext.unregister$1(this._id);
+  },
+  toSendPort$0: function() {
+    return $._NativeJsSendPort$(this, $.get$id$x($globalState.currentContext));
+  },
+  ReceivePortImpl$0: function() {
+    $.register$2$x($._globalState().get$currentContext(), this._id, this);
+  }
+};
+
+$$._waitForPendingPorts_anon = {"": "Closure;callback_0",
+  call$1: function(_) {
+    return this.callback_0.call$0();
+  },
+  $isFunction: true
+};
+
+$$._PendingSendPortFinder = {"": "_MessageTraverser;ports,_visited",
+  visitPrimitive$1: function(x) {
+  },
+  visitList$1: function(list) {
+    var t1 = this._visited;
+    if (t1.$index(t1, list) != null)
+      return;
+    t1 = this._visited;
+    t1.$indexSet(t1, list, true);
+    $.forEach$1$ax(list, new $._PendingSendPortFinder_visitList_anon(this));
+  },
+  visitMap$1: function(map) {
+    var t1 = this._visited;
+    if (t1.$index(t1, map) != null)
+      return;
+    t1 = this._visited;
+    t1.$indexSet(t1, map, true);
+    t1 = map.get$values(map);
+    t1.forEach$1(t1, new $._PendingSendPortFinder_visitMap_anon(this));
+  },
+  visitSendPort$1: function(port) {
+    if (false)
+      this.ports.push(port.get$_futurePort());
+  },
+  visitIsolateSink$1: function(sink) {
+    var t1 = sink._port;
+    if (false)
+      this.ports.push(t1.get$_futurePort());
+  },
+  visitCloseToken$1: function(token) {
+  },
+  _PendingSendPortFinder$0: function() {
+    this._visited = $._JsVisitedMap$();
+  }
+};
+
+$$._PendingSendPortFinder_visitList_anon = {"": "Closure;this_0",
+  call$1: function(e) {
+    return this.this_0._dispatch$1(e);
+  },
+  $isFunction: true
+};
+
+$$._PendingSendPortFinder_visitMap_anon = {"": "Closure;this_0",
+  call$1: function(e) {
+    return this.this_0._dispatch$1(e);
+  },
+  $isFunction: true
+};
+
+$$._JsSerializer = {"": "_Serializer;_nextFreeRefId,_visited",
+  visitSendPort$1: function(x) {
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$is_NativeJsSendPort)
+      return ["sendport", $globalState.currentManagerId, x._isolateId, x._receivePort.get$_id()];
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$is_WorkerSendPort)
+      return ["sendport", x._workerId, x._isolateId, x._receivePortId];
+    throw $.wrapException("Illegal underlying port " + $.S(x));
+  },
+  visitIsolateSink$1: function(sink) {
+    var isClosed = sink._isClosed;
+    return ["isolateSink", this.visitSendPort$1(sink._port), isClosed];
+  },
+  visitCloseToken$1: function(token) {
+    return ["closeToken"];
+  },
+  _JsSerializer$0: function() {
+    this._visited = $._JsVisitedMap$();
+  }
+};
+
+$$._JsCopier = {"": "_Copier;_visited",
+  visitSendPort$1: function(x) {
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$is_NativeJsSendPort)
+      return $._NativeJsSendPort$(x._receivePort, x._isolateId);
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$is_WorkerSendPort)
+      return $._WorkerSendPort$(x._workerId, x._isolateId, x._receivePortId);
+    throw $.wrapException("Illegal underlying port " + $.S(this.get$p()));
+  },
+  visitIsolateSink$1: function(sink) {
+    var isClosed, result;
+    isClosed = sink._isClosed;
+    result = $.JsIsolateSink$fromPort(this.visitSendPort$1(sink._port));
+    result._isClosed = isClosed;
+    return result;
+  },
+  visitCloseToken$1: function(token) {
+    return token;
+  },
+  _JsCopier$0: function() {
+    this._visited = $._JsVisitedMap$();
+  }
+};
+
+$$._JsDeserializer = {"": "_Deserializer;_deserialized",
+  deserializeSendPort$1: function(list) {
+    var t1, managerId, isolateId, receivePortId, isolate, receivePort;
+    t1 = $.getInterceptor$asx(list);
+    managerId = t1.$index(list, 1);
+    isolateId = t1.$index(list, 2);
+    receivePortId = t1.$index(list, 3);
+    if ($.$eq(managerId, $globalState.currentManagerId) === true) {
+      t1 = $globalState.isolates;
+      isolate = t1.$index(t1, isolateId);
+      if (isolate == null)
+        return;
+      receivePort = isolate.lookup$1(receivePortId);
+      if (receivePort == null)
+        return;
+      return $._NativeJsSendPort$(receivePort, isolateId);
+    } else
+      return $._WorkerSendPort$(managerId, isolateId, receivePortId);
+  },
+  deserializeIsolateSink$1: function(list) {
+    var t1, port, isClosed, result;
+    t1 = $.getInterceptor$asx(list);
+    port = this.deserializeSendPort$1(t1.$index(list, 1));
+    isClosed = t1.$index(list, 2);
+    result = $.JsIsolateSink$fromPort(port);
+    result._isClosed = isClosed;
+    return result;
+  },
+  deserializeCloseToken$1: function(list) {
+    return $.C_CloseToken;
+  }
+};
+
+$$._JsVisitedMap = {"": "Object;tagged",
+  $index: function(_, object) {
+    return object.__MessageTraverser__attached_info__;
+  },
+  $indexSet: function(_, object, info) {
+    $.add$1$ax(this.tagged, object);
+    object.__MessageTraverser__attached_info__ = info;
+  },
+  reset$0: function(_) {
+    this.tagged = $.List_List($, null);
+  },
+  cleanup$0: function() {
+    var $length, i;
+    for ($length = $.get$length$asx(this.tagged), i = 0; i < $length; ++i)
+      $.$index$asx(this.tagged, i).__MessageTraverser__attached_info__ = null;
+    this.tagged = null;
+  }
+};
+
+$$._MessageTraverserVisitedMap = {"": "Object;",
+  $index: function(_, object) {
+    return;
+  },
+  $indexSet: function(_, object, info) {
+  },
+  reset$0: function(_) {
+  },
+  cleanup$0: function() {
+  }
+};
+
+$$._MessageTraverser = {"": "Object;",
+  traverse$1: function(x) {
+    var result, t1;
+    t1 = x;
+    if (t1 == null || typeof t1 === "string" || typeof t1 === "number" || typeof t1 === "boolean")
+      return this.visitPrimitive$1(x);
+    t1 = this._visited;
+    t1.reset$0(t1);
+    result = null;
+    try {
+      result = this._dispatch$1(x);
+    } finally {
+      this._visited.cleanup$0();
+    }
+    return result;
+  },
+  _dispatch$1: function(x) {
+    if (x == null || typeof x === "string" || typeof x === "number" || typeof x === "boolean")
+      return this.visitPrimitive$1(x);
+    if (typeof x === "object" && x !== null && (x.constructor === Array || $.getInterceptor(x).$isList()))
+      return this.visitList$1(x);
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$isMap)
+      return this.visitMap$1(x);
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$isSendPort)
+      return this.visitSendPort$1(x);
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$isJsIsolateSink)
+      return this.visitIsolateSink$1(x);
+    if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$isCloseToken)
+      return this.visitCloseToken$1(x);
+    $.throwExpression("Message serialization: Illegal value " + $.S(x) + " passed");
+    return;
+  }
+};
+
+$$._Copier = {"": "_MessageTraverser;",
+  visitPrimitive$1: function(x) {
+    return x;
+  },
+  visitList$1: function(list) {
+    var t1, copy, len, i, t2;
+    if (typeof list !== "string" && (typeof list !== "object" || list === null || list.constructor !== Array && !$.getInterceptor(list).$isJavaScriptIndexingBehavior()))
+      return this.visitList$1$bailout1(1, list);
+    t1 = this._visited;
+    copy = t1.$index(t1, list);
+    if (copy != null)
+      return copy;
+    len = list.length;
+    copy = $.List_List(len, null);
+    t1 = this._visited;
+    t1.$indexSet(t1, list, copy);
+    for (t1 = copy.length, i = 0; i < len; ++i) {
+      if (i >= list.length)
+        throw $.ioore(i);
+      t2 = this._dispatch$1(list[i]);
+      if (i >= t1)
+        throw $.ioore(i);
+      copy[i] = t2;
+    }
+    return copy;
+  },
+  visitList$1$bailout1: function(state0, list) {
+    var t1, copy, len, t2, i, t3;
+    t1 = this._visited;
+    copy = t1.$index(t1, list);
+    if (copy != null)
+      return copy;
+    t1 = $.getInterceptor$asx(list);
+    len = t1.get$length(list);
+    copy = $.List_List(len, null);
+    t2 = this._visited;
+    t2.$indexSet(t2, list, copy);
+    for (t2 = copy.length, i = 0; i < len; ++i) {
+      t3 = this._dispatch$1(t1.$index(list, i));
+      if (i >= t2)
+        throw $.ioore(i);
+      copy[i] = t3;
+    }
+    return copy;
+  },
+  visitMap$1: function(map) {
+    var t1, t2;
+    t1 = {};
+    t2 = this._visited;
+    t1.copy_0 = t2.$index(t2, map);
+    t2 = t1.copy_0;
+    if (t2 != null)
+      return t2;
+    t1.copy_0 = $.HashMap$(null, null);
+    t2 = this._visited;
+    t2.$indexSet(t2, map, t1.copy_0);
+    map.forEach$1(map, new $._Copier_visitMap_anon(t1, this));
+    return t1.copy_0;
+  }
+};
+
+$$._Copier_visitMap_anon = {"": "Closure;box_0,this_1",
+  call$2: function(key, val) {
+    var t1, t2;
+    t1 = this.box_0.copy_0;
+    t2 = this.this_1;
+    $.$indexSet$ax(t1, t2._dispatch$1(key), t2._dispatch$1(val));
+  },
+  $isFunction: true
+};
+
+$$._Serializer = {"": "_MessageTraverser;",
+  visitPrimitive$1: function(x) {
+    return x;
+  },
+  visitList$1: function(list) {
+    var t1, copyId, id;
+    t1 = this._visited;
+    copyId = t1.$index(t1, list);
+    if (copyId != null)
+      return ["ref", copyId];
+    id = this._nextFreeRefId;
+    this._nextFreeRefId = id + 1;
+    t1 = this._visited;
+    t1.$indexSet(t1, list, id);
+    return ["list", id, this._serializeList$1(list)];
+  },
+  visitMap$1: function(map) {
+    var t1, copyId, id, keys;
+    t1 = this._visited;
+    copyId = t1.$index(t1, map);
+    if (copyId != null)
+      return ["ref", copyId];
+    id = this._nextFreeRefId;
+    this._nextFreeRefId = id + 1;
+    t1 = this._visited;
+    t1.$indexSet(t1, map, id);
+    t1 = map.get$keys();
+    keys = this._serializeList$1(t1.toList$0(t1));
+    t1 = map.get$values(map);
+    return ["map", id, keys, this._serializeList$1(t1.toList$0(t1))];
+  },
+  _serializeList$1: function(list) {
+    var len, result, t1, i, t2;
+    if (typeof list !== "string" && (typeof list !== "object" || list === null || list.constructor !== Array && !$.getInterceptor(list).$isJavaScriptIndexingBehavior()))
+      return this._serializeList$1$bailout(1, list);
+    len = list.length;
+    result = $.List_List(len, null);
+    for (t1 = result.length, i = 0; i < len; ++i) {
+      if (i >= list.length)
+        throw $.ioore(i);
+      t2 = this._dispatch$1(list[i]);
+      if (i >= t1)
+        throw $.ioore(i);
+      result[i] = t2;
+    }
+    return result;
+  },
+  _serializeList$1$bailout: function(state0, list) {
+    var t1, len, result, t2, i, t3;
+    t1 = $.getInterceptor$asx(list);
+    len = t1.get$length(list);
+    result = $.List_List(len, null);
+    for (t2 = result.length, i = 0; $.JSNumber_methods.$lt(i, len); ++i) {
+      t3 = this._dispatch$1(t1.$index(list, i));
+      if (i >= t2)
+        throw $.ioore(i);
+      result[i] = t3;
+    }
+    return result;
+  }
+};
+
+$$._Deserializer = {"": "Object;",
+  deserialize$1: function(x) {
+    if (x == null || typeof x === "string" || typeof x === "number" || typeof x === "boolean")
+      return x;
+    this._deserialized = $.HashMap$(null, null);
+    return this._deserializeHelper$1(x);
+  },
+  _deserializeHelper$1: function(x) {
+    var t1, id;
+    t1 = $.getInterceptor(x);
+    if (x == null || typeof x === "string" || typeof x === "number" || typeof x === "boolean")
+      return x;
+    switch (t1.$index(x, 0)) {
+      case "ref":
+        id = t1.$index(x, 1);
+        t1 = this._deserialized;
+        return t1.$index(t1, id);
+      case "list":
+        return this._deserializeList$1(x);
+      case "map":
+        return this._deserializeMap$1(x);
+      case "sendport":
+        return this.deserializeSendPort$1(x);
+      case "isolateSink":
+        return this.deserializeIsolateSink$1(x);
+      case "closeToken":
+        return this.deserializeCloseToken$1(x);
+      default:
+        $.throwExpression("Unexpected serialized object");
+        return;
+    }
+  },
+  _deserializeList$1: function(x) {
+    var t1, id, dartList, t2, len, i;
+    t1 = $.getInterceptor$asx(x);
+    id = t1.$index(x, 1);
+    dartList = t1.$index(x, 2);
+    if (typeof dartList !== "object" || dartList === null || (dartList.constructor !== Array || !!dartList.immutable$list) && !$.getInterceptor(dartList).$isJavaScriptIndexingBehavior())
+      return this._deserializeList$1$bailout(1, dartList, id);
+    t2 = this._deserialized;
+    t2.$indexSet(t2, id, dartList);
+    len = dartList.length;
+    for (i = 0; i < len; ++i) {
+      if (i >= dartList.length)
+        throw $.ioore(i);
+      t1 = this._deserializeHelper$1(dartList[i]);
+      if (i >= dartList.length)
+        throw $.ioore(i);
+      dartList[i] = t1;
+    }
+    return dartList;
+  },
+  _deserializeList$1$bailout: function(state0, dartList, id) {
+    var t2, len, i;
+    t2 = this._deserialized;
+    t2.$indexSet(t2, id, dartList);
+    t2 = $.getInterceptor$asx(dartList);
+    len = t2.get$length(dartList);
+    for (i = 0; $.JSNumber_methods.$lt(i, len); ++i)
+      t2.$indexSet(dartList, i, this._deserializeHelper$1(t2.$index(dartList, i)));
+    return dartList;
+  },
+  _deserializeMap$1: function(x) {
+    var result, t1, id, t2, keys, values, len, i, key;
+    result = $.HashMap$(null, null);
+    t1 = $.getInterceptor$asx(x);
+    id = t1.$index(x, 1);
+    t2 = this._deserialized;
+    t2.$indexSet(t2, id, result);
+    keys = t1.$index(x, 2);
+    if (typeof keys !== "string" && (typeof keys !== "object" || keys === null || keys.constructor !== Array && !$.getInterceptor(keys).$isJavaScriptIndexingBehavior()))
+      return this._deserializeMap$1$bailout(1, keys, t1, x, result);
+    values = t1.$index(x, 3);
+    if (typeof values !== "string" && (typeof values !== "object" || values === null || values.constructor !== Array && !$.getInterceptor(values).$isJavaScriptIndexingBehavior()))
+      return this._deserializeMap$1$bailout(2, keys, 0, 0, result, values);
+    len = keys.length;
+    for (i = 0; i < len; ++i) {
+      if (i >= keys.length)
+        throw $.ioore(i);
+      key = this._deserializeHelper$1(keys[i]);
+      if (i >= values.length)
+        throw $.ioore(i);
+      result.$indexSet(result, key, this._deserializeHelper$1(values[i]));
+    }
+    return result;
+  },
+  _deserializeMap$1$bailout: function(state0, keys, t1, x, result, values) {
+    switch (state0) {
+      case 0:
+        result = $.HashMap$(null, null);
+        t1 = $.getInterceptor$asx(x);
+        id = t1.$index(x, 1);
+        t2 = this._deserialized;
+        t2.$indexSet(t2, id, result);
+        keys = t1.$index(x, 2);
+      case 1:
+        state0 = 0;
+        values = t1.$index(x, 3);
+      case 2:
+        var id, t2, t3, len, i;
+        state0 = 0;
+        t3 = $.getInterceptor$asx(keys);
+        len = t3.get$length(keys);
+        for (t1 = $.getInterceptor$asx(values), i = 0; $.JSNumber_methods.$lt(i, len); ++i)
+          result.$indexSet(result, this._deserializeHelper$1(t3.$index(keys, i)), this._deserializeHelper$1(t1.$index(values, i)));
+        return result;
+    }
+  }
+};
+
+$$.TimerImpl = {"": "Object;_once,_inEventLoop,_handle?",
+  TimerImpl$2: function(milliseconds, callback) {
+    var t1;
+    if (milliseconds === 0)
+      t1 = $.hasTimer() !== true || $._globalState().get$isWorker() === true;
+    else
+      t1 = false;
+    if (t1) {
+      $._globalState().get$topEventLoop().enqueue$3($._globalState().get$currentContext(), callback, "timer");
+      this._inEventLoop = true;
+    } else if ($.hasTimer() === true) {
+      t1 = $._globalState().get$topEventLoop();
+      t1.activeTimerCount = t1.activeTimerCount + 1;
+      t1 = new $.internalCallback(this, callback);
+      this._handle = $.get$globalThis().setTimeout($.convertDartClosureToJS(t1, 0), milliseconds);
+    } else
+      throw $.wrapException($.UnsupportedError$("Timer greater than 0."));
+  }
+};
+
+$$.internalCallback = {"": "Closure;this_0,callback_1",
+  call$0: function() {
+    this.callback_1.call$0();
+    this.this_0.set$_handle(null);
+    var t1 = $globalState.topEventLoop;
+    t1.activeTimerCount = t1.activeTimerCount - 1;
+  },
+  $isFunction: true
+};
+
 $$.JSArray = {"": "Interceptor;",
   add$1: function(receiver, value) {
     if (!!receiver.fixed$length)
@@ -345,6 +1361,21 @@ $$.JSArray = {"": "Interceptor;",
       throw $.wrapException($.RangeError$value(-1));
     return receiver.pop();
   },
+  addAll$1: function(receiver, collection) {
+    var t1, t2;
+    for (t1 = $.get$iterator$ax(collection); t1.moveNext$0() === true;) {
+      t2 = t1.get$current();
+      if (!!receiver.fixed$length)
+        $.throwExpression($.UnsupportedError$("add"));
+      receiver.push(t2);
+    }
+  },
+  forEach$1: function(receiver, f) {
+    var t1;
+    for (t1 = this.get$iterator(receiver); t1.moveNext$0();)
+      f.call$1(t1.get$current());
+    return;
+  },
   skip$1: function(receiver, n) {
     return $.SubListIterable$(receiver, n, null, null);
   },
@@ -356,6 +1387,12 @@ $$.JSArray = {"": "Interceptor;",
     return receiver[index];
   },
   sublist$2: function(receiver, start, end) {
+    if (typeof end !== "number")
+      return this.sublist$2$bailout(1, start, end, receiver);
+    if (start == null)
+      $.throwExpression($.ArgumentError$(null));
+    if (!(typeof start === "number" && Math.floor(start) === start))
+      throw $.wrapException($.ArgumentError$(start));
     if (start < 0 || start > receiver.length)
       throw $.wrapException($.RangeError$range(start, 0, receiver.length));
     if (!(typeof end === "number" && Math.floor(end) === end))
@@ -365,6 +1402,28 @@ $$.JSArray = {"": "Interceptor;",
     if (start === end)
       return [];
     return receiver.slice(start, end);
+  },
+  sublist$2$bailout: function(state0, start, end, receiver) {
+    if (start == null)
+      $.throwExpression($.ArgumentError$(null));
+    if (!(typeof start === "number" && Math.floor(start) === start))
+      throw $.wrapException($.ArgumentError$(start));
+    if (start < 0 || start > receiver.length)
+      throw $.wrapException($.RangeError$range(start, 0, receiver.length));
+    if (end == null)
+      end = receiver.length;
+    else {
+      if (!(typeof end === "number" && Math.floor(end) === end))
+        throw $.wrapException($.ArgumentError$(end));
+      if (end < start || end > receiver.length)
+        throw $.wrapException($.RangeError$range(end, start, receiver.length));
+    }
+    if (start === end)
+      return [];
+    return receiver.slice(start, end);
+  },
+  sublist$1: function($receiver, start) {
+    return this.sublist$2($receiver, start, null);
   },
   setRange$4: function(receiver, start, end, iterable, skipCount) {
     if (!!receiver.immutable$list)
@@ -378,6 +1437,8 @@ $$.JSArray = {"": "Interceptor;",
     var t1;
     if (!!receiver.immutable$list)
       $.throwExpression($.UnsupportedError$("sort"));
+    if (compare == null)
+      compare = $.Comparable_compare;
     t1 = receiver.length - 1;
     if (t1 - 0 <= 32)
       $.Sort_insertionSort_(receiver, 0, t1, compare);
@@ -426,13 +1487,28 @@ $$.JSArray = {"": "Interceptor;",
     receiver[index] = value;
   },
   $asInterceptor: null,
-  $asList: null,
-  $asIterable: null,
-  $isList: true,
-  $isIterable: true
+  $asList: function() {
+    return null;
+  },
+  $asIterable: function() {
+    return null;
+  },
+  $isList: function() {
+    return true;
+  },
+  $isIterable: function() {
+    return true;
+  }
 };
 
-$$.JSMutableArray = {"": "JSArray;", $asJSArray: function () { return [null]; }, $asList: function () { return [null]; }, $asIterable: function () { return [null]; }};
+$$.JSMutableArray = {"": "JSArray;", $asJSArray: function () { return [null]; },
+  $asList: function() {
+    return function () { return [null]; };
+  },
+  $asIterable: function() {
+    return function () { return [null]; };
+  }
+};
 
 $$.JSFixedArray = {"": "JSMutableArray;"};
 
@@ -460,6 +1536,27 @@ $$._StackTrace = {"": "Object;_stack",
     var t1 = this._stack;
     return t1 != null ? t1 : "";
   }
+};
+
+$$.invokeClosure_anon = {"": "Closure;closure_0",
+  call$0: function() {
+    return this.closure_0.call$0();
+  },
+  $isFunction: true
+};
+
+$$.invokeClosure_anon0 = {"": "Closure;closure_1,arg1_2",
+  call$0: function() {
+    return this.closure_1.call$1(this.arg1_2);
+  },
+  $isFunction: true
+};
+
+$$.invokeClosure_anon1 = {"": "Closure;closure_3,arg1_4,arg2_5",
+  call$0: function() {
+    return this.closure_3.call$2(this.arg1_4, this.arg2_5);
+  },
+  $isFunction: true
 };
 
 $$.Closure = {"": "Object;",
@@ -505,6 +1602,9 @@ $$.JSNumber = {"": "Interceptor;",
   },
   get$isInfinite: function(receiver) {
     return receiver == Infinity || receiver == -Infinity;
+  },
+  remainder$1: function(receiver, b) {
+    return receiver % b;
   },
   abs$0: function(receiver) {
     return Math.abs(receiver);
@@ -566,6 +1666,13 @@ $$.JSNumber = {"": "Interceptor;",
   $tdiv: function(receiver, other) {
     return this.truncate$0(receiver / other);
   },
+  $shl: function(receiver, other) {
+    if (other < 0)
+      throw $.wrapException($.ArgumentError$(other));
+    if (other > 31)
+      return 0;
+    return receiver << other >>> 0;
+  },
   $shr: function(receiver, other) {
     if (other < 0)
       throw $.wrapException($.ArgumentError$(other));
@@ -595,6 +1702,8 @@ $$.JSNumber = {"": "Interceptor;",
     return receiver > other;
   },
   $le: function(receiver, other) {
+    if (!(typeof other === "number"))
+      throw $.wrapException($.ArgumentError$(other));
     return receiver <= other;
   },
   $ge: function(receiver, other) {
@@ -646,6 +1755,9 @@ $$.JSString = {"": "Interceptor;",
       throw $.wrapException($.RangeError$value(index));
     return receiver.charCodeAt(index);
   },
+  allMatches$1: function(receiver, str) {
+    return $.allMatchesInStringUnchecked(receiver, str);
+  },
   $add: function(receiver, other) {
     if (!(typeof other === "string"))
       throw $.wrapException($.ArgumentError$(other));
@@ -683,6 +1795,25 @@ $$.JSString = {"": "Interceptor;",
   },
   substring$1: function($receiver, startIndex) {
     return this.substring$2($receiver, startIndex, null);
+  },
+  indexOf$2: function(receiver, other, start) {
+    if (other == null)
+      $.throwExpression($.ArgumentError$(null));
+    if (!(typeof start === "number" && Math.floor(start) === start))
+      throw $.wrapException($.ArgumentError$(start));
+    if (!(typeof other === "string"))
+      throw $.wrapException($.ArgumentError$(other));
+    if (start < 0)
+      return -1;
+    return receiver.indexOf(other, start);
+  },
+  contains$2: function(receiver, other, startIndex) {
+    if (other == null)
+      $.throwExpression($.ArgumentError$(null));
+    return $.stringContainsUnchecked(receiver, other, startIndex);
+  },
+  get$isEmpty: function(receiver) {
+    return receiver.length === 0;
   },
   compareTo$1: function(receiver, other) {
     var t1;
@@ -724,9 +1855,644 @@ $$.JSString = {"": "Interceptor;",
   $isString: true
 };
 
+$$.MetaInfo = {"": "Object;_tag<,_tags,_set<"};
+
+$$.StringMatch = {"": "Object;start,str,pattern",
+  $index: function(_, g) {
+    if ($.$eq(g, 0) !== true)
+      $.throwExpression($.RangeError$value(g));
+    return this.pattern;
+  }
+};
+
+$$._CompleterImpl = {"": "Object;future<,_isComplete",
+  complete$1: function(_, value) {
+    if (this._isComplete)
+      throw $.wrapException($.StateError$("Future already completed"));
+    this._isComplete = true;
+    this.future._setValue$1(value);
+  },
+  completeError$2: function(error, stackTrace) {
+    if (this._isComplete)
+      throw $.wrapException($.StateError$("Future already completed"));
+    this._isComplete = true;
+    if (stackTrace != null)
+      $._attachStackTrace(error, stackTrace);
+    this.future._setError$1(error);
+  },
+  completeError$1: function(error) {
+    return this.completeError$2(error, null);
+  }
+};
+
+$$._FutureListenerWrapper = {"": "Object;future<,_nextListener@",
+  _sendValue$1: function(value) {
+    this.future._setValue$1(value);
+  },
+  _sendError$1: function(error) {
+    this.future._setError$1(error);
+  }
+};
+
+$$._FutureImpl = {"": "Object;_state@,_resultOrListeners<",
+  get$_isComplete: function() {
+    return this._state !== 0;
+  },
+  get$_hasValue: function() {
+    return this._state === 1;
+  },
+  get$_hasError: function() {
+    return (this._state & 2) !== 0;
+  },
+  get$_hasUnhandledError: function() {
+    return (this._state & 4) !== 0;
+  },
+  then$2$onError: function(f, onError) {
+    var t1;
+    if (!this.get$_isComplete()) {
+      if (onError == null) {
+        t1 = $._ThenFuture$(f, null, null);
+        t1._subscribeTo$1(this);
+        return t1;
+      }
+      t1 = $._SubscribeFuture$(f, onError, null, null);
+      t1._subscribeTo$1(this);
+      return t1;
+    }
+    if (this.get$_hasError()) {
+      if (onError != null)
+        return this._handleError$2(onError, null);
+      return $._FutureWrapper$(this, null);
+    } else
+      return this._handleValue$1(f);
+  },
+  then$1: function(f) {
+    return this.then$2$onError(f, null);
+  },
+  catchError$2$test: function(f, test) {
+    var t1;
+    if (this.get$_hasValue())
+      return $._FutureWrapper$(this, null);
+    if (!this.get$_isComplete()) {
+      t1 = $._CatchErrorFuture$(f, test, null);
+      t1._subscribeTo$1(this);
+      return t1;
+    } else
+      return this._handleError$2(f, test);
+  },
+  catchError$1: function(f) {
+    return this.catchError$2$test(f, null);
+  },
+  _handleValue$1: function(onValue) {
+    var thenFuture = $._ThenFuture$(onValue, null, null);
+    $.Timer_run(new $._FutureImpl__handleValue_anon(thenFuture, this._resultOrListeners));
+    return thenFuture;
+  },
+  _handleError$2: function(onError, test) {
+    var error, errorFuture;
+    this._state = (this._state & 4294967291) >>> 0;
+    error = this._resultOrListeners;
+    errorFuture = $._CatchErrorFuture$(onError, test, null);
+    $.Timer_run(new $._FutureImpl__handleError_anon(error, errorFuture));
+    return errorFuture;
+  },
+  _setValue$1: function(value) {
+    var listeners, listeners0;
+    if (this.get$_isComplete())
+      throw $.wrapException($.StateError$("Future already completed"));
+    listeners = this._removeListeners$0();
+    this._state = 1;
+    this._resultOrListeners = value;
+    for (; listeners != null; listeners = listeners0) {
+      listeners0 = listeners.get$_nextListener();
+      listeners.set$_nextListener(null);
+      listeners._sendValue$1(value);
+    }
+  },
+  get$_setValue: function() {
+    return new $.BoundClosure$1(this, "_setValue$1");
+  },
+  _setError$1: function(error) {
+    var listeners, listeners0;
+    if (this.get$_isComplete())
+      throw $.wrapException($.StateError$("Future already completed"));
+    listeners = this._removeListeners$0();
+    this._state = 2;
+    this._resultOrListeners = error;
+    if (listeners == null) {
+      this._scheduleUnhandledError$0();
+      return;
+    }
+    do {
+      listeners0 = listeners.get$_nextListener();
+      listeners.set$_nextListener(null);
+      listeners._sendError$1(error);
+      if (listeners0 != null) {
+        listeners = listeners0;
+        continue;
+      } else
+        break;
+    } while (true);
+  },
+  get$_setError: function() {
+    return new $.BoundClosure$1(this, "_setError$1");
+  },
+  _scheduleUnhandledError$0: function() {
+    this._state = (this._state | 4) >>> 0;
+    $.Timer_run(new $._FutureImpl__scheduleUnhandledError_anon(this));
+  },
+  _addListener$1: function(listener) {
+    listener._nextListener = this._resultOrListeners;
+    this._resultOrListeners = listener;
+  },
+  _removeListeners$0: function() {
+    var current, prev, next;
+    current = this._resultOrListeners;
+    this._resultOrListeners = null;
+    for (prev = null; current != null; prev = current, current = next) {
+      next = current.get$_nextListener();
+      current.set$_nextListener(prev);
+    }
+    return prev;
+  },
+  _chain$1: function(future) {
+    var t1;
+    if (!this.get$_isComplete()) {
+      t1 = future._asListener$0();
+      t1._nextListener = this._resultOrListeners;
+      this._resultOrListeners = t1;
+    } else if (this.get$_hasValue())
+      future._setValue$1(this._resultOrListeners);
+    else {
+      this._state = (this._state & 4294967291) >>> 0;
+      future._setError$1(this._resultOrListeners);
+    }
+  },
+  _setOrChainValue$1: function(result) {
+    if (typeof result === "object" && result !== null && !!$.getInterceptor(result).$isFuture)
+      if (!!$.getInterceptor(result).$is_FutureImpl) {
+        result._chain$1(this);
+        return;
+      } else {
+        result.then$2$onError(this.get$_setValue(), this.get$_setError());
+        return;
+      }
+    else
+      this._setValue$1(result);
+  },
+  _asListener$0: function() {
+    return $._FutureListenerWrapper$(this, null);
+  },
+  _FutureImpl$immediate$1: function(value, T) {
+    this._state = 1;
+    this._resultOrListeners = value;
+  },
+  $is_FutureImpl: true,
+  $isFuture: true
+};
+
+$$._FutureImpl__FutureImpl$wait_handleError = {"": "Closure;box_0",
+  call$1: function(error) {
+    var t1 = this.box_0;
+    if (t1.values_1 != null) {
+      t1.values_1 = null;
+      t1.completer_0.completeError$1(error);
+    }
+  },
+  $isFunction: true
+};
+
+$$._FutureImpl__FutureImpl$wait_anon = {"": "Closure;box_0,pos_1",
+  call$1: function(value) {
+    var t1, t2;
+    t1 = this.box_0;
+    t2 = t1.values_1;
+    if (t2 == null)
+      return;
+    $.$indexSet$ax(t2, this.pos_1, value);
+    t1.remaining_2 = $.$sub$n(t1.remaining_2, 1);
+    if ($.$eq(t1.remaining_2, 0) === true) {
+      t2 = t1.completer_0;
+      t2.complete$1(t2, t1.values_1);
+    }
+  },
+  $isFunction: true
+};
+
+$$._FutureImpl__handleValue_anon = {"": "Closure;thenFuture_0,value_1",
+  call$0: function() {
+    this.thenFuture_0._sendValue$1(this.value_1);
+  },
+  $isFunction: true
+};
+
+$$._FutureImpl__handleError_anon = {"": "Closure;error_0,errorFuture_1",
+  call$0: function() {
+    this.errorFuture_1._sendError$1(this.error_0);
+  },
+  $isFunction: true
+};
+
+$$._FutureImpl__scheduleUnhandledError_anon = {"": "Closure;this_0",
+  call$0: function() {
+    var t1, error, trace;
+    t1 = this.this_0;
+    if (t1.get$_hasUnhandledError()) {
+      t1.set$_state((t1.get$_state() & 4294967291) >>> 0);
+      error = t1.get$_resultOrListeners();
+      $.Primitives_printString("Uncaught Error: " + $.S(error));
+      trace = $.getAttachedStackTrace(error);
+      if (trace != null)
+        $.Primitives_printString("Stack Trace:\n" + $.S(trace) + "\n");
+      throw $.wrapException(error);
+    }
+  },
+  $isFunction: true
+};
+
+$$._TransformFuture = {"": "_FutureImpl;_nextListener@",
+  _subscribeTo$1: function(future) {
+    future._addListener$1(this);
+  },
+  $as_FutureImpl: function (S, T) { return [T]; },
+  $asFuture: function (S, T) { return [T]; }
+};
+
+$$._ThenFuture = {"": "_TransformFuture;_onValue,_nextListener,_state,_resultOrListeners",
+  _onValue$1: function(arg0) {
+    return this._onValue.call$1(arg0);
+  },
+  _sendValue$1: function(value) {
+    var result, e, s, exception, t1;
+    result = null;
+    try {
+      result = this._onValue$1(value);
+    } catch (exception) {
+      t1 = $.unwrapException(exception);
+      e = t1;
+      s = $.getTraceFromException(exception);
+      this._setError$1($._asyncError(e, s));
+      return;
+    }
+
+    this._setOrChainValue$1(result);
+  },
+  _sendError$1: function(error) {
+    this._setError$1(error);
+  },
+  $as_TransformFuture: null,
+  $as_FutureImpl: function (S, T) { return [T]; },
+  $asFuture: function (S, T) { return [T]; }
+};
+
+$$._CatchErrorFuture = {"": "_TransformFuture;_test,_onError,_nextListener,_state,_resultOrListeners",
+  _test$1: function(arg0) {
+    return this._test.call$1(arg0);
+  },
+  _onError$1: function(arg0) {
+    return this._onError.call$1(arg0);
+  },
+  _sendValue$1: function(value) {
+    this._setValue$1(value);
+  },
+  _sendError$1: function(error) {
+    var matchesTest, e, s, result, e0, s0, exception, t1;
+    if (this._test != null) {
+      matchesTest = null;
+      try {
+        matchesTest = this._test$1(error);
+      } catch (exception) {
+        t1 = $.unwrapException(exception);
+        e = t1;
+        s = $.getTraceFromException(exception);
+        this._setError$1($._asyncError(e, s));
+        return;
+      }
+
+      if (matchesTest !== true) {
+        this._setError$1(error);
+        return;
+      }
+    }
+    result = null;
+    try {
+      result = this._onError$1(error);
+    } catch (exception) {
+      t1 = $.unwrapException(exception);
+      e0 = t1;
+      s0 = $.getTraceFromException(exception);
+      this._setError$1($._asyncError(e0, s0));
+      return;
+    }
+
+    this._setOrChainValue$1(result);
+  },
+  $as_TransformFuture: function (T) { return [T, T]; },
+  $as_FutureImpl: null,
+  $asFuture: null
+};
+
+$$._SubscribeFuture = {"": "_ThenFuture;_onError,_onValue,_nextListener,_state,_resultOrListeners",
+  _onError$1: function(arg0) {
+    return this._onError.call$1(arg0);
+  },
+  _sendError$1: function(error) {
+    var result, e, s, exception, t1;
+    result = null;
+    try {
+      result = this._onError$1(error);
+    } catch (exception) {
+      t1 = $.unwrapException(exception);
+      e = t1;
+      s = $.getTraceFromException(exception);
+      this._setError$1($._asyncError(e, s));
+      return;
+    }
+
+    this._setOrChainValue$1(result);
+  },
+  $as_ThenFuture: null,
+  $as_FutureImpl: function (S, T) { return [T]; },
+  $asFuture: function (S, T) { return [T]; }
+};
+
+$$._FutureWrapper = {"": "Object;_future",
+  then$2$onError: function($function, onError) {
+    return this._future.then$2$onError($function, onError);
+  },
+  then$1: function($function) {
+    return this.then$2$onError($function, null);
+  },
+  catchError$2$test: function($function, test) {
+    return this._future.catchError$2$test($function, test);
+  },
+  catchError$1: function($function) {
+    return this.catchError$2$test($function, null);
+  },
+  $isFuture: true
+};
+
+$$.EventSink = {"": "Object;"};
+
+$$.Timer_run_anon = {"": "Closure;",
+  call$0: function() {
+    var runCallbacks, i, callback, newCallbacks, exception;
+    runCallbacks = $.get$Timer__runCallbacks();
+    $.Timer__runCallbacks = [];
+    for (i = 0; $.$lt$n(i, $.get$length$asx(runCallbacks)); i = $.$add$ns(i, 1)) {
+      callback = $.$index$asx(runCallbacks, i);
+      try {
+        callback.call$0();
+      } catch (exception) {
+        $.unwrapException(exception);
+        newCallbacks = $.get$Timer__runCallbacks();
+        $.Timer__runCallbacks = [];
+        i = $.$add$ns(i, 1);
+        $.addAll$1$ax($.get$Timer__runCallbacks(), $.sublist$1$ax(runCallbacks, i));
+        $.addAll$1$ax($.get$Timer__runCallbacks(), newCallbacks);
+        throw exception;
+      }
+
+    }
+  },
+  $isFunction: true
+};
+
+$$.HashMap = {"": "Object;_liblib0$_length,_strings,_nums,_rest,_keys",
+  get$length: function(_) {
+    return this._liblib0$_length;
+  },
+  get$isEmpty: function(_) {
+    return this._liblib0$_length === 0;
+  },
+  get$keys: function() {
+    return $.HashMapKeyIterable$(this, $.getRuntimeTypeArgument(this, this.$asHashMap, 0));
+  },
+  get$values: function(_) {
+    var t1 = this.get$keys();
+    return t1.map$1(t1, new $.HashMap_values_anon(this));
+  },
+  containsKey$1: function(key) {
+    var strings, nums, rest;
+    if (typeof key === "string" && key !== "__proto__") {
+      strings = this._strings;
+      return strings == null ? false : strings[key] != null;
+    } else if (typeof key === "number" && (key & 0x3ffffff) === key) {
+      nums = this._nums;
+      return nums == null ? false : nums[key] != null;
+    } else {
+      rest = this._rest;
+      if (rest == null)
+        return false;
+      return $.HashMap__findBucketIndex(rest[$.get$hashCode$(key) & 0x3ffffff], key) >= 0;
+    }
+  },
+  addAll$1: function(_, other) {
+    $.forEach$1$ax(other, new $.HashMap_addAll_anon(this));
+  },
+  $index: function(_, key) {
+    var strings, t1, entry, nums, rest, bucket, index;
+    if (typeof key === "string" && key !== "__proto__") {
+      strings = this._strings;
+      if (strings == null)
+        t1 = null;
+      else {
+        entry = strings[key];
+        t1 = entry === strings ? null : entry;
+      }
+      return t1;
+    } else if (typeof key === "number" && (key & 0x3ffffff) === key) {
+      nums = this._nums;
+      if (nums == null)
+        t1 = null;
+      else {
+        entry = nums[key];
+        t1 = entry === nums ? null : entry;
+      }
+      return t1;
+    } else {
+      rest = this._rest;
+      if (rest == null)
+        return;
+      bucket = rest[$.get$hashCode$(key) & 0x3ffffff];
+      index = $.HashMap__findBucketIndex(bucket, key);
+      return index < 0 ? null : bucket[index + 1];
+    }
+  },
+  $indexSet: function(_, key, value) {
+    var strings, table, nums, rest, hash, bucket, index;
+    if (typeof key === "string" && key !== "__proto__") {
+      strings = this._strings;
+      if (strings == null) {
+        table = Object.create(null);
+        if (table == null)
+          ;
+        table["<non-identifier-key>"] = table;
+        delete table["<non-identifier-key>"];
+        this._strings = table;
+        strings = table;
+      }
+      if (strings[key] == null) {
+        this._liblib0$_length = this._liblib0$_length + 1;
+        this._keys = null;
+      }
+      if (value == null)
+        value = strings;
+      strings[key] = value;
+    } else if (typeof key === "number" && (key & 0x3ffffff) === key) {
+      nums = this._nums;
+      if (nums == null) {
+        table = Object.create(null);
+        if (table == null)
+          ;
+        table["<non-identifier-key>"] = table;
+        delete table["<non-identifier-key>"];
+        this._nums = table;
+        nums = table;
+      }
+      if (nums[key] == null) {
+        this._liblib0$_length = this._liblib0$_length + 1;
+        this._keys = null;
+      }
+      if (value == null)
+        value = nums;
+      nums[key] = value;
+    } else {
+      rest = this._rest;
+      if (rest == null) {
+        table = Object.create(null);
+        if (table == null)
+          ;
+        table["<non-identifier-key>"] = table;
+        delete table["<non-identifier-key>"];
+        this._rest = table;
+        rest = table;
+      }
+      hash = $.get$hashCode$(key) & 0x3ffffff;
+      bucket = rest[hash];
+      if (bucket == null) {
+        value = [key, value];
+        if (value == null)
+          value = rest;
+        rest[hash] = value;
+        this._liblib0$_length = this._liblib0$_length + 1;
+        this._keys = null;
+      } else {
+        index = $.HashMap__findBucketIndex(bucket, key);
+        if (index >= 0)
+          bucket[index + 1] = value;
+        else {
+          bucket.push(key, value);
+          this._liblib0$_length = this._liblib0$_length + 1;
+          this._keys = null;
+        }
+      }
+    }
+  },
+  remove$1: function(_, key) {
+    var rest, bucket, index;
+    if (typeof key === "string" && key !== "__proto__")
+      return this._removeHashTableEntry$2(this._strings, key);
+    else if (typeof key === "number" && (key & 0x3ffffff) === key)
+      return this._removeHashTableEntry$2(this._nums, key);
+    else {
+      rest = this._rest;
+      if (rest == null)
+        return;
+      bucket = rest[$.get$hashCode$(key) & 0x3ffffff];
+      index = $.HashMap__findBucketIndex(bucket, key);
+      if (index < 0)
+        return;
+      this._liblib0$_length = this._liblib0$_length - 1;
+      this._keys = null;
+      return bucket.splice(index, 2)[1];
+    }
+  },
+  forEach$1: function(_, action) {
+    var keys, $length, i, key;
+    keys = this._computeKeys$0();
+    for ($length = $.get$length$asx(keys), i = 0; i < $length; ++i) {
+      key = keys[i];
+      action.call$2(key, this.$index(this, key));
+      if (keys !== this._keys)
+        throw $.wrapException($.ConcurrentModificationError$(this));
+    }
+  },
+  toString$0: function(_) {
+    var result = $.StringBuffer$("");
+    $.ToString__emitPair(this, result, $.List_List($, null));
+    return result.toString$0(result);
+  },
+  _computeKeys$0: function() {
+    var t1, result, strings, names, entries, index, i, nums, rest, bucket, $length, i0;
+    t1 = this._keys;
+    if (t1 != null)
+      return t1;
+    result = $.List_List(this._liblib0$_length, null);
+    strings = this._strings;
+    if (strings != null) {
+      names = Object.getOwnPropertyNames(strings);
+      entries = names.length;
+      for (index = 0, i = 0; i < entries; ++i) {
+        result[index] = names[i];
+        ++index;
+      }
+    } else
+      index = 0;
+    nums = this._nums;
+    if (nums != null) {
+      names = Object.getOwnPropertyNames(nums);
+      entries = names.length;
+      for (i = 0; i < entries; ++i) {
+        result[index] = +names[i];
+        ++index;
+      }
+    }
+    rest = this._rest;
+    if (rest != null) {
+      names = Object.getOwnPropertyNames(rest);
+      entries = names.length;
+      for (i = 0; i < entries; ++i) {
+        bucket = rest[names[i]];
+        $length = bucket.length;
+        for (i0 = 0; i0 < $length; i0 += 2) {
+          result[index] = bucket[i0];
+          ++index;
+        }
+      }
+    }
+    this._keys = result;
+    return result;
+  },
+  _removeHashTableEntry$2: function(table, key) {
+    var entry, value;
+    if (table != null && table[key] != null) {
+      entry = table[key];
+      value = entry === table ? null : entry;
+      delete table[key];
+      this._liblib0$_length = this._liblib0$_length - 1;
+      this._keys = null;
+      return value;
+    } else
+      return;
+  },
+  $isMap: true
+};
+
 $$.IterableBase = {"": "Object;",
+  map$1: function(_, f) {
+    return $.MappedIterable$(this, f, $.getRuntimeTypeArgument(this, this.$asIterableBase, 0), null);
+  },
+  forEach$1: function(_, f) {
+    var t1;
+    for (t1 = this.get$iterator(this); t1.moveNext$0() === true;)
+      f.call$1(t1.get$current());
+  },
   toList$1$growable: function(_, growable) {
     return $.List_List$from(this, growable, $.getRuntimeTypeArgument(this, this.$asIterableBase, 0));
+  },
+  toList$0: function($receiver) {
+    return this.toList$1$growable($receiver, true);
   },
   get$length: function(_) {
     var it, count;
@@ -750,7 +2516,12 @@ $$.IterableBase = {"": "Object;",
     }
     throw $.wrapException($.RangeError$value(index));
   },
-  $isIterable: true
+  $isIterable: function() {
+    return true;
+  },
+  $asIterable: function() {
+    return null;
+  }
 };
 
 $$.LinkedHashMap = {"": "Object;_liblib0$_length,_strings,_nums,_rest,_first,_last,_modifications",
@@ -772,6 +2543,9 @@ $$.LinkedHashMap = {"": "Object;_liblib0$_length,_strings,_nums,_rest,_first,_la
         return false;
       return $.LinkedHashMap__findBucketIndex(rest[$.get$hashCode$(key) & 0x3ffffff], key) >= 0;
     }
+  },
+  addAll$1: function(_, other) {
+    $.forEach$1$ax(other, new $.LinkedHashMap_addAll_anon(this));
   },
   $index: function(_, key) {
     var strings, cell, nums, rest, bucket, index;
@@ -847,14 +2621,18 @@ $$.LinkedHashMap = {"": "Object;_liblib0$_length,_strings,_nums,_rest,_first,_la
     cell = this._first;
     modifications = this._modifications;
     for (; cell != null;) {
-      action.call$2(cell._key, cell._value);
+      action.call$2(cell.get$_key(), cell.get$_value());
       if (modifications !== this._modifications)
         throw $.wrapException($.ConcurrentModificationError$(this));
-      cell = cell._next;
+      cell = cell.get$_liblib0$_next();
     }
   },
   get$keys: function() {
     return $.LinkedHashMapKeyIterable$(this, $.getRuntimeTypeArgument(this, this.$asLinkedHashMap, 0));
+  },
+  get$values: function(_) {
+    var t1 = this.get$keys();
+    return t1.map$1(t1, new $.LinkedHashMap_values_anon(this));
   },
   get$length: function(_) {
     return this._liblib0$_length;
@@ -880,7 +2658,7 @@ $$.LinkedHashMap = {"": "Object;_liblib0$_length,_strings,_nums,_rest,_first,_la
     } else {
       last = this._last;
       cell._previous = last;
-      last._next = cell;
+      last._liblib0$_next = cell;
       this._last = cell;
     }
     this._liblib0$_length = this._liblib0$_length + 1;
@@ -894,11 +2672,23 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
   get$iterator: function(_) {
     return $._ListQueueIterator$(this, null);
   },
+  forEach$1: function(_, action) {
+    var modificationCount, i, t1;
+    modificationCount = this._modificationCount;
+    for (i = this._head; i !== this._tail; i = (i + 1 & this._table.length - 1) >>> 0) {
+      t1 = this._table;
+      if (i < 0 || i >= t1.length)
+        throw $.ioore(i);
+      action.call$1(t1[i]);
+      if (modificationCount !== this._modificationCount)
+        $.throwExpression($.ConcurrentModificationError$(this));
+    }
+  },
   get$isEmpty: function(_) {
     return this._head === this._tail;
   },
   get$length: function(_) {
-    return (this._tail - this._head & this._table.length - 1) >>> 0;
+    return $.$and$n($.$sub$n(this._tail, this._head), this._table.length - 1);
   },
   elementAt$1: function(_, index) {
     var t1, t2, t3;
@@ -924,13 +2714,51 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
     this._writeToList$1(list);
     return list;
   },
+  toList$0: function($receiver) {
+    return this.toList$1$growable($receiver, true);
+  },
   add$1: function(_, element) {
     this._add$1(element);
+  },
+  addAll$1: function(_, elements) {
+    var addCount, $length, t1, t2, t3, endSpace, preSpace;
+    if (typeof elements === "object" && elements !== null && (elements.constructor === Array || $.getInterceptor(elements).$isList())) {
+      addCount = $.get$length$asx(elements);
+      $length = this.get$length(this);
+      t1 = $length + addCount;
+      t2 = this._table;
+      t3 = t2.length;
+      if (t1 >= t3) {
+        this._preGrow$1(t1);
+        $.JSArray_methods.setRange$4(this._table, $length, t1, elements, 0);
+        this._tail = $.$add$ns(this._tail, addCount);
+      } else {
+        t1 = this._tail;
+        if (typeof t1 !== "number")
+          throw $.iae(t1);
+        endSpace = t3 - t1;
+        if (addCount < endSpace) {
+          $.JSArray_methods.setRange$4(t2, t1, t1 + addCount, elements, 0);
+          this._tail = $.$add$ns(this._tail, addCount);
+        } else {
+          preSpace = addCount - endSpace;
+          $.JSArray_methods.setRange$4(t2, t1, t1 + endSpace, elements, 0);
+          $.JSArray_methods.setRange$4(this._table, 0, preSpace, elements, endSpace);
+          this._tail = preSpace;
+        }
+      }
+      this._modificationCount = this._modificationCount + 1;
+    } else
+      for (t1 = $.get$iterator$ax(elements); t1.moveNext$0() === true;)
+        this._add$1(t1.get$current());
   },
   toString$0: function(_) {
     var result = $.StringBuffer$("");
     $.ToString__emitValue(this, result, $.List_List($, null));
     return result.toString$0(result);
+  },
+  addLast$1: function(element) {
+    this._add$1(element);
   },
   addFirst$1: function(element) {
     var t1, t2;
@@ -963,9 +2791,11 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
     if (this._head === this._tail)
       throw $.wrapException($.StateError$("No elements"));
     this._modificationCount = this._modificationCount + 1;
-    this._tail = (this._tail - 1 & this._table.length - 1) >>> 0;
+    this._tail = $.$and$n($.$sub$n(this._tail, 1), this._table.length - 1);
     t1 = this._table;
     t2 = this._tail;
+    if (t2 !== (t2 | 0))
+      throw $.iae(t2);
     if (t2 < 0 || t2 >= t1.length)
       throw $.ioore(t2);
     return t1[t2];
@@ -981,14 +2811,15 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
       throw $.wrapException($.ConcurrentModificationError$(this));
   },
   _add$1: function(element) {
-    var t1, t2, t3;
+    var t1, t2;
     t1 = this._table;
     t2 = this._tail;
-    t3 = t1.length;
-    if (t2 < 0 || t2 >= t3)
+    if (t2 !== (t2 | 0))
+      throw $.iae(t2);
+    if (t2 < 0 || t2 >= t1.length)
       throw $.ioore(t2);
     t1[t2] = element;
-    this._tail = (t2 + 1 & t3 - 1) >>> 0;
+    this._tail = $.$and$n(t2 + 1, this._table.length - 1);
     if (this._head === this._tail)
       this._grow$0();
     this._modificationCount = this._modificationCount + 1;
@@ -1007,20 +2838,30 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
     this._table = newTable;
   },
   _writeToList$1: function(target) {
-    var t1, t2, t3, $length, firstPartSize;
-    t1 = this._head;
-    t2 = this._tail;
-    t3 = this._table;
-    if (t1 <= t2) {
-      $length = t2 - t1;
-      $.JSArray_methods.setRange$4(target, 0, $length, t3, t1);
+    var t1, t2, $length, firstPartSize;
+    t1 = $.JSInt_methods.$le(this._head, this._tail);
+    t2 = this._head;
+    if (t1) {
+      $length = $.$sub$n(this._tail, t2);
+      $.JSArray_methods.setRange$4(target, 0, $length, this._table, this._head);
       return $length;
     } else {
-      firstPartSize = t3.length - t1;
-      $.JSArray_methods.setRange$4(target, 0, firstPartSize, t3, t1);
-      $.JSArray_methods.setRange$4(target, firstPartSize, firstPartSize + this._tail, this._table, 0);
-      return this._tail + firstPartSize;
+      t1 = this._table;
+      firstPartSize = t1.length - t2;
+      $.JSArray_methods.setRange$4(target, 0, firstPartSize, t1, t2);
+      t2 = this._tail;
+      if (typeof t2 !== "number")
+        throw $.iae(t2);
+      $.JSArray_methods.setRange$4(target, firstPartSize, firstPartSize + t2, this._table, 0);
+      return $.$add$ns(this._tail, firstPartSize);
     }
+  },
+  _preGrow$1: function(newElementCount) {
+    var newTable = $.List_List($.ListQueue__nextPowerOf2(newElementCount), $.getRuntimeTypeArgument(this, this.$asListQueue, 0));
+    $.setRuntimeTypeInfo(newTable, [$.getRuntimeTypeArgument(this, this.$asListQueue, 0)]);
+    this._tail = this._writeToList$1(newTable);
+    this._table = newTable;
+    this._head = 0;
   },
   ListQueue$1: function(initialCapacity, E) {
     var t1;
@@ -1033,11 +2874,15 @@ $$.ListQueue = {"": "IterableBase;_table,_head,_tail,_modificationCount",
     this._table = t1;
   },
   $asIterableBase: null,
-  $asIterable: null,
-  $isIterable: true
+  $asIterable: function() {
+    return null;
+  },
+  $isIterable: function() {
+    return true;
+  }
 };
 
-$$._ListQueueIterator = {"": "Object;_queue,_end,_modificationCount,_position,_liblib0$_current",
+$$._ListQueueIterator = {"": "Object;_queue,_end,_modificationCount,_liblib0$_position,_liblib0$_current",
   get$current: function() {
     return this._liblib0$_current;
   },
@@ -1045,7 +2890,7 @@ $$._ListQueueIterator = {"": "Object;_queue,_end,_modificationCount,_position,_l
     var t1, t2, t3;
     t1 = this._queue;
     t1._checkModification$1(this._modificationCount);
-    t2 = this._position;
+    t2 = this._liblib0$_position;
     if (t2 === this._end) {
       this._liblib0$_current = null;
       return false;
@@ -1054,9 +2899,102 @@ $$._ListQueueIterator = {"": "Object;_queue,_end,_modificationCount,_position,_l
     if (t2 < 0 || t2 >= t3.length)
       throw $.ioore(t2);
     this._liblib0$_current = t3[t2];
-    this._position = (this._position + 1 & t1._table.length - 1) >>> 0;
+    this._liblib0$_position = (this._liblib0$_position + 1 & t1._table.length - 1) >>> 0;
     return true;
   }
+};
+
+$$.Duration = {"": "Object;_duration<",
+  $add: function(_, other) {
+    return $.Duration$(0, 0, this._duration + other.get$_duration(), 0, 0, 0);
+  },
+  $sub: function(_, other) {
+    return $.Duration$(0, 0, this._duration - other.get$_duration(), 0, 0, 0);
+  },
+  $mul: function(_, factor) {
+    if (typeof factor !== "number")
+      throw $.iae(factor);
+    return $.Duration$(0, 0, this._duration * factor, 0, 0, 0);
+  },
+  $lt: function(_, other) {
+    return this._duration < other.get$_duration();
+  },
+  $gt: function(_, other) {
+    return this._duration > other.get$_duration();
+  },
+  $le: function(_, other) {
+    return $.JSNumber_methods.$le(this._duration, other.get$_duration());
+  },
+  $ge: function(_, other) {
+    return this._duration >= other.get$_duration();
+  },
+  get$inHours: function() {
+    return $.JSNumber_methods.$tdiv(this._duration, 3600000000);
+  },
+  get$inMinutes: function() {
+    return $.JSNumber_methods.$tdiv(this._duration, 60000000);
+  },
+  get$inSeconds: function() {
+    return $.JSNumber_methods.$tdiv(this._duration, 1000000);
+  },
+  get$inMilliseconds: function() {
+    return $.JSNumber_methods.$tdiv(this._duration, 1000);
+  },
+  get$inMicroseconds: function() {
+    return this._duration;
+  },
+  $eq: function(_, other) {
+    if (other == null)
+      return false;
+    if (!(typeof other === "object" && other !== null && !!$.getInterceptor(other).$isDuration))
+      return false;
+    return this._duration === other._duration;
+  },
+  get$hashCode: function(_) {
+    return $.JSNumber_methods.get$hashCode(this._duration);
+  },
+  compareTo$1: function(_, other) {
+    return $.JSNumber_methods.compareTo$1(this._duration, other.get$_duration());
+  },
+  toString$0: function(_) {
+    var t1, t2, twoDigitMinutes, twoDigitSeconds, sixDigitUs;
+    t1 = new $.Duration_toString_sixDigits();
+    t2 = new $.Duration_toString_twoDigits();
+    if (this.get$inMicroseconds() < 0)
+      return "-" + $.S($.Duration$(0, 0, -this.get$inMicroseconds(), 0, 0, 0));
+    twoDigitMinutes = t2.call$1($.JSNumber_methods.remainder$1(this.get$inMinutes(), 60));
+    twoDigitSeconds = t2.call$1($.JSNumber_methods.remainder$1(this.get$inSeconds(), 60));
+    sixDigitUs = t1.call$1($.JSNumber_methods.remainder$1(this.get$inMicroseconds(), 1000000));
+    return $.S(this.get$inHours()) + ":" + $.S(twoDigitMinutes) + ":" + $.S(twoDigitSeconds) + "." + $.S(sixDigitUs);
+  },
+  $isDuration: true
+};
+
+$$.Duration_toString_sixDigits = {"": "Closure;",
+  call$1: function(n) {
+    var t1 = $.getInterceptor$n(n);
+    if (t1.$ge(n, 100000))
+      return $.S(n);
+    if (t1.$ge(n, 10000))
+      return "0" + $.S(n);
+    if (t1.$ge(n, 1000))
+      return "00" + $.S(n);
+    if (t1.$ge(n, 100))
+      return "000" + $.S(n);
+    if (t1.$gt(n, 10))
+      return "0000" + $.S(n);
+    return "00000" + $.S(n);
+  },
+  $isFunction: true
+};
+
+$$.Duration_toString_twoDigits = {"": "Closure;",
+  call$1: function(n) {
+    if ($.$ge$n(n, 10))
+      return $.S(n);
+    return "0" + $.S(n);
+  },
+  $isFunction: true
 };
 
 $$.NullThrownError = {"": "Object;",
@@ -1126,6 +3064,13 @@ $$.UnsupportedError = {"": "Object;message",
   }
 };
 
+$$.UnimplementedError = {"": "Object;message",
+  toString$0: function(_) {
+    var t1 = this.message;
+    return t1 != null ? "UnimplementedError: " + $.S(t1) : "UnimplementedError";
+  }
+};
+
 $$.StateError = {"": "Object;message",
   toString$0: function(_) {
     return "Bad state: " + this.message;
@@ -1147,12 +3092,48 @@ $$.StackOverflowError = {"": "Object;",
   }
 };
 
+$$.RuntimeError = {"": "Object;message",
+  toString$0: function(_) {
+    return "RuntimeError: " + this.message;
+  }
+};
+
 $$._ExceptionImplementation = {"": "Object;message",
   toString$0: function(_) {
     var t1 = this.message;
     if (t1 == null)
       return "Exception";
     return "Exception: " + $.S(t1);
+  },
+  $isException: true
+};
+
+$$.Expando = {"": "Object;name",
+  toString$0: function(_) {
+    return "Expando:" + this.name;
+  },
+  $index: function(_, object) {
+    var values = $.Primitives_getProperty(object, "expando$values");
+    return values == null ? null : $.Primitives_getProperty(values, this._getKey$0());
+  },
+  $indexSet: function(_, object, value) {
+    var values = $.Primitives_getProperty(object, "expando$values");
+    if (values == null) {
+      values = $.Object$();
+      $.Primitives_setProperty(object, "expando$values", values);
+    }
+    $.Primitives_setProperty(values, this._getKey$0(), value);
+  },
+  _getKey$0: function() {
+    var key, t1;
+    key = $.Primitives_getProperty(this, "expando$key");
+    if (key == null) {
+      t1 = $.Expando__keyCount;
+      $.Expando__keyCount = $.$add$ns(t1, 1);
+      key = "expando$key$" + $.S(t1);
+      $.Primitives_setProperty(this, "expando$key", key);
+    }
+    return key;
   }
 };
 
@@ -1173,41 +3154,6 @@ $$.Object = {"": ";",
   }
 };
 
-$$.Stopwatch = {"": "Object;_start,_stop",
-  start$0: function() {
-    if (this.get$isRunning())
-      return;
-    if (this._start == null)
-      this._start = $.Primitives_numMicroseconds();
-    else {
-      this._start = $.Primitives_numMicroseconds() - $.$sub$n(this._stop, this._start);
-      this._stop = null;
-    }
-  },
-  stop$0: function() {
-    if (!this.get$isRunning())
-      return;
-    this._stop = $.Primitives_numMicroseconds();
-  },
-  get$elapsedTicks: function() {
-    var t1, t2;
-    t1 = this._start;
-    if (t1 == null)
-      return 0;
-    t2 = this._stop;
-    return t2 == null ? $.$sub$n($.Stopwatch__now(), this._start) : $.$sub$n(t2, t1);
-  },
-  get$elapsedMilliseconds: function() {
-    return $.JSNumber_methods.$tdiv(this.get$elapsedTicks() * 1000, this.get$frequency());
-  },
-  get$frequency: function() {
-    return $.Stopwatch__frequency();
-  },
-  get$isRunning: function() {
-    return this._start != null && this._stop == null;
-  }
-};
-
 $$.StringBuffer = {"": "Object;_contents",
   get$length: function(_) {
     return this._contents.length;
@@ -1221,6 +3167,29 @@ $$.StringBuffer = {"": "Object;_contents",
     var str = typeof obj === "string" ? obj : $.S(obj);
     this._contents = this._contents + str;
   },
+  writeAll$2: function(objects, separator) {
+    var iterator, str;
+    iterator = $.get$iterator$ax(objects);
+    if (iterator.moveNext$0() !== true)
+      return;
+    if ($.JSString_methods.get$isEmpty(separator))
+      do {
+        str = iterator.get$current();
+        str = typeof str === "string" ? str : $.S(str);
+        this._contents = this._contents + str;
+      } while (iterator.moveNext$0() === true);
+    else {
+      str = iterator.get$current();
+      str = typeof str === "string" ? str : $.S(str);
+      this._contents = this._contents + str;
+      for (; iterator.moveNext$0() === true;) {
+        this._contents = this._contents + separator;
+        str = iterator.get$current();
+        str = typeof str === "string" ? str : $.S(str);
+        this._contents = this._contents + str;
+      }
+    }
+  },
   toString$0: function(_) {
     return this._contents;
   },
@@ -1229,8 +3198,120 @@ $$.StringBuffer = {"": "Object;_contents",
   }
 };
 
-$$.Bench2d = {"": "Object;canvas,ctx,viewport,debugDraw,world",
-  initialize$0: function() {
+$$.Window_animationFrame_anon = {"": "Closure;completer_0",
+  call$1: function(time) {
+    var t1 = this.completer_0;
+    t1.complete$1(t1, time);
+  },
+  $isFunction: true
+};
+
+$$._WrappedList = {"": "Object;_list",
+  get$iterator: function(_) {
+    return $._WrappedIterator$($.get$iterator$ax(this._list), null);
+  },
+  forEach$1: function(_, f) {
+    $.forEach$1$ax(this._list, f);
+  },
+  get$length: function(_) {
+    return $.get$length$asx(this._list);
+  },
+  skip$1: function(_, n) {
+    return $.skip$1$ax(this._list, n);
+  },
+  elementAt$1: function(_, index) {
+    return $.elementAt$1$ax(this._list, index);
+  },
+  add$1: function(_, element) {
+    $.add$1$ax(this._list, element);
+  },
+  addAll$1: function(_, elements) {
+    $.addAll$1$ax(this._list, elements);
+  },
+  $index: function(_, index) {
+    return $.$index$asx(this._list, index);
+  },
+  $indexSet: function(_, index, value) {
+    $.$indexSet$ax(this._list, index, value);
+  },
+  removeLast$0: function(_) {
+    return $.removeLast$0$ax(this._list);
+  },
+  sublist$2: function(_, start, end) {
+    return $.sublist$2$ax(this._list, start, end);
+  },
+  sublist$1: function($receiver, start) {
+    return this.sublist$2($receiver, start, null);
+  },
+  setRange$4: function(_, start, end, iterable, skipCount) {
+    $.setRange$4$ax(this._list, start, end, iterable, skipCount);
+  },
+  setRange$3: function($receiver, start, end, iterable) {
+    return this.setRange$4($receiver, start, end, iterable, 0);
+  },
+  toString$0: function(_) {
+    var buffer = $.StringBuffer$("[");
+    buffer.writeAll$2(this, ", ");
+    buffer.write$1("]");
+    return buffer.toString$0(buffer);
+  },
+  $isList: function() {
+    return true;
+  },
+  $asList: function() {
+    return null;
+  },
+  $isIterable: function() {
+    return true;
+  },
+  $asIterable: function() {
+    return null;
+  }
+};
+
+$$._WrappedIterator = {"": "Object;_iterator",
+  moveNext$0: function() {
+    return this._iterator.moveNext$0();
+  },
+  get$current: function() {
+    return this._iterator.get$current();
+  }
+};
+
+$$._DOMWindowCrossFrame = {"": "Object;_window",
+  get$parent: function(_) {
+    return $._DOMWindowCrossFrame__createSafe(this._window.parent);
+  }
+};
+
+$$.FixedSizeListIterator = {"": "Object;_array,_length,_position,_current",
+  moveNext$0: function() {
+    var nextPosition, t1;
+    nextPosition = this._position + 1;
+    t1 = this._length;
+    if (nextPosition < t1) {
+      this._current = $.$index$asx(this._array, nextPosition);
+      this._position = nextPosition;
+      return true;
+    }
+    this._current = null;
+    this._position = t1;
+    return false;
+  },
+  get$current: function() {
+    return this._current;
+  }
+};
+
+$$.convertDartToNative_Dictionary_anon = {"": "Closure;object_0",
+  call$2: function(key, value) {
+    this.object_0[key] = value;
+  },
+  $isFunction: true
+};
+
+$$.Bench2d = {"": "Object;",
+  initialize$0: function(_) {
     var bd, ground, shape, fixDef, x, y, deltaX, deltaY, i, j;
     bd = $.BodyDef$();
     ground = this.world.createBody$1(bd);
@@ -1261,53 +3342,141 @@ $$.Bench2d = {"": "Object;canvas,ctx,viewport,debugDraw,world",
       x.add$1(x, deltaX);
     }
   },
-  warmup$0: function() {
-    for (var i = 0; i < 64; ++i)
-      this.world.step$3(0.016666666666666666, 3, 3);
-  },
-  bench$0: function() {
-    var times, t1, i, watch, t2, total;
-    times = $.List_List(256, $.$int);
-    $.setRuntimeTypeInfo(times, [$.$int]);
-    for (t1 = times.length, i = 0; i < 256; ++i) {
-      watch = $.Stopwatch$();
-      watch.start$0();
-      this.world.step$3(0.016666666666666666, 3, 3);
-      watch.stop$0();
-      t2 = watch.get$elapsedMilliseconds();
-      if (i >= t1)
-        throw $.ioore(i);
-      times[i] = t2;
-      $.Primitives_printString("" + i + ": " + $.S(times[i]));
-    }
-    for (total = 0, i = 0; i < 256; ++i) {
-      if (i >= t1)
-        throw $.ioore(i);
-      t2 = times[i];
-      if (typeof t2 !== "number")
-        throw $.iae(t2);
-      total += t2;
-    }
-    $.Primitives_printString("Average: " + $.S(total / 256));
+  step$0: function(_) {
+    var t1 = this.world;
+    t1.step$3(t1, 0.016666666666666666, 3, 3);
   },
   Bench2d$0: function() {
     this.world = $.World$($.vec2$(0, -10), true, $.DefaultWorldPool$());
   }
 };
 
+$$.Bench2dWeb = {"": "Bench2d;canvas,ctx,viewport,debugDraw,world",
+  initializeAnimation$0: function() {
+    var t1, t2, extents;
+    t1 = $.CanvasElement_CanvasElement(null, null);
+    t2 = $.getInterceptor$x(t1);
+    t2.set$width(t1, 900);
+    t2.set$height(t1, 600);
+    this.canvas = t1;
+    this.ctx = $.getContext$1$x(this.canvas, "2d");
+    document.body.appendChild(this.canvas);
+    extents = $.vec2$(450, 300);
+    t1 = $.CanvasViewportTransform$(extents, extents);
+    t1.scale = 10;
+    this.viewport = t1;
+    this.debugDraw = $.CanvasDraw$(this.viewport, this.ctx);
+    this.world.set$debugDraw(this.debugDraw);
+    this.initialize$0(this);
+  },
+  render$1: function(delta) {
+    $.Bench2d.prototype.step$0.call(this, this);
+    $.clearRect$4$x(this.ctx, 0, 0, 900, 600);
+    this.world.drawDebugData$0();
+    $.get$animationFrame$x(window).then$1(this.get$render());
+  },
+  get$render: function() {
+    return new $.BoundClosure$1(this, "render$1");
+  },
+  runAnimation$0: function() {
+    $.get$animationFrame$x(window).then$1(this.get$render());
+  }
+};
+
+$$.CanvasDraw = {"": "DebugDraw;ctx,flags,viewportTransform",
+  drawPolygon$3: function(vertices, vertexCount, color) {
+    this._pathPolygon$3(vertices, vertexCount, color);
+    $.stroke$0$x(this.ctx);
+  },
+  drawSolidPolygon$3: function(vertices, vertexCount, color) {
+    this._pathPolygon$3(vertices, vertexCount, color);
+    $.fill$0$x(this.ctx);
+  },
+  _pathPolygon$3: function(vertices, vertexCount, color) {
+    var t1, t2, i, t3, t4;
+    this.set$_color(color);
+    for (t1 = vertices.length, t2 = this.viewportTransform, i = 0; i < vertexCount; ++i) {
+      if (i >= t1)
+        throw $.ioore(i);
+      t3 = vertices[i];
+      t2.getWorldToScreen$2(t3, t3);
+    }
+    $.beginPath$0$x(this.ctx);
+    t2 = this.ctx;
+    if (0 >= t1)
+      throw $.ioore(0);
+    t3 = vertices[0];
+    t4 = $.getInterceptor$x(t3);
+    $.moveTo$2$x(t2, t4.get$x(t3), t4.get$y(t3));
+    for (i = 1; t2 = this.ctx, i < vertexCount; ++i) {
+      if (i >= t1)
+        throw $.ioore(i);
+      t3 = vertices[i];
+      t4 = $.getInterceptor$x(t3);
+      $.lineTo$2$x(t2, t4.get$x(t3), t4.get$y(t3));
+    }
+    t1 = vertices[0];
+    t3 = $.getInterceptor$x(t1);
+    $.lineTo$2$x(t2, t3.get$x(t1), t3.get$y(t1));
+    $.closePath$0$x(this.ctx);
+  },
+  drawSegment$3: function(p1, p2, color) {
+    var t1;
+    this.set$_color(color);
+    t1 = this.viewportTransform;
+    t1.getWorldToScreen$2(p1, p1);
+    t1.getWorldToScreen$2(p2, p2);
+    $.beginPath$0$x(this.ctx);
+    $.moveTo$2$x(this.ctx, p1.x, p1.y);
+    $.lineTo$2$x(this.ctx, p2.x, p2.y);
+    $.closePath$0$x(this.ctx);
+    $.stroke$0$x(this.ctx);
+  },
+  drawCircle$4: function(center, radius, color, axis) {
+    this._pathCircle$3(center, $.$mul$n(radius, $.get$scale$x(this.viewportTransform)), color);
+    $.stroke$0$x(this.ctx);
+  },
+  drawSolidCircle$4: function(center, radius, color, axis) {
+    this._pathCircle$3(center, $.$mul$n(radius, $.get$scale$x(this.viewportTransform)), color);
+    $.fill$0$x(this.ctx);
+  },
+  _pathCircle$3: function(center, radius, color) {
+    this.set$_color(color);
+    this.viewportTransform.getWorldToScreen$2(center, center);
+    $.beginPath$0$x(this.ctx);
+    $.arc$6$x(this.ctx, center.x, center.y, radius, 0, 6.283185307179586, true);
+    $.closePath$0$x(this.ctx);
+  },
+  drawTransform$2: function(xf, color) {
+    var t1 = $.get$scale$x(this.viewportTransform);
+    if (typeof t1 !== "number")
+      throw $.iae(t1);
+    this._pathCircle$3(xf.position, 0.1 * t1, color);
+    $.stroke$0$x(this.ctx);
+  },
+  set$_color: function(color) {
+    $.setStrokeColorRgb$4$x(this.ctx, color.x, color.y, color.z, 0.9);
+    $.setFillColorRgb$4$x(this.ctx, color.x, color.y, color.z, 0.8);
+  },
+  CanvasDraw$2: function(viewport, ctx) {
+  }
+};
+
 $$.ContactFilter = {"": "Object;",
   shouldCollide$2: function(fixtureA, fixtureB) {
     var filterA, filterB, t1;
-    filterA = fixtureA.get$filter();
-    filterB = fixtureB.get$filter();
-    t1 = filterA.groupIndex;
-    if (t1 !== 0 && t1 === filterB.groupIndex)
+    filterA = $.get$filter$x(fixtureA);
+    filterB = $.get$filter$x(fixtureB);
+    t1 = filterA.get$groupIndex();
+    if (t1 !== 0 && t1 === filterB.get$groupIndex())
       return t1 > 0;
-    return (filterA.maskBits & filterB.categoryBits) >>> 0 !== 0 && (filterA.categoryBits & filterB.maskBits) >>> 0 !== 0;
+    return (filterA.get$maskBits() & filterB.get$categoryBits()) >>> 0 !== 0 && (filterA.get$categoryBits() & filterB.get$maskBits()) >>> 0 !== 0;
   }
 };
 
 $$.ContactImpulse = {"": "Object;normalImpulses,tangentImpulses"};
+
+$$.DebugDraw = {"": "Object;flags@"};
 
 $$.AxisAlignedBox = {"": "Object;lowerBound<,upperBound<",
   setFromCombination$2: function(boxOne, boxTwo) {
@@ -1318,7 +3487,8 @@ $$.AxisAlignedBox = {"": "Object;lowerBound<,upperBound<",
   },
   get$center: function() {
     var t1 = this.lowerBound;
-    return t1.$add(t1, this.upperBound).scale$1(0.5);
+    t1 = t1.$add(t1, this.upperBound);
+    return t1.scale$1(t1, 0.5);
   },
   contains$1: function(_, aabb) {
     var t1, t2, t4, t5;
@@ -1447,190 +3617,209 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     return $.$lt$n(t3._distance, 0.000001192);
   },
   collideCircles$5: function(manifold, circle1, xfA, circle2, xfB) {
-    var v, t1, t2, pAy, pAx, v1, pBy, dx, dy, distSqr, radius;
+    var t1, v, t2, t3, t4, pAy, pAx, v1, t5, pBy, dx, dy, distSqr, radius;
     manifold.set$pointCount(0);
-    v = circle1.get$position();
-    t1 = xfA.position;
-    t2 = xfA.rotation;
-    pAy = $.$add$ns($.$add$ns(t1.y, $.$mul$n(t2.col0.get$y(), v.x)), $.$mul$n(t2.col1.get$y(), v.y));
-    pAx = $.$add$ns($.$add$ns(t1.x, $.$mul$n(t2.col0.get$x(), v.x)), $.$mul$n(t2.col1.get$x(), v.y));
-    v1 = circle2.get$position();
-    t2 = xfB.position;
-    t1 = xfB.rotation;
-    pBy = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t1.col0.get$y(), v1.x)), $.$mul$n(t1.col1.get$y(), v1.y));
-    dx = $.$sub$n($.$add$ns($.$add$ns(t2.x, $.$mul$n(t1.col0.get$x(), v1.x)), $.$mul$n(t1.col1.get$x(), v1.y)), pAx);
+    t1 = $.getInterceptor$x(circle1);
+    v = t1.get$position(circle1);
+    t2 = xfA.position;
+    t3 = xfA.rotation;
+    t4 = $.getInterceptor$x(v);
+    pAy = $.$add$ns($.$add$ns(t2.y, $.$mul$n($.get$y$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$y$x(t3.col1), t4.get$y(v)));
+    pAx = $.$add$ns($.$add$ns(t2.x, $.$mul$n($.get$x$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$x$x(t3.col1), t4.get$y(v)));
+    t4 = $.getInterceptor$x(circle2);
+    v1 = t4.get$position(circle2);
+    t3 = xfB.position;
+    t2 = xfB.rotation;
+    t5 = $.getInterceptor$x(v1);
+    pBy = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t2.col0), t5.get$x(v1))), $.$mul$n($.get$y$x(t2.col1), t5.get$y(v1)));
+    dx = $.$sub$n($.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t2.col0), t5.get$x(v1))), $.$mul$n($.get$x$x(t2.col1), t5.get$y(v1))), pAx);
     dy = $.$sub$n(pBy, pAy);
     distSqr = $.$add$ns($.$mul$n(dx, dx), $.$mul$n(dy, dy));
     radius = $.$add$ns(circle1.get$radius(), circle2.get$radius());
     if ($.$gt$n(distSqr, $.$mul$n(radius, radius)))
       return;
-    manifold.set$type(0);
-    manifold.get$localPoint().copyFrom$1(circle1.get$position());
+    t2 = $.getInterceptor$x(manifold);
+    t2.set$type(manifold, 0);
+    manifold.get$localPoint().copyFrom$1(t1.get$position(circle1));
     manifold.get$localNormal().splat$1(0);
     manifold.set$pointCount(1);
-    $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle2.get$position());
-    $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+    $.$index$asx(t2.get$points(manifold), 0).get$localPoint().copyFrom$1(t4.get$position(circle2));
+    $.get$id$x($.$index$asx(t2.get$points(manifold), 0)).zero$0();
   },
   collidePolygonAndCircle$5: function(manifold, polygon, xfA, circle, xfB) {
-    var v, t1, t2, cy, t3, v1x, v1y, b, b1, cLocaly, cLocalx, radius, vertexCount, vertices, normals, normalIndex, separation, i, vertex, norm, s, vertIndex2, v1, v2, mpoint, temp2X, temp2Y, t4, temp4X, temp4Y, dx, dy, fcx, fcy;
+    var t1, v, t2, t3, t4, cy, t5, v1x, v1y, b, b1, cLocaly, cLocalx, radius, vertexCount, vertices, normals, normalIndex, separation, i, vertex, norm, s, vertIndex2, v1, v2, mpoint, temp2X, temp2Y, t6, t7, temp4X, temp4Y, dx, dy, fcx, fcy;
     manifold.set$pointCount(0);
-    v = circle.get$position();
-    t1 = xfB.position;
-    t2 = xfB.rotation;
-    cy = $.$add$ns($.$add$ns(t1.y, $.$mul$n(t2.col0.get$y(), v.x)), $.$mul$n(t2.col1.get$y(), v.y));
-    t3 = xfA.position;
-    v1x = $.$sub$n($.$add$ns($.$add$ns(t1.x, $.$mul$n(t2.col0.get$x(), v.x)), $.$mul$n(t2.col1.get$x(), v.y)), t3.x);
-    v1y = $.$sub$n(cy, t3.y);
-    t3 = xfA.rotation;
-    b = t3.col0;
-    b1 = t3.col1;
-    t3 = $.getInterceptor$n(v1x);
-    t2 = $.getInterceptor$n(v1y);
-    cLocaly = $.$add$ns(t3.$mul(v1x, b1.get$x()), t2.$mul(v1y, b1.get$y()));
+    t1 = $.getInterceptor$x(circle);
+    v = t1.get$position(circle);
+    t2 = xfB.position;
+    t3 = xfB.rotation;
+    t4 = $.getInterceptor$x(v);
+    cy = $.$add$ns($.$add$ns(t2.y, $.$mul$n($.get$y$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$y$x(t3.col1), t4.get$y(v)));
+    t5 = xfA.position;
+    v1x = $.$sub$n($.$add$ns($.$add$ns(t2.x, $.$mul$n($.get$x$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$x$x(t3.col1), t4.get$y(v))), t5.x);
+    v1y = $.$sub$n(cy, t5.y);
+    t5 = xfA.rotation;
+    b = t5.col0;
+    b1 = t5.col1;
+    t5 = $.getInterceptor$x(b1);
+    t4 = $.getInterceptor$n(v1x);
+    t3 = $.getInterceptor$n(v1y);
+    cLocaly = $.$add$ns(t4.$mul(v1x, t5.get$x(b1)), t3.$mul(v1y, t5.get$y(b1)));
     if (typeof cLocaly !== "number")
-      return this.collidePolygonAndCircle$5$bailout(1, manifold, polygon, circle, b, v1x, t3, v1y, cLocaly, t2);
-    cLocalx = $.$add$ns(t3.$mul(v1x, b.get$x()), t2.$mul(v1y, b.get$y()));
+      return this.collidePolygonAndCircle$5$bailout(1, manifold, polygon, t3, circle, b, v1y, v1x, cLocaly, t1, t4);
+    t2 = $.getInterceptor$x(b);
+    cLocalx = $.$add$ns(t4.$mul(v1x, t2.get$x(b)), t3.$mul(v1y, t2.get$y(b)));
     if (typeof cLocalx !== "number")
-      return this.collidePolygonAndCircle$5$bailout(2, manifold, polygon, circle, 0, 0, 0, 0, cLocaly, 0, cLocalx);
+      return this.collidePolygonAndCircle$5$bailout(2, manifold, polygon, 0, circle, 0, 0, 0, cLocaly, t1, 0, cLocalx);
     radius = $.$add$ns(polygon.get$radius(), circle.get$radius());
     if (typeof radius !== "number")
-      return this.collidePolygonAndCircle$5$bailout(3, manifold, polygon, circle, 0, 0, 0, 0, cLocaly, 0, cLocalx, radius);
+      return this.collidePolygonAndCircle$5$bailout(3, manifold, polygon, 0, circle, 0, 0, 0, cLocaly, t1, 0, cLocalx, radius);
     vertexCount = polygon.get$vertexCount();
     vertices = polygon.get$vertices();
-    if (typeof vertices !== "string" && (typeof vertices !== "object" || vertices === null || vertices.constructor !== Array && !$.getInterceptor(vertices).$isJavaScriptIndexingBehavior))
-      return this.collidePolygonAndCircle$5$bailout(4, manifold, polygon, circle, 0, 0, 0, 0, cLocaly, 0, cLocalx, radius, vertices, vertexCount);
+    if (typeof vertices !== "string" && (typeof vertices !== "object" || vertices === null || vertices.constructor !== Array && !$.getInterceptor(vertices).$isJavaScriptIndexingBehavior()))
+      return this.collidePolygonAndCircle$5$bailout(4, manifold, polygon, 0, circle, 0, 0, 0, cLocaly, t1, 0, cLocalx, radius, vertexCount, vertices);
     normals = polygon.get$normals();
-    if (typeof normals !== "string" && (typeof normals !== "object" || normals === null || normals.constructor !== Array && !$.getInterceptor(normals).$isJavaScriptIndexingBehavior))
-      return this.collidePolygonAndCircle$5$bailout(5, manifold, 0, circle, 0, 0, 0, 0, cLocaly, 0, cLocalx, radius, vertices, vertexCount, normals);
+    if (typeof normals !== "string" && (typeof normals !== "object" || normals === null || normals.constructor !== Array && !$.getInterceptor(normals).$isJavaScriptIndexingBehavior()))
+      return this.collidePolygonAndCircle$5$bailout(5, manifold, 0, 0, circle, 0, 0, 0, cLocaly, t1, 0, cLocalx, radius, vertexCount, vertices, normals);
     for (normalIndex = 0, separation = 1e-12, i = 0; i < vertexCount; ++i) {
       if (i >= vertices.length)
         throw $.ioore(i);
       vertex = vertices[i];
-      t1 = vertex.get$x();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      t2 = vertex.get$y();
+      t2 = $.getInterceptor$x(vertex);
+      t3 = t2.get$x(vertex);
+      if (typeof t3 !== "number")
+        throw $.iae(t3);
+      t2 = t2.get$y(vertex);
       if (typeof t2 !== "number")
         throw $.iae(t2);
       if (i >= normals.length)
         throw $.ioore(i);
       norm = normals[i];
-      s = $.$add$ns($.$mul$n(norm.get$x(), cLocalx - t1), $.$mul$n(norm.get$y(), cLocaly - t2));
-      t1 = $.getInterceptor$n(s);
-      if (t1.$gt(s, radius))
+      t4 = $.getInterceptor$x(norm);
+      s = $.$add$ns($.$mul$n(t4.get$x(norm), cLocalx - t3), $.$mul$n(t4.get$y(norm), cLocaly - t2));
+      t2 = $.getInterceptor$n(s);
+      if (t2.$gt(s, radius))
         return;
-      if (t1.$gt(s, separation)) {
+      if (t2.$gt(s, separation)) {
         separation = s;
         normalIndex = i;
       }
     }
     vertIndex2 = normalIndex + 1;
     vertIndex2 = vertIndex2 < vertexCount ? vertIndex2 : 0;
-    t1 = vertices.length;
-    if (normalIndex < 0 || normalIndex >= t1)
+    t2 = vertices.length;
+    if (normalIndex < 0 || normalIndex >= t2)
       throw $.ioore(normalIndex);
     v1 = vertices[normalIndex];
-    if (vertIndex2 < 0 || vertIndex2 >= t1)
+    if (vertIndex2 < 0 || vertIndex2 >= t2)
       throw $.ioore(vertIndex2);
     v2 = vertices[vertIndex2];
     if ($.$lt$n(separation, 1.192e-7)) {
       manifold.set$pointCount(1);
-      manifold.set$type(1);
+      t2 = $.getInterceptor$x(manifold);
+      t2.set$type(manifold, 1);
       if (normalIndex >= normals.length)
         throw $.ioore(normalIndex);
       norm = normals[normalIndex];
-      manifold.get$localNormal().x = norm.get$x();
-      manifold.get$localNormal().y = norm.get$y();
-      manifold.get$localPoint().x = $.$mul$n($.$add$ns(v1.get$x(), v2.get$x()), 0.5);
-      manifold.get$localPoint().y = $.$mul$n($.$add$ns(v1.get$y(), v2.get$y()), 0.5);
-      mpoint = $.$index$as(manifold.get$points(), 0);
-      mpoint.get$localPoint().x = circle.get$position().x;
-      mpoint.get$localPoint().y = circle.get$position().y;
-      mpoint.get$id().zero$0();
+      t3 = $.getInterceptor$x(norm);
+      manifold.get$localNormal().x = t3.get$x(norm);
+      manifold.get$localNormal().y = t3.get$y(norm);
+      t3 = $.getInterceptor$x(v1);
+      t4 = $.getInterceptor$x(v2);
+      manifold.get$localPoint().x = $.$mul$n($.$add$ns(t3.get$x(v1), t4.get$x(v2)), 0.5);
+      manifold.get$localPoint().y = $.$mul$n($.$add$ns(t3.get$y(v1), t4.get$y(v2)), 0.5);
+      mpoint = $.$index$asx(t2.get$points(manifold), 0);
+      mpoint.get$localPoint().x = $.get$x$x(t1.get$position(circle));
+      mpoint.get$localPoint().y = $.get$y$x(t1.get$position(circle));
+      $.get$id$x(mpoint).zero$0();
       return;
     }
-    t1 = v1.get$x();
-    if (typeof t1 !== "number")
-      throw $.iae(t1);
-    t2 = v1.get$y();
-    if (typeof t2 !== "number")
-      throw $.iae(t2);
-    temp2X = $.$sub$n(v2.get$x(), t1);
-    temp2Y = $.$sub$n(v2.get$y(), v1.get$y());
+    t2 = $.getInterceptor$x(v1);
+    t3 = t2.get$x(v1);
+    if (typeof t3 !== "number")
+      throw $.iae(t3);
+    t4 = t2.get$y(v1);
+    if (typeof t4 !== "number")
+      throw $.iae(t4);
+    t5 = $.getInterceptor$x(v2);
+    temp2X = $.$sub$n(t5.get$x(v2), t3);
+    temp2Y = $.$sub$n(t5.get$y(v2), t2.get$y(v1));
     if (typeof temp2X !== "number")
       throw $.iae(temp2X);
     if (typeof temp2Y !== "number")
       throw $.iae(temp2Y);
-    t3 = v2.get$x();
-    if (typeof t3 !== "number")
-      throw $.iae(t3);
-    t4 = v2.get$y();
-    if (typeof t4 !== "number")
-      throw $.iae(t4);
-    temp4X = $.$sub$n(v1.get$x(), t3);
-    temp4Y = $.$sub$n(v1.get$y(), v2.get$y());
+    t6 = t5.get$x(v2);
+    if (typeof t6 !== "number")
+      throw $.iae(t6);
+    t7 = t5.get$y(v2);
+    if (typeof t7 !== "number")
+      throw $.iae(t7);
+    temp4X = $.$sub$n(t2.get$x(v1), t6);
+    temp4Y = $.$sub$n(t2.get$y(v1), t5.get$y(v2));
     if (typeof temp4X !== "number")
       throw $.iae(temp4X);
     if (typeof temp4Y !== "number")
       throw $.iae(temp4Y);
-    if ((cLocalx - t1) * temp2X + (cLocaly - t2) * temp2Y <= 0) {
-      t1 = v1.get$x();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      dx = cLocalx - t1;
-      t1 = v1.get$y();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      dy = cLocaly - t1;
+    if ((cLocalx - t3) * temp2X + (cLocaly - t4) * temp2Y <= 0) {
+      t3 = t2.get$x(v1);
+      if (typeof t3 !== "number")
+        throw $.iae(t3);
+      dx = cLocalx - t3;
+      t3 = t2.get$y(v1);
+      if (typeof t3 !== "number")
+        throw $.iae(t3);
+      dy = cLocaly - t3;
       if (dx * dx + dy * dy > radius * radius)
         return;
       manifold.set$pointCount(1);
-      manifold.set$type(1);
-      t1 = manifold.get$localNormal();
-      t2 = v1.get$x();
+      t3 = $.getInterceptor$x(manifold);
+      t3.set$type(manifold, 1);
+      t4 = manifold.get$localNormal();
+      t5 = t2.get$x(v1);
+      if (typeof t5 !== "number")
+        throw $.iae(t5);
+      t4.x = cLocalx - t5;
+      t5 = manifold.get$localNormal();
+      t2 = t2.get$y(v1);
       if (typeof t2 !== "number")
         throw $.iae(t2);
-      t1.x = cLocalx - t2;
-      t2 = manifold.get$localNormal();
-      t1 = v1.get$y();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      t2.y = cLocaly - t1;
+      t5.y = cLocaly - t2;
       manifold.get$localNormal().normalize$0();
       manifold.get$localPoint().copyFrom$1(v1);
-      $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-      $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+      $.$index$asx(t3.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+      $.get$id$x($.$index$asx(t3.get$points(manifold), 0)).zero$0();
     } else {
-      t1 = v2.get$x();
-      if ((cLocalx - t3) * temp4X + (cLocaly - t4) * temp4Y <= 0) {
-        if (typeof t1 !== "number")
-          throw $.iae(t1);
-        dx = cLocalx - t1;
-        t1 = v2.get$y();
-        if (typeof t1 !== "number")
-          throw $.iae(t1);
-        dy = cLocaly - t1;
+      t3 = t5.get$x(v2);
+      if ((cLocalx - t6) * temp4X + (cLocaly - t7) * temp4Y <= 0) {
+        if (typeof t3 !== "number")
+          throw $.iae(t3);
+        dx = cLocalx - t3;
+        t2 = t5.get$y(v2);
+        if (typeof t2 !== "number")
+          throw $.iae(t2);
+        dy = cLocaly - t2;
         if (dx * dx + dy * dy > radius * radius)
           return;
         manifold.set$pointCount(1);
-        manifold.set$type(1);
-        t1 = manifold.get$localNormal();
-        t2 = v2.get$x();
-        if (typeof t2 !== "number")
-          throw $.iae(t2);
-        t1.x = cLocalx - t2;
-        t2 = manifold.get$localNormal();
-        t1 = v2.get$y();
-        if (typeof t1 !== "number")
-          throw $.iae(t1);
-        t2.y = cLocaly - t1;
+        t2 = $.getInterceptor$x(manifold);
+        t2.set$type(manifold, 1);
+        t3 = manifold.get$localNormal();
+        t4 = t5.get$x(v2);
+        if (typeof t4 !== "number")
+          throw $.iae(t4);
+        t3.x = cLocalx - t4;
+        t4 = manifold.get$localNormal();
+        t5 = t5.get$y(v2);
+        if (typeof t5 !== "number")
+          throw $.iae(t5);
+        t4.y = cLocaly - t5;
         manifold.get$localNormal().normalize$0();
         manifold.get$localPoint().copyFrom$1(v2);
-        $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-        $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+        $.$index$asx(t2.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+        $.get$id$x($.$index$asx(t2.get$points(manifold), 0)).zero$0();
       } else {
-        fcx = $.$mul$n($.$add$ns(v1.get$x(), t1), 0.5);
-        fcy = $.$mul$n($.$add$ns(v1.get$y(), v2.get$y()), 0.5);
+        fcx = $.$mul$n($.$add$ns(t2.get$x(v1), t3), 0.5);
+        fcy = $.$mul$n($.$add$ns(t2.get$y(v1), t5.get$y(v2)), 0.5);
         if (typeof fcx !== "number")
           throw $.iae(fcx);
         if (typeof fcy !== "number")
@@ -1638,47 +3827,53 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
         if (normalIndex >= normals.length)
           throw $.ioore(normalIndex);
         norm = normals[normalIndex];
-        t1 = norm.get$x();
-        if (typeof t1 !== "number")
-          throw $.iae(t1);
-        t2 = norm.get$y();
+        t2 = $.getInterceptor$x(norm);
+        t3 = t2.get$x(norm);
+        if (typeof t3 !== "number")
+          throw $.iae(t3);
+        t2 = t2.get$y(norm);
         if (typeof t2 !== "number")
           throw $.iae(t2);
-        if ((cLocalx - fcx) * t1 + (cLocaly - fcy) * t2 > radius)
+        if ((cLocalx - fcx) * t3 + (cLocaly - fcy) * t2 > radius)
           return;
         manifold.set$pointCount(1);
-        manifold.set$type(1);
-        t1 = manifold.get$localNormal();
+        t2 = $.getInterceptor$x(manifold);
+        t2.set$type(manifold, 1);
+        t3 = manifold.get$localNormal();
         if (normalIndex >= normals.length)
           throw $.ioore(normalIndex);
-        t1.copyFrom$1(normals[normalIndex]);
+        t3.copyFrom$1(normals[normalIndex]);
         manifold.get$localPoint().x = fcx;
         manifold.get$localPoint().y = fcy;
-        $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-        $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+        $.$index$asx(t2.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+        $.get$id$x($.$index$asx(t2.get$points(manifold), 0)).zero$0();
       }
     }
   },
-  collidePolygonAndCircle$5$bailout: function(state0, manifold, polygon, circle, b, v1x, t3, v1y, cLocaly, t2, cLocalx, radius, vertices, vertexCount, normals) {
+  collidePolygonAndCircle$5$bailout: function(state0, manifold, polygon, t3, circle, b, v1y, v1x, cLocaly, t1, t4, cLocalx, radius, vertexCount, vertices, normals) {
     switch (state0) {
       case 0:
         manifold.set$pointCount(0);
-        v = circle.get$position();
-        t1 = xfB.position;
-        t2 = xfB.rotation;
-        cy = $.$add$ns($.$add$ns(t1.y, $.$mul$n(t2.col0.get$y(), v.x)), $.$mul$n(t2.col1.get$y(), v.y));
-        t3 = xfA.position;
-        v1x = $.$sub$n($.$add$ns($.$add$ns(t1.x, $.$mul$n(t2.col0.get$x(), v.x)), $.$mul$n(t2.col1.get$x(), v.y)), t3.x);
-        v1y = $.$sub$n(cy, t3.y);
-        t3 = xfA.rotation;
-        b = t3.col0;
-        b1 = t3.col1;
-        t3 = $.getInterceptor$n(v1x);
-        t2 = $.getInterceptor$n(v1y);
-        cLocaly = $.$add$ns(t3.$mul(v1x, b1.get$x()), t2.$mul(v1y, b1.get$y()));
+        t1 = $.getInterceptor$x(circle);
+        v = t1.get$position(circle);
+        t2 = xfB.position;
+        t3 = xfB.rotation;
+        t4 = $.getInterceptor$x(v);
+        cy = $.$add$ns($.$add$ns(t2.y, $.$mul$n($.get$y$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$y$x(t3.col1), t4.get$y(v)));
+        t5 = xfA.position;
+        v1x = $.$sub$n($.$add$ns($.$add$ns(t2.x, $.$mul$n($.get$x$x(t3.col0), t4.get$x(v))), $.$mul$n($.get$x$x(t3.col1), t4.get$y(v))), t5.x);
+        v1y = $.$sub$n(cy, t5.y);
+        t5 = xfA.rotation;
+        b = t5.col0;
+        b1 = t5.col1;
+        t5 = $.getInterceptor$x(b1);
+        t4 = $.getInterceptor$n(v1x);
+        t3 = $.getInterceptor$n(v1y);
+        cLocaly = $.$add$ns(t4.$mul(v1x, t5.get$x(b1)), t3.$mul(v1y, t5.get$y(b1)));
       case 1:
         state0 = 0;
-        cLocalx = $.$add$ns(t3.$mul(v1x, b.get$x()), t2.$mul(v1y, b.get$y()));
+        t2 = $.getInterceptor$x(b);
+        cLocalx = $.$add$ns(t4.$mul(v1x, t2.get$x(b)), t3.$mul(v1y, t2.get$y(b)));
       case 2:
         state0 = 0;
         radius = $.$add$ns(polygon.get$radius(), circle.get$radius());
@@ -1690,170 +3885,186 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
         state0 = 0;
         normals = polygon.get$normals();
       case 5:
-        var v, t1, cy, b1, t4, normalIndex, separation, i, vertex, tempx, tempy, norm, s, t5, vertIndex2, v1, v2, mpoint, tempX, tempY, temp2X, temp2Y, u1, temp3X, temp3Y, temp4X, temp4Y, u2, dx, dy, fcx, fcy, tx, ty;
+        var v, t2, cy, t5, b1, normalIndex, separation, i, vertex, t6, tempx, tempy, norm, s, vertIndex2, v1, v2, mpoint, tempX, tempY, temp2X, temp2Y, u1, temp3X, temp3Y, temp4X, temp4Y, u2, dx, dy, t7, t8, fcx, fcy, tx, ty;
         state0 = 0;
-        for (t1 = $.getInterceptor$as(vertices), t2 = $.getInterceptor$n(cLocalx), t3 = $.getInterceptor$n(cLocaly), t4 = $.getInterceptor$as(normals), normalIndex = 0, separation = 1e-12, i = 0; i < vertexCount; ++i) {
-          vertex = t1.$index(vertices, i);
-          tempx = t2.$sub(cLocalx, vertex.get$x());
-          tempy = t3.$sub(cLocaly, vertex.get$y());
-          norm = t4.$index(normals, i);
-          s = $.$add$ns($.$mul$n(norm.get$x(), tempx), $.$mul$n(norm.get$y(), tempy));
-          t5 = $.getInterceptor$n(s);
-          if (t5.$gt(s, radius))
+        for (t2 = $.getInterceptor$asx(vertices), t3 = $.getInterceptor$n(cLocalx), t4 = $.getInterceptor$n(cLocaly), t5 = $.getInterceptor$asx(normals), normalIndex = 0, separation = 1e-12, i = 0; i < vertexCount; ++i) {
+          vertex = t2.$index(vertices, i);
+          t6 = $.getInterceptor$x(vertex);
+          tempx = t3.$sub(cLocalx, t6.get$x(vertex));
+          tempy = t4.$sub(cLocaly, t6.get$y(vertex));
+          norm = t5.$index(normals, i);
+          t6 = $.getInterceptor$x(norm);
+          s = $.$add$ns($.$mul$n(t6.get$x(norm), tempx), $.$mul$n(t6.get$y(norm), tempy));
+          t6 = $.getInterceptor$n(s);
+          if (t6.$gt(s, radius))
             return;
-          if (t5.$gt(s, separation)) {
+          if (t6.$gt(s, separation)) {
             separation = s;
             normalIndex = i;
           }
         }
         vertIndex2 = normalIndex + 1;
         vertIndex2 = vertIndex2 < vertexCount ? vertIndex2 : 0;
-        v1 = t1.$index(vertices, normalIndex);
-        v2 = t1.$index(vertices, vertIndex2);
+        v1 = t2.$index(vertices, normalIndex);
+        v2 = t2.$index(vertices, vertIndex2);
         if ($.$lt$n(separation, 1.192e-7)) {
           manifold.set$pointCount(1);
-          manifold.set$type(1);
-          norm = t4.$index(normals, normalIndex);
-          manifold.get$localNormal().x = norm.get$x();
-          manifold.get$localNormal().y = norm.get$y();
-          manifold.get$localPoint().x = $.$mul$n($.$add$ns(v1.get$x(), v2.get$x()), 0.5);
-          manifold.get$localPoint().y = $.$mul$n($.$add$ns(v1.get$y(), v2.get$y()), 0.5);
-          mpoint = $.$index$as(manifold.get$points(), 0);
-          mpoint.get$localPoint().x = circle.get$position().x;
-          mpoint.get$localPoint().y = circle.get$position().y;
-          mpoint.get$id().zero$0();
+          t2 = $.getInterceptor$x(manifold);
+          t2.set$type(manifold, 1);
+          norm = t5.$index(normals, normalIndex);
+          t5 = $.getInterceptor$x(norm);
+          manifold.get$localNormal().x = t5.get$x(norm);
+          manifold.get$localNormal().y = t5.get$y(norm);
+          t5 = $.getInterceptor$x(v1);
+          t3 = $.getInterceptor$x(v2);
+          manifold.get$localPoint().x = $.$mul$n($.$add$ns(t5.get$x(v1), t3.get$x(v2)), 0.5);
+          manifold.get$localPoint().y = $.$mul$n($.$add$ns(t5.get$y(v1), t3.get$y(v2)), 0.5);
+          mpoint = $.$index$asx(t2.get$points(manifold), 0);
+          mpoint.get$localPoint().x = $.get$x$x(t1.get$position(circle));
+          mpoint.get$localPoint().y = $.get$y$x(t1.get$position(circle));
+          $.get$id$x(mpoint).zero$0();
           return;
         }
-        tempX = t2.$sub(cLocalx, v1.get$x());
-        tempY = t3.$sub(cLocaly, v1.get$y());
-        temp2X = $.$sub$n(v2.get$x(), v1.get$x());
-        temp2Y = $.$sub$n(v2.get$y(), v1.get$y());
+        t2 = $.getInterceptor$x(v1);
+        tempX = t3.$sub(cLocalx, t2.get$x(v1));
+        tempY = t4.$sub(cLocaly, t2.get$y(v1));
+        t6 = $.getInterceptor$x(v2);
+        temp2X = $.$sub$n(t6.get$x(v2), t2.get$x(v1));
+        temp2Y = $.$sub$n(t6.get$y(v2), t2.get$y(v1));
         u1 = $.$add$ns($.$mul$n(tempX, temp2X), $.$mul$n(tempY, temp2Y));
-        temp3X = t2.$sub(cLocalx, v2.get$x());
-        temp3Y = t3.$sub(cLocaly, v2.get$y());
-        temp4X = $.$sub$n(v1.get$x(), v2.get$x());
-        temp4Y = $.$sub$n(v1.get$y(), v2.get$y());
+        temp3X = t3.$sub(cLocalx, t6.get$x(v2));
+        temp3Y = t4.$sub(cLocaly, t6.get$y(v2));
+        temp4X = $.$sub$n(t2.get$x(v1), t6.get$x(v2));
+        temp4Y = $.$sub$n(t2.get$y(v1), t6.get$y(v2));
         u2 = $.$add$ns($.$mul$n(temp3X, temp4X), $.$mul$n(temp3Y, temp4Y));
         if ($.$le$n(u1, 0)) {
-          dx = t2.$sub(cLocalx, v1.get$x());
-          dy = t3.$sub(cLocaly, v1.get$y());
+          dx = t3.$sub(cLocalx, t2.get$x(v1));
+          dy = t4.$sub(cLocaly, t2.get$y(v1));
           if ($.$gt$n($.$add$ns($.$mul$n(dx, dx), $.$mul$n(dy, dy)), $.$mul$n(radius, radius)))
             return;
           manifold.set$pointCount(1);
-          manifold.set$type(1);
-          manifold.get$localNormal().x = t2.$sub(cLocalx, v1.get$x());
-          manifold.get$localNormal().y = t3.$sub(cLocaly, v1.get$y());
+          t5 = $.getInterceptor$x(manifold);
+          t5.set$type(manifold, 1);
+          manifold.get$localNormal().x = t3.$sub(cLocalx, t2.get$x(v1));
+          manifold.get$localNormal().y = t4.$sub(cLocaly, t2.get$y(v1));
           manifold.get$localNormal().normalize$0();
           manifold.get$localPoint().copyFrom$1(v1);
-          $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-          $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+          $.$index$asx(t5.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+          $.get$id$x($.$index$asx(t5.get$points(manifold), 0)).zero$0();
         } else {
-          t1 = $.$le$n(u2, 0);
-          t5 = v2.get$x();
-          if (t1) {
-            dx = t2.$sub(cLocalx, t5);
-            dy = t3.$sub(cLocaly, v2.get$y());
+          t7 = $.$le$n(u2, 0);
+          t8 = t6.get$x(v2);
+          if (t7) {
+            dx = t3.$sub(cLocalx, t8);
+            dy = t4.$sub(cLocaly, t6.get$y(v2));
             if ($.$gt$n($.$add$ns($.$mul$n(dx, dx), $.$mul$n(dy, dy)), $.$mul$n(radius, radius)))
               return;
             manifold.set$pointCount(1);
-            manifold.set$type(1);
-            manifold.get$localNormal().x = t2.$sub(cLocalx, v2.get$x());
-            manifold.get$localNormal().y = t3.$sub(cLocaly, v2.get$y());
+            t2 = $.getInterceptor$x(manifold);
+            t2.set$type(manifold, 1);
+            manifold.get$localNormal().x = t3.$sub(cLocalx, t6.get$x(v2));
+            manifold.get$localNormal().y = t4.$sub(cLocaly, t6.get$y(v2));
             manifold.get$localNormal().normalize$0();
             manifold.get$localPoint().copyFrom$1(v2);
-            $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-            $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+            $.$index$asx(t2.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+            $.get$id$x($.$index$asx(t2.get$points(manifold), 0)).zero$0();
           } else {
-            fcx = $.$mul$n($.$add$ns(v1.get$x(), t5), 0.5);
-            fcy = $.$mul$n($.$add$ns(v1.get$y(), v2.get$y()), 0.5);
-            tx = t2.$sub(cLocalx, fcx);
-            ty = t3.$sub(cLocaly, fcy);
-            norm = t4.$index(normals, normalIndex);
-            if ($.$gt$n($.$add$ns($.$mul$n(tx, norm.get$x()), $.$mul$n(ty, norm.get$y())), radius))
+            fcx = $.$mul$n($.$add$ns(t2.get$x(v1), t8), 0.5);
+            fcy = $.$mul$n($.$add$ns(t2.get$y(v1), t6.get$y(v2)), 0.5);
+            tx = t3.$sub(cLocalx, fcx);
+            ty = t4.$sub(cLocaly, fcy);
+            norm = t5.$index(normals, normalIndex);
+            t2 = $.getInterceptor$x(norm);
+            if ($.$gt$n($.$add$ns($.$mul$n(tx, t2.get$x(norm)), $.$mul$n(ty, t2.get$y(norm))), radius))
               return;
             manifold.set$pointCount(1);
-            manifold.set$type(1);
-            manifold.get$localNormal().copyFrom$1(t4.$index(normals, normalIndex));
+            t2 = $.getInterceptor$x(manifold);
+            t2.set$type(manifold, 1);
+            manifold.get$localNormal().copyFrom$1(t5.$index(normals, normalIndex));
             manifold.get$localPoint().x = fcx;
             manifold.get$localPoint().y = fcy;
-            $.$index$as(manifold.get$points(), 0).get$localPoint().copyFrom$1(circle.get$position());
-            $.$index$as(manifold.get$points(), 0).get$id().zero$0();
+            $.$index$asx(t2.get$points(manifold), 0).get$localPoint().copyFrom$1(t1.get$position(circle));
+            $.get$id$x($.$index$asx(t2.get$points(manifold), 0)).zero$0();
           }
         }
     }
   },
   edgeSeparation$5: function(poly1, xf1, edge1, poly2, xf2) {
-    var vertices1, normals1, count2, vertices2, R, v, t4, t5, t7, t9, t10, t11, t13, normal1Worldy, normal1Worldx, R1, t17, normal1x, t19, t21, normal1y, t1, t2, index, minDot, i, a, t3, t8, dot_, v3, t6, v1y, v1x, v4, v2y;
+    var vertices1, normals1, count2, vertices2, R, v, t4, t6, t7, t10, normal1Worldy, normal1Worldx, R1, normal1x, t16, normal1y, t1, t2, index, minDot, i, a, t3, dot_, v3, t5, t8, v1y, t12, v1x, v4, t15, t17, t18, t20, v2y, t22;
     poly1.get$vertexCount();
     vertices1 = poly1.get$vertices();
-    if (typeof vertices1 !== "string" && (typeof vertices1 !== "object" || vertices1 === null || vertices1.constructor !== Array && !$.getInterceptor(vertices1).$isJavaScriptIndexingBehavior))
+    if (typeof vertices1 !== "string" && (typeof vertices1 !== "object" || vertices1 === null || vertices1.constructor !== Array && !$.getInterceptor(vertices1).$isJavaScriptIndexingBehavior()))
       return this.edgeSeparation$5$bailout(1, poly1, xf1, edge1, poly2, xf2, vertices1);
     normals1 = poly1.get$normals();
-    if (typeof normals1 !== "string" && (typeof normals1 !== "object" || normals1 === null || normals1.constructor !== Array && !$.getInterceptor(normals1).$isJavaScriptIndexingBehavior))
+    if (typeof normals1 !== "string" && (typeof normals1 !== "object" || normals1 === null || normals1.constructor !== Array && !$.getInterceptor(normals1).$isJavaScriptIndexingBehavior()))
       return this.edgeSeparation$5$bailout(2, 0, xf1, edge1, poly2, xf2, vertices1, normals1);
     count2 = poly2.get$vertexCount();
     vertices2 = poly2.get$vertices();
-    if (typeof vertices2 !== "string" && (typeof vertices2 !== "object" || vertices2 === null || vertices2.constructor !== Array && !$.getInterceptor(vertices2).$isJavaScriptIndexingBehavior))
+    if (typeof vertices2 !== "string" && (typeof vertices2 !== "object" || vertices2 === null || vertices2.constructor !== Array && !$.getInterceptor(vertices2).$isJavaScriptIndexingBehavior()))
       return this.edgeSeparation$5$bailout(3, 0, xf1, edge1, 0, xf2, vertices1, normals1, count2, vertices2);
     R = xf1.rotation;
     if (edge1 < 0 || edge1 >= normals1.length)
       throw $.ioore(edge1);
     v = normals1[edge1];
-    t4 = R.col0;
-    t5 = t4.get$y();
-    if (t5 !== (t5 | 0))
-      return this.edgeSeparation$5$bailout(4, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, t5, v);
-    t7 = v.get$x();
-    if (t7 !== (t7 | 0))
-      return this.edgeSeparation$5$bailout(5, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, t5, v, t7);
-    t9 = t5 * t7;
-    t10 = R.col1;
-    t11 = t10.get$y();
-    if (t11 !== (t11 | 0))
-      return this.edgeSeparation$5$bailout(7, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, v, t9, t11);
-    t13 = v.get$y();
-    if (t13 !== (t13 | 0))
-      return this.edgeSeparation$5$bailout(8, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, v, t9, t11, t13);
-    normal1Worldy = t9 + t11 * t13;
-    t4 = t4.get$x();
+    t4 = $.get$y$x(R.col0);
     if (t4 !== (t4 | 0))
-      return this.edgeSeparation$5$bailout(11, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, v, t4, 0, 0, normal1Worldy);
-    t7 = t4 * t7;
-    t10 = t10.get$x();
-    if (t10 !== (t10 | 0))
-      return this.edgeSeparation$5$bailout(14, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, v, 0, 0, 0, normal1Worldy, t7, t10);
-    normal1Worldx = t7 + t10 * t13;
-    R1 = xf2.rotation;
-    t13 = R1.col0;
-    t7 = t13.get$x();
+      return this.edgeSeparation$5$bailout(4, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, t4, R);
+    t6 = $.getInterceptor$x(v);
+    t7 = t6.get$x(v);
     if (t7 !== (t7 | 0))
-      return this.edgeSeparation$5$bailout(18, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, t7, 0, 0, normal1Worldx, R1);
-    t17 = normal1Worldx * t7;
-    t13 = t13.get$y();
-    if (t13 !== (t13 | 0))
-      return this.edgeSeparation$5$bailout(20, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, t17, 0, 0, normal1Worldx, R1, $.JSInt_methods, t13);
-    normal1x = t17 + normal1Worldy * t13;
-    t17 = R1.col1;
-    t19 = t17.get$x();
-    if (t19 !== (t19 | 0))
-      return this.edgeSeparation$5$bailout(23, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, t19, 0, 0, normal1Worldx, R1, $.JSInt_methods, 0, $.JSInt_methods, normal1x);
-    t21 = normal1Worldx * t19;
-    t17 = t17.get$y();
-    if (t17 !== (t17 | 0))
-      return this.edgeSeparation$5$bailout(25, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, t21, 0, 0, normal1Worldx, R1, 0, 0, $.JSInt_methods, normal1x, t17);
-    normal1y = t21 + normal1Worldy * t17;
-    for (t1 = $.getInterceptor$as(vertices2), t2 = vertices2.length, index = 0, minDot = 99999999999999, i = 0; i < count2; ++i) {
+      return this.edgeSeparation$5$bailout(5, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, t4, R, t6, t7);
+    t7 = t4 * t7;
+    t4 = $.get$y$x(R.col1);
+    if (t4 !== (t4 | 0))
+      return this.edgeSeparation$5$bailout(7, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, 0, R, t6, t7, t4);
+    t10 = t6.get$y(v);
+    if (t10 !== (t10 | 0))
+      return this.edgeSeparation$5$bailout(8, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, 0, R, t6, t7, t4, t10);
+    normal1Worldy = t7 + t4 * t10;
+    t10 = $.get$x$x(R.col0);
+    if (t10 !== (t10 | 0))
+      return this.edgeSeparation$5$bailout(11, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, 0, R, t6, t10, 0, 0, normal1Worldy);
+    t7 = t6.get$x(v);
+    if (t7 !== (t7 | 0))
+      return this.edgeSeparation$5$bailout(12, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, 0, R, t6, t10, 0, 0, normal1Worldy, t7);
+    t7 = t10 * t7;
+    t10 = $.get$x$x(R.col1);
+    if (t10 !== (t10 | 0))
+      return this.edgeSeparation$5$bailout(14, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, v, 0, R, t6, 0, 0, 0, normal1Worldy, t7, t10);
+    t6 = t6.get$y(v);
+    if (t6 !== (t6 | 0))
+      return this.edgeSeparation$5$bailout(15, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, t6, 0, 0, 0, normal1Worldy, t7, t10);
+    normal1Worldx = t7 + t10 * t6;
+    R1 = xf2.rotation;
+    t6 = $.get$x$x(R1.col0);
+    if (t6 !== (t6 | 0))
+      return this.edgeSeparation$5$bailout(18, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, t6, 0, normal1Worldx, R1);
+    t6 = normal1Worldx * t6;
+    t7 = $.get$y$x(R1.col0);
+    if (t7 !== (t7 | 0))
+      return this.edgeSeparation$5$bailout(20, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, t6, 0, normal1Worldx, R1, $.JSInt_methods, t7);
+    normal1x = t6 + normal1Worldy * t7;
+    t7 = $.get$x$x(R1.col1);
+    if (t7 !== (t7 | 0))
+      return this.edgeSeparation$5$bailout(23, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, t7, 0, normal1Worldx, R1, $.JSInt_methods, 0, $.JSInt_methods, normal1x);
+    t7 = normal1Worldx * t7;
+    t16 = $.get$y$x(R1.col1);
+    if (t16 !== (t16 | 0))
+      return this.edgeSeparation$5$bailout(25, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, t7, 0, normal1Worldx, R1, 0, 0, $.JSInt_methods, normal1x, t16);
+    normal1y = t7 + normal1Worldy * t16;
+    for (t1 = $.getInterceptor$asx(vertices2), t2 = vertices2.length, index = 0, minDot = 99999999999999, i = 0; i < count2; ++i) {
       if (i >= t2)
         throw $.ioore(i);
       a = vertices2[i];
-      t3 = a.get$x();
+      t3 = $.getInterceptor$x(a);
+      t4 = t3.get$x(a);
+      if (t4 !== (t4 | 0))
+        return this.edgeSeparation$5$bailout(28, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, normal1x, 0, normal1y, i, t1, a, t3, t4, index, minDot);
+      t4 *= normal1x;
+      t3 = t3.get$y(a);
       if (t3 !== (t3 | 0))
-        return this.edgeSeparation$5$bailout(28, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, normal1x, 0, normal1y, index, minDot, i, t1, a, t3);
-      t3 *= normal1x;
-      t8 = a.get$y();
-      if (t8 !== (t8 | 0))
-        return this.edgeSeparation$5$bailout(30, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, normal1x, 0, normal1y, index, minDot, i, t1, 0, t3, t8);
-      dot_ = t3 + t8 * normal1y;
+        return this.edgeSeparation$5$bailout(30, 0, xf1, edge1, 0, xf2, vertices1, 0, count2, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, normal1x, 0, normal1y, i, t1, 0, t3, t4, index, minDot);
+      dot_ = t4 + t3 * normal1y;
       if (dot_ < minDot) {
         minDot = dot_;
         index = i;
@@ -1862,43 +4073,83 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     if (edge1 >= vertices1.length)
       throw $.ioore(edge1);
     v3 = vertices1[edge1];
-    t3 = xf1.position;
-    t6 = t3.y;
-    if (typeof t6 !== "number")
-      return this.edgeSeparation$5$bailout(33, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, index, 0, 0, t1, 0, t3, 0, 0, v3, t6);
-    t9 = v3.get$x();
-    if (typeof t9 !== "number")
-      return this.edgeSeparation$5$bailout(35, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, index, 0, 0, t1, 0, t3, t5, 0, v3, t6, t9);
-    t5 = t6 + t5 * t9;
-    t6 = v3.get$y();
-    if (typeof t6 !== "number")
-      return this.edgeSeparation$5$bailout(37, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, index, 0, 0, t1, 0, t3, t11, 0, v3, 0, t5, t6);
-    v1y = t5 + t11 * t6;
-    t3 = t3.x;
+    t2 = xf1.position;
+    t3 = t2.y;
     if (typeof t3 !== "number")
-      return this.edgeSeparation$5$bailout(38, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, R, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, index, 0, 0, t1, 0, t3, 0, 0, v3, 0, 0, 0, v1y);
-    v1x = t3 + t4 * t9 + t10 * t6;
-    if (index < 0 || index >= t2)
+      return this.edgeSeparation$5$bailout(33, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, t3, index, 0, 0, v3);
+    t5 = $.get$y$x(R.col0);
+    if (typeof t5 !== "number")
+      return this.edgeSeparation$5$bailout(34, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, 0, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, t3, index, 0, 0, v3, t5);
+    t7 = $.getInterceptor$x(v3);
+    t8 = t7.get$x(v3);
+    if (typeof t8 !== "number")
+      return this.edgeSeparation$5$bailout(35, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, t3, index, 0, 0, v3, t5, t8);
+    t8 = t3 + t5 * t8;
+    t5 = $.get$y$x(R.col1);
+    if (typeof t5 !== "number")
+      return this.edgeSeparation$5$bailout(36, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, 0, index, 0, 0, v3, t5, t8);
+    t10 = t7.get$y(v3);
+    if (typeof t10 !== "number")
+      return this.edgeSeparation$5$bailout(37, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, 0, index, 0, 0, v3, t5, t8, t10);
+    v1y = t8 + t5 * t10;
+    t2 = t2.x;
+    if (typeof t2 !== "number")
+      return this.edgeSeparation$5$bailout(38, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, 0, index, 0, 0, v3, 0, 0, 0, v1y);
+    t5 = $.get$x$x(R.col0);
+    if (typeof t5 !== "number")
+      return this.edgeSeparation$5$bailout(39, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, 0, index, 0, 0, v3, t5, 0, 0, v1y);
+    t12 = t7.get$x(v3);
+    if (typeof t12 !== "number")
+      return this.edgeSeparation$5$bailout(40, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, R, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, t2, 0, index, 0, 0, v3, t5, 0, 0, v1y, t12);
+    t12 = t2 + t5 * t12;
+    t5 = $.get$x$x(R.col1);
+    if (typeof t5 !== "number")
+      return this.edgeSeparation$5$bailout(41, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, 0, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, 0, 0, index, 0, 0, v3, t5, 0, 0, v1y, t12);
+    t7 = t7.get$y(v3);
+    if (typeof t7 !== "number")
+      return this.edgeSeparation$5$bailout(42, 0, 0, 0, 0, xf2, 0, 0, 0, vertices2, 0, 0, 0, 0, t7, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t1, 0, 0, 0, index, 0, 0, 0, t5, 0, 0, v1y, t12);
+    v1x = t12 + t5 * t7;
+    if (index < 0 || index >= vertices2.length)
       throw $.ioore(index);
     v4 = vertices2[index];
-    t6 = xf2.position;
-    t10 = t6.y;
-    if (typeof t10 !== "number")
-      return this.edgeSeparation$5$bailout(43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, t10, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, 0, 0, t6, 0, 0, 0, 0, 0, 0, 0, 0, v1y, 0, v1x, v4);
-    t4 = v4.get$x();
-    if (typeof t4 !== "number")
-      return this.edgeSeparation$5$bailout(45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, t10, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, 0, 0, t6, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t13, v1x, v4, t4);
-    t13 = t10 + t13 * t4;
-    t10 = v4.get$y();
-    if (typeof t10 !== "number")
-      return this.edgeSeparation$5$bailout(47, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, 0, 0, t6, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t17, v1x, v4, t13, t10);
-    v2y = t13 + t17 * t10 - v1y;
-    t6 = t6.x;
-    if (typeof t6 !== "number")
-      return this.edgeSeparation$5$bailout(48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, 0, 0, t6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1x, v4, 0, 0, v2y);
-    return (t6 + t7 * t4 + t19 * t10 - v1x) * normal1Worldx + v2y * normal1Worldy;
+    t7 = xf2.position;
+    t5 = t7.y;
+    if (typeof t5 !== "number")
+      return this.edgeSeparation$5$bailout(43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t5, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1y, 0, v1x, v4);
+    t15 = $.get$y$x(R1.col0);
+    if (typeof t15 !== "number")
+      return this.edgeSeparation$5$bailout(44, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t5, 0, 0, normal1Worldy, 0, 0, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t15, v1x, v4);
+    t17 = $.getInterceptor$x(v4);
+    t18 = t17.get$x(v4);
+    if (typeof t18 !== "number")
+      return this.edgeSeparation$5$bailout(45, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t5, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t15, v1x, v4, t18);
+    t18 = t5 + t15 * t18;
+    t15 = $.get$y$x(R1.col1);
+    if (typeof t15 !== "number")
+      return this.edgeSeparation$5$bailout(46, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t15, v1x, v4, t18);
+    t20 = t17.get$y(v4);
+    if (typeof t20 !== "number")
+      return this.edgeSeparation$5$bailout(47, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1y, t15, v1x, v4, t18, t20);
+    v2y = t18 + t15 * t20 - v1y;
+    t7 = t7.x;
+    if (typeof t7 !== "number")
+      return this.edgeSeparation$5$bailout(48, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, v1x, v4, 0, 0, v2y);
+    t15 = $.get$x$x(R1.col0);
+    if (typeof t15 !== "number")
+      return this.edgeSeparation$5$bailout(49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t15, v1x, v4, 0, 0, v2y);
+    t22 = t17.get$x(v4);
+    if (typeof t22 !== "number")
+      return this.edgeSeparation$5$bailout(50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, R1, 0, 0, 0, 0, 0, 0, 0, t7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t15, v1x, v4, 0, 0, v2y, t22);
+    t22 = t7 + t15 * t22;
+    t15 = $.get$x$x(R1.col1);
+    if (typeof t15 !== "number")
+      return this.edgeSeparation$5$bailout(51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t15, v1x, v4, 0, 0, v2y, t22);
+    t17 = t17.get$y(v4);
+    if (typeof t17 !== "number")
+      return this.edgeSeparation$5$bailout(52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, normal1Worldy, 0, t17, normal1Worldx, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t15, v1x, 0, 0, 0, v2y, t22);
+    return (t22 + t15 * t17 - v1x) * normal1Worldx + v2y * normal1Worldy;
   },
-  edgeSeparation$5$bailout: function(state0, poly1, xf1, edge1, poly2, xf2, vertices1, normals1, count2, vertices2, R, t4, v, t6, t8, t10, normal1Worldy, t13, t15, t17, normal1Worldx, R1, t20, t22, t24, normal1x, t27, normal1y, index, minDot, i, t1, a, t2, t5, dot_, v3, t3, t7, t9, v1y, t11, v1x, v4, t16, t18, v2y) {
+  edgeSeparation$5$bailout: function(state0, poly1, xf1, edge1, poly2, xf2, vertices1, normals1, count2, vertices2, v, t4, R, t6, t7, t9, t11, normal1Worldy, t14, t16, normal1Worldx, R1, t20, t22, t24, normal1x, t27, normal1y, i, t1, a, t2, t3, index, minDot, dot_, v3, t5, t8, t10, v1y, t12, v1x, v4, t17, t19, v2y, t21) {
     switch (state0) {
       case 0:
         poly1.get$vertexCount();
@@ -1913,60 +4164,61 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
       case 3:
         state0 = 0;
         R = xf1.rotation;
-        v = $.$index$as(normals1, edge1);
-        t4 = R.col0.get$y();
+        v = $.$index$asx(normals1, edge1);
+        t4 = $.get$y$x(R.col0);
       case 4:
         state0 = 0;
-        t6 = v.get$x();
+        t6 = $.getInterceptor$x(v);
+        t7 = t6.get$x(v);
       case 5:
         state0 = 0;
-        t6 = $.$mul$n(t4, t6);
+        t7 = $.$mul$n(t4, t7);
       case 6:
         state0 = 0;
-        t8 = R.col1.get$y();
+        t9 = $.get$y$x(R.col1);
       case 7:
         state0 = 0;
-        t10 = v.get$y();
+        t11 = t6.get$y(v);
       case 8:
         state0 = 0;
-        t10 = $.$mul$n(t8, t10);
+        t11 = $.$mul$n(t9, t11);
       case 9:
         state0 = 0;
-        normal1Worldy = $.$add$ns(t6, t10);
+        normal1Worldy = $.$add$ns(t7, t11);
       case 10:
         state0 = 0;
-        t6 = R.col0.get$x();
+        t7 = $.get$x$x(R.col0);
       case 11:
         state0 = 0;
-        t13 = v.get$x();
+        t14 = t6.get$x(v);
       case 12:
         state0 = 0;
-        t13 = $.$mul$n(t6, t13);
+        t14 = $.$mul$n(t7, t14);
       case 13:
         state0 = 0;
-        t15 = R.col1.get$x();
+        t16 = $.get$x$x(R.col1);
       case 14:
         state0 = 0;
-        t17 = v.get$y();
+        t6 = t6.get$y(v);
       case 15:
         state0 = 0;
-        t17 = $.$mul$n(t15, t17);
+        t6 = $.$mul$n(t16, t6);
       case 16:
         state0 = 0;
-        normal1Worldx = $.$add$ns(t13, t17);
+        normal1Worldx = $.$add$ns(t14, t6);
       case 17:
         state0 = 0;
         R1 = xf2.rotation;
-        t13 = R1.col0.get$x();
+        t14 = $.get$x$x(R1.col0);
       case 18:
         state0 = 0;
         t20 = $.getInterceptor$n(normal1Worldx);
-        if (typeof t13 !== "number")
-          throw $.iae(t13);
-        t13 = t20.$mul(normal1Worldx, t13);
+        if (typeof t14 !== "number")
+          throw $.iae(t14);
+        t14 = t20.$mul(normal1Worldx, t14);
       case 19:
         state0 = 0;
-        t22 = R1.col0.get$y();
+        t22 = $.get$y$x(R1.col0);
       case 20:
         state0 = 0;
         t24 = $.getInterceptor$n(normal1Worldy);
@@ -1975,18 +4227,18 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
         t22 = t24.$mul(normal1Worldy, t22);
       case 21:
         state0 = 0;
-        normal1x = $.$add$ns(t13, t22);
+        normal1x = $.$add$ns(t14, t22);
       case 22:
         state0 = 0;
-        t13 = R1.col1.get$x();
+        t14 = $.get$x$x(R1.col1);
       case 23:
         state0 = 0;
-        if (typeof t13 !== "number")
-          throw $.iae(t13);
-        t13 = t20.$mul(normal1Worldx, t13);
+        if (typeof t14 !== "number")
+          throw $.iae(t14);
+        t14 = t20.$mul(normal1Worldx, t14);
       case 24:
         state0 = 0;
-        t27 = R1.col1.get$y();
+        t27 = $.get$y$x(R1.col1);
       case 25:
         state0 = 0;
         if (typeof t27 !== "number")
@@ -1994,10 +4246,10 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
         t27 = t24.$mul(normal1Worldy, t27);
       case 26:
         state0 = 0;
-        normal1y = $.$add$ns(t13, t27);
+        normal1y = $.$add$ns(t14, t27);
       case 27:
         state0 = 0;
-        t1 = $.getInterceptor$as(vertices2);
+        t1 = $.getInterceptor$asx(vertices2);
         index = 0;
         minDot = 99999999999999;
         i = 0;
@@ -2009,19 +4261,20 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
                 if (!(i < count2))
                   break L0;
                 a = t1.$index(vertices2, i);
-                t2 = a.get$x();
+                t2 = $.getInterceptor$x(a);
+                t3 = t2.get$x(a);
               case 28:
                 state0 = 0;
-                t2 = $.$mul$n(t2, normal1x);
+                t3 = $.$mul$n(t3, normal1x);
               case 29:
                 state0 = 0;
-                t5 = a.get$y();
+                t2 = t2.get$y(a);
               case 30:
                 state0 = 0;
-                t5 = $.$mul$n(t5, normal1y);
+                t2 = $.$mul$n(t2, normal1y);
               case 31:
                 state0 = 0;
-                dot_ = $.$add$ns(t2, t5);
+                dot_ = $.$add$ns(t3, t2);
               case 32:
                 state0 = 0;
                 if ($.$lt$n(dot_, minDot)) {
@@ -2030,110 +4283,113 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
                 }
                 ++i;
             }
-        v3 = $.$index$as(vertices1, edge1);
+        v3 = $.$index$asx(vertices1, edge1);
         t2 = xf1.position;
         t3 = t2.y;
       case 33:
         state0 = 0;
-        t5 = R.col0.get$y();
+        t5 = $.get$y$x(R.col0);
       case 34:
         state0 = 0;
-        t7 = v3.get$x();
+        t7 = $.getInterceptor$x(v3);
+        t8 = t7.get$x(v3);
       case 35:
         state0 = 0;
-        t7 = $.$add$ns(t3, $.$mul$n(t5, t7));
-        t5 = R.col1.get$y();
+        t8 = $.$add$ns(t3, $.$mul$n(t5, t8));
+        t5 = $.get$y$x(R.col1);
       case 36:
         state0 = 0;
-        t9 = v3.get$y();
+        t10 = t7.get$y(v3);
       case 37:
         state0 = 0;
-        v1y = $.$add$ns(t7, $.$mul$n(t5, t9));
+        v1y = $.$add$ns(t8, $.$mul$n(t5, t10));
         t2 = t2.x;
       case 38:
         state0 = 0;
-        t5 = R.col0.get$x();
+        t5 = $.get$x$x(R.col0);
       case 39:
         state0 = 0;
-        t11 = v3.get$x();
+        t12 = t7.get$x(v3);
       case 40:
         state0 = 0;
-        t11 = $.$add$ns(t2, $.$mul$n(t5, t11));
-        t5 = R.col1.get$x();
+        t12 = $.$add$ns(t2, $.$mul$n(t5, t12));
+        t5 = $.get$x$x(R.col1);
       case 41:
         state0 = 0;
-        t13 = v3.get$y();
+        t7 = t7.get$y(v3);
       case 42:
         state0 = 0;
-        v1x = $.$add$ns(t11, $.$mul$n(t5, t13));
+        v1x = $.$add$ns(t12, $.$mul$n(t5, t7));
         v4 = t1.$index(vertices2, index);
         t1 = xf2.position;
-        t13 = t1.y;
+        t7 = t1.y;
       case 43:
         state0 = 0;
-        t11 = R1.col0.get$y();
+        t12 = $.get$y$x(R1.col0);
       case 44:
         state0 = 0;
-        t16 = v4.get$x();
+        t16 = $.getInterceptor$x(v4);
+        t17 = t16.get$x(v4);
       case 45:
         state0 = 0;
-        t16 = $.$add$ns(t13, $.$mul$n(t11, t16));
-        t11 = R1.col1.get$y();
+        t17 = $.$add$ns(t7, $.$mul$n(t12, t17));
+        t12 = $.get$y$x(R1.col1);
       case 46:
         state0 = 0;
-        t18 = v4.get$y();
+        t19 = t16.get$y(v4);
       case 47:
         state0 = 0;
-        v2y = $.$sub$n($.$add$ns(t16, $.$mul$n(t11, t18)), v1y);
+        v2y = $.$sub$n($.$add$ns(t17, $.$mul$n(t12, t19)), v1y);
         t1 = t1.x;
       case 48:
         state0 = 0;
-        t11 = R1.col0.get$x();
+        t12 = $.get$x$x(R1.col0);
       case 49:
         state0 = 0;
-        t20 = v4.get$x();
+        t21 = t16.get$x(v4);
       case 50:
         state0 = 0;
-        t20 = $.$add$ns(t1, $.$mul$n(t11, t20));
-        t11 = R1.col1.get$x();
+        t21 = $.$add$ns(t1, $.$mul$n(t12, t21));
+        t12 = $.get$x$x(R1.col1);
       case 51:
         state0 = 0;
-        t22 = v4.get$y();
+        t16 = t16.get$y(v4);
       case 52:
         state0 = 0;
-        return $.$add$ns($.$mul$n($.$sub$n($.$add$ns(t20, $.$mul$n(t11, t22)), v1x), normal1Worldx), $.$mul$n(v2y, normal1Worldy));
+        return $.$add$ns($.$mul$n($.$sub$n($.$add$ns(t21, $.$mul$n(t12, t16)), v1x), normal1Worldx), $.$mul$n(v2y, normal1Worldy));
     }
   },
   findMaxSeparation$5: function(results, poly1, xf1, poly2, xf2) {
-    var count1, normals1, v, t2, t3, predy, predx, v1, tempy, dx, dy, t4, dLocal1x, dLocal1y, edge, maxDot, i, norm, dot_, s, prevEdge, sPrev, nextEdge, sNext, t1, bestSeparation, bestEdge, increment, edge0;
+    var count1, normals1, v, t2, t3, predy, predx, v1, tempy, dx, dy, t4, dLocal1x, dLocal1y, edge, maxDot, i, norm, t1, dot_, s, prevEdge, sPrev, nextEdge, sNext, bestSeparation, bestEdge, increment, edge0;
     count1 = poly1.get$vertexCount();
     normals1 = poly1.get$normals();
-    if (typeof normals1 !== "string" && (typeof normals1 !== "object" || normals1 === null || normals1.constructor !== Array && !$.getInterceptor(normals1).$isJavaScriptIndexingBehavior))
+    if (typeof normals1 !== "string" && (typeof normals1 !== "object" || normals1 === null || normals1.constructor !== Array && !$.getInterceptor(normals1).$isJavaScriptIndexingBehavior()))
       return this.findMaxSeparation$5$bailout(1, results, poly1, xf1, poly2, xf2, count1, normals1);
     v = poly2.get$centroid();
     t2 = xf2.position;
     t3 = xf2.rotation;
-    predy = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t3.col0.get$y(), v.x)), $.$mul$n(t3.col1.get$y(), v.y));
-    predx = $.$add$ns($.$add$ns(t2.x, $.$mul$n(t3.col0.get$x(), v.x)), $.$mul$n(t3.col1.get$x(), v.y));
+    predy = $.$add$ns($.$add$ns(t2.y, $.$mul$n($.get$y$x(t3.col0), v.x)), $.$mul$n($.get$y$x(t3.col1), v.y));
+    predx = $.$add$ns($.$add$ns(t2.x, $.$mul$n($.get$x$x(t3.col0), v.x)), $.$mul$n($.get$x$x(t3.col1), v.y));
     v1 = poly1.get$centroid();
     t3 = xf1.position;
     t2 = xf1.rotation;
-    tempy = $.$add$ns($.$add$ns(t3.y, $.$mul$n(t2.col0.get$y(), v1.x)), $.$mul$n(t2.col1.get$y(), v1.y));
-    dx = $.$sub$n(predx, $.$add$ns($.$add$ns(t3.x, $.$mul$n(t2.col0.get$x(), v1.x)), $.$mul$n(t2.col1.get$x(), v1.y)));
+    tempy = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t2.col0), v1.x)), $.$mul$n($.get$y$x(t2.col1), v1.y));
+    dx = $.$sub$n(predx, $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t2.col0), v1.x)), $.$mul$n($.get$x$x(t2.col1), v1.y)));
     dy = $.$sub$n(predy, tempy);
     t3 = $.getInterceptor$n(dx);
     t4 = $.getInterceptor$n(dy);
-    dLocal1x = $.$add$ns(t3.$mul(dx, t2.col0.get$x()), t4.$mul(dy, t2.col0.get$y()));
+    dLocal1x = $.$add$ns(t3.$mul(dx, $.get$x$x(t2.col0)), t4.$mul(dy, $.get$y$x(t2.col0)));
     if (typeof dLocal1x !== "number")
-      return this.findMaxSeparation$5$bailout(2, results, poly1, xf1, poly2, xf2, count1, normals1, dLocal1x, t4, t3, t2, dx, dy);
-    dLocal1y = $.$add$ns(t3.$mul(dx, t2.col1.get$x()), t4.$mul(dy, t2.col1.get$y()));
+      return this.findMaxSeparation$5$bailout(2, results, poly1, xf1, poly2, xf2, count1, normals1, dy, dLocal1x, dx, t3, t4, t2);
+    dLocal1y = $.$add$ns(t3.$mul(dx, $.get$x$x(t2.col1)), t4.$mul(dy, $.get$y$x(t2.col1)));
     if (typeof dLocal1y !== "number")
-      return this.findMaxSeparation$5$bailout(3, results, poly1, xf1, poly2, xf2, count1, normals1, dLocal1x, 0, 0, 0, 0, 0, dLocal1y);
+      return this.findMaxSeparation$5$bailout(3, results, poly1, xf1, poly2, xf2, count1, normals1, 0, dLocal1x, 0, 0, 0, 0, dLocal1y);
     for (edge = 0, maxDot = 1e-12, i = 0; i < count1; ++i) {
       if (i >= normals1.length)
         throw $.ioore(i);
       norm = normals1[i];
-      dot_ = $.$add$ns($.$mul$n(norm.get$x(), dLocal1x), $.$mul$n(norm.get$y(), dLocal1y));
+      t1 = $.getInterceptor$x(norm);
+      dot_ = $.$add$ns($.$mul$n(t1.get$x(norm), dLocal1x), $.$mul$n(t1.get$y(norm), dLocal1y));
       if ($.$gt$n(dot_, maxDot)) {
         maxDot = dot_;
         edge = i;
@@ -2182,7 +4438,7 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     results.edgeIndex = bestEdge;
     results.separation = bestSeparation;
   },
-  findMaxSeparation$5$bailout: function(state0, results, poly1, xf1, poly2, xf2, count1, normals1, dLocal1x, t4, t3, t2, dx, dy, dLocal1y, bestEdge, bestSeparation, increment) {
+  findMaxSeparation$5$bailout: function(state0, results, poly1, xf1, poly2, xf2, count1, normals1, dy, dLocal1x, dx, t3, t4, t2, dLocal1y, bestEdge, bestSeparation, increment) {
     switch (state0) {
       case 0:
         count1 = poly1.get$vertexCount();
@@ -2192,25 +4448,26 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
         v = poly2.get$centroid();
         t2 = xf2.position;
         t3 = xf2.rotation;
-        predy = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t3.col0.get$y(), v.x)), $.$mul$n(t3.col1.get$y(), v.y));
-        predx = $.$add$ns($.$add$ns(t2.x, $.$mul$n(t3.col0.get$x(), v.x)), $.$mul$n(t3.col1.get$x(), v.y));
+        predy = $.$add$ns($.$add$ns(t2.y, $.$mul$n($.get$y$x(t3.col0), v.x)), $.$mul$n($.get$y$x(t3.col1), v.y));
+        predx = $.$add$ns($.$add$ns(t2.x, $.$mul$n($.get$x$x(t3.col0), v.x)), $.$mul$n($.get$x$x(t3.col1), v.y));
         v1 = poly1.get$centroid();
         t3 = xf1.position;
         t2 = xf1.rotation;
-        tempy = $.$add$ns($.$add$ns(t3.y, $.$mul$n(t2.col0.get$y(), v1.x)), $.$mul$n(t2.col1.get$y(), v1.y));
-        dx = $.$sub$n(predx, $.$add$ns($.$add$ns(t3.x, $.$mul$n(t2.col0.get$x(), v1.x)), $.$mul$n(t2.col1.get$x(), v1.y)));
+        tempy = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t2.col0), v1.x)), $.$mul$n($.get$y$x(t2.col1), v1.y));
+        dx = $.$sub$n(predx, $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t2.col0), v1.x)), $.$mul$n($.get$x$x(t2.col1), v1.y)));
         dy = $.$sub$n(predy, tempy);
         t3 = $.getInterceptor$n(dx);
         t4 = $.getInterceptor$n(dy);
-        dLocal1x = $.$add$ns(t3.$mul(dx, t2.col0.get$x()), t4.$mul(dy, t2.col0.get$y()));
+        dLocal1x = $.$add$ns(t3.$mul(dx, $.get$x$x(t2.col0)), t4.$mul(dy, $.get$y$x(t2.col0)));
       case 2:
         state0 = 0;
-        dLocal1y = $.$add$ns(t3.$mul(dx, t2.col1.get$x()), t4.$mul(dy, t2.col1.get$y()));
+        dLocal1y = $.$add$ns(t3.$mul(dx, $.get$x$x(t2.col1)), t4.$mul(dy, $.get$y$x(t2.col1)));
       case 3:
         state0 = 0;
-        for (t1 = $.getInterceptor$as(normals1), edge = 0, maxDot = 1e-12, i = 0; i < count1; ++i) {
+        for (t1 = $.getInterceptor$asx(normals1), edge = 0, maxDot = 1e-12, i = 0; i < count1; ++i) {
           norm = t1.$index(normals1, i);
-          dot_ = $.$add$ns($.$mul$n(norm.get$x(), dLocal1x), $.$mul$n(norm.get$y(), dLocal1y));
+          t2 = $.getInterceptor$x(norm);
+          dot_ = $.$add$ns($.$mul$n(t2.get$x(norm), dLocal1x), $.$mul$n(t2.get$y(norm), dLocal1y));
           if ($.$gt$n(dot_, maxDot)) {
             maxDot = dot_;
             edge = i;
@@ -2262,17 +4519,18 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     }
   },
   findIncidentEdge$6: function(c, poly1, xf1, edge1, poly2, xf2) {
-    var normals1, count2, vertices2, normals2, t2, index, minDot, i, dot_, i2, t1, t3;
+    var normals1, count2, vertices2, normals2, t2, t3, index, minDot, i, dot_, i2, t1;
     poly1.get$vertexCount();
     normals1 = poly1.get$normals();
     count2 = poly2.get$vertexCount();
     vertices2 = poly2.get$vertices();
     normals2 = poly2.get$normals();
-    if (typeof normals2 !== "string" && (typeof normals2 !== "object" || normals2 === null || normals2.constructor !== Array && !$.getInterceptor(normals2).$isJavaScriptIndexingBehavior))
+    if (typeof normals2 !== "string" && (typeof normals2 !== "object" || normals2 === null || normals2.constructor !== Array && !$.getInterceptor(normals2).$isJavaScriptIndexingBehavior()))
       return this.findIncidentEdge$6$bailout(1, c, xf1, edge1, xf2, normals1, count2, vertices2, normals2);
     t2 = this.normal1;
-    xf1.rotation.transformed$2($.$index$as(normals1, edge1), t2);
-    xf2.rotation.transposed$0().transform$1(t2);
+    xf1.rotation.transformed$2($.$index$asx(normals1, edge1), t2);
+    t3 = xf2.rotation.transposed$0();
+    t3.transform$1(t3, t2);
     for (index = 0, minDot = 99999999999999, i = 0; i < count2; ++i) {
       if (i >= normals2.length)
         throw $.ioore(i);
@@ -2284,31 +4542,30 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     }
     i2 = index + 1;
     i2 = i2 < count2 ? i2 : 0;
-    t1 = $.getInterceptor$as(vertices2);
+    t1 = $.getInterceptor$asx(vertices2);
     t2 = t1.$index(vertices2, index);
     t3 = c.length;
     if (0 >= t3)
       throw $.ioore(0);
     $.Transform_mulToOut(xf2, t2, c[0].get$v());
-    t2 = c[0];
-    t2.get$id().features.referenceEdge = edge1;
-    t2.get$id().features.incidentEdge = index;
-    t2.get$id().features.incidentVertex = 0;
+    $.get$id$x(c[0]).get$features().referenceEdge = edge1;
+    $.get$id$x(c[0]).get$features().incidentEdge = index;
+    $.get$id$x(c[0]).get$features().incidentVertex = 0;
     t1 = t1.$index(vertices2, i2);
     if (1 >= t3)
       throw $.ioore(1);
     $.Transform_mulToOut(xf2, t1, c[1].get$v());
-    t1 = c[1];
-    t1.get$id().features.referenceEdge = edge1;
-    t1.get$id().features.incidentEdge = i2;
-    t1.get$id().features.incidentVertex = 1;
+    $.get$id$x(c[1]).get$features().referenceEdge = edge1;
+    $.get$id$x(c[1]).get$features().incidentEdge = i2;
+    $.get$id$x(c[1]).get$features().incidentVertex = 1;
   },
   findIncidentEdge$6$bailout: function(state0, c, xf1, edge1, xf2, normals1, count2, vertices2, normals2) {
-    var t2, t1, index, minDot, i, dot_, i2, t3;
+    var t2, t3, t1, index, minDot, i, dot_, i2;
     t2 = this.normal1;
-    xf1.rotation.transformed$2($.$index$as(normals1, edge1), t2);
-    xf2.rotation.transposed$0().transform$1(t2);
-    for (t1 = $.getInterceptor$as(normals2), index = 0, minDot = 99999999999999, i = 0; i < count2; ++i) {
+    xf1.rotation.transformed$2($.$index$asx(normals1, edge1), t2);
+    t3 = xf2.rotation.transposed$0();
+    t3.transform$1(t3, t2);
+    for (t1 = $.getInterceptor$asx(normals2), index = 0, minDot = 99999999999999, i = 0; i < count2; ++i) {
       dot_ = t2.dot$1(t1.$index(normals2, i));
       if (dot_ < minDot) {
         minDot = dot_;
@@ -2317,27 +4574,25 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     }
     i2 = index + 1;
     i2 = i2 < count2 ? i2 : 0;
-    t1 = $.getInterceptor$as(vertices2);
+    t1 = $.getInterceptor$asx(vertices2);
     t2 = t1.$index(vertices2, index);
     t3 = c.length;
     if (0 >= t3)
       throw $.ioore(0);
     $.Transform_mulToOut(xf2, t2, c[0].get$v());
-    t2 = c[0];
-    t2.get$id().features.referenceEdge = edge1;
-    t2.get$id().features.incidentEdge = index;
-    t2.get$id().features.incidentVertex = 0;
+    $.get$id$x(c[0]).get$features().referenceEdge = edge1;
+    $.get$id$x(c[0]).get$features().incidentEdge = index;
+    $.get$id$x(c[0]).get$features().incidentVertex = 0;
     t1 = t1.$index(vertices2, i2);
     if (1 >= t3)
       throw $.ioore(1);
     $.Transform_mulToOut(xf2, t1, c[1].get$v());
-    t1 = c[1];
-    t1.get$id().features.referenceEdge = edge1;
-    t1.get$id().features.incidentEdge = i2;
-    t1.get$id().features.incidentVertex = 1;
+    $.get$id$x(c[1]).get$features().referenceEdge = edge1;
+    $.get$id$x(c[1]).get$features().incidentEdge = i2;
+    $.get$id$x(c[1]).get$features().incidentVertex = 1;
   },
   collidePolygons$5: function(manifold, polyA, xfA, polyB, xfB) {
-    var totalRadius, t1, t2, t3, t4, edge1, xf2, xf1, poly2, poly1, flip, count1, vertices1, t5, t6, t7, frontOffset, t8, np, pointCount, i, cp;
+    var totalRadius, t1, t2, t3, t4, t5, edge1, xf2, xf1, poly2, poly1, flip, count1, vertices1, t6, t7, frontOffset, t8, np, pointCount, i, cp;
     manifold.set$pointCount(0);
     totalRadius = $.$add$ns(polyA.get$radius(), polyB.get$radius());
     t1 = this.results1;
@@ -2352,9 +4607,10 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     t4 = t1.separation;
     if (typeof t4 !== "number")
       throw $.iae(t4);
+    t5 = $.getInterceptor$x(manifold);
     if ($.$gt$n(t3, 0.98 * t4 + 0.001)) {
       edge1 = t2.edgeIndex;
-      manifold.set$type(2);
+      t5.set$type(manifold, 2);
       xf2 = xfA;
       xf1 = xfB;
       poly2 = polyA;
@@ -2362,7 +4618,7 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
       flip = 1;
     } else {
       edge1 = t1.edgeIndex;
-      manifold.set$type(1);
+      t5.set$type(manifold, 1);
       xf2 = xfB;
       xf1 = xfA;
       poly2 = polyB;
@@ -2374,7 +4630,7 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     count1 = poly1.get$vertexCount();
     vertices1 = poly1.get$vertices();
     t2 = this.v11;
-    t3 = $.getInterceptor$as(vertices1);
+    t3 = $.getInterceptor$asx(vertices1);
     t2.copyFrom$1(t3.$index(vertices1, edge1));
     t4 = this.v12;
     t5 = $.getInterceptor$ns(edge1);
@@ -2386,7 +4642,8 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
     $.cross(t3, 1, t5);
     t6 = this.planePoint;
     t7 = t6.copyFrom$1(t2);
-    t7.add$1(t7, t4).scale$1(0.5);
+    t7 = t7.add$1(t7, t4);
+    t7.scale$1(t7, 0.5);
     t7 = this.tangent;
     xf1.rotation.transformed$2(t3, t7);
     t3 = this.normal;
@@ -2408,14 +4665,15 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
       return;
     manifold.get$localNormal().copyFrom$1(t5);
     manifold.get$localPoint().copyFrom$1(t6);
-    for (t2 = t1.length, pointCount = 0, i = 0; i < 2; ++i) {
-      if (i >= t2)
+    for (t2 = $.getInterceptor$x(manifold), t4 = t1.length, pointCount = 0, i = 0; i < 2; ++i) {
+      if (i >= t4)
         throw $.ioore(i);
       if (t3.dot$1(t1[i].get$v()) - frontOffset <= totalRadius) {
-        cp = $.$index$as(manifold.get$points(), pointCount);
+        cp = $.$index$asx(t2.get$points(manifold), pointCount);
         $.Transform_mulTransToOut(xf2, t1[i].get$v(), cp.get$localPoint());
-        cp.get$id().setFrom$1(t1[i].get$id());
-        cp.get$id().features.flip = flip;
+        t5 = $.getInterceptor$x(cp);
+        t5.get$id(cp).setFrom$1($.get$id$x(t1[i]));
+        t5.get$id(cp).get$features().flip = flip;
         ++pointCount;
       }
     }
@@ -2456,10 +4714,10 @@ $$.Collision = {"": "Object;_pool,cache,input,output,results1,results2,incidentE
   }
 };
 
-$$.ClipVertex = {"": "Object;v<,id<",
+$$.ClipVertex = {"": "Object;v<,id>",
   setFrom$1: function(cv) {
     this.v.copyFrom$1(cv.get$v());
-    this.id.setFrom$1(cv.get$id());
+    this.id.setFrom$1($.get$id$x(cv));
   }
 };
 
@@ -2477,7 +4735,7 @@ $$.ContactID = {"": "Object;features<",
     this.features.setFrom$1(other.get$features());
   },
   isEqual$1: function(other) {
-    var t1 = other.features;
+    var t1 = other.get$features();
     return t1.$eq(t1, this.features);
   },
   zero$0: function() {
@@ -2499,7 +4757,7 @@ $$.Distance = {"": "Object;calls,iters,maxIters,simplex,saveA,saveB,closestPoint
     t2 = this.closestPoint;
     t1.getClosestPoint$1(t2);
     t2.get$length2();
-    for (t3 = this.saveB, t4 = t3.length, t5 = this.saveA, t6 = t5.length, t7 = $.getInterceptor$as(vertices), t8 = transformA.rotation, t9 = this.searchDirection, t10 = this.temp, t11 = transformB.rotation, iter = 0; iter < this.maxIters;) {
+    for (t3 = this.saveB, t4 = t3.length, t5 = this.saveA, t6 = t5.length, t7 = $.getInterceptor$asx(vertices), t8 = transformA.rotation, t9 = this.searchDirection, t10 = this.temp, t11 = transformB.rotation, iter = 0; iter < this.maxIters;) {
       saveCount = t1.count;
       for (i = 0; $.JSNumber_methods.$lt(i, saveCount); ++i) {
         t12 = t7.$index(vertices, i).get$indexA();
@@ -2533,10 +4791,10 @@ $$.Distance = {"": "Object;calls,iters,maxIters,simplex,saveA,saveB,closestPoint
       vertex = t7.$index(vertices, t1.count);
       t8.transposed$0().transformed$2(t9.negate$0(), t10);
       vertex.set$indexA(proxyA.getSupport$1(t10));
-      $.Transform_mulToOut(transformA, $.$index$as(proxyA.get$vertices(), vertex.get$indexA()), vertex.get$wA());
+      $.Transform_mulToOut(transformA, $.$index$asx(proxyA.get$vertices(), vertex.get$indexA()), vertex.get$wA());
       t11.transposed$0().transformed$2(t9.negate$0(), t10);
       vertex.set$indexB(proxyB.getSupport$1(t10));
-      $.Transform_mulToOut(transformB, $.$index$as(proxyB.get$vertices(), vertex.get$indexB()), vertex.get$wB());
+      $.Transform_mulToOut(transformB, $.$index$asx(proxyB.get$vertices(), vertex.get$indexB()), vertex.get$wB());
       vertex.get$w().copyFrom$1(vertex.get$wB()).sub$1(vertex.get$wA());
       ++iter;
       this.iters = this.iters + 1;
@@ -2577,12 +4835,15 @@ $$.Distance = {"": "Object;calls,iters,maxIters,simplex,saveA,saveB,closestPoint
         t1 = this.normal;
         t1.copyFrom$1(t3).sub$1(t2);
         t1.normalize$0();
-        t10.copyFrom$1(t1).scale$1(rA);
+        t4 = t10.copyFrom$1(t1);
+        t4.scale$1(t4, rA);
         t2.add$1(t2, t10);
-        t10.copyFrom$1(t1).scale$1(rB);
+        t1 = t10.copyFrom$1(t1);
+        t1.scale$1(t1, rB);
         t3.sub$1(t10);
       } else {
-        t2.add$1(t2, t3).scale$1(0.5);
+        t1 = t2.add$1(t2, t3);
+        t1.scale$1(t1, 0.5);
         t3.copyFrom$1(t2);
         output._distance = 0;
       }
@@ -2597,17 +4858,18 @@ $$.DistanceOutput = {"": "Object;pointA,pointB,_distance,iterations"};
 $$.DistanceProxy = {"": "Object;vertices<,count<,radius@",
   setFromShape$1: function(shape) {
     var t1, t2, i;
-    switch (shape.get$type()) {
+    t1 = $.getInterceptor$x(shape);
+    switch (t1.get$type(shape)) {
       case 0:
-        $.$index$as(this.vertices, 0).copyFrom$1(shape.get$position());
+        $.$index$asx(this.vertices, 0).copyFrom$1(t1.get$position(shape));
         this.count = 1;
         this.radius = shape.get$radius();
         break;
       case 1:
         this.count = shape.get$vertexCount();
         this.radius = shape.get$radius();
-        for (t1 = this.vertices, t2 = $.getInterceptor$as(t1), i = 0; i < this.count; ++i)
-          t2.$index(t1, i).copyFrom$1($.$index$as(shape.get$vertices(), i));
+        for (t1 = this.vertices, t2 = $.getInterceptor$asx(t1), i = 0; i < this.count; ++i)
+          t2.$index(t1, i).copyFrom$1($.$index$asx(shape.get$vertices(), i));
         break;
       default:
         break;
@@ -2616,7 +4878,7 @@ $$.DistanceProxy = {"": "Object;vertices<,count<,radius@",
   getSupport$1: function(direction) {
     var t1, bestValue, bestIndex, i, value;
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.getSupport$1$bailout(1, direction, t1);
     if (0 >= t1.length)
       throw $.ioore(0);
@@ -2634,7 +4896,7 @@ $$.DistanceProxy = {"": "Object;vertices<,count<,radius@",
   },
   getSupport$1$bailout: function(state0, direction, t1) {
     var t3, bestValue, bestIndex, i, value;
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     bestValue = t3.$index(t1, 0).dot$1(direction);
     for (bestIndex = 0, i = 1; i < this.count; ++i) {
       value = t3.$index(t1, i).dot$1(direction);
@@ -2680,15 +4942,15 @@ $$.Features = {"": "Object;referenceEdge<,incidentEdge<,incidentVertex<,flip<",
   }
 };
 
-$$.Manifold = {"": "Object;points<,localNormal<,localPoint<,type@,pointCount@",
+$$.Manifold = {"": "Object;points>,localNormal<,localPoint<,type*,pointCount@",
   setFrom$1: function(other) {
-    var t1, t2, i;
-    for (t1 = this.points, t2 = t1.length, i = 0; $.JSNumber_methods.$lt(i, other.get$pointCount()); ++i) {
+    var t1, t2, t3, i;
+    for (t1 = this.points, t2 = t1.length, t3 = $.getInterceptor$x(other), i = 0; $.JSNumber_methods.$lt(i, other.get$pointCount()); ++i) {
       if (i >= t2)
         throw $.ioore(i);
-      t1[i].setFrom$1($.$index$as(other.get$points(), i));
+      t1[i].setFrom$1($.$index$asx(t3.get$points(other), i));
     }
-    this.type = other.get$type();
+    this.type = $.get$type$x(other);
     this.localNormal.copyFrom$1(other.get$localNormal());
     this.localPoint.copyFrom$1(other.get$localPoint());
     this.pointCount = other.get$pointCount();
@@ -2704,12 +4966,12 @@ $$.Manifold = {"": "Object;points<,localNormal<,localPoint<,type@,pointCount@",
   }
 };
 
-$$.ManifoldPoint = {"": "Object;localPoint<,normalImpulse@,tangentImpulse@,id<",
+$$.ManifoldPoint = {"": "Object;localPoint<,normalImpulse@,tangentImpulse@,id>",
   setFrom$1: function(other) {
     this.localPoint.copyFrom$1(other.get$localPoint());
     this.normalImpulse = other.get$normalImpulse();
     this.tangentImpulse = other.get$tangentImpulse();
-    this.id.setFrom$1(other.get$id());
+    this.id.setFrom$1($.get$id$x(other));
   }
 };
 
@@ -2718,15 +4980,15 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
     var t1, t3, t4, t6, t7, i, v, wALocal, wBLocal, metric1, metric2, t2;
     this.count = cache.count;
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.readCache$5$bailout(1, cache, proxyA, transformA, proxyB, transformB, t1);
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     t4 = cache.indexA;
-    if (typeof t4 !== "string" && (typeof t4 !== "object" || t4 === null || t4.constructor !== Array && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior))
+    if (typeof t4 !== "string" && (typeof t4 !== "object" || t4 === null || t4.constructor !== Array && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior()))
       return this.readCache$5$bailout(2, cache, proxyA, transformA, proxyB, transformB, t1, t3, t4);
-    t6 = $.getInterceptor$as(t4);
+    t6 = $.getInterceptor$asx(t4);
     t7 = cache.indexB;
-    if (typeof t7 !== "string" && (typeof t7 !== "object" || t7 === null || t7.constructor !== Array && !$.getInterceptor(t7).$isJavaScriptIndexingBehavior))
+    if (typeof t7 !== "string" && (typeof t7 !== "object" || t7 === null || t7.constructor !== Array && !$.getInterceptor(t7).$isJavaScriptIndexingBehavior()))
       return this.readCache$5$bailout(3, cache, proxyA, transformA, proxyB, transformB, t1, t3, t4, t7, t6);
     i = 0;
     for (; $.JSNumber_methods.$lt(i, this.count); ++i) {
@@ -2739,8 +5001,8 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
       if (i >= t7.length)
         throw $.ioore(i);
       v.set$indexB(t7[i]);
-      wALocal = $.$index$as(proxyA.get$vertices(), v.get$indexA());
-      wBLocal = $.$index$as(proxyB.get$vertices(), v.get$indexB());
+      wALocal = $.$index$asx(proxyA.get$vertices(), v.get$indexA());
+      wBLocal = $.$index$asx(proxyB.get$vertices(), v.get$indexB());
       $.Transform_mulToOut(transformA, wALocal, v.get$wA());
       $.Transform_mulToOut(transformB, wBLocal, v.get$wB());
       v.get$w().copyFrom$1(v.get$wB()).sub$1(v.get$wA());
@@ -2761,8 +5023,8 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
       v = t1[0];
       v.set$indexA(0);
       v.set$indexB(0);
-      wALocal = $.$index$as(proxyA.get$vertices(), 0);
-      wBLocal = $.$index$as(proxyB.get$vertices(), 0);
+      wALocal = $.$index$asx(proxyA.get$vertices(), 0);
+      wBLocal = $.$index$asx(proxyB.get$vertices(), 0);
       $.Transform_mulToOut(transformA, wALocal, v.get$wA());
       $.Transform_mulToOut(transformB, wBLocal, v.get$wB());
       v.get$w().copyFrom$1(v.get$wB()).sub$1(v.get$wA());
@@ -2776,23 +5038,23 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
         t1 = this.vertices;
       case 1:
         state0 = 0;
-        t3 = $.getInterceptor$as(t1);
+        t3 = $.getInterceptor$asx(t1);
         t4 = cache.indexA;
       case 2:
         state0 = 0;
-        t6 = $.getInterceptor$as(t4);
+        t6 = $.getInterceptor$asx(t4);
         t7 = cache.indexB;
       case 3:
         var t9, i, v, wALocal, wBLocal, metric1, metric2, t2;
         state0 = 0;
-        t9 = $.getInterceptor$as(t7);
+        t9 = $.getInterceptor$asx(t7);
         i = 0;
         for (; $.JSNumber_methods.$lt(i, this.count); ++i) {
           v = t3.$index(t1, i);
           v.set$indexA(t6.$index(t4, i));
           v.set$indexB(t9.$index(t7, i));
-          wALocal = $.$index$as(proxyA.get$vertices(), v.get$indexA());
-          wBLocal = $.$index$as(proxyB.get$vertices(), v.get$indexB());
+          wALocal = $.$index$asx(proxyA.get$vertices(), v.get$indexA());
+          wBLocal = $.$index$asx(proxyB.get$vertices(), v.get$indexB());
           $.Transform_mulToOut(transformA, wALocal, v.get$wA());
           $.Transform_mulToOut(transformB, wBLocal, v.get$wB());
           v.get$w().copyFrom$1(v.get$wB()).sub$1(v.get$wA());
@@ -2811,8 +5073,8 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
           v = t3.$index(t1, 0);
           v.set$indexA(0);
           v.set$indexB(0);
-          wALocal = $.$index$as(proxyA.get$vertices(), 0);
-          wBLocal = $.$index$as(proxyB.get$vertices(), 0);
+          wALocal = $.$index$asx(proxyA.get$vertices(), 0);
+          wBLocal = $.$index$asx(proxyB.get$vertices(), 0);
           $.Transform_mulToOut(transformA, wALocal, v.get$wA());
           $.Transform_mulToOut(transformB, wBLocal, v.get$wB());
           v.get$w().copyFrom$1(v.get$wB()).sub$1(v.get$wA());
@@ -2825,14 +5087,14 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
     cache.metric = this.getMetric$0();
     cache.count = this.count;
     t1 = cache.indexA;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.writeCache$1$bailout(1, cache, t1);
     t3 = this.vertices;
-    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior))
+    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior()))
       return this.writeCache$1$bailout(2, cache, t1, t3);
-    t5 = $.getInterceptor$as(t3);
+    t5 = $.getInterceptor$asx(t3);
     t6 = cache.indexB;
-    if (typeof t6 !== "object" || t6 === null || (t6.constructor !== Array || !!t6.immutable$list) && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior)
+    if (typeof t6 !== "object" || t6 === null || (t6.constructor !== Array || !!t6.immutable$list) && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior())
       return this.writeCache$1$bailout(3, 0, t1, t3, t5, $.JSArray_methods, t6);
     i = 0;
     for (; $.JSNumber_methods.$lt(i, this.count); ++i) {
@@ -2859,13 +5121,13 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
         t3 = this.vertices;
       case 2:
         state0 = 0;
-        t5 = $.getInterceptor$as(t3);
-        t6 = $.getInterceptor$a(t1);
+        t5 = $.getInterceptor$asx(t3);
+        t6 = $.getInterceptor$ax(t1);
         t7 = cache.indexB;
       case 3:
         var t9, i;
         state0 = 0;
-        t9 = $.getInterceptor$a(t7);
+        t9 = $.getInterceptor$ax(t7);
         i = 0;
         for (; $.JSNumber_methods.$lt(i, this.count); ++i) {
           t6.$indexSet(t1, i, t5.$index(t3, i).get$indexA());
@@ -2877,12 +5139,12 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
     var t1, t2, t3;
     switch (this.count) {
       case 1:
-        out.copyFrom$1($.$index$as(this.vertices, 0).get$w()).negate$0();
+        out.copyFrom$1($.$index$asx(this.vertices, 0).get$w()).negate$0();
         break;
       case 2:
         t1 = this.e12;
         t2 = this.vertices;
-        t3 = $.getInterceptor$as(t2);
+        t3 = $.getInterceptor$asx(t2);
         t1.copyFrom$1(t3.$index(t2, 1).get$w()).sub$1(t3.$index(t2, 0).get$w());
         out.copyFrom$1(t3.$index(t2, 0).get$w()).negate$0();
         if ($.$gt$n($.cross(t1, out, null), 0))
@@ -2895,20 +5157,22 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
     }
   },
   getClosestPoint$1: function(out) {
-    var t1, t2, t3, t4;
+    var t1, t2, t3, t4, t5;
     switch (this.count) {
       case 0:
         break;
       case 1:
-        out.copyFrom$1($.$index$as(this.vertices, 0).get$w());
+        out.copyFrom$1($.$index$asx(this.vertices, 0).get$w());
         break;
       case 2:
         t1 = this.case22;
         t2 = this.vertices;
-        t3 = $.getInterceptor$as(t2);
-        t1.copyFrom$1(t3.$index(t2, 1).get$w()).scale$1(t3.$index(t2, 1).get$a());
+        t3 = $.getInterceptor$asx(t2);
+        t4 = t1.copyFrom$1(t3.$index(t2, 1).get$w());
+        t4.scale$1(t4, t3.$index(t2, 1).get$a());
         t4 = this.case2;
-        t2 = t4.copyFrom$1(t3.$index(t2, 0).get$w()).scale$1(t3.$index(t2, 0).get$a());
+        t5 = t4.copyFrom$1(t3.$index(t2, 0).get$w());
+        t2 = t5.scale$1(t5, t3.$index(t2, 0).get$a());
         t2.add$1(t2, t1);
         out.copyFrom$1(t4);
         break;
@@ -2920,35 +5184,42 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
     }
   },
   getWitnessPoints$2: function(pA, pB) {
-    var t1, t2, t3, t4;
+    var t1, t2, t3, t4, t5;
     switch (this.count) {
       case 0:
         break;
       case 1:
         t1 = this.vertices;
-        t2 = $.getInterceptor$as(t1);
+        t2 = $.getInterceptor$asx(t1);
         pA.copyFrom$1(t2.$index(t1, 0).get$wA());
         pB.copyFrom$1(t2.$index(t1, 0).get$wB());
         break;
       case 2:
         t1 = this.case2;
         t2 = this.vertices;
-        t3 = $.getInterceptor$as(t2);
-        t1.copyFrom$1(t3.$index(t2, 0).get$wA()).scale$1(t3.$index(t2, 0).get$a());
-        t4 = pA.copyFrom$1(t3.$index(t2, 1).get$wA()).scale$1(t3.$index(t2, 1).get$a());
+        t3 = $.getInterceptor$asx(t2);
+        t4 = t1.copyFrom$1(t3.$index(t2, 0).get$wA());
+        t4.scale$1(t4, t3.$index(t2, 0).get$a());
+        t4 = pA.copyFrom$1(t3.$index(t2, 1).get$wA());
+        t4 = t4.scale$1(t4, t3.$index(t2, 1).get$a());
         t4.add$1(t4, t1);
-        t1.copyFrom$1(t3.$index(t2, 0).get$wB()).scale$1(t3.$index(t2, 0).get$a());
-        t2 = pB.copyFrom$1(t3.$index(t2, 1).get$wB()).scale$1(t3.$index(t2, 1).get$a());
+        t4 = t1.copyFrom$1(t3.$index(t2, 0).get$wB());
+        t4.scale$1(t4, t3.$index(t2, 0).get$a());
+        t4 = pB.copyFrom$1(t3.$index(t2, 1).get$wB());
+        t2 = t4.scale$1(t4, t3.$index(t2, 1).get$a());
         t2.add$1(t2, t1);
         break;
       case 3:
         t1 = this.vertices;
-        t2 = $.getInterceptor$as(t1);
-        pA.copyFrom$1(t2.$index(t1, 0).get$wA()).scale$1(t2.$index(t1, 0).get$a());
+        t2 = $.getInterceptor$asx(t1);
+        t3 = pA.copyFrom$1(t2.$index(t1, 0).get$wA());
+        t3.scale$1(t3, t2.$index(t1, 0).get$a());
         t3 = this.case3;
-        t3.copyFrom$1(t2.$index(t1, 1).get$wA()).scale$1(t2.$index(t1, 1).get$a());
+        t4 = t3.copyFrom$1(t2.$index(t1, 1).get$wA());
+        t4.scale$1(t4, t2.$index(t1, 1).get$a());
         t4 = this.case33;
-        t4.copyFrom$1(t2.$index(t1, 2).get$wA()).scale$1(t2.$index(t1, 2).get$a());
+        t5 = t4.copyFrom$1(t2.$index(t1, 2).get$wA());
+        t5.scale$1(t5, t2.$index(t1, 2).get$a());
         t3 = pA.add$1(pA, t3);
         t3.add$1(t3, t4);
         pB.copyFrom$1(pA);
@@ -2966,12 +5237,12 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
         return 0;
       case 2:
         t1 = this.vertices;
-        t2 = $.getInterceptor$as(t1);
-        return $.get$length$as($.$sub$n(t2.$index(t1, 0).get$w(), t2.$index(t1, 1).get$w()));
+        t2 = $.getInterceptor$asx(t1);
+        return $.get$length$asx($.$sub$n(t2.$index(t1, 0).get$w(), t2.$index(t1, 1).get$w()));
       case 3:
         t1 = this.case3;
         t2 = this.vertices;
-        t3 = $.getInterceptor$as(t2);
+        t3 = $.getInterceptor$asx(t2);
         t1.copyFrom$1(t3.$index(t2, 1).get$w()).sub$1(t3.$index(t2, 0).get$w());
         t4 = this.case33;
         t4.copyFrom$1(t3.$index(t2, 2).get$w()).sub$1(t3.$index(t2, 0).get$w());
@@ -2983,7 +5254,7 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
   solve2$0: function() {
     var t1, t3, w1, w2, t4, d12_2, d12_1, t2, inv_d12;
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.solve2$0$bailout(1, t1);
     t3 = t1.length;
     if (0 >= t3)
@@ -3028,7 +5299,7 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
   },
   solve2$0$bailout: function(state0, t1) {
     var t3, w1, w2, t4, d12_2, d12_1, inv_d12;
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     w1 = t3.$index(t1, 0).get$w();
     w2 = t3.$index(t1, 1).get$w();
     t4 = this.e12;
@@ -3054,9 +5325,9 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
   solve3$0: function() {
     var t1, t3, t4, w1, w2, w3, t5, w1e12, w2e12, d12_2, t6, w1e13, w3e13, d13_2, t7, w2e23, w3e23, d23_2, n123, d123_1, d123_2, d123_3, inv_d12, inv_d13, t2, inv_d23, inv_d123;
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.solve3$0$bailout(1, t1);
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     t4 = t1.length;
     if (0 >= t4)
       throw $.ioore(0);
@@ -3197,7 +5468,7 @@ $$.Simplex = {"": "Object;vertices<,count<,e13,e23,e12,case2,case22,case3,case33
         t1 = this.vertices;
       case 1:
         state0 = 0;
-        t3 = $.getInterceptor$as(t1);
+        t3 = $.getInterceptor$asx(t1);
         w1 = t3.$index(t1, 0).get$w();
         w2 = t3.$index(t1, 1).get$w();
         w3 = t3.$index(t1, 2).get$w();
@@ -3296,9 +5567,9 @@ $$.anon6 = {"": "Closure;",
 $$.SimplexCache = {"": "Object;metric<,count<,indexA<,indexB<",
   setFrom$1: function(sc) {
     var t1 = this.indexA;
-    $.setRange$3$a(t1, 0, $.get$length$as(t1), sc.get$indexA());
+    $.setRange$3$ax(t1, 0, $.get$length$asx(t1), sc.get$indexA());
     t1 = this.indexB;
-    $.setRange$3$a(t1, 0, $.get$length$as(t1), sc.get$indexB());
+    $.setRange$3$ax(t1, 0, $.get$length$asx(t1), sc.get$indexB());
     this.metric = sc.get$metric();
     this.count = sc.get$count();
   }
@@ -3373,7 +5644,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
       t13.distance.computeDistance$3(t10, t7, t5);
       t15 = t10._distance;
       if (typeof t15 !== "number")
-        return this.timeOfImpact$2$bailout(5, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, t15, t14);
+        return this.timeOfImpact$2$bailout(5, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, t15, t14);
       if (t15 <= 0) {
         output.set$state(2);
         output.set$t(0);
@@ -3384,7 +5655,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
         output.set$t(t14);
         break;
       }
-      t2.initialize$6(t7, proxyA, t1, proxyB, t3, t14);
+      t2.initialize$6(t2, t7, proxyA, t1, proxyB, t3, t14);
       for (t20 = tMax, pushBackIter = 0; done = false, true;) {
         s2 = t2.findMinSeparation$2(t4, t20);
         if (s2 > t8) {
@@ -3420,12 +5691,12 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
           if ((rootIterCount & 1) === 1) {
             t15 = (target - s1) * (a2 - a1) / (s2 - s1);
             if (t15 !== (t15 | 0))
-              return this.timeOfImpact$2$bailout(7, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, $.JSInt_methods, t14, pushBackIter, t20, s2, s1, rootIterCount, a1, a2, t15);
+              return this.timeOfImpact$2$bailout(7, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, $.JSInt_methods, t14, t20, pushBackIter, s2, s1, rootIterCount, a1, a2, t15);
             t = a1 + t15;
           } else
             t = 0.5 * (a1 + a2);
           if (t !== (t | 0))
-            return this.timeOfImpact$2$bailout(9, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, 0, t14, pushBackIter, t20, s2, s1, rootIterCount, a1, a2, 0, t);
+            return this.timeOfImpact$2$bailout(9, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, 0, t14, t20, pushBackIter, s2, s1, rootIterCount, a1, a2, 0, t);
           s = t2.evaluate$3(t4[0], t4[1], t);
           if ($.JSNumber_methods.abs$0(s - target) < 0.00125) {
             t20 = t;
@@ -3441,7 +5712,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
           ++rootIterCount;
           t15 = $.TimeOfImpact_toiRootIters;
           if (typeof t15 !== "number")
-            return this.timeOfImpact$2$bailout(11, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, 0, t14, pushBackIter, t20, s2, s1, rootIterCount, a1, a2, t15);
+            return this.timeOfImpact$2$bailout(11, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, 0, t14, t20, pushBackIter, s2, s1, rootIterCount, a1, a2, t15);
           $.TimeOfImpact_toiRootIters = t15 + 1;
           if (rootIterCount === 50)
             break;
@@ -3456,7 +5727,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
       ++iter;
       t15 = $.TimeOfImpact_toiIters;
       if (typeof t15 !== "number")
-        return this.timeOfImpact$2$bailout(12, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, t15, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, done);
+        return this.timeOfImpact$2$bailout(12, output, 0, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, t15, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, done);
       $.TimeOfImpact_toiIters = t15 + 1;
       if (done)
         break;
@@ -3469,7 +5740,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
     }
     $.TimeOfImpact_toiMaxIters = $.max($.TimeOfImpact_toiMaxIters, iter);
   },
-  timeOfImpact$2$bailout: function(state0, output, input, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, t4, target, t11, t12, t6, t13, t9, t8, t10, t15, t14, pushBackIter, t20, s2, s1, rootIterCount, a1, a2, t16, t, done) {
+  timeOfImpact$2$bailout: function(state0, output, input, t1, t3, tMax, proxyA, proxyB, t5, t7, iter, t2, target, t4, t11, t12, t6, t13, t9, t8, t10, t15, t14, t20, pushBackIter, s2, s1, rootIterCount, a1, a2, t16, t, done) {
     switch (state0) {
       case 0:
         t1 = $.TimeOfImpact_toiCalls;
@@ -3542,7 +5813,7 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
                   output.set$t(t14);
                   break L0;
                 }
-                t2.initialize$6(t7, proxyA, t1, proxyB, t3, t14);
+                t2.initialize$6(t2, t7, proxyA, t1, proxyB, t3, t14);
                 t20 = tMax;
                 pushBackIter = 0;
               default:
@@ -3676,14 +5947,14 @@ $$.TimeOfImpact = {"": "Object;cache,distanceInput,xfA,xfB,distanceOutput,fcn,in
   }
 };
 
-$$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,sweepA<,sweepB<,localPointA,localPointB,pointA,pointB,localPointA1,localPointA2,normal<,localPointB1,localPointB2,axisA,axisB,temp,xfa,xfb",
-  initialize$6: function(cache, argProxyA, argSweepA, argProxyB, argSweepB, t1) {
+$$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type*,localPoint<,axis,sweepA<,sweepB<,localPointA,localPointB,pointA,pointB,localPointA1,localPointA2,normal<,localPointB1,localPointB2,axisA,axisB,temp,xfa,xfb",
+  initialize$6: function(_, cache, argProxyA, argSweepA, argProxyB, argSweepB, t1) {
     var count, t3, t4, t2, t6, t9, s, t5, t7, t8, t10, t11, t12, t13, t14, t15, t16;
     this.proxyA = argProxyA;
     this.proxyB = argProxyB;
     count = cache.count;
     if (typeof count !== "number")
-      return this.initialize$6$bailout(1, cache, argSweepA, argSweepB, t1, count);
+      return this.initialize$6$bailout(1, cache, argSweepA, argSweepB, count, t1);
     this.sweepA = argSweepA;
     this.sweepB = argSweepB;
     t3 = this.xfa;
@@ -3694,11 +5965,11 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
       this.type = 0;
       t1 = this.localPointA;
       t2 = this.proxyA.get$vertices();
-      if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(2, cache, 0, 0, t1, 0, t3, t4, t2);
+      if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(2, cache, 0, 0, 0, t1, t3, t4, t2);
       t6 = cache.indexA;
-      if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(3, cache, 0, 0, t1, 0, t3, t4, t2, t6);
+      if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(3, cache, 0, 0, 0, t1, t3, t4, t2, t6);
       if (0 >= t6.length)
         throw $.ioore(0);
       t6 = t6[0];
@@ -3709,11 +5980,11 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
       t1.copyFrom$1(t2[t6]);
       t6 = this.localPointB;
       t2 = this.proxyB.get$vertices();
-      if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(4, cache, 0, 0, t1, 0, t3, t4, t2, t6);
+      if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(4, cache, 0, 0, 0, t1, t3, t4, t2, t6);
       t9 = cache.indexB;
-      if (typeof t9 !== "string" && (typeof t9 !== "object" || t9 === null || t9.constructor !== Array && !$.getInterceptor(t9).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(5, 0, 0, 0, t1, 0, t3, t4, t2, t6, t9);
+      if (typeof t9 !== "string" && (typeof t9 !== "object" || t9 === null || t9.constructor !== Array && !$.getInterceptor(t9).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(5, 0, 0, 0, 0, t1, t3, t4, t2, t6, t9);
       if (0 >= t9.length)
         throw $.ioore(0);
       t9 = t9[0];
@@ -3733,9 +6004,9 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
       return s;
     } else {
       t1 = cache.indexA;
-      if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(6, cache, 0, 0, t1, 0, t3, t4);
-      t5 = $.getInterceptor$as(t1);
+      if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(6, cache, 0, 0, 0, t1, t3, t4);
+      t5 = $.getInterceptor$asx(t1);
       t6 = t1.length;
       if (0 >= t6)
         throw $.ioore(0);
@@ -3744,8 +6015,8 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         throw $.ioore(1);
       t7 = $.$eq(t7, t1[1]) === true;
       t8 = cache.indexB;
-      if (typeof t8 !== "string" && (typeof t8 !== "object" || t8 === null || t8.constructor !== Array && !$.getInterceptor(t8).$isJavaScriptIndexingBehavior))
-        return this.initialize$6$bailout(7, 0, 0, 0, t1, 0, t3, t4, 0, t7, 0, t5, t8);
+      if (typeof t8 !== "string" && (typeof t8 !== "object" || t8 === null || t8.constructor !== Array && !$.getInterceptor(t8).$isJavaScriptIndexingBehavior()))
+        return this.initialize$6$bailout(7, 0, 0, 0, 0, t1, t3, t4, 0, t7, 0, t8, t5);
       t10 = this.pointA;
       t11 = this.normal;
       t12 = this.pointB;
@@ -3756,9 +6027,9 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         this.type = 2;
         t2 = this.localPointB1;
         t6 = this.proxyB.get$vertices();
-        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(8, 0, 0, 0, t1, 0, t3, t4, t2, t6, t10, t5, t8, t11, t13, t12, t14, t15);
-        t9 = $.getInterceptor$as(t8);
+        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(8, 0, 0, 0, 0, t1, t3, t4, t2, t6, t10, t8, t5, t15, t11, t13, t12, t14);
+        t9 = $.getInterceptor$asx(t8);
         if (0 >= t8.length)
           throw $.ioore(0);
         t16 = t8[0];
@@ -3769,8 +6040,8 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t2.copyFrom$1(t6[t16]);
         t16 = this.localPointB2;
         t6 = this.proxyB.get$vertices();
-        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(9, 0, 0, 0, t1, 0, t3, t4, t2, t16, t10, t5, t8, t11, t13, t12, t14, t15, t9, t6);
+        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(9, 0, 0, 0, 0, t1, t3, t4, t2, t16, t10, t8, t5, t15, t11, t13, t12, t14, t9, t6);
         if (1 >= t8.length)
           throw $.ioore(1);
         t8 = t8[1];
@@ -3784,12 +6055,13 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t15.normalize$0();
         t4.rotation.transformed$2(t15, t11);
         t2 = t13.copyFrom$1(t2);
-        t2.add$1(t2, t16).scale$1(0.5);
+        t16 = t2.add$1(t2, t16);
+        t16.scale$1(t16, 0.5);
         $.Transform_mulToOut(t4, t13, t12);
         t13 = this.localPointA;
         t4 = this.proxyA.get$vertices();
-        if (typeof t4 !== "string" && (typeof t4 !== "object" || t4 === null || t4.constructor !== Array && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(10, 0, 0, 0, t1, 0, t3, t4, 0, 0, t10, t5, 0, t11, t13, t12, t14, t15);
+        if (typeof t4 !== "string" && (typeof t4 !== "object" || t4 === null || t4.constructor !== Array && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(10, 0, 0, 0, 0, t1, t3, t4, 0, 0, t10, 0, t5, t15, t11, t13, t12, t14);
         if (0 >= t1.length)
           throw $.ioore(0);
         t1 = t1[0];
@@ -3810,8 +6082,8 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         this.type = 1;
         t2 = this.localPointA1;
         t6 = this.proxyA.get$vertices();
-        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(11, 0, 0, 0, t1, 0, t3, t4, t2, t6, t10, t5, t8, t11, t13, t12, t14, t15);
+        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(11, 0, 0, 0, 0, t1, t3, t4, t2, t6, t10, t8, t5, t15, t11, t13, t12, t14);
         if (0 >= t1.length)
           throw $.ioore(0);
         t9 = t1[0];
@@ -3822,8 +6094,8 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t2.copyFrom$1(t6[t9]);
         t9 = this.localPointA2;
         t6 = this.proxyA.get$vertices();
-        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(12, 0, 0, 0, t1, 0, t3, t4, t2, t9, t10, t5, t8, t11, t13, t12, t14, t15, t6);
+        if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(12, 0, 0, 0, 0, t1, t3, t4, t2, t9, t10, t8, t5, t15, t11, t13, t12, t14, t6);
         if (1 >= t1.length)
           throw $.ioore(1);
         t1 = t1[1];
@@ -3837,12 +6109,13 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t15.normalize$0();
         t3.rotation.transformed$2(t15, t11);
         t2 = t13.copyFrom$1(t2);
-        t2.add$1(t2, t9).scale$1(0.5);
+        t9 = t2.add$1(t2, t9);
+        t9.scale$1(t9, 0.5);
         $.Transform_mulToOut(t3, t13, t10);
         t13 = this.localPointB;
         t3 = this.proxyB.get$vertices();
-        if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior))
-          return this.initialize$6$bailout(13, 0, 0, 0, 0, 0, t3, t4, 0, 0, t10, 0, t8, t11, t13, t12, t14, t15);
+        if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior()))
+          return this.initialize$6$bailout(13, 0, 0, 0, 0, 0, t3, t4, 0, 0, t10, t8, 0, t15, t11, t13, t12, t14);
         if (0 >= t8.length)
           throw $.ioore(0);
         t8 = t8[0];
@@ -3862,7 +6135,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
       }
     }
   },
-  initialize$6$bailout: function(state0, cache, argSweepA, argSweepB, t1, count, t3, t4, t2, t6, t9, t5, t7, t10, t12, t11, t13, t14, t15, t16) {
+  initialize$6$bailout: function(state0, cache, argSweepA, argSweepB, count, t1, t3, t4, t2, t6, t9, t7, t5, t14, t10, t12, t11, t13, t15, t16) {
     switch (state0) {
       case 0:
         this.proxyA = argProxyA;
@@ -3889,7 +6162,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
               t6 = cache.indexA;
             case 3:
               state0 = 0;
-              t1.copyFrom$1($.$index$as(t2, $.$index$as(t6, 0)));
+              t1.copyFrom$1($.$index$asx(t2, $.$index$asx(t6, 0)));
               t6 = this.localPointB;
               t2 = this.proxyB.get$vertices();
             case 4:
@@ -3897,7 +6170,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
               t9 = cache.indexB;
             case 5:
               state0 = 0;
-              t6.copyFrom$1($.$index$as(t2, $.$index$as(t9, 0)));
+              t6.copyFrom$1($.$index$asx(t2, $.$index$asx(t9, 0)));
               t9 = this.pointA;
               $.Transform_mulToOut(t3, t1, t9);
               t1 = this.pointB;
@@ -3914,7 +6187,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
               t1 = cache.indexA;
             case 6:
               state0 = 0;
-              t5 = $.getInterceptor$as(t1);
+              t5 = $.getInterceptor$asx(t1);
               t6 = $.$eq(t5.$index(t1, 0), t5.$index(t1, 1)) === true;
               t7 = cache.indexB;
             case 7:
@@ -3934,25 +6207,26 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
                     t6 = this.proxyB.get$vertices();
                   case 8:
                     state0 = 0;
-                    t15 = $.getInterceptor$as(t7);
-                    t2.copyFrom$1($.$index$as(t6, t15.$index(t7, 0)));
+                    t15 = $.getInterceptor$asx(t7);
+                    t2.copyFrom$1($.$index$asx(t6, t15.$index(t7, 0)));
                     t6 = this.localPointB2;
                     t16 = this.proxyB.get$vertices();
                   case 9:
                     state0 = 0;
-                    t6.copyFrom$1($.$index$as(t16, t15.$index(t7, 1)));
+                    t6.copyFrom$1($.$index$asx(t16, t15.$index(t7, 1)));
                     t13.copyFrom$1(t6).sub$1(t2);
                     $.cross(t13, 1, t14);
                     t14.normalize$0();
                     t4.rotation.transformed$2(t14, t10);
                     t2 = t12.copyFrom$1(t2);
-                    t2.add$1(t2, t6).scale$1(0.5);
+                    t6 = t2.add$1(t2, t6);
+                    t6.scale$1(t6, 0.5);
                     $.Transform_mulToOut(t4, t12, t11);
                     t12 = this.localPointA;
                     t4 = this.proxyA.get$vertices();
                   case 10:
                     state0 = 0;
-                    t12.copyFrom$1($.$index$as(t4, t5.$index(t1, 0)));
+                    t12.copyFrom$1($.$index$asx(t4, t5.$index(t1, 0)));
                     $.Transform_mulToOut(t3, t12, t9);
                     t13.copyFrom$1(t9).sub$1(t11);
                     s = t13.dot$1(t10);
@@ -3970,24 +6244,25 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
                     t6 = this.proxyA.get$vertices();
                   case 11:
                     state0 = 0;
-                    t2.copyFrom$1($.$index$as(t6, t5.$index(t1, 0)));
+                    t2.copyFrom$1($.$index$asx(t6, t5.$index(t1, 0)));
                     t6 = this.localPointA2;
                     t15 = this.proxyA.get$vertices();
                   case 12:
                     state0 = 0;
-                    t6.copyFrom$1($.$index$as(t15, t5.$index(t1, 1)));
+                    t6.copyFrom$1($.$index$asx(t15, t5.$index(t1, 1)));
                     t13.copyFrom$1(t6).sub$1(t2);
                     $.cross(t13, 1, t14);
                     t14.normalize$0();
                     t3.rotation.transformed$2(t14, t10);
                     t2 = t12.copyFrom$1(t2);
-                    t2.add$1(t2, t6).scale$1(0.5);
+                    t6 = t2.add$1(t2, t6);
+                    t6.scale$1(t6, 0.5);
                     $.Transform_mulToOut(t3, t12, t9);
                     t12 = this.localPointB;
                     t3 = this.proxyB.get$vertices();
                   case 13:
                     state0 = 0;
-                    t12.copyFrom$1($.$index$as(t3, $.$index$as(t7, 0)));
+                    t12.copyFrom$1($.$index$asx(t3, $.$index$asx(t7, 0)));
                     $.Transform_mulToOut(t4, t12, t11);
                     t13.copyFrom$1(t11).sub$1(t9);
                     s = t13.dot$1(t10);
@@ -4024,9 +6299,9 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
           throw $.ioore(1);
         indexes[1] = t6;
         t6 = this.localPointA;
-        t6.copyFrom$1($.$index$as(this.proxyA.get$vertices(), indexes[0]));
+        t6.copyFrom$1($.$index$asx(this.proxyA.get$vertices(), indexes[0]));
         t5 = this.localPointB;
-        t5.copyFrom$1($.$index$as(this.proxyB.get$vertices(), indexes[1]));
+        t5.copyFrom$1($.$index$asx(this.proxyB.get$vertices(), indexes[1]));
         t7 = this.pointA;
         $.Transform_mulToOut(t1, t6, t7);
         t6 = this.pointB;
@@ -4049,7 +6324,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
           throw $.ioore(1);
         indexes[1] = t1;
         t1 = this.localPointB;
-        t1.copyFrom$1($.$index$as(this.proxyB.get$vertices(), indexes[1]));
+        t1.copyFrom$1($.$index$asx(this.proxyB.get$vertices(), indexes[1]));
         t6 = this.pointB;
         $.Transform_mulToOut(t2, t1, t6);
         return t6.sub$1(t5).dot$1(t4);
@@ -4066,7 +6341,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         indexes[1] = -1;
         indexes[0] = this.proxyA.getSupport$1(t2);
         t2 = this.localPointA;
-        t2.copyFrom$1($.$index$as(this.proxyA.get$vertices(), indexes[0]));
+        t2.copyFrom$1($.$index$asx(this.proxyA.get$vertices(), indexes[0]));
         t6 = this.pointA;
         $.Transform_mulToOut(t1, t2, t6);
         return t6.sub$1(t5).dot$1(t4);
@@ -4093,9 +6368,9 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t2.rotation.transposed$0().transformed$2(t3.negate$0(), this.axisB);
         t3.negate$0();
         t4 = this.localPointA;
-        t4.copyFrom$1($.$index$as(this.proxyA.get$vertices(), indexA));
+        t4.copyFrom$1($.$index$asx(this.proxyA.get$vertices(), indexA));
         t5 = this.localPointB;
-        t5.copyFrom$1($.$index$as(this.proxyB.get$vertices(), indexB));
+        t5.copyFrom$1($.$index$asx(this.proxyB.get$vertices(), indexB));
         t6 = this.pointA;
         $.Transform_mulToOut(t1, t4, t6);
         t4 = this.pointB;
@@ -4109,7 +6384,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t2.rotation.transposed$0().transformed$2(t3.negate$0(), this.axisB);
         t3.negate$0();
         t1 = this.localPointB;
-        t1.copyFrom$1($.$index$as(this.proxyB.get$vertices(), indexB));
+        t1.copyFrom$1($.$index$asx(this.proxyB.get$vertices(), indexB));
         t5 = this.pointB;
         $.Transform_mulToOut(t2, t1, t5);
         return t5.sub$1(t4).dot$1(t3);
@@ -4121,7 +6396,7 @@ $$.SeparationFunction = {"": "Object;proxyA@,proxyB@,type@,localPoint<,axis,swee
         t1.rotation.transposed$0().transformed$2(t3.negate$0(), this.axisA);
         t3.negate$0();
         t2 = this.localPointA;
-        t2.copyFrom$1($.$index$as(this.proxyA.get$vertices(), indexA));
+        t2.copyFrom$1($.$index$asx(this.proxyA.get$vertices(), indexA));
         t5 = this.pointA;
         $.Transform_mulToOut(t1, t2, t5);
         return t5.sub$1(t4).dot$1(t3);
@@ -4135,81 +6410,82 @@ $$.TimeOfImpactInput = {"": "Object;proxyA<,proxyB<,sweepA<,sweepB<,tMax<"};
 
 $$.TimeOfImpactOutput = {"": "Object;state?,t?"};
 
-$$.WorldManifold = {"": "Object;normal<,points<,pool3,pool4",
-  initialize$5: function(manifold, xfA, radiusA, xfB, radiusB) {
-    var pointA, pointB, t1, t2, t3, cA, cB, planePoint, clipPoint, t4, t5, t6, i, scalar, cAx, cAy, cBx, cBy, R, v;
-    switch (manifold.get$type()) {
+$$.WorldManifold = {"": "Object;normal<,points>,pool3,pool4",
+  initialize$5: function(_, manifold, xfA, radiusA, xfB, radiusB) {
+    var t1, pointA, pointB, t2, t3, t4, cA, cB, planePoint, clipPoint, t5, t6, t7, i, scalar, cAx, cAy, cBx, cBy, R, v;
+    t1 = $.getInterceptor$x(manifold);
+    switch (t1.get$type(manifold)) {
       case 0:
         pointA = this.pool3;
         pointB = this.pool4;
-        t1 = this.normal;
-        t1.x = 1;
-        t1.y = 0;
-        t2 = xfA.position;
-        t3 = xfA.rotation;
-        pointA.x = $.$add$ns($.$add$ns(t2.x, $.$mul$n(t3.col0.get$x(), manifold.get$localPoint().x)), $.$mul$n(t3.col1.get$x(), manifold.get$localPoint().y));
-        pointA.y = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t3.col0.get$y(), manifold.get$localPoint().x)), $.$mul$n(t3.col1.get$y(), manifold.get$localPoint().y));
-        t3 = xfB.position;
-        t2 = xfB.rotation;
-        pointB.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n(t2.col0.get$x(), $.$index$as(manifold.get$points(), 0).get$localPoint().x)), $.$mul$n(t2.col1.get$x(), $.$index$as(manifold.get$points(), 0).get$localPoint().y));
-        pointB.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n(t2.col0.get$y(), $.$index$as(manifold.get$points(), 0).get$localPoint().x)), $.$mul$n(t2.col1.get$y(), $.$index$as(manifold.get$points(), 0).get$localPoint().y));
+        t2 = this.normal;
+        t2.x = 1;
+        t2.y = 0;
+        t3 = xfA.position;
+        t4 = xfA.rotation;
+        pointA.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t4.col0), manifold.get$localPoint().x)), $.$mul$n($.get$x$x(t4.col1), manifold.get$localPoint().y));
+        pointA.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t4.col0), manifold.get$localPoint().x)), $.$mul$n($.get$y$x(t4.col1), manifold.get$localPoint().y));
+        t4 = xfB.position;
+        t3 = xfB.rotation;
+        pointB.x = $.$add$ns($.$add$ns(t4.x, $.$mul$n($.get$x$x(t3.col0), $.$index$asx(t1.get$points(manifold), 0).get$localPoint().x)), $.$mul$n($.get$x$x(t3.col1), $.$index$asx(t1.get$points(manifold), 0).get$localPoint().y));
+        pointB.y = $.$add$ns($.$add$ns(t4.y, $.$mul$n($.get$y$x(t3.col0), $.$index$asx(t1.get$points(manifold), 0).get$localPoint().x)), $.$mul$n($.get$y$x(t3.col1), $.$index$asx(t1.get$points(manifold), 0).get$localPoint().y));
         if (pointA.$sub(pointA, pointB).get$length2() > 1.4208639999999999e-14) {
-          t1.copyFrom$1(pointB).sub$1(pointA);
-          t1.normalize$0();
+          t2.copyFrom$1(pointB).sub$1(pointA);
+          t2.normalize$0();
         }
-        t2 = t1.$mul(t1, radiusA);
-        cA = t2.$add(t2, pointA);
-        t1 = t1.$negate(t1);
-        t1 = t1.$mul(t1, radiusB);
-        cB = t1.$add(t1, pointB);
-        $.add$1$a($.$index$as(this.points, 0).copyFrom$1(cA), cB).scale$1(0.5);
+        t1 = t2.$mul(t2, radiusA);
+        cA = t1.$add(t1, pointA);
+        t2 = t2.$negate(t2);
+        t2 = t2.$mul(t2, radiusB);
+        cB = t2.$add(t2, pointB);
+        $.scale$1$x($.add$1$ax($.$index$asx(this.points, 0).copyFrom$1(cA), cB), 0.5);
         return;
       case 1:
         planePoint = this.pool3;
-        t1 = this.normal;
-        t2 = xfA.rotation;
-        t1.x = $.$add$ns($.$mul$n(t2.col0.get$x(), manifold.get$localNormal().x), $.$mul$n(t2.col1.get$x(), manifold.get$localNormal().y));
-        t1.y = $.$add$ns($.$mul$n(t2.col0.get$y(), manifold.get$localNormal().x), $.$mul$n(t2.col1.get$y(), manifold.get$localNormal().y));
-        t3 = xfA.position;
-        planePoint.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n(t2.col0.get$x(), manifold.get$localPoint().x)), $.$mul$n(t2.col1.get$x(), manifold.get$localPoint().y));
-        planePoint.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n(t2.col0.get$y(), manifold.get$localPoint().x)), $.$mul$n(t2.col1.get$y(), manifold.get$localPoint().y));
+        t2 = this.normal;
+        t3 = xfA.rotation;
+        t2.x = $.$add$ns($.$mul$n($.get$x$x(t3.col0), manifold.get$localNormal().x), $.$mul$n($.get$x$x(t3.col1), manifold.get$localNormal().y));
+        t2.y = $.$add$ns($.$mul$n($.get$y$x(t3.col0), manifold.get$localNormal().x), $.$mul$n($.get$y$x(t3.col1), manifold.get$localNormal().y));
+        t4 = xfA.position;
+        planePoint.x = $.$add$ns($.$add$ns(t4.x, $.$mul$n($.get$x$x(t3.col0), manifold.get$localPoint().x)), $.$mul$n($.get$x$x(t3.col1), manifold.get$localPoint().y));
+        planePoint.y = $.$add$ns($.$add$ns(t4.y, $.$mul$n($.get$y$x(t3.col0), manifold.get$localPoint().x)), $.$mul$n($.get$y$x(t3.col1), manifold.get$localPoint().y));
         clipPoint = this.pool4;
-        for (t2 = xfB.position, t3 = xfB.rotation, t4 = $.getInterceptor$n(radiusA), t5 = this.points, t6 = $.getInterceptor$as(t5), i = 0; $.JSNumber_methods.$lt(i, manifold.get$pointCount()); ++i) {
-          clipPoint.x = $.$add$ns($.$add$ns(t2.x, $.$mul$n(t3.col0.get$x(), $.$index$as(manifold.get$points(), i).get$localPoint().x)), $.$mul$n(t3.col1.get$x(), $.$index$as(manifold.get$points(), i).get$localPoint().y));
-          clipPoint.y = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t3.col0.get$y(), $.$index$as(manifold.get$points(), i).get$localPoint().x)), $.$mul$n(t3.col1.get$y(), $.$index$as(manifold.get$points(), i).get$localPoint().y));
-          scalar = t4.$sub(radiusA, $.$add$ns($.$mul$n($.$sub$n(clipPoint.x, planePoint.x), t1.x), $.$mul$n($.$sub$n(clipPoint.y, planePoint.y), t1.y)));
-          cAx = $.$add$ns($.$mul$n(t1.x, scalar), clipPoint.x);
-          cAy = $.$add$ns($.$mul$n(t1.y, scalar), clipPoint.y);
-          cBx = $.$add$ns($.$mul$n($.$negate$n(t1.x), radiusB), clipPoint.x);
-          cBy = $.$add$ns($.$mul$n($.$negate$n(t1.y), radiusB), clipPoint.y);
-          t6.$index(t5, i).set$x($.$mul$n($.$add$ns(cAx, cBx), 0.5));
-          t6.$index(t5, i).set$y($.$mul$n($.$add$ns(cAy, cBy), 0.5));
+        for (t3 = xfB.position, t4 = xfB.rotation, t5 = $.getInterceptor$n(radiusA), t6 = this.points, t7 = $.getInterceptor$asx(t6), i = 0; $.JSNumber_methods.$lt(i, manifold.get$pointCount()); ++i) {
+          clipPoint.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t4.col0), $.$index$asx(t1.get$points(manifold), i).get$localPoint().x)), $.$mul$n($.get$x$x(t4.col1), $.$index$asx(t1.get$points(manifold), i).get$localPoint().y));
+          clipPoint.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t4.col0), $.$index$asx(t1.get$points(manifold), i).get$localPoint().x)), $.$mul$n($.get$y$x(t4.col1), $.$index$asx(t1.get$points(manifold), i).get$localPoint().y));
+          scalar = t5.$sub(radiusA, $.$add$ns($.$mul$n($.$sub$n(clipPoint.x, planePoint.x), t2.x), $.$mul$n($.$sub$n(clipPoint.y, planePoint.y), t2.y)));
+          cAx = $.$add$ns($.$mul$n(t2.x, scalar), clipPoint.x);
+          cAy = $.$add$ns($.$mul$n(t2.y, scalar), clipPoint.y);
+          cBx = $.$add$ns($.$mul$n($.$negate$n(t2.x), radiusB), clipPoint.x);
+          cBy = $.$add$ns($.$mul$n($.$negate$n(t2.y), radiusB), clipPoint.y);
+          $.set$x$x(t7.$index(t6, i), $.$mul$n($.$add$ns(cAx, cBx), 0.5));
+          $.set$y$x(t7.$index(t6, i), $.$mul$n($.$add$ns(cAy, cBy), 0.5));
         }
         return;
       case 2:
         planePoint = this.pool3;
         R = xfB.rotation;
-        t1 = this.normal;
-        t1.x = $.$add$ns($.$mul$n(R.col0.get$x(), manifold.get$localNormal().x), $.$mul$n(R.col1.get$x(), manifold.get$localNormal().y));
-        t1.y = $.$add$ns($.$mul$n(R.col0.get$y(), manifold.get$localNormal().x), $.$mul$n(R.col1.get$y(), manifold.get$localNormal().y));
+        t2 = this.normal;
+        t2.x = $.$add$ns($.$mul$n($.get$x$x(R.col0), manifold.get$localNormal().x), $.$mul$n($.get$x$x(R.col1), manifold.get$localNormal().y));
+        t2.y = $.$add$ns($.$mul$n($.get$y$x(R.col0), manifold.get$localNormal().x), $.$mul$n($.get$y$x(R.col1), manifold.get$localNormal().y));
         v = manifold.get$localPoint();
-        t2 = xfB.position;
-        planePoint.x = $.$add$ns($.$add$ns(t2.x, $.$mul$n(R.col0.get$x(), v.x)), $.$mul$n(R.col1.get$x(), v.y));
-        planePoint.y = $.$add$ns($.$add$ns(t2.y, $.$mul$n(R.col0.get$y(), v.x)), $.$mul$n(R.col1.get$y(), v.y));
+        t3 = xfB.position;
+        planePoint.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(R.col0), v.x)), $.$mul$n($.get$x$x(R.col1), v.y));
+        planePoint.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(R.col0), v.x)), $.$mul$n($.get$y$x(R.col1), v.y));
         clipPoint = this.pool4;
-        for (t2 = xfA.position, t3 = xfA.rotation, t4 = $.getInterceptor$n(radiusB), t5 = this.points, t6 = $.getInterceptor$as(t5), i = 0; $.JSNumber_methods.$lt(i, manifold.get$pointCount()); ++i) {
-          clipPoint.x = $.$add$ns($.$add$ns(t2.x, $.$mul$n(t3.col0.get$x(), $.$index$as(manifold.get$points(), i).get$localPoint().x)), $.$mul$n(t3.col1.get$x(), $.$index$as(manifold.get$points(), i).get$localPoint().y));
-          clipPoint.y = $.$add$ns($.$add$ns(t2.y, $.$mul$n(t3.col0.get$y(), $.$index$as(manifold.get$points(), i).get$localPoint().x)), $.$mul$n(t3.col1.get$y(), $.$index$as(manifold.get$points(), i).get$localPoint().y));
-          scalar = t4.$sub(radiusB, $.$add$ns($.$mul$n($.$sub$n(clipPoint.x, planePoint.x), t1.x), $.$mul$n($.$sub$n(clipPoint.y, planePoint.y), t1.y)));
-          cBx = $.$add$ns($.$mul$n(t1.x, scalar), clipPoint.x);
-          cBy = $.$add$ns($.$mul$n(t1.y, scalar), clipPoint.y);
-          cAx = $.$add$ns($.$mul$n($.$negate$n(t1.x), radiusA), clipPoint.x);
-          cAy = $.$add$ns($.$mul$n($.$negate$n(t1.y), radiusA), clipPoint.y);
-          t6.$index(t5, i).set$x($.$mul$n($.$add$ns(cAx, cBx), 0.5));
-          t6.$index(t5, i).set$y($.$mul$n($.$add$ns(cAy, cBy), 0.5));
+        for (t3 = xfA.position, t4 = xfA.rotation, t5 = $.getInterceptor$n(radiusB), t6 = this.points, t7 = $.getInterceptor$asx(t6), i = 0; $.JSNumber_methods.$lt(i, manifold.get$pointCount()); ++i) {
+          clipPoint.x = $.$add$ns($.$add$ns(t3.x, $.$mul$n($.get$x$x(t4.col0), $.$index$asx(t1.get$points(manifold), i).get$localPoint().x)), $.$mul$n($.get$x$x(t4.col1), $.$index$asx(t1.get$points(manifold), i).get$localPoint().y));
+          clipPoint.y = $.$add$ns($.$add$ns(t3.y, $.$mul$n($.get$y$x(t4.col0), $.$index$asx(t1.get$points(manifold), i).get$localPoint().x)), $.$mul$n($.get$y$x(t4.col1), $.$index$asx(t1.get$points(manifold), i).get$localPoint().y));
+          scalar = t5.$sub(radiusB, $.$add$ns($.$mul$n($.$sub$n(clipPoint.x, planePoint.x), t2.x), $.$mul$n($.$sub$n(clipPoint.y, planePoint.y), t2.y)));
+          cBx = $.$add$ns($.$mul$n(t2.x, scalar), clipPoint.x);
+          cBy = $.$add$ns($.$mul$n(t2.y, scalar), clipPoint.y);
+          cAx = $.$add$ns($.$mul$n($.$negate$n(t2.x), radiusA), clipPoint.x);
+          cAy = $.$add$ns($.$mul$n($.$negate$n(t2.y), radiusA), clipPoint.y);
+          $.set$x$x(t7.$index(t6, i), $.$mul$n($.$add$ns(cAx, cBx), 0.5));
+          $.set$y$x(t7.$index(t6, i), $.$mul$n($.$add$ns(cAy, cBy), 0.5));
         }
-        t1.x = $.$negate$n(t1.x);
-        t1.y = $.$negate$n(t1.y);
+        t2.x = $.$negate$n(t2.x);
+        t2.y = $.$negate$n(t2.y);
         break;
     }
   }
@@ -4244,7 +6520,7 @@ $$.BroadPhase = {"": "Object;_tree,proxyCount,moveBuffer,_pairBuffer,_pairCapaci
       t2 = this.queryProxy;
       if (t2 == null)
         continue;
-      t1.query$2(this, t2.get$box());
+      t1.query$2(t1, this, t2.get$box());
     }
     t2 = $.List_List($, $.DynamicTreeNode);
     $.setRuntimeTypeInfo(t2, [$.DynamicTreeNode]);
@@ -4392,7 +6668,8 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
     t1 = argBox.upperBound;
     t1.y = $.$add$ns(t1.y, 0.1);
     t1 = this._tempVector;
-    t1.copyFrom$1(displacement).scale$1(2);
+    t2 = t1.copyFrom$1(displacement);
+    t2.scale$1(t2, 2);
     t2 = $.$lt$n(t1.x, 0);
     t3 = t1.x;
     if (t2) {
@@ -4422,7 +6699,7 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
       for (i = 0; i < 6; ++i)
         t1.addFirst$1($.DynamicTreeNode$_construct());
     node = t1.removeFirst$0();
-    node.set$parent(null);
+    $.set$parent$x(node, null);
     node.set$childOne(null);
     node.set$childTwo(null);
     node.set$userData(null);
@@ -4431,7 +6708,7 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
     this._nodeCount = this._nodeCount + 1;
     return node;
   },
-  query$2: function(callback, argBox) {
+  query$2: function(_, callback, argBox) {
     this._query$4(callback, argBox, this._root, 1);
   },
   _query$4: function(callback, argBox, node, count) {
@@ -4458,7 +6735,7 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
     this._insertionCount = this._insertionCount + 1;
     if (this._root == null) {
       this._root = node;
-      node.set$parent(null);
+      $.set$parent$x(node, null);
       return;
     }
     t1 = this.center;
@@ -4474,42 +6751,43 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
         t3.copyFrom$1(childTwo.get$box().get$center()).sub$1(t1).absolute$0();
         t4 = t2.x;
         if (typeof t4 !== "number")
-          return this._insertLeaf$1$bailout(1, node, t2, t3, childOne, childTwo, t4);
+          return this._insertLeaf$1$bailout(1, node, t4, childOne, childTwo, t2, t3);
         t2 = t2.y;
         if (typeof t2 !== "number")
-          return this._insertLeaf$1$bailout(2, node, t2, t3, childOne, childTwo, t4);
+          return this._insertLeaf$1$bailout(2, node, t4, childOne, childTwo, t2, t3);
         normOne = t4 + t2;
         t2 = t3.x;
         if (typeof t2 !== "number")
-          return this._insertLeaf$1$bailout(3, node, t2, t3, childOne, childTwo, 0, normOne);
+          return this._insertLeaf$1$bailout(3, node, 0, childOne, childTwo, t2, t3, normOne);
         t3 = t3.y;
         if (typeof t3 !== "number")
-          return this._insertLeaf$1$bailout(4, node, t2, t3, childOne, childTwo, 0, normOne);
+          return this._insertLeaf$1$bailout(4, node, 0, childOne, childTwo, t2, t3, normOne);
         sibling = normOne < t2 + t3 ? childOne : childTwo;
         t2 = sibling.get$isLeaf();
         if (typeof t2 !== "boolean")
-          return this._insertLeaf$1$bailout(5, node, t2, 0, 0, 0, 0, 0, sibling, t1);
+          return this._insertLeaf$1$bailout(5, node, 0, 0, 0, t2, 0, 0, sibling, t1);
       } while (!t2);
-    node1 = sibling.get$parent();
+    t1 = $.getInterceptor$x(sibling);
+    node1 = t1.get$parent(sibling);
     node2 = this._allocateNode$0();
-    node2.set$parent(node1);
+    $.set$parent$x(node2, node1);
     node2.set$userData(null);
     node2.get$box().setFromCombination$2(node.get$box(), sibling.get$box());
     if (node1 != null) {
-      if ($.$eq(sibling.get$parent().get$childOne(), sibling) === true)
+      if ($.$eq(t1.get$parent(sibling).get$childOne(), sibling) === true)
         node1.set$childOne(node2);
       else
         node1.set$childTwo(node2);
       node2.set$childOne(sibling);
       node2.set$childTwo(node);
-      sibling.set$parent(node2);
-      node.set$parent(node2);
+      t1.set$parent(sibling, node2);
+      $.set$parent$x(node, node2);
       do {
         t1 = node1.get$box();
         if (t1.contains$1(t1, node2.get$box()))
           break;
         node1.get$box().setFromCombination$2(node1.get$childOne().get$box(), node1.get$childTwo().get$box());
-        node10 = node1.get$parent();
+        node10 = $.get$parent$x(node1);
         if (node10 != null) {
           node2 = node1;
           node1 = node10;
@@ -4520,18 +6798,18 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
     } else {
       node2.set$childOne(sibling);
       node2.set$childTwo(node);
-      sibling.set$parent(node2);
-      node.set$parent(node2);
+      t1.set$parent(sibling, node2);
+      $.set$parent$x(node, node2);
       this._root = node2;
     }
   },
-  _insertLeaf$1$bailout: function(state0, node, t2, t3, childOne, childTwo, t4, normOne, sibling, t1) {
+  _insertLeaf$1$bailout: function(state0, node, t4, childOne, childTwo, t2, t3, normOne, sibling, t1) {
     switch (state0) {
       case 0:
         this._insertionCount = this._insertionCount + 1;
         if (this._root == null) {
           this._root = node;
-          node.set$parent(null);
+          $.set$parent$x(node, null);
           return;
         }
         t1 = this.center;
@@ -4574,26 +6852,27 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
                         break L0;
                   }
           }
-        node1 = sibling.get$parent();
+        t1 = $.getInterceptor$x(sibling);
+        node1 = t1.get$parent(sibling);
         node2 = this._allocateNode$0();
-        node2.set$parent(node1);
+        $.set$parent$x(node2, node1);
         node2.set$userData(null);
         node2.get$box().setFromCombination$2(node.get$box(), sibling.get$box());
         if (node1 != null) {
-          if ($.$eq(sibling.get$parent().get$childOne(), sibling) === true)
+          if ($.$eq(t1.get$parent(sibling).get$childOne(), sibling) === true)
             node1.set$childOne(node2);
           else
             node1.set$childTwo(node2);
           node2.set$childOne(sibling);
           node2.set$childTwo(node);
-          sibling.set$parent(node2);
-          node.set$parent(node2);
+          t1.set$parent(sibling, node2);
+          $.set$parent$x(node, node2);
           do {
             t1 = node1.get$box();
             if (t1.contains$1(t1, node2.get$box()))
               break;
             node1.get$box().setFromCombination$2(node1.get$childOne().get$box(), node1.get$childTwo().get$box());
-            node10 = node1.get$parent();
+            node10 = $.get$parent$x(node1);
             if (node10 != null) {
               node2 = node1;
               node1 = node10;
@@ -4604,29 +6883,30 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
         } else {
           node2.set$childOne(sibling);
           node2.set$childTwo(node);
-          sibling.set$parent(node2);
-          node.set$parent(node2);
+          t1.set$parent(sibling, node2);
+          $.set$parent$x(node, node2);
           this._root = node2;
         }
     }
   },
   _removeLeaf$1: function(argNode) {
-    var node2, node1, sibling, t1;
-    if ($.$eq(argNode, this._root) === true) {
+    var t1, node2, node1, sibling;
+    t1 = $.getInterceptor(argNode);
+    if (t1.$eq(argNode, this._root) === true) {
       this._root = null;
       if ($.$eq(this._lastLeaf, argNode) === true)
         this._lastLeaf = null;
       return;
     }
-    node2 = argNode.get$parent();
-    node1 = node2.get$parent();
+    node2 = t1.get$parent(argNode);
+    node1 = $.get$parent$x(node2);
     sibling = $.$eq(node2.get$childOne(), argNode) === true ? node2.get$childTwo() : node2.get$childOne();
     if (node1 != null) {
       if ($.$eq(node1.get$childOne(), node2) === true)
         node1.set$childOne(sibling);
       else
         node1.set$childTwo(sibling);
-      sibling.set$parent(node1);
+      $.set$parent$x(sibling, node1);
       this._nodeStack.addFirst$1(node2);
       this._nodeCount = this._nodeCount - 1;
       for (t1 = this._tempBox; node1 != null;) {
@@ -4634,11 +6914,11 @@ $$.DynamicTree = {"": "Object;_root,_nodeCount,_lastLeaf,_insertionCount,_path,_
         node1.get$box().setFromCombination$2(node1.get$childOne().get$box(), node1.get$childTwo().get$box());
         if (t1.contains$1(t1, node1.get$box()))
           break;
-        node1 = node1.get$parent();
+        node1 = $.get$parent$x(node1);
       }
     } else {
       this._root = sibling;
-      sibling.set$parent(null);
+      $.set$parent$x(sibling, null);
       this._nodeStack.addFirst$1(node2);
       this._nodeCount = this._nodeCount - 1;
     }
@@ -4674,7 +6954,7 @@ $$.anon10 = {"": "Closure;",
   $isFunction: true
 };
 
-$$.DynamicTreeNode = {"": "Object;box<,parent@,next@,childOne@,childTwo@,userData@,key@",
+$$.DynamicTreeNode = {"": "Object;box<,parent*,next@,childOne@,childTwo@,userData@,key@",
   get$isLeaf: function() {
     return this.childOne == null;
   },
@@ -4717,7 +6997,7 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
   getSupport$1: function(d) {
     var t1, bestValue, bestIndex, i, value;
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.getSupport$1$bailout(1, d, t1);
     if (0 >= t1.length)
       throw $.ioore(0);
@@ -4735,7 +7015,7 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
   },
   getSupport$1$bailout: function(state0, d, t1) {
     var t3, bestValue, bestIndex, i, value;
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     bestValue = t3.$index(t1, 0).dot$1(d);
     for (bestIndex = 0, i = 1; i < this.vertexCount; ++i) {
       value = t3.$index(t1, i).dot$1(d);
@@ -4746,14 +7026,14 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     }
     return bestIndex;
   },
-  clone$0: function() {
+  clone$0: function(_) {
     return $.PolygonShape$copy(this);
   },
   setAsBox$2: function(hx, hy) {
     var t1, t2, t3, t4;
     this.vertexCount = 4;
     t1 = this.vertices;
-    t2 = $.getInterceptor$as(t1);
+    t2 = $.getInterceptor$asx(t1);
     t3 = -hx;
     t4 = -hy;
     t2.$index(t1, 0).setComponents$2(t3, t4);
@@ -4761,7 +7041,7 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     t2.$index(t1, 2).setComponents$2(hx, hy);
     t2.$index(t1, 3).setComponents$2(t3, hy);
     t3 = this.normals;
-    t1 = $.getInterceptor$as(t3);
+    t1 = $.getInterceptor$asx(t3);
     t1.$index(t3, 0).setComponents$2(0, -1);
     t1.$index(t3, 1).setComponents$2(1, 0);
     t1.$index(t3, 2).setComponents$2(0, 1);
@@ -4772,13 +7052,14 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     var t1, t2;
     this.vertexCount = 2;
     t1 = this.vertices;
-    t2 = $.getInterceptor$as(t1);
+    t2 = $.getInterceptor$asx(t1);
     t2.$index(t1, 0).copyFrom$1(v1);
     t2.$index(t1, 1).copyFrom$1(v2);
     t1 = this.centroid.copyFrom$1(v1);
-    t1.add$1(t1, v2).scale$1(0.5);
+    t1 = t1.add$1(t1, v2);
+    t1.scale$1(t1, 0.5);
     t1 = this.normals;
-    t2 = $.getInterceptor$as(t1);
+    t2 = $.getInterceptor$asx(t1);
     t2.$index(t1, 0).copyFrom$1(v2).sub$1(v1);
     $.cross(t2.$index(t1, 0), 1, t2.$index(t1, 0));
     t2.$index(t1, 0).normalize$0();
@@ -4790,7 +7071,7 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     upper = $.vec2$zero();
     v = $.vec2$zero();
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
       return this.computeAxisAlignedBox$2$bailout1(1, argAabb, argXf, v, lower, t1, upper);
     if (0 >= t1.length)
       throw $.ioore(0);
@@ -4810,7 +7091,7 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
   },
   computeAxisAlignedBox$2$bailout1: function(state0, argAabb, argXf, v, lower, t1, upper) {
     var t3, i;
-    t3 = $.getInterceptor$as(t1);
+    t3 = $.getInterceptor$asx(t1);
     $.Transform_mulToOut(argXf, t3.$index(t1, 0), lower);
     upper.copyFrom$1(lower);
     for (i = 1; i < this.vertexCount; ++i) {
@@ -4824,12 +7105,13 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     argAabb.upperBound.y = $.$add$ns(upper.y, this.radius);
   },
   computeMass$2: function(massData, density) {
-    var t1, t2, t3, center, pRef, e1, e2, area, I, i, p2, p3, D, triangleArea, t4, px, py, ex1, ey1, ex2, ey2, t5;
+    var t1, t2, t3, center, pRef, e1, e2, area, I, i, p2, p3, D, triangleArea, t4, t5, t6, px, py, ex1, ey1, ex2, ey2;
     if (this.vertexCount === 2) {
       t1 = this.vertices;
-      t2 = $.getInterceptor$as(t1);
+      t2 = $.getInterceptor$asx(t1);
       t3 = massData.center.copyFrom$1(t2.$index(t1, 0));
-      t3.add$1(t3, t2.$index(t1, 1)).scale$1(0.5);
+      t1 = t3.add$1(t3, t2.$index(t1, 1));
+      t1.scale$1(t1, 0.5);
       massData.mass = 0;
       massData.inertia = 0;
       return;
@@ -4839,8 +7121,8 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
     e1 = $.vec2$zero();
     e2 = $.vec2$zero();
     t1 = this.vertices;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
-      return this.computeMass$2$bailout1(1, massData, pRef, density, e1, e2, t1, center);
+    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior()))
+      return this.computeMass$2$bailout1(1, center, massData, pRef, density, e1, e2, t1);
     area = 0;
     I = 0;
     i = 0;
@@ -4868,53 +7150,55 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
       area += triangleArea;
       t2 = center.x;
       t3 = triangleArea * 0.3333333333333333;
-      t4 = $.$add$ns($.$add$ns(pRef.x, p2.get$x()), p3.get$x());
-      if (typeof t4 !== "number")
-        throw $.iae(t4);
-      center.x = $.$add$ns(t2, t3 * t4);
-      t4 = center.y;
-      t2 = $.$add$ns($.$add$ns(pRef.y, p2.get$y()), p3.get$y());
-      if (typeof t2 !== "number")
-        throw $.iae(t2);
-      center.y = $.$add$ns(t4, t3 * t2);
+      t4 = $.getInterceptor$x(p2);
+      t5 = $.getInterceptor$x(p3);
+      t6 = $.$add$ns($.$add$ns(pRef.x, t4.get$x(p2)), t5.get$x(p3));
+      if (typeof t6 !== "number")
+        throw $.iae(t6);
+      center.x = $.$add$ns(t2, t3 * t6);
+      t6 = center.y;
+      t5 = $.$add$ns($.$add$ns(pRef.y, t4.get$y(p2)), t5.get$y(p3));
+      if (typeof t5 !== "number")
+        throw $.iae(t5);
+      center.y = $.$add$ns(t6, t3 * t5);
       px = pRef.x;
       py = pRef.y;
       ex1 = e1.x;
       ey1 = e1.y;
       ex2 = e2.x;
       ey2 = e2.y;
-      t2 = $.getInterceptor$n(ex2);
-      t2 = $.$add$ns($.$add$ns($.$mul$n(ex1, ex1), t2.$mul(ex2, ex1)), t2.$mul(ex2, ex2));
-      if (typeof t2 !== "number")
-        throw $.iae(t2);
+      t5 = $.getInterceptor$n(ex2);
+      t5 = $.$add$ns($.$add$ns($.$mul$n(ex1, ex1), t5.$mul(ex2, ex1)), t5.$mul(ex2, ex2));
+      if (typeof t5 !== "number")
+        throw $.iae(t5);
       t3 = $.getInterceptor$n(px);
       t3 = $.$add$ns(t3.$mul(px, ex1), t3.$mul(px, ex2));
       if (typeof t3 !== "number")
         throw $.iae(t3);
       if (typeof px !== "number")
         throw $.iae(px);
-      t4 = $.getInterceptor$n(ey2);
-      t4 = $.$add$ns($.$add$ns($.$mul$n(ey1, ey1), t4.$mul(ey2, ey1)), t4.$mul(ey2, ey2));
+      t6 = $.getInterceptor$n(ey2);
+      t6 = $.$add$ns($.$add$ns($.$mul$n(ey1, ey1), t6.$mul(ey2, ey1)), t6.$mul(ey2, ey2));
+      if (typeof t6 !== "number")
+        throw $.iae(t6);
+      t4 = $.getInterceptor$n(py);
+      t4 = $.$add$ns(t4.$mul(py, ey1), t4.$mul(py, ey2));
       if (typeof t4 !== "number")
         throw $.iae(t4);
-      t5 = $.getInterceptor$n(py);
-      t5 = $.$add$ns(t5.$mul(py, ey1), t5.$mul(py, ey2));
-      if (typeof t5 !== "number")
-        throw $.iae(t5);
       if (typeof py !== "number")
         throw $.iae(py);
-      I += D * (0.3333333333333333 * (0.25 * t2 + t3) + 0.5 * px * px + (0.3333333333333333 * (0.25 * t4 + t5) + 0.5 * py * py));
+      I += D * (0.3333333333333333 * (0.25 * t5 + t3) + 0.5 * px * px + (0.3333333333333333 * (0.25 * t6 + t4) + 0.5 * py * py));
     }
     massData.mass = $.$mul$n(density, area);
-    center.scale$1(1 / area);
+    center.scale$1(center, 1 / area);
     massData.center.copyFrom$1(center);
     if (typeof density !== "number")
       throw $.iae(density);
     massData.inertia = I * density;
   },
-  computeMass$2$bailout1: function(state0, massData, pRef, density, e1, e2, t1, center) {
-    var t3, area, I, i, p2, p3, D, triangleArea, t2, t4, t5, px, py, ex1, ey1, ex2, ey2, t6;
-    t3 = $.getInterceptor$as(t1);
+  computeMass$2$bailout1: function(state0, center, massData, pRef, density, e1, e2, t1) {
+    var t3, area, I, i, p2, p3, D, triangleArea, t2, t4, t5, t6, t7, px, py, ex1, ey1, ex2, ey2;
+    t3 = $.getInterceptor$asx(t1);
     area = 0;
     I = 0;
     i = 0;
@@ -4931,45 +7215,47 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
       area += triangleArea;
       t2 = center.x;
       t4 = triangleArea * 0.3333333333333333;
-      t5 = $.$add$ns($.$add$ns(pRef.x, p2.get$x()), p3.get$x());
-      if (typeof t5 !== "number")
-        throw $.iae(t5);
-      center.x = $.$add$ns(t2, t4 * t5);
-      t5 = center.y;
-      t2 = $.$add$ns($.$add$ns(pRef.y, p2.get$y()), p3.get$y());
-      if (typeof t2 !== "number")
-        throw $.iae(t2);
-      center.y = $.$add$ns(t5, t4 * t2);
+      t5 = $.getInterceptor$x(p2);
+      t6 = $.getInterceptor$x(p3);
+      t7 = $.$add$ns($.$add$ns(pRef.x, t5.get$x(p2)), t6.get$x(p3));
+      if (typeof t7 !== "number")
+        throw $.iae(t7);
+      center.x = $.$add$ns(t2, t4 * t7);
+      t7 = center.y;
+      t6 = $.$add$ns($.$add$ns(pRef.y, t5.get$y(p2)), t6.get$y(p3));
+      if (typeof t6 !== "number")
+        throw $.iae(t6);
+      center.y = $.$add$ns(t7, t4 * t6);
       px = pRef.x;
       py = pRef.y;
       ex1 = e1.x;
       ey1 = e1.y;
       ex2 = e2.x;
       ey2 = e2.y;
-      t2 = $.getInterceptor$n(ex2);
-      t2 = $.$add$ns($.$add$ns($.$mul$n(ex1, ex1), t2.$mul(ex2, ex1)), t2.$mul(ex2, ex2));
-      if (typeof t2 !== "number")
-        throw $.iae(t2);
+      t6 = $.getInterceptor$n(ex2);
+      t6 = $.$add$ns($.$add$ns($.$mul$n(ex1, ex1), t6.$mul(ex2, ex1)), t6.$mul(ex2, ex2));
+      if (typeof t6 !== "number")
+        throw $.iae(t6);
       t4 = $.getInterceptor$n(px);
       t4 = $.$add$ns(t4.$mul(px, ex1), t4.$mul(px, ex2));
       if (typeof t4 !== "number")
         throw $.iae(t4);
       if (typeof px !== "number")
         throw $.iae(px);
-      t5 = $.getInterceptor$n(ey2);
-      t5 = $.$add$ns($.$add$ns($.$mul$n(ey1, ey1), t5.$mul(ey2, ey1)), t5.$mul(ey2, ey2));
+      t7 = $.getInterceptor$n(ey2);
+      t7 = $.$add$ns($.$add$ns($.$mul$n(ey1, ey1), t7.$mul(ey2, ey1)), t7.$mul(ey2, ey2));
+      if (typeof t7 !== "number")
+        throw $.iae(t7);
+      t5 = $.getInterceptor$n(py);
+      t5 = $.$add$ns(t5.$mul(py, ey1), t5.$mul(py, ey2));
       if (typeof t5 !== "number")
         throw $.iae(t5);
-      t6 = $.getInterceptor$n(py);
-      t6 = $.$add$ns(t6.$mul(py, ey1), t6.$mul(py, ey2));
-      if (typeof t6 !== "number")
-        throw $.iae(t6);
       if (typeof py !== "number")
         throw $.iae(py);
-      I += D * (0.3333333333333333 * (0.25 * t2 + t4) + 0.5 * px * px + (0.3333333333333333 * (0.25 * t5 + t6) + 0.5 * py * py));
+      I += D * (0.3333333333333333 * (0.25 * t6 + t4) + 0.5 * px * px + (0.3333333333333333 * (0.25 * t7 + t5) + 0.5 * py * py));
     }
     massData.mass = $.$mul$n(density, area);
-    center.scale$1(1 / area);
+    center.scale$1(center, 1 / area);
     massData.center.copyFrom$1(center);
     if (typeof density !== "number")
       throw $.iae(density);
@@ -4978,10 +7264,10 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
   PolygonShape$copy$1: function(other) {
     var t1, t3, i, t2;
     t1 = this.vertices;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.PolygonShape$copy$1$bailout(1, other, t1);
     t3 = other.vertices;
-    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior))
+    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior()))
       return this.PolygonShape$copy$1$bailout(2, other, t1, t3);
     i = 0;
     for (; i < t3.length; ++i) {
@@ -4991,10 +7277,10 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
       t1[i] = t2;
     }
     t1 = this.normals;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.PolygonShape$copy$1$bailout(3, other, t1);
     t3 = other.normals;
-    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior))
+    if (typeof t3 !== "string" && (typeof t3 !== "object" || t3 === null || t3.constructor !== Array && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior()))
       return this.PolygonShape$copy$1$bailout(4, 0, t1, t3);
     i = 0;
     for (; i < t3.length; ++i) {
@@ -5013,10 +7299,10 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
         t3 = other.vertices;
       case 2:
         state0 = 0;
-        t5 = $.getInterceptor$as(t3);
-        t6 = $.getInterceptor$a(t1);
+        t5 = $.getInterceptor$asx(t3);
+        t6 = $.getInterceptor$ax(t1);
         i = 0;
-        for (; $.JSNumber_methods.$lt(i, t5.get$length(t3)); ++i)
+        for (; $.JSNumber_methods.$lt(i, $.get$length$asx(t3)); ++i)
           t6.$indexSet(t1, i, $.vec2$copy(t5.$index(t3, i)));
         t1 = this.normals;
       case 3:
@@ -5025,10 +7311,10 @@ $$.PolygonShape = {"": "Shape;centroid<,vertices<,normals<,vertexCount<,type,rad
       case 4:
         var t5, t6, i;
         state0 = 0;
-        t5 = $.getInterceptor$as(t3);
-        t6 = $.getInterceptor$a(t1);
+        t5 = $.getInterceptor$asx(t3);
+        t6 = $.getInterceptor$ax(t1);
         i = 0;
-        for (; $.JSNumber_methods.$lt(i, t5.get$length(t3)); ++i)
+        for (; $.JSNumber_methods.$lt(i, $.get$length$asx(t3)); ++i)
           t6.$indexSet(t1, i, $.vec2$copy(t5.$index(t3, i)));
     }
   }
@@ -5048,7 +7334,32 @@ $$.anon2 = {"": "Closure;",
   $isFunction: true
 };
 
-$$.Shape = {"": "Object;type@,radius@"};
+$$.Shape = {"": "Object;type*,radius@"};
+
+$$.CanvasViewportTransform = {"": "ViewportTransform;yFlip,extents,scale,center",
+  CanvasViewportTransform$2: function(_extents, _center) {
+    this.yFlip = true;
+  }
+};
+
+$$.Color3 = {"": "Object;x*,y*,z*",
+  setFromRGBF$3: function(r, g, b) {
+    this.x = $.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(r * 255));
+    this.y = $.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(g * 255));
+    this.z = $.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(b * 255));
+  },
+  $eq: function(_, other) {
+    var t1;
+    if (other == null)
+      return false;
+    if (typeof other === "object" && other !== null && !!$.getInterceptor(other).$isColor3)
+      t1 = $.$eq(this.x, other.x) === true && $.$eq(this.y, other.y) === true && $.$eq(this.z, other.z) === true;
+    else
+      t1 = false;
+    return t1;
+  },
+  $isColor3: true
+};
 
 $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
   $eq: function(_, other) {
@@ -5101,40 +7412,40 @@ $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
     t6 = t1.x;
     if (typeof t6 !== "number")
       return this.getTransform$2$bailout(1, t1, t6, t5);
-    t2 = t5.col0.get$x();
+    t2 = $.get$x$x(t5.col0);
     if (typeof t2 !== "number")
       return this.getTransform$2$bailout(2, t1, t6, t5, t2);
     t7 = this.localCenter;
     t8 = t7.x;
     if (typeof t8 !== "number")
-      return this.getTransform$2$bailout(3, t1, t6, t5, t2, t8, t7);
+      return this.getTransform$2$bailout(3, t1, t6, t5, t2, t7, t8);
     t8 = t2 * t8;
-    t2 = t5.col1.get$x();
+    t2 = $.get$x$x(t5.col1);
     if (typeof t2 !== "number")
-      return this.getTransform$2$bailout(4, t1, t6, t5, t2, t8, t7);
+      return this.getTransform$2$bailout(4, t1, t6, t5, t2, t7, t8);
     t11 = t7.y;
     if (typeof t11 !== "number")
-      return this.getTransform$2$bailout(5, t1, t6, t5, t2, t8, t7, t11);
+      return this.getTransform$2$bailout(5, t1, t6, t5, t2, t7, t8, t11);
     t1.x = t6 - (t8 + t2 * t11);
     t11 = t1.y;
     if (typeof t11 !== "number")
-      return this.getTransform$2$bailout(6, t1, 0, t5, 0, 0, t7, t11);
-    t8 = t5.col0.get$y();
+      return this.getTransform$2$bailout(6, t1, 0, t5, 0, t7, 0, t11);
+    t8 = $.get$y$x(t5.col0);
     if (typeof t8 !== "number")
-      return this.getTransform$2$bailout(7, t1, 0, t5, 0, t8, t7, t11);
+      return this.getTransform$2$bailout(7, t1, 0, t5, 0, t7, t8, t11);
     t13 = t7.x;
     if (typeof t13 !== "number")
-      return this.getTransform$2$bailout(8, t1, 0, t5, 0, t8, t7, t11, t13);
+      return this.getTransform$2$bailout(8, t1, 0, t5, 0, t7, t8, t11, t13);
     t13 = t8 * t13;
-    t5 = t5.col1.get$y();
+    t5 = $.get$y$x(t5.col1);
     if (typeof t5 !== "number")
-      return this.getTransform$2$bailout(9, t1, 0, t5, 0, 0, t7, t11, t13);
+      return this.getTransform$2$bailout(9, t1, 0, t5, 0, t7, 0, t11, t13);
     t7 = t7.y;
     if (typeof t7 !== "number")
-      return this.getTransform$2$bailout(10, t1, 0, t5, 0, 0, t7, t11, t13);
+      return this.getTransform$2$bailout(10, t1, 0, t5, 0, t7, 0, t11, t13);
     t1.y = t11 - (t13 + t5 * t7);
   },
-  getTransform$2$bailout: function(state0, t1, t6, t5, t2, t8, t7, t11, t13) {
+  getTransform$2$bailout: function(state0, t1, t6, t5, t2, t7, t8, t11, t13) {
     switch (state0) {
       case 0:
         t1 = xf.position;
@@ -5168,7 +7479,7 @@ $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
         t6 = t1.x;
       case 1:
         state0 = 0;
-        t2 = t5.col0.get$x();
+        t2 = $.get$x$x(t5.col0);
       case 2:
         state0 = 0;
         t7 = this.localCenter;
@@ -5176,7 +7487,7 @@ $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
       case 3:
         state0 = 0;
         t8 = $.$mul$n(t2, t8);
-        t2 = t5.col1.get$x();
+        t2 = $.get$x$x(t5.col1);
       case 4:
         state0 = 0;
         t11 = t7.y;
@@ -5186,14 +7497,14 @@ $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
         t11 = t1.y;
       case 6:
         state0 = 0;
-        t8 = t5.col0.get$y();
+        t8 = $.get$y$x(t5.col0);
       case 7:
         state0 = 0;
         t13 = t7.x;
       case 8:
         state0 = 0;
         t13 = $.$mul$n(t8, t13);
-        t5 = t5.col1.get$y();
+        t5 = $.get$y$x(t5.col1);
       case 9:
         state0 = 0;
         t7 = t7.y;
@@ -5234,19 +7545,39 @@ $$.Sweep = {"": "Object;localCenter<,centerZero<,center<,angleZero<,angle<",
   }
 };
 
-$$.Transform = {"": "Object;position<,rotation<",
+$$.Transform = {"": "Object;position>,rotation<",
   $eq: function(_, other) {
     if (other == null)
       return false;
-    return this.position === other.get$position() && this.rotation === other.get$rotation();
+    return this.position === $.get$position$x(other) && this.rotation === other.get$rotation();
   },
   setFrom$1: function(other) {
-    this.position.copyFrom$1(other.get$position());
+    this.position.copyFrom$1($.get$position$x(other));
     this.rotation.copyFrom$1(other.get$rotation());
   }
 };
 
-$$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVelocity,_angularVelocity,mass<,invMass<,next@,prev@,fixtureList,fixtureCount,jointList<,_force<,_torque@,_inertia,invInertia<,linearDamping<,angularDamping<,_type,islandIndex?,originTransform,sweep<,_fixDef,_pmd,_pxf,oldCenter,tempCenter",
+$$.ViewportTransform = {"": "Object;scale>,center<",
+  scale$1: function($receiver, arg0) {
+    return this.scale.call$1(arg0);
+  },
+  get$translation: function() {
+    var t1 = this.extents;
+    return t1.$sub(t1, this.center);
+  },
+  getWorldToScreen$2: function(argWorld, argScreen) {
+    var t1, t2, gridCorrectedX, gridCorrectedY;
+    t1 = $.getInterceptor$x(argWorld);
+    t2 = this.extents;
+    gridCorrectedX = $.$add$ns($.$mul$n(t1.get$x(argWorld), this.scale), t2.x);
+    gridCorrectedY = $.$sub$n(t2.y, $.$mul$n(t1.get$y(argWorld), this.scale));
+    t1 = $.getInterceptor$x(argScreen);
+    t1.set$x(argScreen, $.$add$ns(gridCorrectedX, this.get$translation().x));
+    t1.set$y(argScreen, $.$sub$n(gridCorrectedY, this.get$translation().y));
+  }
+};
+
+$$.Body = {"": "Object;world,flags@,contactList@,sleepTime@,userData@,_linearVelocity,_angularVelocity,mass<,invMass<,next@,prev@,fixtureList<,fixtureCount,jointList<,_force<,_torque@,_inertia,invInertia<,linearDamping<,angularDamping<,_type<,islandIndex?,originTransform<,sweep<,_fixDef,_pmd,_pxf,oldCenter,tempCenter",
   createFixture$1: function(def) {
     var fixture, t1;
     fixture = $.Fixture$();
@@ -5263,11 +7594,14 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
     t1._flags = (t1._flags | 1) >>> 0;
     return fixture;
   },
-  get$position: function() {
+  get$position: function(_) {
     return this.originTransform.position;
   },
   get$angle: function() {
     return this.sweep.angle;
+  },
+  get$worldCenter: function() {
+    return this.sweep.center;
   },
   get$localCenter: function() {
     return this.sweep.localCenter;
@@ -5335,7 +7669,7 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
       f.getMassData$1(massData);
       this.mass = $.$add$ns(this.mass, massData.mass);
       temp = $.vec2$copy(t4);
-      temp.scale$1(massData.mass);
+      temp.scale$1(temp, massData.mass);
       t3.add$1(t3, temp);
       this._inertia = this._inertia + massData.inertia;
     }
@@ -5344,7 +7678,7 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
       if (typeof t4 !== "number")
         throw $.iae(t4);
       this.invMass = 1 / t4;
-      t3.scale$1(this.invMass);
+      t3.scale$1(t3, this.invMass);
     } else {
       this.mass = 1;
       this.invMass = 1;
@@ -5387,10 +7721,10 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
   getWorldVectorToOut$2: function(localVector, out) {
     this.originTransform.rotation.transformed$2(localVector, out);
   },
-  get$type: function() {
+  get$type: function(_) {
     return this._type;
   },
-  set$type: function(otherType) {
+  set$type: function(_, otherType) {
     var ce;
     if ($.$eq(this._type, otherType) === true)
       return;
@@ -5458,41 +7792,11 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
     r.setRotation$1(t1.angle);
     t2 = t1.localCenter;
     t1 = t1.center;
-    p.x = $.$add$ns($.$mul$n($.$add$ns($.$mul$n(r.col0.get$x(), t2.x), $.$mul$n(r.col1.get$x(), t2.y)), -1), t1.x);
-    p.y = $.$add$ns($.$mul$n($.$add$ns($.$mul$n(r.col0.get$y(), t2.x), $.$mul$n(r.col1.get$y(), t2.y)), -1), t1.y);
+    p.x = $.$add$ns($.$mul$n($.$add$ns($.$mul$n($.get$x$x(r.col0), t2.x), $.$mul$n($.get$x$x(r.col1), t2.y)), -1), t1.x);
+    p.y = $.$add$ns($.$mul$n($.$add$ns($.$mul$n($.get$y$x(r.col0), t2.x), $.$mul$n($.get$y$x(r.col1), t2.y)), -1), t1.y);
   },
   shouldCollide$1: function(other) {
-    var t1 = this._type;
-    if (typeof t1 !== "number")
-      return this.shouldCollide$1$bailout(1, other, t1);
-    if (t1 !== 2) {
-      t1 = other._type;
-      if (typeof t1 !== "number")
-        return this.shouldCollide$1$bailout(2, 0, t1);
-      t1 = t1 !== 2;
-    } else
-      t1 = false;
-    return !t1;
-  },
-  shouldCollide$1$bailout: function(state0, other, t1) {
-    switch (state0) {
-      case 0:
-        t1 = this._type;
-      case 1:
-        state0 = 0;
-      case 2:
-        if (state0 === 2 || state0 === 0 && $.$eq(t1, 2) !== true)
-          switch (state0) {
-            case 0:
-              t1 = other._type;
-            case 2:
-              state0 = 0;
-              t1 = $.$eq(t1, 2) !== true;
-          }
-        else
-          t1 = false;
-        return !t1;
-    }
+    return !($.$eq(this._type, 2) !== true && $.$eq(other.get$_type(), 2) !== true);
   },
   advance$1: function(t) {
     var t1 = this.sweep;
@@ -5514,7 +7818,7 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
     if (bd.get$active())
       this.flags = (this.flags | 32) >>> 0;
     t1 = this.originTransform;
-    t1.position.copyFrom$1(bd.get$position());
+    t1.position.copyFrom$1($.get$position$x(bd));
     t1.rotation.setRotation$1(bd.get$angle());
     t2 = this.sweep;
     t3 = t2.localCenter;
@@ -5534,19 +7838,18 @@ $$.Body = {"": "Object;world,flags@,contactList<,sleepTime@,userData@,_linearVel
   }
 };
 
-$$.BodyDef = {"": "Object;type@,angle<,userData@,position<,linearVelocity<,angularVelocity@,fixedRotation<,isSleeping,bullet<,allowSleep<,linearDamping<,angularDamping<,awake@,active<"};
+$$.BodyDef = {"": "Object;type*,angle<,userData@,position>,linearVelocity<,angularVelocity@,fixedRotation<,isSleeping,bullet<,allowSleep<,linearDamping<,angularDamping<,awake@,active<"};
 
-$$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFilter,contactListener,pool",
+$$.ContactManager = {"": "Object;broadPhase,contactList@,contactCount,contactFilter,contactListener,pool",
   addPair$2: function(fixtureA, fixtureB) {
     var bodyA, bodyB, edge, t1, fA, fB, c;
-    bodyA = fixtureA.get$body();
-    bodyB = fixtureB.get$body();
-    if (bodyA == null ? bodyB == null : bodyA === bodyB)
+    bodyA = $.get$body$x(fixtureA);
+    bodyB = $.get$body$x(fixtureB);
+    if ($.$eq(bodyA, bodyB) === true)
       return;
-    edge = bodyB.contactList;
+    edge = bodyB.get$contactList();
     for (; edge != null;) {
-      t1 = edge.get$other();
-      if (t1 == null ? bodyA == null : t1 === bodyA) {
+      if ($.$eq(edge.get$other(), bodyA) === true) {
         t1 = edge.get$contact();
         fA = t1.get$fixtureA();
         fB = t1.get$fixtureB();
@@ -5565,8 +7868,8 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     c = this.pool.popContact$2(fixtureA, fixtureB);
     fixtureA = c.get$fixtureA();
     fixtureB = c.get$fixtureB();
-    bodyA = fixtureA.get$body();
-    bodyB = fixtureB.get$body();
+    bodyA = $.get$body$x(fixtureA);
+    bodyB = $.get$body$x(fixtureB);
     c.set$prev(null);
     c.set$next(this.contactList);
     t1 = this.contactList;
@@ -5576,19 +7879,17 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     c.get$edge1().contact = c;
     c.get$edge1().other = bodyB;
     c.get$edge1().prev = null;
-    c.get$edge1().next = bodyA.contactList;
-    t1 = bodyA.contactList;
-    if (t1 != null)
-      t1.set$prev(c.get$edge1());
-    bodyA.contactList = c.get$edge1();
+    c.get$edge1().next = bodyA.get$contactList();
+    if (bodyA.get$contactList() != null)
+      bodyA.get$contactList().set$prev(c.get$edge1());
+    bodyA.set$contactList(c.get$edge1());
     c.get$edge2().contact = c;
     c.get$edge2().other = bodyA;
     c.get$edge2().prev = null;
-    c.get$edge2().next = bodyB.contactList;
-    t1 = bodyB.contactList;
-    if (t1 != null)
-      t1.set$prev(c.get$edge2());
-    bodyB.contactList = c.get$edge2();
+    c.get$edge2().next = bodyB.get$contactList();
+    if (bodyB.get$contactList() != null)
+      bodyB.get$contactList().set$prev(c.get$edge2());
+    bodyB.set$contactList(c.get$edge2());
     this.contactCount = this.contactCount + 1;
   },
   findNewContacts$0: function() {
@@ -5598,8 +7899,8 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     var fixtureA, fixtureB, bodyA, bodyB, t1, t2;
     fixtureA = c.get$fixtureA();
     fixtureB = c.get$fixtureB();
-    bodyA = fixtureA.get$body();
-    bodyB = fixtureB.get$body();
+    bodyA = $.get$body$x(fixtureA);
+    bodyB = $.get$body$x(fixtureB);
     t1 = this.contactListener;
     if (t1 != null && c.get$touching())
       t1.endContact$1(c);
@@ -5619,9 +7920,8 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     t2 = t1.next;
     if (t2 != null)
       t2.set$prev(t1.prev);
-    t1 = c.get$edge1();
-    if (t1 === bodyA.contactList)
-      bodyA.contactList = t1.next;
+    if (c.get$edge1() === bodyA.get$contactList())
+      bodyA.set$contactList(c.get$edge1().next);
     t1 = c.get$edge2();
     t2 = t1.prev;
     if (t2 != null)
@@ -5630,9 +7930,8 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     t2 = t1.next;
     if (t2 != null)
       t2.set$prev(t1.prev);
-    t1 = c.get$edge2();
-    if (t1 === bodyB.contactList)
-      bodyB.contactList = t1.next;
+    if (c.get$edge2() === bodyB.get$contactList())
+      bodyB.set$contactList(c.get$edge2().next);
     this.pool.pushContact$1(c);
     this.contactCount = this.contactCount - 1;
   },
@@ -5642,8 +7941,8 @@ $$.ContactManager = {"": "Object;broadPhase,contactList<,contactCount,contactFil
     for (t1 = this.contactFilter, t2 = this.broadPhase, t3 = this.contactListener; c != null;) {
       fixtureA = c.get$fixtureA();
       fixtureB = c.get$fixtureB();
-      bodyA = fixtureA.get$body();
-      bodyB = fixtureB.get$body();
+      bodyA = $.get$body$x(fixtureA);
+      bodyB = $.get$body$x(fixtureB);
       if (!bodyA.get$awake() && !bodyB.get$awake()) {
         c = c.get$next();
         continue;
@@ -5683,8 +7982,9 @@ $$.Filter = {"": "Object;categoryBits<,maskBits<,groupIndex<",
   }
 };
 
-$$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution@,proxy<,filter<,isSensor<,userData@,_poolOne,_poolTwo",
+$$.Fixture = {"": "Object;box<,density<,next@,body>,shape>,friction@,restitution@,proxy<,filter>,isSensor<,userData@,_poolOne,_poolTwo",
   create$2: function(b, def) {
+    var t1;
     this.userData = def.userData;
     this.friction = def.friction;
     this.restitution = def.restitution;
@@ -5692,7 +7992,8 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     this.next = null;
     this.filter.setFrom$1(def.filter);
     this.isSensor = def.isSensor;
-    this.shape = def.shape.clone$0();
+    t1 = def.shape;
+    this.shape = t1.clone$0(t1);
     this.density = def.density;
   },
   createProxy$2: function(broadPhase, xf) {
@@ -5712,10 +8013,10 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     t4 = t3.lowerBound;
     t5 = t1.lowerBound.x;
     if (typeof t5 !== "number")
-      return this.synchronize$3$bailout(1, broadPhase, transformOne, t3, transformTwo, t4, t2, t5, t1);
+      return this.synchronize$3$bailout(1, broadPhase, transformOne, transformTwo, t1, t2, t3, t4, t5);
     t7 = t2.lowerBound.x;
     if (typeof t7 !== "number")
-      return this.synchronize$3$bailout(2, broadPhase, transformOne, t3, transformTwo, t4, t2, t5, t1, t7);
+      return this.synchronize$3$bailout(2, broadPhase, transformOne, transformTwo, t1, t2, t3, t4, t5, t7);
     if (t5 < t7)
       ;
     else
@@ -5724,10 +8025,10 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     t5 = t3.lowerBound;
     t4 = t1.lowerBound.y;
     if (typeof t4 !== "number")
-      return this.synchronize$3$bailout(3, broadPhase, transformOne, t3, transformTwo, t5, t2, t4, t1);
+      return this.synchronize$3$bailout(3, broadPhase, transformOne, transformTwo, t1, t2, t3, t5, t4);
     t7 = t2.lowerBound.y;
     if (typeof t7 !== "number")
-      return this.synchronize$3$bailout(4, broadPhase, transformOne, t3, transformTwo, t5, t2, t4, t1, t7);
+      return this.synchronize$3$bailout(4, broadPhase, transformOne, transformTwo, t1, t2, t3, t5, t4, t7);
     if (t4 < t7)
       ;
     else
@@ -5736,10 +8037,10 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     t4 = t3.upperBound;
     t5 = t1.upperBound.x;
     if (typeof t5 !== "number")
-      return this.synchronize$3$bailout(5, broadPhase, transformOne, t3, transformTwo, t4, t2, t5, t1);
+      return this.synchronize$3$bailout(5, broadPhase, transformOne, transformTwo, t1, t2, t3, t4, t5);
     t7 = t2.upperBound.x;
     if (typeof t7 !== "number")
-      return this.synchronize$3$bailout(6, broadPhase, transformOne, t3, transformTwo, t4, t2, t5, t1, t7);
+      return this.synchronize$3$bailout(6, broadPhase, transformOne, transformTwo, t1, t2, t3, t4, t5, t7);
     if (t5 > t7)
       ;
     else
@@ -5748,10 +8049,10 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     t5 = t3.upperBound;
     t4 = t1.upperBound.y;
     if (typeof t4 !== "number")
-      return this.synchronize$3$bailout(7, broadPhase, transformOne, t3, transformTwo, t5, t2, t4, t1);
+      return this.synchronize$3$bailout(7, broadPhase, transformOne, transformTwo, t1, t2, t3, t5, t4);
     t7 = t2.upperBound.y;
     if (typeof t7 !== "number")
-      return this.synchronize$3$bailout(8, broadPhase, transformOne, t3, transformTwo, t5, t2, t4, t1, t7);
+      return this.synchronize$3$bailout(8, broadPhase, transformOne, transformTwo, t1, t2, t3, t5, t4, t7);
     if (t4 > t7)
       t2 = t4;
     else
@@ -5761,7 +8062,7 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
     disp.copyFrom$1(transformTwo.position).sub$1(transformOne.position);
     broadPhase.moveProxy$3(this.proxy, t3, disp);
   },
-  synchronize$3$bailout: function(state0, broadPhase, transformOne, t3, transformTwo, t4, t2, t5, t1, t7) {
+  synchronize$3$bailout: function(state0, broadPhase, transformOne, transformTwo, t1, t2, t3, t4, t5, t7) {
     switch (state0) {
       case 0:
         if (this.proxy == null)
@@ -5812,12 +8113,12 @@ $$.Fixture = {"": "Object;box<,density<,next@,body<,shape<,friction@,restitution
   getMassData$1: function(massData) {
     this.shape.computeMass$2(massData, this.density);
   },
-  get$type: function() {
-    return this.shape.get$type();
+  get$type: function(_) {
+    return $.get$type$x(this.shape);
   }
 };
 
-$$.FixtureDef = {"": "Object;shape<,userData@,friction@,restitution@,density<,isSensor<,filter<",
+$$.FixtureDef = {"": "Object;shape>,userData@,friction@,restitution@,density<,isSensor<,filter>",
   FixtureDef$0: function() {
     var t1 = this.filter;
     t1.categoryBits = 1;
@@ -5836,25 +8137,25 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     this.contactCount = 0;
     this.listener = argListener;
     t1 = this.bodies;
-    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$as(t1))) {
+    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$asx(t1))) {
       t1 = $.List_List(this.bodyCapacity, $.Body);
       $.setRuntimeTypeInfo(t1, [$.Body]);
       this.bodies = t1;
     }
     t1 = this.contacts;
-    if (t1 == null || $.$gt$n(this.contactCapacity, $.get$length$as(t1))) {
+    if (t1 == null || $.$gt$n(this.contactCapacity, $.get$length$asx(t1))) {
       t1 = $.List_List(this.contactCapacity, $.Contact);
       $.setRuntimeTypeInfo(t1, [$.Contact]);
       this.contacts = t1;
     }
     t1 = this.joints;
-    if (t1 == null || $.$gt$n(this.jointCapacity, $.get$length$as(t1))) {
+    if (t1 == null || $.$gt$n(this.jointCapacity, $.get$length$asx(t1))) {
       t1 = $.List_List(this.jointCapacity, $.Joint);
       $.setRuntimeTypeInfo(t1, [$.Joint]);
       this.joints = t1;
     }
     t1 = this.velocities;
-    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$as(t1))) {
+    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$asx(t1))) {
       old = this.velocities;
       if (old == null) {
         old = $.List_List(0, $.Velocity);
@@ -5863,13 +8164,13 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       t1 = $.List_List(this.bodyCapacity, $.Velocity);
       $.setRuntimeTypeInfo(t1, [$.Velocity]);
       this.velocities = t1;
-      t1 = $.getInterceptor$as(old);
-      $.setRange$3$a(this.velocities, 0, t1.get$length(old), old);
-      for (i = t1.get$length(old); i < $.get$length$as(this.velocities); ++i)
-        $.$indexSet$a(this.velocities, i, $.Velocity$());
+      t1 = $.getInterceptor$asx(old);
+      $.setRange$3$ax(this.velocities, 0, t1.get$length(old), old);
+      for (i = t1.get$length(old); i < $.get$length$asx(this.velocities); ++i)
+        $.$indexSet$ax(this.velocities, i, $.Velocity$());
     }
     t1 = this.positions;
-    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$as(t1))) {
+    if (t1 == null || $.$gt$n(this.bodyCapacity, $.get$length$asx(t1))) {
       old = this.positions;
       if (old == null) {
         old = $.List_List(0, $.Position);
@@ -5878,10 +8179,10 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       t1 = $.List_List(this.bodyCapacity, $.Position);
       $.setRuntimeTypeInfo(t1, [$.Position]);
       this.positions = t1;
-      t1 = $.getInterceptor$as(old);
-      $.setRange$3$a(this.positions, 0, t1.get$length(old), old);
-      for (i = t1.get$length(old); i < $.get$length$as(this.positions); ++i)
-        $.$indexSet$a(this.positions, i, $.Position$());
+      t1 = $.getInterceptor$asx(old);
+      $.setRange$3$ax(this.positions, 0, t1.get$length(old), old);
+      for (i = t1.get$length(old); i < $.get$length$asx(this.positions); ++i)
+        $.$indexSet$ax(this.positions, i, $.Position$());
     }
   },
   clear$0: function(_) {
@@ -5895,45 +8196,45 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     while (true) {
       t1 = this.bodyCount;
       if (typeof t1 !== "number")
-        return this.solve$3$bailout(1, time_step, gravity, allowSleep, t1, i);
+        return this.solve$3$bailout(1, time_step, gravity, allowSleep, i, t1);
       if (!(i < t1))
         break;
       c$0: {
         t1 = this.bodies;
-        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-          return this.solve$3$bailout(2, time_step, gravity, allowSleep, t1, i);
+        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+          return this.solve$3$bailout(2, time_step, gravity, allowSleep, i, t1);
         if (i >= t1.length)
           throw $.ioore(i);
         b = t1[i];
-        t1 = b.get$type();
+        t1 = $.get$type$x(b);
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(3, time_step, gravity, allowSleep, t1, i, b);
+          return this.solve$3$bailout(3, time_step, gravity, allowSleep, i, t1, b);
         if (t1 !== 2)
           break c$0;
         t1 = b.get$_force();
         t2 = t1.x;
         if (typeof t2 !== "number")
-          return this.solve$3$bailout(4, time_step, gravity, allowSleep, t2, i, b);
+          return this.solve$3$bailout(4, time_step, gravity, allowSleep, i, t2, b);
         t4 = b.get$invMass();
         t2 *= t4;
         t5 = gravity.x;
         if (typeof t5 !== "number")
-          return this.solve$3$bailout(5, time_step, gravity, allowSleep, t2, i, b, t5);
+          return this.solve$3$bailout(5, time_step, gravity, allowSleep, i, t2, b, t5);
         t7 = time_step.dt;
         t5 = (t2 + t5) * t7;
         t1 = t1.y;
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(6, time_step, gravity, allowSleep, t1, i, b, t5);
+          return this.solve$3$bailout(6, time_step, gravity, allowSleep, i, t1, b, t5);
         t4 = t1 * t4;
         t1 = gravity.y;
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(7, time_step, gravity, allowSleep, t4, i, b, t5, t1);
+          return this.solve$3$bailout(7, time_step, gravity, allowSleep, i, t4, b, t5, t1);
         velocityDelta = $.vec2$(t5, (t4 + t1) * t7);
         t7 = b.get$linearVelocity();
         t7.add$1(t7, velocityDelta);
         t7 = b.get$angularVelocity();
         if (typeof t7 !== "number")
-          return this.solve$3$bailout(8, time_step, gravity, allowSleep, 0, i, b, 0, t7);
+          return this.solve$3$bailout(8, time_step, gravity, allowSleep, i, 0, b, 0, t7);
         b.set$angularVelocity(t7 + time_step.dt * b.get$invInertia() * b.get$_torque());
         t7 = time_step.dt;
         t4 = b.get$linearDamping();
@@ -5945,7 +8246,8 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
           a1 = 0;
         else
           a1 = t1 ? a : 1;
-        b.get$linearVelocity().scale$1(a1);
+        t1 = b.get$linearVelocity();
+        t1.scale$1(t1, a1);
         t1 = time_step.dt;
         t2 = b.get$angularDamping();
         if (typeof t2 !== "number")
@@ -5954,7 +8256,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
         b1 = a2 < 1 ? a2 : 1;
         t1 = b.get$angularVelocity();
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(9, time_step, gravity, allowSleep, t1, i, b, 0, 0, b1);
+          return this.solve$3$bailout(9, time_step, gravity, allowSleep, i, t1, b, 0, 0, b1);
         b.set$angularVelocity(t1 * (0 > b1 ? 0 : b1));
       }
       ++i;
@@ -5964,11 +8266,11 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     while (true) {
       t1 = this.contactCount;
       if (typeof t1 !== "number")
-        return this.solve$3$bailout(10, time_step, 0, allowSleep, t1, 0, 0, 0, 0, 0, i1, i2);
+        return this.solve$3$bailout(10, time_step, 0, allowSleep, 0, t1, 0, 0, 0, 0, i1, i2);
       t3 = i2 < t1;
       t4 = this.contacts;
-      if (typeof t4 !== "object" || t4 === null || (t4.constructor !== Array || !!t4.immutable$list) && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior)
-        return this.solve$3$bailout(11, time_step, 0, allowSleep, t3, 0, 0, t4, 0, 0, i1, i2);
+      if (typeof t4 !== "object" || t4 === null || (t4.constructor !== Array || !!t4.immutable$list) && !$.getInterceptor(t4).$isJavaScriptIndexingBehavior())
+        return this.solve$3$bailout(11, time_step, 0, allowSleep, 0, t3, 0, t4, 0, 0, i1, i2);
       if (!t3)
         break;
       if (i2 >= t4.length)
@@ -5977,23 +8279,23 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       if (i2 >= t4.length)
         throw $.ioore(i2);
       fixtureB = t4[i2].get$fixtureB();
-      bodyA = fixtureA.get$body();
-      bodyB = fixtureB.get$body();
-      t1 = bodyA.get$type();
+      bodyA = $.get$body$x(fixtureA);
+      bodyB = $.get$body$x(fixtureB);
+      t1 = $.get$type$x(bodyA);
       if (typeof t1 !== "number")
-        return this.solve$3$bailout(13, time_step, 0, allowSleep, t1, 0, 0, 0, 0, 0, i1, i2, 0, bodyB);
+        return this.solve$3$bailout(13, time_step, 0, allowSleep, 0, t1, 0, 0, 0, 0, i1, i2, 0, bodyB);
       if (t1 !== 0) {
-        t1 = bodyB.get$type();
+        t1 = $.get$type$x(bodyB);
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(14, time_step, 0, allowSleep, t1, 0, 0, 0, 0, 0, i1, i2);
+          return this.solve$3$bailout(14, time_step, 0, allowSleep, 0, t1, 0, 0, 0, 0, i1, i2);
         nonStatic = t1 !== 0;
       } else
         nonStatic = false;
       if (nonStatic) {
         ++i1;
         t1 = this.contacts;
-        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-          return this.solve$3$bailout(15, time_step, 0, allowSleep, t1, 0, 0, 0, 0, 0, i1, i2);
+        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+          return this.solve$3$bailout(15, time_step, 0, allowSleep, 0, t1, 0, 0, 0, 0, i1, i2);
         if (i1 >= t1.length)
           throw $.ioore(i1);
         temp = t1[i1];
@@ -6017,12 +8319,12 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     while (true) {
       t1 = this.jointCount;
       if (typeof t1 !== "number")
-        return this.solve$3$bailout(18, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1);
+        return this.solve$3$bailout(18, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1);
       if (!(i < t1))
         break;
       t1 = this.joints;
-      if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-        return this.solve$3$bailout(19, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1);
+      if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+        return this.solve$3$bailout(19, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1);
       if (i >= t1.length)
         throw $.ioore(i);
       t1[i].initVelocityConstraints$1(time_step);
@@ -6033,12 +8335,12 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       while (true) {
         t1 = this.jointCount;
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(20, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j);
+          return this.solve$3$bailout(20, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j);
         if (!(j < t1))
           break;
         t1 = this.joints;
-        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-          return this.solve$3$bailout(21, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j);
+        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+          return this.solve$3$bailout(21, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j);
         if (j >= t1.length)
           throw $.ioore(j);
         t1[j].solveVelocityConstraints$1(time_step);
@@ -6053,25 +8355,27 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     while (true) {
       t3 = this.bodyCount;
       if (typeof t3 !== "number")
-        return this.solve$3$bailout(22, time_step, 0, allowSleep, t2, i, 0, t3, 0, 0, 0, 0, 0, 0, temp, t1);
+        return this.solve$3$bailout(22, time_step, 0, allowSleep, i, t2, 0, t3, 0, 0, 0, 0, 0, 0, temp, t1);
       if (!(i < t3))
         break;
       c$0: {
         t3 = this.bodies;
-        if (typeof t3 !== "object" || t3 === null || (t3.constructor !== Array || !!t3.immutable$list) && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior)
-          return this.solve$3$bailout(23, time_step, 0, allowSleep, t2, i, 0, t3, 0, 0, 0, 0, 0, 0, temp, t1);
+        if (typeof t3 !== "object" || t3 === null || (t3.constructor !== Array || !!t3.immutable$list) && !$.getInterceptor(t3).$isJavaScriptIndexingBehavior())
+          return this.solve$3$bailout(23, time_step, 0, allowSleep, i, t2, 0, t3, 0, 0, 0, 0, 0, 0, temp, t1);
         if (i >= t3.length)
           throw $.ioore(i);
         b = t3[i];
-        t3 = b.get$type();
+        t3 = $.get$type$x(b);
         if (typeof t3 !== "number")
-          return this.solve$3$bailout(24, time_step, 0, allowSleep, t2, i, b, t3, 0, 0, 0, 0, 0, 0, temp, t1);
+          return this.solve$3$bailout(24, time_step, 0, allowSleep, i, t2, b, t3, 0, 0, 0, 0, 0, 0, temp, t1);
         if (t3 === 0)
           break c$0;
-        t1.copyFrom$1(b.get$linearVelocity()).scale$1(time_step.dt);
+        t3 = t1.copyFrom$1(b.get$linearVelocity());
+        t3.scale$1(t3, time_step.dt);
         if (t1.dot$1(t1) > 4) {
           t3 = t1.get$length(t1);
-          b.get$linearVelocity().scale$1(2 / t3);
+          t4 = b.get$linearVelocity();
+          t4.scale$1(t4, 2 / t3);
         }
         t3 = time_step.dt;
         t4 = b.get$angularVelocity();
@@ -6082,20 +8386,21 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
           ratio = 1.5707963267948966 / $.JSNumber_methods.abs$0(rotation);
           t3 = b.get$angularVelocity();
           if (typeof t3 !== "number")
-            return this.solve$3$bailout(25, time_step, 0, allowSleep, t2, i, b, t3, 0, 0, 0, 0, 0, 0, temp, t1, 0, ratio);
+            return this.solve$3$bailout(25, time_step, 0, allowSleep, i, t2, b, t3, 0, 0, 0, 0, 0, 0, temp, t1, 0, ratio);
           b.set$angularVelocity(t3 * ratio);
         }
         t3 = b.get$sweep();
         t3.centerZero.copyFrom$1(t3.center);
         t3 = b.get$sweep();
         t3.angleZero = t3.angle;
-        temp.copyFrom$1(b.get$linearVelocity()).scale$1(time_step.dt);
+        t3 = temp.copyFrom$1(b.get$linearVelocity());
+        t3.scale$1(t3, time_step.dt);
         t3 = b.get$sweep().center;
         t3.add$1(t3, temp);
         t3 = b.get$sweep();
         t4 = t3.angle;
         if (typeof t4 !== "number")
-          return this.solve$3$bailout(26, time_step, 0, allowSleep, t2, i, b, t3, 0, 0, 0, 0, 0, 0, temp, t1, 0, 0, t4);
+          return this.solve$3$bailout(26, time_step, 0, allowSleep, i, t2, b, t3, 0, 0, 0, 0, 0, 0, temp, t1, 0, 0, t4);
         t6 = time_step.dt;
         t7 = b.get$angularVelocity();
         if (typeof t7 !== "number")
@@ -6112,12 +8417,12 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       while (true) {
         t1 = this.jointCount;
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(27, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j, 0, 0, jointsOkay, contactsOkay);
+          return this.solve$3$bailout(27, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j, 0, 0, jointsOkay, contactsOkay);
         if (!(j < t1))
           break;
         t1 = this.joints;
-        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-          return this.solve$3$bailout(28, time_step, 0, allowSleep, t2, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j, 0, 0, jointsOkay, contactsOkay);
+        if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+          return this.solve$3$bailout(28, time_step, 0, allowSleep, i, t2, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, j, 0, 0, jointsOkay, contactsOkay);
         if (j >= t1.length)
           throw $.ioore(j);
         jointOkay = t1[j].solvePositionConstraints$1(0.2);
@@ -6134,38 +8439,38 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       while (true) {
         t1 = this.bodyCount;
         if (typeof t1 !== "number")
-          return this.solve$3$bailout(29, time_step, 0, 0, t1, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+          return this.solve$3$bailout(29, time_step, 0, 0, i, t1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
         if (!(i < t1))
           break;
         c$0: {
           t1 = this.bodies;
-          if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-            return this.solve$3$bailout(30, time_step, 0, 0, t1, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+          if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+            return this.solve$3$bailout(30, time_step, 0, 0, i, t1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
           if (i >= t1.length)
             throw $.ioore(i);
           b = t1[i];
-          t1 = b.get$type();
+          t1 = $.get$type$x(b);
           if (typeof t1 !== "number")
-            return this.solve$3$bailout(31, time_step, 0, 0, t1, i, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+            return this.solve$3$bailout(31, time_step, 0, 0, i, t1, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
           if (t1 === 0)
             break c$0;
           t1 = b.get$flags();
           if (t1 !== (t1 | 0))
-            return this.solve$3$bailout(32, time_step, 0, 0, t1, i, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+            return this.solve$3$bailout(32, time_step, 0, 0, i, t1, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
           if ((t1 & 4) === 0) {
             b.set$sleepTime(0);
             minSleepTime = 0;
           }
           t1 = b.get$flags();
           if (t1 !== (t1 | 0))
-            return this.solve$3$bailout(33, time_step, 0, 0, t1, i, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+            return this.solve$3$bailout(33, time_step, 0, 0, i, t1, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
           if ((t1 & 4) !== 0) {
             t1 = b.get$angularVelocity();
             if (typeof t1 !== "number")
-              return this.solve$3$bailout(34, time_step, 0, 0, t1, i, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+              return this.solve$3$bailout(34, time_step, 0, 0, i, t1, b, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
             t3 = b.get$angularVelocity();
             if (typeof t3 !== "number")
-              return this.solve$3$bailout(35, time_step, 0, 0, t1, i, b, t3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+              return this.solve$3$bailout(35, time_step, 0, 0, i, t1, b, t3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
             t1 = t1 * t3 > 0.0012184696791468343 || b.get$linearVelocity().dot$1(b.get$linearVelocity()) > 0.0001;
           } else
             t1 = true;
@@ -6176,7 +8481,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
             b.set$sleepTime(b.get$sleepTime() + time_step.dt);
             minSleepTime = $.min(minSleepTime, b.get$sleepTime());
             if (minSleepTime !== (minSleepTime | 0))
-              return this.solve$3$bailout(36, time_step, 0, 0, 0, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
+              return this.solve$3$bailout(36, time_step, 0, 0, i, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, minSleepTime);
           }
         }
         ++i;
@@ -6186,12 +8491,12 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
         while (true) {
           t1 = this.bodyCount;
           if (typeof t1 !== "number")
-            return this.solve$3$bailout(37, 0, 0, 0, t1, i);
+            return this.solve$3$bailout(37, 0, 0, 0, i, t1);
           if (!(i < t1))
             break;
           t1 = this.bodies;
-          if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
-            return this.solve$3$bailout(38, 0, 0, 0, t1, i);
+          if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
+            return this.solve$3$bailout(38, 0, 0, 0, i, t1);
           if (i >= t1.length)
             throw $.ioore(i);
           t1[i].set$awake(false);
@@ -6200,7 +8505,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       }
     }
   },
-  solve$3$bailout: function(state0, time_step, gravity, allowSleep, t1, i, b, t3, t6, b1, i1, i2, fixtureA, bodyB, temp, t2, j, ratio, t4, jointsOkay, contactsOkay, minSleepTime) {
+  solve$3$bailout: function(state0, time_step, gravity, allowSleep, i, t1, b, t3, t6, b1, i1, i2, fixtureA, bodyB, temp, t2, j, ratio, t4, jointsOkay, contactsOkay, minSleepTime) {
     switch (state0) {
       case 0:
         i = 0;
@@ -6221,8 +8526,8 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                       t1 = this.bodies;
                     case 2:
                       state0 = 0;
-                      b = $.$index$as(t1, i);
-                      t1 = b.get$type();
+                      b = $.$index$asx(t1, i);
+                      t1 = $.get$type$x(b);
                     case 3:
                       state0 = 0;
                       if ($.$eq(t1, 2) !== true)
@@ -6259,7 +8564,8 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                         a1 = 0;
                       else
                         a1 = t1 ? a : 1;
-                      b.get$linearVelocity().scale$1(a1);
+                      t1 = b.get$linearVelocity();
+                      t1.scale$1(t1, a1);
                       t1 = time_step.dt;
                       t2 = b.get$angularDamping();
                       if (typeof t2 !== "number")
@@ -6297,21 +8603,21 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                 state0 = 0;
                 if (!t1)
                   break L1;
-                fixtureA = $.$index$as(t3, i2).get$fixtureA();
+                fixtureA = $.$index$asx(t3, i2).get$fixtureA();
                 t1 = this.contacts;
               case 12:
                 state0 = 0;
-                fixtureB = $.$index$as(t1, i2).get$fixtureB();
-                bodyA = fixtureA.get$body();
-                bodyB = fixtureB.get$body();
-                t1 = bodyA.get$type();
+                fixtureB = $.$index$asx(t1, i2).get$fixtureB();
+                bodyA = $.get$body$x(fixtureA);
+                bodyB = $.get$body$x(fixtureB);
+                t1 = $.get$type$x(bodyA);
               case 13:
                 state0 = 0;
               case 14:
                 if (state0 === 14 || state0 === 0 && $.$eq(t1, 0) !== true)
                   switch (state0) {
                     case 0:
-                      t1 = bodyB.get$type();
+                      t1 = $.get$type$x(bodyB);
                     case 14:
                       state0 = 0;
                       nonStatic = $.$eq(t1, 0) !== true;
@@ -6326,15 +8632,15 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                       t1 = this.contacts;
                     case 15:
                       state0 = 0;
-                      temp = $.$index$as(t1, i1);
+                      temp = $.$index$asx(t1, i1);
                       t1 = this.contacts;
                     case 16:
                       state0 = 0;
-                      $.$indexSet$a(t1, i1, $.$index$as(t1, i2));
+                      $.$indexSet$ax(t1, i1, $.$index$asx(t1, i2));
                       t1 = this.contacts;
                     case 17:
                       state0 = 0;
-                      $.$indexSet$a(t1, i2, temp);
+                      $.$indexSet$ax(t1, i2, temp);
                   }
                 ++i2;
             }
@@ -6356,7 +8662,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                 t2 = this.joints;
               case 19:
                 state0 = 0;
-                $.$index$as(t2, i).initVelocityConstraints$1(time_step);
+                $.$index$asx(t2, i).initVelocityConstraints$1(time_step);
                 ++i;
             }
         i = 0;
@@ -6382,7 +8688,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                         t2 = this.joints;
                       case 21:
                         state0 = 0;
-                        $.$index$as(t2, j).solveVelocityConstraints$1(time_step);
+                        $.$index$asx(t2, j).solveVelocityConstraints$1(time_step);
                         ++j;
                     }
                 t1.solveVelocityConstraints$0();
@@ -6413,16 +8719,18 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                       t3 = this.bodies;
                     case 23:
                       state0 = 0;
-                      b = $.$index$as(t3, i);
-                      t3 = b.get$type();
+                      b = $.$index$asx(t3, i);
+                      t3 = $.get$type$x(b);
                     case 24:
                       state0 = 0;
                       if ($.$eq(t3, 0) === true)
                         break c$0;
-                      t2.copyFrom$1(b.get$linearVelocity()).scale$1(time_step.dt);
+                      t3 = t2.copyFrom$1(b.get$linearVelocity());
+                      t3.scale$1(t3, time_step.dt);
                       if (t2.dot$1(t2) > 4) {
                         t3 = t2.get$length(t2);
-                        b.get$linearVelocity().scale$1(2 / t3);
+                        t4 = b.get$linearVelocity();
+                        t4.scale$1(t4, 2 / t3);
                       }
                       t3 = time_step.dt;
                       t4 = b.get$angularVelocity();
@@ -6443,7 +8751,8 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                       t3.centerZero.copyFrom$1(t3.center);
                       t3 = b.get$sweep();
                       t3.angleZero = t3.angle;
-                      temp.copyFrom$1(b.get$linearVelocity()).scale$1(time_step.dt);
+                      t3 = temp.copyFrom$1(b.get$linearVelocity());
+                      t3.scale$1(t3, time_step.dt);
                       t3 = b.get$sweep().center;
                       t3.add$1(t3, temp);
                       t3 = b.get$sweep();
@@ -6485,7 +8794,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                         t2 = this.joints;
                       case 28:
                         state0 = 0;
-                        jointOkay = $.$index$as(t2, j).solvePositionConstraints$1(0.2);
+                        jointOkay = $.$index$asx(t2, j).solvePositionConstraints$1(0.2);
                         jointsOkay = jointsOkay && jointOkay;
                         ++j;
                     }
@@ -6527,8 +8836,8 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                             t1 = this.bodies;
                           case 30:
                             state0 = 0;
-                            b = $.$index$as(t1, i);
-                            t1 = b.get$type();
+                            b = $.$index$asx(t1, i);
+                            t1 = $.get$type$x(b);
                           case 31:
                             state0 = 0;
                             if ($.$eq(t1, 0) === true)
@@ -6592,7 +8901,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
                             t1 = this.bodies;
                           case 38:
                             state0 = 0;
-                            $.$index$as(t1, i).set$awake(false);
+                            $.$index$asx(t1, i).set$awake(false);
                             ++i;
                         }
                 }
@@ -6603,7 +8912,7 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
     var t1, t3;
     body.set$islandIndex(this.bodyCount);
     t1 = this.bodies;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.addBody$1$bailout(1, body, t1);
     t3 = this.bodyCount;
     if (typeof t3 !== "number")
@@ -6626,13 +8935,13 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       case 2:
         state0 = 0;
         this.bodyCount = $.$add$ns(t3, 1);
-        $.$indexSet$a(t1, t3, body);
+        $.$indexSet$ax(t1, t3, body);
     }
   },
   addContact$1: function(contact) {
     var t1, t3;
     t1 = this.contacts;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.addContact$1$bailout(1, contact, t1);
     t3 = this.contactCount;
     if (typeof t3 !== "number")
@@ -6654,13 +8963,13 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       case 2:
         state0 = 0;
         this.contactCount = $.$add$ns(t3, 1);
-        $.$indexSet$a(t1, t3, contact);
+        $.$indexSet$ax(t1, t3, contact);
     }
   },
   addJoint$1: function(joint) {
     var t1, t3;
     t1 = this.joints;
-    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior)
+    if (typeof t1 !== "object" || t1 === null || (t1.constructor !== Array || !!t1.immutable$list) && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior())
       return this.addJoint$1$bailout(1, joint, t1);
     t3 = this.jointCount;
     if (typeof t3 !== "number")
@@ -6682,56 +8991,56 @@ $$.Island = {"": "Object;listener,bodies,contacts,joints,positions,velocities,bo
       case 2:
         state0 = 0;
         this.jointCount = $.$add$ns(t3, 1);
-        $.$indexSet$a(t1, t3, joint);
+        $.$indexSet$ax(t1, t3, joint);
     }
   },
   report$1: function(constraints) {
-    var t1, t2, t3, t4, t5, i, c, cc, j, t6;
-    if (typeof constraints !== "string" && (typeof constraints !== "object" || constraints === null || constraints.constructor !== Array && !$.getInterceptor(constraints).$isJavaScriptIndexingBehavior))
+    var t1, t2, t3, t4, t5, i, c, cc, t6, j, t7;
+    if (typeof constraints !== "string" && (typeof constraints !== "object" || constraints === null || constraints.constructor !== Array && !$.getInterceptor(constraints).$isJavaScriptIndexingBehavior()))
       return this.report$1$bailout(1, constraints);
     if (this.listener == null)
       return;
     for (t1 = this.impulse, t2 = t1.normalImpulses, t3 = t2.length, t4 = t1.tangentImpulses, t5 = t4.length, i = 0; $.JSNumber_methods.$lt(i, this.contactCount); ++i) {
-      c = $.$index$as(this.contacts, i);
+      c = $.$index$asx(this.contacts, i);
       if (i >= constraints.length)
         throw $.ioore(i);
       cc = constraints[i];
-      for (j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
-        t6 = $.$index$as(cc.get$points(), j).get$normalImpulse();
-        if (j >= t3)
-          throw $.ioore(j);
-        t2[j] = t6;
-        t6 = $.$index$as(cc.get$points(), j).get$tangentImpulse();
-        if (j >= t5)
-          throw $.ioore(j);
-        t4[j] = t6;
-      }
-      this.listener.postSolve$2(c, t1);
-    }
-  },
-  report$1$bailout: function(state0, constraints) {
-    var t1, t2, t3, t4, t5, t6, i, c, cc, j, t7;
-    if (this.listener == null)
-      return;
-    for (t1 = this.impulse, t2 = t1.normalImpulses, t3 = t2.length, t4 = t1.tangentImpulses, t5 = t4.length, t6 = $.getInterceptor$as(constraints), i = 0; $.JSNumber_methods.$lt(i, this.contactCount); ++i) {
-      c = $.$index$as(this.contacts, i);
-      cc = t6.$index(constraints, i);
-      for (j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
-        t7 = $.$index$as(cc.get$points(), j).get$normalImpulse();
+      for (t6 = $.getInterceptor$x(cc), j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
+        t7 = $.$index$asx(t6.get$points(cc), j).get$normalImpulse();
         if (j >= t3)
           throw $.ioore(j);
         t2[j] = t7;
-        t7 = $.$index$as(cc.get$points(), j).get$tangentImpulse();
+        t7 = $.$index$asx(t6.get$points(cc), j).get$tangentImpulse();
         if (j >= t5)
           throw $.ioore(j);
         t4[j] = t7;
       }
       this.listener.postSolve$2(c, t1);
     }
+  },
+  report$1$bailout: function(state0, constraints) {
+    var t1, t2, t3, t4, t5, t6, i, c, cc, t7, j, t8;
+    if (this.listener == null)
+      return;
+    for (t1 = this.impulse, t2 = t1.normalImpulses, t3 = t2.length, t4 = t1.tangentImpulses, t5 = t4.length, t6 = $.getInterceptor$asx(constraints), i = 0; $.JSNumber_methods.$lt(i, this.contactCount); ++i) {
+      c = $.$index$asx(this.contacts, i);
+      cc = t6.$index(constraints, i);
+      for (t7 = $.getInterceptor$x(cc), j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
+        t8 = $.$index$asx(t7.get$points(cc), j).get$normalImpulse();
+        if (j >= t3)
+          throw $.ioore(j);
+        t2[j] = t8;
+        t8 = $.$index$asx(t7.get$points(cc), j).get$tangentImpulse();
+        if (j >= t5)
+          throw $.ioore(j);
+        t4[j] = t8;
+      }
+      this.listener.postSolve$2(c, t1);
+    }
   }
 };
 
-$$.Position = {"": "Object;x@,a@"};
+$$.Position = {"": "Object;x*,a@"};
 
 $$.Velocity = {"": "Object;v<,a@"};
 
@@ -6747,14 +9056,14 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
     t2 = t1.length;
     if (type1 < 0 || type1 >= t2)
       throw $.ioore(type1);
-    $.$indexSet$a(t1[type1], type2, register);
+    $.$indexSet$ax(t1[type1], type2, register);
     if (type1 !== type2) {
       register2 = $.ContactRegister$();
       register2.creator = creatorStack;
       register2.primary = false;
       if (type2 < 0 || type2 >= t2)
         throw $.ioore(type2);
-      $.$indexSet$a(t1[type2], type1, register2);
+      $.$indexSet$ax(t1[type2], type1, register2);
     }
   },
   _initializeRegisters$0: function() {
@@ -6765,14 +9074,14 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
   },
   popContact$2: function(fixtureA, fixtureB) {
     var type1, type2, t1, reg, creator, c;
-    type1 = fixtureA.get$type();
-    type2 = fixtureB.get$type();
+    type1 = $.get$type$x(fixtureA);
+    type2 = $.get$type$x(fixtureB);
     t1 = this._contactStacks;
     if (type1 !== (type1 | 0))
       throw $.iae(type1);
     if (type1 < 0 || type1 >= t1.length)
       throw $.ioore(type1);
-    reg = $.$index$as(t1[type1], type2);
+    reg = $.$index$asx(t1[type1], type2);
     creator = reg.get$creator();
     if (creator != null) {
       if (creator.get$isEmpty(creator))
@@ -6805,17 +9114,20 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
   pushContact$1: function(contact) {
     var type1, type2, t1;
     if ($.$gt$n(contact.get$manifold().get$pointCount(), 0)) {
-      contact.get$fixtureA().get$body().set$awake(true);
-      contact.get$fixtureB().get$body().set$awake(true);
+      $.get$body$x(contact.get$fixtureA()).set$awake(true);
+      $.get$body$x(contact.get$fixtureB()).set$awake(true);
     }
-    type1 = contact.get$fixtureA().get$type();
-    type2 = contact.get$fixtureB().get$type();
+    type1 = $.get$type$x(contact.get$fixtureA());
+    type2 = $.get$type$x(contact.get$fixtureB());
     t1 = this._contactStacks;
     if (type1 !== (type1 | 0))
       throw $.iae(type1);
     if (type1 < 0 || type1 >= t1.length)
       throw $.ioore(type1);
-    $.$index$as(t1[type1], type2).get$creator().addFirst$1(contact);
+    $.$index$asx(t1[type1], type2).get$creator().addFirst$1(contact);
+  },
+  set$debugDraw: function(debugDraw) {
+    this._debugDraw = debugDraw;
   },
   createBody$1: function(def) {
     var b, t1;
@@ -6831,7 +9143,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
     this._bodyCount = this._bodyCount + 1;
     return b;
   },
-  step$3: function(dt, velocityIterations, positionIterations) {
+  step$3: function(_, dt, velocityIterations, positionIterations) {
     var t1;
     if ((this._flags & 1) === 1) {
       this._contactManager.findNewContacts$0();
@@ -6865,6 +9177,93 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
       body.set$_torque(0);
     }
   },
+  drawDebugData$0: function() {
+    var t1, drawFlags, xf, color, b, f, j, c, t2, aabb, vs, t3;
+    t1 = this._debugDraw;
+    if (t1 == null)
+      return;
+    drawFlags = t1.flags;
+    if ((drawFlags & 1) === 1) {
+      xf = $.Transform$();
+      color = $.Color3$();
+      for (b = this._bodyList; t1 = $.getInterceptor(b), b != null; b = b.get$next()) {
+        xf.setFrom$1(b.get$originTransform());
+        for (f = b.get$fixtureList(); f != null; f = f.get$next())
+          if (!b.get$active()) {
+            color.setFromRGBF$3(0.5, 0.5, 0.3);
+            this.drawShape$3(f, xf, color);
+          } else if ($.$eq(t1.get$type(b), 0) === true) {
+            color.setFromRGBF$3(0.5, 0.9, 0.3);
+            this.drawShape$3(f, xf, color);
+          } else if ($.$eq(t1.get$type(b), 1) === true) {
+            color.setFromRGBF$3(0.5, 0.5, 0.9);
+            this.drawShape$3(f, xf, color);
+          } else if (!b.get$awake()) {
+            color.setFromRGBF$3(0.9, 0.9, 0.9);
+            this.drawShape$3(f, xf, color);
+          } else {
+            color.setFromRGBF$3(0.9, 0.7, 0.7);
+            this.drawShape$3(f, xf, color);
+          }
+      }
+    }
+    if ((drawFlags & 2) === 2)
+      for (j = this._jointList; j != null; j = j.get$_next())
+        this.drawJoint$1(j);
+    if ((drawFlags & 8) === 8) {
+      color = $.Color3$fromRGBF(0.3, 0.9, 0.9);
+      for (c = this._contactManager.contactList, t1 = this.cA, t2 = this.cB; c != null; c = c.get$next()) {
+        t1.copyFrom$1(c.get$fixtureA().get$box().get$center());
+        t2.copyFrom$1(c.get$fixtureB().get$box().get$center());
+        this._debugDraw.drawSegment$3(t1, t2, color);
+      }
+    }
+    if ((drawFlags & 4) === 4) {
+      color = $.Color3$fromRGBF(0.9, 0.3, 0.9);
+      for (b = this._bodyList, t1 = 0 !== (drawFlags & 64); b != null; b = b.get$next()) {
+        if (!b.get$active())
+          continue;
+        for (f = b.get$fixtureList(); f != null; f = f.get$next()) {
+          aabb = f.get$proxy().get$box();
+          vs = $.List_List(4, $.vec2);
+          $.setRuntimeTypeInfo(vs, [$.vec2]);
+          t2 = aabb.lowerBound;
+          t2 = $.vec2$(t2.x, t2.y);
+          t3 = vs.length;
+          if (0 >= t3)
+            throw $.ioore(0);
+          vs[0] = t2;
+          t2 = $.vec2$(aabb.upperBound.x, aabb.lowerBound.y);
+          if (1 >= t3)
+            throw $.ioore(1);
+          vs[1] = t2;
+          t2 = aabb.upperBound;
+          t2 = $.vec2$(t2.x, t2.y);
+          if (2 >= t3)
+            throw $.ioore(2);
+          vs[2] = t2;
+          t2 = $.vec2$(aabb.lowerBound.x, aabb.upperBound.y);
+          if (3 >= t3)
+            throw $.ioore(3);
+          vs[3] = t2;
+          t2 = this._debugDraw;
+          if (t1)
+            t2.drawPolygon$3(vs, 4, color);
+          else
+            t2.drawSolidPolygon$3(vs, 4, color);
+        }
+      }
+    }
+    if ((drawFlags & 16) === 16) {
+      xf = $.Transform$();
+      color = $.Color3$fromRGB(1, 0, 0);
+      for (b = this._bodyList, t1 = xf.position; b != null; b = b.get$next()) {
+        xf.setFrom$1(b.get$originTransform());
+        t1.copyFrom$1(b.get$worldCenter());
+        this._debugDraw.drawTransform$2(xf, color);
+      }
+    }
+  },
   get$contactList: function() {
     return this._contactManager.contactList;
   },
@@ -6875,7 +9274,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
     return this._jointList;
   },
   solve$1: function(timeStep) {
-    var t1, t2, t3, b, c, j, stackSize, seed, t4, stackCount, ce, contact, sensorA, sensorB, other, t5, stackCount0, je, i;
+    var t1, t2, t3, b, c, j, stackSize, seed, t4, stackCount, ce, contact, sensorA, sensorB, other, stackCount0, je, i;
     t1 = this.island;
     t2 = this._bodyCount;
     t3 = this._contactManager;
@@ -6884,7 +9283,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
       b.set$flags($.$and$n(b.get$flags(), 4294967294));
     for (c = this._contactManager.contactList; c != null; c = c.get$next())
       c.set$flags($.$and$n(c.get$flags(), 4294967294));
-    for (j = this.get$jointList(); j != null; j = j.get$_liblib1$_next())
+    for (j = this.get$jointList(); j != null; j = j.get$_next())
       j.set$islandFlag(false);
     stackSize = this._bodyCount;
     if (this.stack.length < stackSize) {
@@ -6897,7 +9296,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         continue;
       if (!seed.get$awake() || !seed.get$active())
         continue;
-      if ($.$eq(seed.get$type(), 0) === true)
+      if ($.$eq($.get$type$x(seed), 0) === true)
         continue;
       t1.clear$0(t1);
       t4 = this.stack;
@@ -6913,7 +9312,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         b = t4[stackCount];
         t1.addBody$1(b);
         b.set$awake(true);
-        if ($.$eq(b.get$type(), 0) === true)
+        if ($.$eq($.get$type$x(b), 0) === true)
           continue;
         for (ce = b.get$contactList(); ce != null; ce = ce.get$next()) {
           contact = ce.get$contact();
@@ -6928,15 +9327,14 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
           t1.addContact$1(contact);
           contact.set$flags($.$or$n(contact.get$flags(), 1));
           other = ce.get$other();
-          t4 = other.flags;
-          if ((t4 & 1) === 1)
+          if ($.$and$n(other.get$flags(), 1) === 1)
             continue;
-          t5 = this.stack;
+          t4 = this.stack;
           stackCount0 = stackCount + 1;
-          if (stackCount >= t5.length)
+          if (stackCount >= t4.length)
             throw $.ioore(stackCount);
-          t5[stackCount] = other;
-          other.flags = (t4 | 1) >>> 0;
+          t4[stackCount] = other;
+          other.set$flags($.$or$n(other.get$flags(), 1));
           stackCount = stackCount0;
         }
         for (je = b.get$jointList(); je != null; je = je.get$next()) {
@@ -6947,29 +9345,28 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
             continue;
           t1.addJoint$1(je.get$joint());
           je.get$joint().set$islandFlag(true);
-          t4 = other.flags;
-          if ((t4 & 1) === 1)
+          if ($.$and$n(other.get$flags(), 1) === 1)
             continue;
-          t5 = this.stack;
+          t4 = this.stack;
           stackCount0 = stackCount + 1;
-          if (stackCount >= t5.length)
+          if (stackCount >= t4.length)
             throw $.ioore(stackCount);
-          t5[stackCount] = other;
-          other.flags = (t4 | 1) >>> 0;
+          t4[stackCount] = other;
+          other.set$flags($.$or$n(other.get$flags(), 1));
           stackCount = stackCount0;
         }
       }
       t1.solve$3(timeStep, t2, t3);
       for (i = 0; $.JSNumber_methods.$lt(i, t1.bodyCount); ++i) {
-        b = $.$index$as(t1.bodies, i);
-        if ($.$eq(b.get$type(), 0) === true)
+        b = $.$index$asx(t1.bodies, i);
+        if ($.$eq($.get$type$x(b), 0) === true)
           b.set$flags($.$and$n(b.get$flags(), 4294967294));
       }
     }
     for (b = this._bodyList; b != null; b = b.get$next()) {
       if ($.$and$n(b.get$flags(), 1) === 0)
         continue;
-      if ($.$eq(b.get$type(), 0) === true)
+      if ($.$eq($.get$type$x(b), 0) === true)
         continue;
       b.synchronizeFixtures$0();
     }
@@ -6981,8 +9378,8 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
       c.set$flags($.$or$n(c.get$flags(), 4));
       c.set$toiCount(0);
     }
-    for (body = this._bodyList; body != null; body = body.get$next()) {
-      t1 = $.$and$n(body.get$flags(), 1) === 0 || $.$eq(body.get$type(), 1) === true || $.$eq(body.get$type(), 0) === true;
+    for (body = this._bodyList; t1 = $.getInterceptor(body), body != null; body = body.get$next()) {
+      t1 = $.$and$n(body.get$flags(), 1) === 0 || $.$eq(t1.get$type(body), 1) === true || $.$eq(t1.get$type(body), 0) === true;
       t2 = body.get$flags();
       if (t1)
         body.set$flags($.$or$n(t2, 64));
@@ -7003,7 +9400,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
     }
   },
   solveTimeOfImpactGivenBody$1: function(body) {
-    var bullet, t1, t2, t3, t4, t5, t6, t7, toiContact, toi, toiOther, iter, ce, found, count, other, type, t8, contact, fixtureA, fixtureB, bodyA, bodyB, i;
+    var bullet, t1, t2, t3, t4, t5, t6, t7, toiContact, toi, toiOther, iter, ce, found, count, other, type, t8, contact, fixtureA, fixtureB, bodyA, t9, bodyB, i;
     bullet = body.get$bullet();
     t1 = this.toiOutput;
     t2 = this.toiInput;
@@ -7021,16 +9418,19 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         if ($.$eq(ce.get$contact(), toiContact) === true)
           continue;
         other = ce.get$other();
-        type = other.get$type();
+        type = $.get$type$x(other);
         if (typeof type !== "number")
-          return this.solveTimeOfImpactGivenBody$1$bailout(1, body, t7, bullet, other, t1, type, iter, toiContact, toi, toiOther, found, count, t3, t4, ce, t5, t2, t6);
+          return this.solveTimeOfImpactGivenBody$1$bailout(1, t2, t3, type, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce);
         if (bullet) {
-          if ((other.flags & 64) === 0)
+          t8 = other.get$flags();
+          if (t8 !== (t8 | 0))
+            return this.solveTimeOfImpactGivenBody$1$bailout(2, t2, t3, type, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce, t8);
+          if ((t8 & 64) === 0)
             continue;
           if (type !== 0) {
             t8 = ce.get$contact().get$flags();
             if (t8 !== (t8 | 0))
-              return this.solveTimeOfImpactGivenBody$1$bailout(2, body, t7, bullet, other, t1, 0, iter, toiContact, toi, toiOther, found, count, t3, t4, ce, t5, t2, t6, t8);
+              return this.solveTimeOfImpactGivenBody$1$bailout(3, t2, t3, 0, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce, t8);
             t8 = (t8 & 16) !== 0;
           } else
             t8 = false;
@@ -7042,7 +9442,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         if (contact.get$enabled()) {
           t8 = contact.get$toiCount();
           if (typeof t8 !== "number")
-            return this.solveTimeOfImpactGivenBody$1$bailout(3, body, t7, bullet, other, t1, 0, iter, toiContact, toi, toiOther, found, count, t3, t4, ce, t5, t2, t6, t8, contact);
+            return this.solveTimeOfImpactGivenBody$1$bailout(4, t2, t3, 0, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce, t8, contact);
           t8 = t8 > 10;
         } else
           t8 = true;
@@ -7052,25 +9452,27 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         fixtureB = contact.get$fixtureB();
         if (fixtureA.get$isSensor() === true || fixtureB.get$isSensor() === true)
           continue;
-        bodyA = fixtureA.get$body();
-        bodyB = fixtureB.get$body();
-        t3.setFromShape$1(fixtureA.get$shape());
-        t4.setFromShape$1(fixtureB.get$shape());
-        t5.setFrom$1(bodyA.sweep);
-        t6.setFrom$1(bodyB.sweep);
+        t8 = $.getInterceptor$x(fixtureA);
+        bodyA = t8.get$body(fixtureA);
+        t9 = $.getInterceptor$x(fixtureB);
+        bodyB = t9.get$body(fixtureB);
+        t3.setFromShape$1(t8.get$shape(fixtureA));
+        t4.setFromShape$1(t9.get$shape(fixtureB));
+        t5.setFrom$1(bodyA.get$sweep());
+        t6.setFrom$1(bodyB.get$sweep());
         t2.tMax = toi;
         t7.timeOfImpact.timeOfImpact$2(t1, t2);
         if (t1.state === 3) {
           t8 = t1.t;
           if (typeof t8 !== "number")
-            return this.solveTimeOfImpactGivenBody$1$bailout(4, body, t7, bullet, other, t1, 0, iter, toiContact, toi, toiOther, found, count, t3, t4, ce, t5, t2, t6, t8, contact);
+            return this.solveTimeOfImpactGivenBody$1$bailout(5, t2, t3, 0, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce, t8, contact);
           t8 = t8 < toi;
         } else
           t8 = false;
         if (t8) {
           toi = t1.t;
           if (toi !== (toi | 0))
-            return this.solveTimeOfImpactGivenBody$1$bailout(5, body, t7, bullet, other, t1, 0, iter, 0, toi, 0, 0, count, t3, t4, ce, t5, t2, t6, 0, contact);
+            return this.solveTimeOfImpactGivenBody$1$bailout(6, t2, t3, 0, t4, t5, bullet, t6, t7, other, iter, body, t1, 0, toi, 0, 0, count, ce, 0, contact);
           toiOther = other;
           toiContact = contact;
           found = true;
@@ -7093,7 +9495,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
     }
     t1 = toiContact.get$toiCount();
     if (typeof t1 !== "number")
-      return this.solveTimeOfImpactGivenBody$1$bailout(6, body, 0, 0, 0, t1, 0, 0, toiContact, 0, toiOther);
+      return this.solveTimeOfImpactGivenBody$1$bailout(7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, body, t1, toiContact, 0, toiOther);
     toiContact.set$toiCount(t1 + 1);
     t1 = this.contacts;
     if (t1.length < 32) {
@@ -7107,9 +9509,9 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
       if (!(ce != null && count < 32))
         break;
       c$0: {
-        type = ce.get$other().get$type();
+        type = $.get$type$x(ce.get$other());
         if (typeof type !== "number")
-          return this.solveTimeOfImpactGivenBody$1$bailout(7, body, 0, 0, 0, 0, type, 0, toiContact, 0, toiOther, 0, count, 0, 0, ce);
+          return this.solveTimeOfImpactGivenBody$1$bailout(8, 0, 0, type, 0, 0, 0, 0, 0, 0, 0, body, 0, toiContact, 0, toiOther, 0, count, ce);
         if (type === 2)
           break c$0;
         contact = ce.get$contact();
@@ -7132,21 +9534,21 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
       ce = ce.get$next();
     }
     t1 = this.toiSolver;
-    t1.initialize$3(this.contacts, count, body);
+    t1.initialize$3(t1, this.contacts, count, body);
     for (i = 0; i < 20; ++i)
       if (t1.solve$1(0.75))
         break;
-    t1 = toiOther.get$type();
+    t1 = $.get$type$x(toiOther);
     if (typeof t1 !== "number")
-      return this.solveTimeOfImpactGivenBody$1$bailout(8, 0, 0, 0, 0, t1, 0, 0, toiContact);
+      return this.solveTimeOfImpactGivenBody$1$bailout(9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, toiContact);
     if (t1 !== 0) {
       t1 = toiContact.get$flags();
       if (t1 !== (t1 | 0))
-        return this.solveTimeOfImpactGivenBody$1$bailout(9, 0, 0, 0, 0, t1, 0, 0, toiContact);
+        return this.solveTimeOfImpactGivenBody$1$bailout(10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t1, toiContact);
       toiContact.set$flags((t1 | 16) >>> 0);
     }
   },
-  solveTimeOfImpactGivenBody$1$bailout: function(state0, body, t7, bullet, other, t1, type, iter, toiContact, toi, toiOther, found, count, t3, t4, ce, t5, t2, t6, t8, contact) {
+  solveTimeOfImpactGivenBody$1$bailout: function(state0, t2, t3, type, t4, t5, bullet, t6, t7, other, iter, body, t1, toiContact, toi, toiOther, found, count, ce, t8, contact) {
     switch (state0) {
       case 0:
         bullet = body.get$bullet();
@@ -7183,21 +9585,24 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
                               if ($.$eq(ce.get$contact(), toiContact) === true)
                                 break c$1;
                               other = ce.get$other();
-                              type = other.get$type();
+                              type = $.get$type$x(other);
                             case 1:
                               state0 = 0;
-                            case 2:
-                              if (state0 === 2 || state0 === 0 && bullet)
+                            default:
+                              if (state0 === 3 || state0 === 2 || state0 === 0 && bullet)
                                 switch (state0) {
                                   case 0:
-                                    if ((other.flags & 64) === 0)
-                                      break c$1;
+                                    t8 = other.get$flags();
                                   case 2:
-                                    if (state0 === 2 || state0 === 0 && $.$eq(type, 0) !== true)
+                                    state0 = 0;
+                                    if ($.$and$n(t8, 64) === 0)
+                                      break c$1;
+                                  case 3:
+                                    if (state0 === 3 || state0 === 0 && $.$eq(type, 0) !== true)
                                       switch (state0) {
                                         case 0:
                                           t8 = ce.get$contact().get$flags();
-                                        case 2:
+                                        case 3:
                                           state0 = 0;
                                           t8 = $.$and$n(t8, 16) !== 0;
                                       }
@@ -7209,12 +9614,12 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
                               else if ($.$eq(type, 2) === true)
                                 break c$1;
                               contact = ce.get$contact();
-                            case 3:
-                              if (state0 === 3 || state0 === 0 && contact.get$enabled())
+                            case 4:
+                              if (state0 === 4 || state0 === 0 && contact.get$enabled())
                                 switch (state0) {
                                   case 0:
                                     t8 = contact.get$toiCount();
-                                  case 3:
+                                  case 4:
                                     state0 = 0;
                                     t8 = $.$gt$n(t8, 10);
                                 }
@@ -7226,31 +9631,33 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
                               fixtureB = contact.get$fixtureB();
                               if (fixtureA.get$isSensor() === true || fixtureB.get$isSensor() === true)
                                 break c$1;
-                              bodyA = fixtureA.get$body();
-                              bodyB = fixtureB.get$body();
-                              t3.setFromShape$1(fixtureA.get$shape());
-                              t4.setFromShape$1(fixtureB.get$shape());
-                              t5.setFrom$1(bodyA.sweep);
-                              t6.setFrom$1(bodyB.sweep);
+                              t8 = $.getInterceptor$x(fixtureA);
+                              bodyA = t8.get$body(fixtureA);
+                              t9 = $.getInterceptor$x(fixtureB);
+                              bodyB = t9.get$body(fixtureB);
+                              t3.setFromShape$1(t8.get$shape(fixtureA));
+                              t4.setFromShape$1(t9.get$shape(fixtureB));
+                              t5.setFrom$1(bodyA.get$sweep());
+                              t6.setFrom$1(bodyB.get$sweep());
                               t2.tMax = toi;
                               t7.timeOfImpact.timeOfImpact$2(t1, t2);
-                            case 4:
-                              if (state0 === 4 || state0 === 0 && t1.state === 3)
+                            case 5:
+                              if (state0 === 5 || state0 === 0 && t1.state === 3)
                                 switch (state0) {
                                   case 0:
                                     t8 = t1.t;
-                                  case 4:
+                                  case 5:
                                     state0 = 0;
                                     t8 = $.$lt$n(t8, toi);
                                 }
                               else
                                 t8 = false;
-                            case 5:
-                              if (state0 === 5 || state0 === 0 && t8)
+                            case 6:
+                              if (state0 === 6 || state0 === 0 && t8)
                                 switch (state0) {
                                   case 0:
                                     toi = t1.t;
-                                  case 5:
+                                  case 6:
                                     state0 = 0;
                                     toiOther = other;
                                     toiContact = contact;
@@ -7278,7 +9685,7 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
           this.solveTimeOfImpactGivenBody$1(body);
         }
         t1 = toiContact.get$toiCount();
-      case 6:
+      case 7:
         state0 = 0;
         toiContact.set$toiCount($.$add$ns(t1, 1));
         t1 = this.contacts;
@@ -7289,19 +9696,19 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
         }
         ce = body.get$contactList();
         count = 0;
-      case 7:
+      case 8:
         L2:
           while (true)
             switch (state0) {
               case 0:
                 if (!(ce != null && count < 32))
                   break L2;
-              case 7:
+              case 8:
                 c$0: {
                   switch (state0) {
                     case 0:
-                      type = ce.get$other().get$type();
-                    case 7:
+                      type = $.get$type$x(ce.get$other());
+                    case 8:
                       state0 = 0;
                       if ($.$eq(type, 2) === true)
                         break c$0;
@@ -7326,23 +9733,101 @@ $$.World = {"": "Object;_flags,_contactManager,_bodyList,_jointList,_bodyCount,_
                 ce = ce.get$next();
             }
         t1 = this.toiSolver;
-        t1.initialize$3(this.contacts, count, body);
+        t1.initialize$3(t1, this.contacts, count, body);
         for (i = 0; i < 20; ++i)
           if (t1.solve$1(0.75))
             break;
-        t1 = toiOther.get$type();
-      case 8:
-        state0 = 0;
+        t1 = $.get$type$x(toiOther);
       case 9:
-        var fixtureA, fixtureB, bodyA, bodyB, i;
-        if (state0 === 9 || state0 === 0 && $.$eq(t1, 0) !== true)
+        state0 = 0;
+      case 10:
+        var fixtureA, fixtureB, bodyA, t9, bodyB, i;
+        if (state0 === 10 || state0 === 0 && $.$eq(t1, 0) !== true)
           switch (state0) {
             case 0:
               t1 = toiContact.get$flags();
-            case 9:
+            case 10:
               state0 = 0;
               toiContact.set$flags($.$or$n(t1, 16));
           }
+    }
+  },
+  drawShape$3: function(fixture, xf, color) {
+    var t1, circle, radius, t2, t3, poly, vertexCount, vertices, i;
+    t1 = $.getInterceptor$x(fixture);
+    switch (t1.get$type(fixture)) {
+      case 0:
+        circle = t1.get$shape(fixture);
+        t1 = this.center;
+        $.Transform_mulToOut(xf, $.get$position$x(circle), t1);
+        radius = circle.get$radius();
+        t2 = this.axis;
+        t2.copyFrom$1(xf.rotation.col0);
+        t3 = this._debugDraw;
+        if (0 !== (t3.flags & 64))
+          t3.drawCircle$4(t1, radius, color, t2);
+        else
+          t3.drawSolidCircle$4(t1, radius, color, t2);
+        break;
+      case 1:
+        poly = t1.get$shape(fixture);
+        vertexCount = poly.get$vertexCount();
+        vertices = $.List_List(vertexCount, $.vec2);
+        $.setRuntimeTypeInfo(vertices, [$.vec2]);
+        for (t1 = vertices.length, i = 0; i < vertexCount; ++i) {
+          t2 = $.vec2$zero();
+          if (i >= t1)
+            throw $.ioore(i);
+          vertices[i] = t2;
+        }
+        for (i = 0; i < vertexCount; ++i) {
+          t2 = $.$index$asx(poly.get$vertices(), i);
+          if (i >= t1)
+            throw $.ioore(i);
+          $.Transform_mulToOut(xf, t2, vertices[i]);
+        }
+        t1 = this._debugDraw;
+        if (0 !== (t1.flags & 64))
+          t1.drawPolygon$3(vertices, vertexCount, color);
+        else if (vertexCount > 2)
+          t1.drawSolidPolygon$3(vertices, vertexCount, color);
+        else
+          t1.drawPolygon$3(vertices, vertexCount, color);
+        break;
+    }
+  },
+  drawJoint$1: function(joint) {
+    var bodyA, bodyB, xf1, xf2, x1, x2, p1, p2, color, p1t, p2t;
+    bodyA = joint.get$bodyA();
+    bodyB = joint.get$bodyB();
+    xf1 = bodyA.get$originTransform();
+    xf2 = bodyB.get$originTransform();
+    x1 = $.vec2$copy(xf1.position);
+    x2 = $.vec2$copy(xf2.position);
+    p1 = $.vec2$zero();
+    p2 = $.vec2$zero();
+    joint.getAnchorA$1(p1);
+    joint.getAnchorB$1(p2);
+    color = $.Color3$fromRGBF(0.5, 0.3, 0.3);
+    switch ($.get$type$x(joint)) {
+      case 3:
+        this._debugDraw.drawSegment$3(p1, p2, color);
+        break;
+      case 4:
+        throw $.wrapException($.UnimplementedError$(null));
+      case 9:
+        this._debugDraw.drawSegment$3(x1, x2, color);
+        break;
+      case 10:
+      case 5:
+        break;
+      default:
+        p1t = $.vec2$copy(p1);
+        p2t = $.vec2$copy(p2);
+        this._debugDraw.drawSegment$3(x1, p1, color);
+        this._debugDraw.drawSegment$3(p1t, p2, color);
+        this._debugDraw.drawSegment$3(x2, p2t, color);
+        break;
     }
   },
   World$3: function(gravity, doSleep, argPool) {
@@ -7361,12 +9846,12 @@ $$.WorldQueryWrapper = {"": "Object;broadPhase,callback"};
 
 $$.CircleContact = {"": "Contact;flags,prev,next,edge1,edge2,fixtureA,fixtureB,manifold,toiCount,pool,_oldManifold",
   init$2: function(fA, fB) {
-    $.expect(0, fA.get$type(), null, null, false);
-    $.expect(0, fB.get$type(), null, null, false);
+    $.expect(0, $.get$type$x(fA), null, null, false);
+    $.expect(0, $.get$type$x(fB), null, null, false);
     $.Contact.prototype.init$2.call(this, fA, fB);
   },
   evaluate$3: function(argManifold, xfA, xfB) {
-    this.pool.collision.collideCircles$5(argManifold, this.fixtureA.get$shape(), xfA, this.fixtureB.get$shape(), xfB);
+    this.pool.collision.collideCircles$5(argManifold, $.get$shape$x(this.fixtureA), xfA, $.get$shape$x(this.fixtureB), xfB);
   }
 };
 
@@ -7411,28 +9896,28 @@ $$.Contact = {"": "Object;flags@,prev@,next@,edge1<,edge2<,fixtureA<,fixtureB<,m
     t3 = this.fixtureB;
     sensorB = t3.get$isSensor();
     sensor = sensorA === true || sensorB === true;
-    bodyA = t2.get$body();
-    bodyB = t3.get$body();
-    xfA = bodyA.originTransform;
-    xfB = bodyB.originTransform;
+    bodyA = $.get$body$x(t2);
+    bodyB = $.get$body$x(t3);
+    xfA = bodyA.get$originTransform();
+    xfB = bodyB.get$originTransform();
     if (sensor) {
-      shapeA = t2.get$shape();
-      shapeB = t3.get$shape();
+      shapeA = $.get$shape$x(t2);
+      shapeB = $.get$shape$x(t3);
       nowTouching = this.pool.collision.testOverlap$4(shapeA, shapeB, xfA, xfB);
       this.manifold.set$pointCount(0);
     } else {
       this.evaluate$3(this.manifold, xfA, xfB);
       nowTouching = $.$gt$n(this.manifold.get$pointCount(), 0);
       for (t2 = t1.points, t3 = t2.length, i = 0; $.JSNumber_methods.$lt(i, this.manifold.get$pointCount()); ++i) {
-        mp2 = $.$index$as(this.manifold.get$points(), i);
+        mp2 = $.$index$asx($.get$points$x(this.manifold), i);
         mp2.set$normalImpulse(0);
         mp2.set$tangentImpulse(0);
-        id2 = mp2.get$id();
+        id2 = $.get$id$x(mp2);
         for (j = 0; $.JSNumber_methods.$lt(j, t1.pointCount); ++j) {
           if (j >= t3)
             throw $.ioore(j);
           mp1 = t2[j];
-          if (mp1.get$id().isEqual$1(id2)) {
+          if ($.get$id$x(mp1).isEqual$1(id2)) {
             mp2.set$normalImpulse(mp1.get$normalImpulse());
             mp2.set$tangentImpulse(mp1.get$tangentImpulse());
             break;
@@ -7460,9 +9945,9 @@ $$.Contact = {"": "Object;flags@,prev@,next@,edge1<,edge2<,fixtureA<,fixtureB<,m
   }
 };
 
-$$.ContactConstraint = {"": "Object;points<,localNormal<,localPoint<,normal<,normalMass<,K<,bodyA@,bodyB@,type@,radius@,friction@,restitution@,pointCount@,manifold@",
+$$.ContactConstraint = {"": "Object;points>,localNormal<,localPoint<,normal<,normalMass<,K<,bodyA@,bodyB@,type*,radius@,friction@,restitution@,pointCount@,manifold@",
   setFrom$1: function(cp) {
-    var t1, i;
+    var t1, t2, i;
     this.pointCount = cp.get$pointCount();
     this.localNormal.copyFrom$1(cp.get$localNormal());
     this.localPoint.copyFrom$1(cp.get$localPoint());
@@ -7471,27 +9956,28 @@ $$.ContactConstraint = {"": "Object;points<,localNormal<,localPoint<,normal<,nor
     this.K.copyFrom$1(cp.get$K());
     this.bodyA = cp.get$bodyA();
     this.bodyB = cp.get$bodyB();
-    this.type = cp.get$type();
+    t1 = $.getInterceptor$x(cp);
+    this.type = t1.get$type(cp);
     this.radius = cp.get$radius();
     this.friction = cp.get$friction();
     this.restitution = cp.get$restitution();
     this.manifold = cp.get$manifold();
-    t1 = this.points;
-    if (typeof t1 !== "string" && (typeof t1 !== "object" || t1 === null || t1.constructor !== Array && !$.getInterceptor(t1).$isJavaScriptIndexingBehavior))
-      return this.setFrom$1$bailout(1, cp, t1);
+    t2 = this.points;
+    if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior()))
+      return this.setFrom$1$bailout(1, cp, t1, t2);
     i = 0;
     for (; $.JSNumber_methods.$lt(i, cp.get$pointCount()); ++i) {
-      if (i >= t1.length)
+      if (i >= t2.length)
         throw $.ioore(i);
-      t1[i].setFrom$1($.$index$as(cp.get$points(), i));
+      t2[i].setFrom$1($.$index$asx(t1.get$points(cp), i));
     }
   },
-  setFrom$1$bailout: function(state0, cp, t1) {
-    var t3, i;
-    t3 = $.getInterceptor$as(t1);
+  setFrom$1$bailout: function(state0, cp, t1, t2) {
+    var t4, i;
+    t4 = $.getInterceptor$asx(t2);
     i = 0;
     for (; $.JSNumber_methods.$lt(i, cp.get$pointCount()); ++i)
-      t3.$index(t1, i).setFrom$1($.$index$as(cp.get$points(), i));
+      t4.$index(t2, i).setFrom$1($.$index$asx(t1.get$points(cp), i));
   },
   toString$0: function(_) {
     return "localNormal: \"" + $.S(this.localNormal) + "\", localPoint: \"" + $.S(this.localPoint) + "\" normal: \"" + $.S(this.normal) + "\", radius: \"" + $.S(this.radius) + "\" friction: \"" + $.S(this.friction) + "\" restitution: \"" + $.S(this.restitution) + "\", pointCount: \"" + $.S(this.pointCount) + "\"";
@@ -7525,30 +10011,30 @@ $$.ContactEdge = {"": "Object;other<,contact<,prev@,next@"};
 
 $$.ContactRegister = {"": "Object;creator<,primary<"};
 
-$$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangent,temp1,temp2,P,dv,dv1,dv2,x<,d,P1,P2,psolver,rA<,rB<",
+$$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangent,temp1,temp2,P,dv,dv1,dv2,x>,d,P1,P2,psolver,rA<,rB<",
   init$3: function(contacts, contactCount, impulseRatio) {
-    var old, t1, t2, i, t4, t5, t6, t7, t8, t9, contact, fixtureA, fixtureB, shapeA, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, t3, friction, restitution, restitution0, vA, vB, wA, wB, cc, t10, t11, t12, t13, j, cp, ccp, t14, rnA, rnB, t15, t16, t17, rtA, rtB, a, vRel, ccp1, ccp2, invMassA, invIA, invMassB, invIB, rn1A, rn1B, rn2A, rn2B, k11, k22, k12;
-    if (typeof contacts !== "object" || contacts === null || (contacts.constructor !== Array || !!contacts.immutable$list) && !$.getInterceptor(contacts).$isJavaScriptIndexingBehavior)
+    var old, t1, t2, i, t4, t5, t6, t7, t8, t9, contact, fixtureA, fixtureB, t3, shapeA, t10, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, friction, restitution, restitution0, vA, vB, wA, wB, cc, t12, t13, t11, j, cp, ccp, t14, rnA, rnB, t15, t16, t17, rtA, rtB, a, vRel, ccp1, ccp2, invMassA, invIA, invMassB, invIB, rn1A, rn1B, rn2A, rn2B, k11, k22, k12;
+    if (typeof contacts !== "object" || contacts === null || (contacts.constructor !== Array || !!contacts.immutable$list) && !$.getInterceptor(contacts).$isJavaScriptIndexingBehavior())
       return this.init$3$bailout(1, contacts, contactCount, impulseRatio);
     this.constraintCount = contactCount;
-    if ($.$lt$n($.get$length$as(this.constraints), contactCount)) {
+    if ($.$lt$n($.get$length$asx(this.constraints), contactCount)) {
       old = this.constraints;
-      t1 = $.getInterceptor$as(old);
+      t1 = $.getInterceptor$asx(old);
       t2 = $.List_List($.max($.$mul$n(t1.get$length(old), 2), this.constraintCount), $.ContactConstraint);
       $.setRuntimeTypeInfo(t2, [$.ContactConstraint]);
       this.constraints = t2;
-      $.setRange$3$a(this.constraints, 0, t1.get$length(old), old);
+      $.setRange$3$ax(this.constraints, 0, t1.get$length(old), old);
       i = t1.get$length(old);
       if (typeof i !== "number")
         return this.init$3$bailout(2, contacts, 0, impulseRatio, i);
-      for (; $.JSNumber_methods.$lt(i, $.get$length$as(this.constraints)); ++i)
-        $.$indexSet$a(this.constraints, i, $.ContactConstraint$());
+      for (; $.JSNumber_methods.$lt(i, $.get$length$asx(this.constraints)); ++i)
+        $.$indexSet$ax(this.constraints, i, $.ContactConstraint$());
     }
     t1 = this.worldManifold;
     t2 = t1.points;
-    if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior))
+    if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior()))
       return this.init$3$bailout(3, contacts, 0, impulseRatio, 0, t2, t1);
-    t4 = $.getInterceptor$as(t2);
+    t4 = $.getInterceptor$asx(t2);
     t5 = this.tangent;
     t6 = this.temp2;
     t7 = this.temp1;
@@ -7561,32 +10047,34 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       contact = contacts[i];
       fixtureA = contact.get$fixtureA();
       fixtureB = contact.get$fixtureB();
-      shapeA = fixtureA.get$shape();
-      shapeB = fixtureB.get$shape();
+      t3 = $.getInterceptor$x(fixtureA);
+      shapeA = t3.get$shape(fixtureA);
+      t10 = $.getInterceptor$x(fixtureB);
+      shapeB = t10.get$shape(fixtureB);
       radiusA = shapeA.get$radius();
       radiusB = shapeB.get$radius();
-      bodyA = fixtureA.get$body();
-      bodyB = fixtureB.get$body();
+      bodyA = t3.get$body(fixtureA);
+      bodyB = t10.get$body(fixtureB);
       manifold = contact.get$manifold();
-      t3 = $.$mul$n(fixtureA.get$friction(), fixtureB.get$friction());
-      if (!(typeof t3 === "number"))
-        $.throwExpression($.ArgumentError$(t3));
-      friction = Math.sqrt(t3);
+      t10 = $.$mul$n(fixtureA.get$friction(), fixtureB.get$friction());
+      if (!(typeof t10 === "number"))
+        $.throwExpression($.ArgumentError$(t10));
+      friction = Math.sqrt(t10);
       restitution = fixtureA.get$restitution();
       restitution0 = fixtureB.get$restitution();
       restitution = $.$gt$n(restitution, restitution0) ? restitution : restitution0;
       if (typeof restitution !== "number")
-        return this.init$3$bailout(4, contacts, 0, impulseRatio, i, t2, t1, t6, friction, t5, $.JSArray_methods, restitution, radiusA, radiusB, bodyA, bodyB, manifold, t7, t4, t8);
+        return this.init$3$bailout(4, contacts, 0, impulseRatio, i, t2, t1, t8, restitution, t5, friction, $.JSArray_methods, t6, t4, radiusA, t7, radiusB, bodyA, bodyB, manifold);
       vA = bodyA.get$linearVelocity();
       vB = bodyB.get$linearVelocity();
       wA = bodyA.get$angularVelocity();
       if (typeof wA !== "number")
-        return this.init$3$bailout(5, contacts, 0, impulseRatio, i, t2, t1, t6, friction, t5, $.JSArray_methods, restitution, radiusA, radiusB, bodyA, bodyB, manifold, t7, t4, t8, vB, wA, vA);
+        return this.init$3$bailout(5, contacts, 0, impulseRatio, i, t2, t1, t8, restitution, t5, friction, $.JSArray_methods, t6, t4, radiusA, t7, radiusB, bodyA, bodyB, manifold, wA, vB, vA);
       wB = bodyB.get$angularVelocity();
       if (typeof wB !== "number")
-        return this.init$3$bailout(6, contacts, 0, impulseRatio, i, t2, t1, t6, friction, t5, $.JSArray_methods, restitution, radiusA, radiusB, bodyA, bodyB, manifold, t7, t4, t8, vB, wA, vA, wB);
-      t1.initialize$5(manifold, bodyA.originTransform, radiusA, bodyB.originTransform, radiusB);
-      cc = $.$index$as(this.constraints, i);
+        return this.init$3$bailout(6, contacts, 0, impulseRatio, i, t2, t1, t8, restitution, t5, friction, $.JSArray_methods, t6, t4, radiusA, t7, radiusB, bodyA, bodyB, manifold, wA, vB, vA, wB);
+      t1.initialize$5(t1, manifold, bodyA.get$originTransform(), radiusA, bodyB.get$originTransform(), radiusB);
+      cc = $.$index$asx(this.constraints, i);
       cc.set$bodyA(bodyA);
       cc.set$bodyB(bodyB);
       cc.set$manifold(manifold);
@@ -7600,10 +10088,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       cc.get$localPoint().x = manifold.get$localPoint().x;
       cc.get$localPoint().y = manifold.get$localPoint().y;
       cc.set$radius($.$add$ns(radiusA, radiusB));
-      cc.set$type(manifold.get$type());
-      for (t3 = bodyA.sweep.center, t10 = bodyB.sweep.center, t11 = -restitution, t12 = -wA, t13 = -wB, j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
-        cp = $.$index$as(manifold.get$points(), j);
-        ccp = $.$index$as(cc.get$points(), j);
+      t12 = $.getInterceptor$x(manifold);
+      t13 = $.getInterceptor$x(cc);
+      t13.set$type(cc, t12.get$type(manifold));
+      for (t3 = -restitution, t10 = -wA, t11 = -wB, j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
+        cp = $.$index$asx(t12.get$points(manifold), j);
+        ccp = $.$index$asx(t13.get$points(cc), j);
         t14 = cp.get$normalImpulse();
         if (typeof t14 !== "number")
           throw $.iae(t14);
@@ -7617,29 +10107,29 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         t14 = ccp.get$rA();
         if (j >= t2.length)
           throw $.ioore(j);
-        t14.x = $.$sub$n(t2[j].get$x(), t3.x);
+        t14.x = $.$sub$n($.get$x$x(t2[j]), bodyA.get$sweep().center.x);
         t14 = ccp.get$rA();
         if (j >= t2.length)
           throw $.ioore(j);
-        t14.y = $.$sub$n(t2[j].get$y(), t3.y);
+        t14.y = $.$sub$n($.get$y$x(t2[j]), bodyA.get$sweep().center.y);
         t14 = ccp.get$rB();
         if (j >= t2.length)
           throw $.ioore(j);
-        t14.x = $.$sub$n(t2[j].get$x(), t10.x);
+        t14.x = $.$sub$n($.get$x$x(t2[j]), bodyB.get$sweep().center.x);
         t14 = ccp.get$rB();
         if (j >= t2.length)
           throw $.ioore(j);
-        t14.y = $.$sub$n(t2[j].get$y(), t10.y);
+        t14.y = $.$sub$n($.get$y$x(t2[j]), bodyB.get$sweep().center.y);
         rnA = $.$sub$n($.$mul$n(ccp.get$rA().x, cc.get$normal().y), $.$mul$n(ccp.get$rA().y, cc.get$normal().x));
         rnB = $.$sub$n($.$mul$n(ccp.get$rB().x, cc.get$normal().y), $.$mul$n(ccp.get$rB().y, cc.get$normal().x));
         rnA = $.$mul$n(rnA, rnA);
         rnB = $.$mul$n(rnB, rnB);
-        t14 = bodyA.invMass;
-        t15 = bodyB.invMass;
-        t16 = bodyA.invInertia;
+        t14 = bodyA.get$invMass();
+        t15 = bodyB.get$invMass();
+        t16 = bodyA.get$invInertia();
         if (typeof rnA !== "number")
           throw $.iae(rnA);
-        t17 = bodyB.invInertia;
+        t17 = bodyB.get$invInertia();
         if (typeof rnB !== "number")
           throw $.iae(rnB);
         ccp.set$normalMass(1 / (t14 + t15 + t16 * rnA + t17 * rnB));
@@ -7655,12 +10145,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         rtB = $.$sub$n($.$mul$n(ccp.get$rB().x, t5.y), $.$mul$n(ccp.get$rB().y, t5.x));
         rtA = $.$mul$n(rtA, rtA);
         rtB = $.$mul$n(rtB, rtB);
-        t17 = bodyA.invMass;
-        t16 = bodyB.invMass;
-        t15 = bodyA.invInertia;
+        t17 = bodyA.get$invMass();
+        t16 = bodyB.get$invMass();
+        t15 = bodyA.get$invInertia();
         if (typeof rtA !== "number")
           throw $.iae(rtA);
-        t14 = bodyB.invInertia;
+        t14 = bodyB.get$invInertia();
         if (typeof rtB !== "number")
           throw $.iae(rtB);
         ccp.set$tangentMass(1 / (t17 + t16 + t15 * rtA + t14 * rtB));
@@ -7668,7 +10158,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         t14 = ccp.get$rA().y;
         if (typeof t14 !== "number")
           throw $.iae(t14);
-        t6.x = t12 * t14;
+        t6.x = t10 * t14;
         t14 = ccp.get$rA().x;
         if (typeof t14 !== "number")
           throw $.iae(t14);
@@ -7685,7 +10175,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         t17 = t6.x;
         if (typeof t17 !== "number")
           throw $.iae(t17);
-        t7.x = t13 * t14 + t15 - t16 - t17;
+        t7.x = t11 * t14 + t15 - t16 - t17;
         t17 = ccp.get$rB().x;
         if (typeof t17 !== "number")
           throw $.iae(t17);
@@ -7704,16 +10194,16 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         if ($.$lt$n(vRel, -1)) {
           if (typeof vRel !== "number")
             throw $.iae(vRel);
-          ccp.set$velocityBias(t11 * vRel);
+          ccp.set$velocityBias(t3 * vRel);
         }
       }
       if ($.$eq(cc.get$pointCount(), 2) === true) {
-        ccp1 = $.$index$as(cc.get$points(), 0);
-        ccp2 = $.$index$as(cc.get$points(), 1);
-        invMassA = bodyA.invMass;
-        invIA = bodyA.invInertia;
-        invMassB = bodyB.invMass;
-        invIB = bodyB.invInertia;
+        ccp1 = $.$index$asx(t13.get$points(cc), 0);
+        ccp2 = $.$index$asx(t13.get$points(cc), 1);
+        invMassA = bodyA.get$invMass();
+        invIA = bodyA.get$invInertia();
+        invMassB = bodyB.get$invMass();
+        invIB = bodyB.get$invInertia();
         rn1A = $.cross(ccp1.get$rA(), cc.get$normal(), null);
         rn1B = $.cross(ccp1.get$rB(), cc.get$normal(), null);
         rn2A = $.cross(ccp2.get$rA(), cc.get$normal(), null);
@@ -7733,55 +10223,55 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         k22 = t3 + invIA * rn2A * rn2A + invIB * rn2B * rn2B;
         k12 = t3 + t10 * rn2A + t11 * rn2B;
         if (k11 * k11 < 100 * (k11 * k22 - k12 * k12)) {
-          cc.get$K().col0.set$x(k11);
-          cc.get$K().col0.set$y(k12);
-          cc.get$K().col1.set$x(k12);
-          cc.get$K().col1.set$y(k22);
-          cc.get$normalMass().get$col0().set$x(cc.get$K().col0.get$x());
-          cc.get$normalMass().get$col0().set$y(cc.get$K().col0.get$y());
-          cc.get$normalMass().get$col1().set$x(cc.get$K().col1.get$x());
-          cc.get$normalMass().get$col1().set$y(cc.get$K().col1.get$y());
+          $.set$x$x(cc.get$K().col0, k11);
+          $.set$y$x(cc.get$K().col0, k12);
+          $.set$x$x(cc.get$K().col1, k12);
+          $.set$y$x(cc.get$K().col1, k22);
+          $.set$x$x(cc.get$normalMass().get$col0(), $.get$x$x(cc.get$K().col0));
+          $.set$y$x(cc.get$normalMass().get$col0(), $.get$y$x(cc.get$K().col0));
+          $.set$x$x(cc.get$normalMass().get$col1(), $.get$x$x(cc.get$K().col1));
+          $.set$y$x(cc.get$normalMass().get$col1(), $.get$y$x(cc.get$K().col1));
           cc.get$normalMass().invert$0();
         } else
           cc.set$pointCount(1);
       }
     }
   },
-  init$3$bailout: function(state0, contacts, contactCount, impulseRatio, i, t2, t1, t6, friction, t5, t9, restitution, radiusA, radiusB, bodyA, bodyB, manifold, t7, t4, t8, vB, wA, vA, wB) {
+  init$3$bailout: function(state0, contacts, contactCount, impulseRatio, i, t2, t1, t8, restitution, t5, friction, t9, t6, t4, radiusA, t7, radiusB, bodyA, bodyB, manifold, wA, vB, vA, wB) {
     switch (state0) {
       case 0:
       case 1:
         state0 = 0;
         this.constraintCount = contactCount;
       case 2:
-        if (state0 === 2 || state0 === 0 && $.$lt$n($.get$length$as(this.constraints), contactCount))
+        if (state0 === 2 || state0 === 0 && $.$lt$n($.get$length$asx(this.constraints), contactCount))
           switch (state0) {
             case 0:
               old = this.constraints;
-              t1 = $.getInterceptor$as(old);
+              t1 = $.getInterceptor$asx(old);
               t2 = $.List_List($.max($.$mul$n(t1.get$length(old), 2), this.constraintCount), $.ContactConstraint);
               $.setRuntimeTypeInfo(t2, [$.ContactConstraint]);
               this.constraints = t2;
-              $.setRange$3$a(this.constraints, 0, t1.get$length(old), old);
+              $.setRange$3$ax(this.constraints, 0, t1.get$length(old), old);
               i = t1.get$length(old);
             case 2:
               state0 = 0;
-              for (; t1 = $.getInterceptor$n(i), t1.$lt(i, $.get$length$as(this.constraints)); i = t1.$add(i, 1))
-                $.$indexSet$a(this.constraints, i, $.ContactConstraint$());
+              for (; t1 = $.getInterceptor$n(i), t1.$lt(i, $.get$length$asx(this.constraints)); i = t1.$add(i, 1))
+                $.$indexSet$ax(this.constraints, i, $.ContactConstraint$());
           }
         t1 = this.worldManifold;
         t2 = t1.points;
       case 3:
         state0 = 0;
-        t4 = $.getInterceptor$as(t2);
+        t4 = $.getInterceptor$asx(t2);
         t5 = this.tangent;
         t6 = this.temp2;
         t7 = this.temp1;
         t8 = t1.normal;
-        t9 = $.getInterceptor$as(contacts);
+        t9 = $.getInterceptor$asx(contacts);
         i = 0;
       default:
-        var old, contact, fixtureA, fixtureB, shapeA, shapeB, t3, restitution0, cc, t10, t11, t12, t13, j, cp, ccp, t14, rnA, rnB, t15, t16, t17, rtA, rtB, a, vRel, ccp1, ccp2, invMassA, invIA, invMassB, invIB, rn1A, rn1B, rn2A, rn2B, k11, k22, k12;
+        var old, contact, fixtureA, fixtureB, t3, shapeA, t10, shapeB, restitution0, cc, t12, t13, t11, j, cp, ccp, t14, rnA, rnB, t15, t16, t17, rtA, rtB, a, vRel, ccp1, ccp2, invMassA, invIA, invMassB, invIB, rn1A, rn1B, rn2A, rn2B, k11, k22, k12;
         L0:
           while (true)
             switch (state0) {
@@ -7791,17 +10281,19 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 contact = t9.$index(contacts, i);
                 fixtureA = contact.get$fixtureA();
                 fixtureB = contact.get$fixtureB();
-                shapeA = fixtureA.get$shape();
-                shapeB = fixtureB.get$shape();
+                t3 = $.getInterceptor$x(fixtureA);
+                shapeA = t3.get$shape(fixtureA);
+                t10 = $.getInterceptor$x(fixtureB);
+                shapeB = t10.get$shape(fixtureB);
                 radiusA = shapeA.get$radius();
                 radiusB = shapeB.get$radius();
-                bodyA = fixtureA.get$body();
-                bodyB = fixtureB.get$body();
+                bodyA = t3.get$body(fixtureA);
+                bodyB = t10.get$body(fixtureB);
                 manifold = contact.get$manifold();
-                t3 = $.$mul$n(fixtureA.get$friction(), fixtureB.get$friction());
-                if (!(typeof t3 === "number"))
-                  $.throwExpression($.ArgumentError$(t3));
-                friction = Math.sqrt(t3);
+                t10 = $.$mul$n(fixtureA.get$friction(), fixtureB.get$friction());
+                if (!(typeof t10 === "number"))
+                  $.throwExpression($.ArgumentError$(t10));
+                friction = Math.sqrt(t10);
                 restitution = fixtureA.get$restitution();
                 restitution0 = fixtureB.get$restitution();
                 restitution = $.$gt$n(restitution, restitution0) ? restitution : restitution0;
@@ -7815,8 +10307,8 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 wB = bodyB.get$angularVelocity();
               case 6:
                 state0 = 0;
-                t1.initialize$5(manifold, bodyA.originTransform, radiusA, bodyB.originTransform, radiusB);
-                cc = $.$index$as(this.constraints, i);
+                t1.initialize$5(t1, manifold, bodyA.get$originTransform(), radiusA, bodyB.get$originTransform(), radiusB);
+                cc = $.$index$asx(this.constraints, i);
                 cc.set$bodyA(bodyA);
                 cc.set$bodyB(bodyB);
                 cc.set$manifold(manifold);
@@ -7830,10 +10322,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 cc.get$localPoint().x = manifold.get$localPoint().x;
                 cc.get$localPoint().y = manifold.get$localPoint().y;
                 cc.set$radius($.$add$ns(radiusA, radiusB));
-                cc.set$type(manifold.get$type());
-                for (t3 = $.getInterceptor$n(restitution), t10 = bodyA.sweep.center, t11 = bodyB.sweep.center, t12 = $.getInterceptor$n(wA), t13 = $.getInterceptor$n(wB), j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
-                  cp = $.$index$as(manifold.get$points(), j);
-                  ccp = $.$index$as(cc.get$points(), j);
+                t12 = $.getInterceptor$x(manifold);
+                t13 = $.getInterceptor$x(cc);
+                t13.set$type(cc, t12.get$type(manifold));
+                for (t3 = $.getInterceptor$n(restitution), t10 = $.getInterceptor$n(wA), t11 = $.getInterceptor$n(wB), j = 0; $.JSNumber_methods.$lt(j, cc.get$pointCount()); ++j) {
+                  cp = $.$index$asx(t12.get$points(manifold), j);
+                  ccp = $.$index$asx(t13.get$points(cc), j);
                   t14 = cp.get$normalImpulse();
                   if (typeof t14 !== "number")
                     throw $.iae(t14);
@@ -7844,20 +10338,20 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                   ccp.set$tangentImpulse(impulseRatio * t14);
                   ccp.get$localPoint().x = cp.get$localPoint().x;
                   ccp.get$localPoint().y = cp.get$localPoint().y;
-                  ccp.get$rA().x = $.$sub$n(t4.$index(t2, j).get$x(), t10.x);
-                  ccp.get$rA().y = $.$sub$n(t4.$index(t2, j).get$y(), t10.y);
-                  ccp.get$rB().x = $.$sub$n(t4.$index(t2, j).get$x(), t11.x);
-                  ccp.get$rB().y = $.$sub$n(t4.$index(t2, j).get$y(), t11.y);
+                  ccp.get$rA().x = $.$sub$n($.get$x$x(t4.$index(t2, j)), bodyA.get$sweep().center.x);
+                  ccp.get$rA().y = $.$sub$n($.get$y$x(t4.$index(t2, j)), bodyA.get$sweep().center.y);
+                  ccp.get$rB().x = $.$sub$n($.get$x$x(t4.$index(t2, j)), bodyB.get$sweep().center.x);
+                  ccp.get$rB().y = $.$sub$n($.get$y$x(t4.$index(t2, j)), bodyB.get$sweep().center.y);
                   rnA = $.$sub$n($.$mul$n(ccp.get$rA().x, cc.get$normal().y), $.$mul$n(ccp.get$rA().y, cc.get$normal().x));
                   rnB = $.$sub$n($.$mul$n(ccp.get$rB().x, cc.get$normal().y), $.$mul$n(ccp.get$rB().y, cc.get$normal().x));
                   rnA = $.$mul$n(rnA, rnA);
                   rnB = $.$mul$n(rnB, rnB);
-                  t14 = bodyA.invMass;
-                  t15 = bodyB.invMass;
-                  t16 = bodyA.invInertia;
+                  t14 = bodyA.get$invMass();
+                  t15 = bodyB.get$invMass();
+                  t16 = bodyA.get$invInertia();
                   if (typeof rnA !== "number")
                     throw $.iae(rnA);
-                  t17 = bodyB.invInertia;
+                  t17 = bodyB.get$invInertia();
                   if (typeof rnB !== "number")
                     throw $.iae(rnB);
                   ccp.set$normalMass(1 / (t14 + t15 + t16 * rnA + t17 * rnB));
@@ -7873,32 +10367,32 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                   rtB = $.$sub$n($.$mul$n(ccp.get$rB().x, t5.y), $.$mul$n(ccp.get$rB().y, t5.x));
                   rtA = $.$mul$n(rtA, rtA);
                   rtB = $.$mul$n(rtB, rtB);
-                  t17 = bodyA.invMass;
-                  t16 = bodyB.invMass;
-                  t15 = bodyA.invInertia;
+                  t17 = bodyA.get$invMass();
+                  t16 = bodyB.get$invMass();
+                  t15 = bodyA.get$invInertia();
                   if (typeof rtA !== "number")
                     throw $.iae(rtA);
-                  t14 = bodyB.invInertia;
+                  t14 = bodyB.get$invInertia();
                   if (typeof rtB !== "number")
                     throw $.iae(rtB);
                   ccp.set$tangentMass(1 / (t17 + t16 + t15 * rtA + t14 * rtB));
                   ccp.set$velocityBias(0);
-                  t6.x = $.$mul$n(t12.$negate(wA), ccp.get$rA().y);
-                  t6.y = t12.$mul(wA, ccp.get$rA().x);
-                  t7.x = $.$sub$n($.$sub$n($.$add$ns($.$mul$n(t13.$negate(wB), ccp.get$rB().y), vB.x), vA.x), t6.x);
-                  t7.y = $.$sub$n($.$sub$n($.$add$ns(t13.$mul(wB, ccp.get$rB().x), vB.y), vA.y), t6.y);
+                  t6.x = $.$mul$n(t10.$negate(wA), ccp.get$rA().y);
+                  t6.y = t10.$mul(wA, ccp.get$rA().x);
+                  t7.x = $.$sub$n($.$sub$n($.$add$ns($.$mul$n(t11.$negate(wB), ccp.get$rB().y), vB.x), vA.x), t6.x);
+                  t7.y = $.$sub$n($.$sub$n($.$add$ns(t11.$mul(wB, ccp.get$rB().x), vB.y), vA.y), t6.y);
                   a = cc.get$normal();
                   vRel = $.$add$ns($.$mul$n(a.x, t7.x), $.$mul$n(a.y, t7.y));
                   if ($.$lt$n(vRel, -1))
                     ccp.set$velocityBias($.$mul$n(t3.$negate(restitution), vRel));
                 }
                 if ($.$eq(cc.get$pointCount(), 2) === true) {
-                  ccp1 = $.$index$as(cc.get$points(), 0);
-                  ccp2 = $.$index$as(cc.get$points(), 1);
-                  invMassA = bodyA.invMass;
-                  invIA = bodyA.invInertia;
-                  invMassB = bodyB.invMass;
-                  invIB = bodyB.invInertia;
+                  ccp1 = $.$index$asx(t13.get$points(cc), 0);
+                  ccp2 = $.$index$asx(t13.get$points(cc), 1);
+                  invMassA = bodyA.get$invMass();
+                  invIA = bodyA.get$invInertia();
+                  invMassB = bodyB.get$invMass();
+                  invIB = bodyB.get$invInertia();
                   rn1A = $.cross(ccp1.get$rA(), cc.get$normal(), null);
                   rn1B = $.cross(ccp1.get$rB(), cc.get$normal(), null);
                   rn2A = $.cross(ccp2.get$rA(), cc.get$normal(), null);
@@ -7918,14 +10412,14 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                   k22 = t3 + invIA * rn2A * rn2A + invIB * rn2B * rn2B;
                   k12 = t3 + t10 * rn2A + t11 * rn2B;
                   if (k11 * k11 < 100 * (k11 * k22 - k12 * k12)) {
-                    cc.get$K().col0.set$x(k11);
-                    cc.get$K().col0.set$y(k12);
-                    cc.get$K().col1.set$x(k12);
-                    cc.get$K().col1.set$y(k22);
-                    cc.get$normalMass().get$col0().set$x(cc.get$K().col0.get$x());
-                    cc.get$normalMass().get$col0().set$y(cc.get$K().col0.get$y());
-                    cc.get$normalMass().get$col1().set$x(cc.get$K().col1.get$x());
-                    cc.get$normalMass().get$col1().set$y(cc.get$K().col1.get$y());
+                    $.set$x$x(cc.get$K().col0, k11);
+                    $.set$y$x(cc.get$K().col0, k12);
+                    $.set$x$x(cc.get$K().col1, k12);
+                    $.set$y$x(cc.get$K().col1, k22);
+                    $.set$x$x(cc.get$normalMass().get$col0(), $.get$x$x(cc.get$K().col0));
+                    $.set$y$x(cc.get$normalMass().get$col0(), $.get$y$x(cc.get$K().col0));
+                    $.set$x$x(cc.get$normalMass().get$col1(), $.get$x$x(cc.get$K().col1));
+                    $.set$y$x(cc.get$normalMass().get$col1(), $.get$y$x(cc.get$K().col1));
                     cc.get$normalMass().invert$0();
                   } else
                     cc.set$pointCount(1);
@@ -7935,9 +10429,9 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
     }
   },
   warmStart$0: function() {
-    var t1, i, c, bodyA, bodyB, invMassA, invIA, invMassB, invIB, normal, j, ccp, Px, Py, t2, t3, t4, t5;
+    var t1, i, c, bodyA, bodyB, invMassA, invIA, invMassB, invIB, normal, t2, j, ccp, Px, Py, t3, t4, t5, t6;
     for (t1 = this.tangent, i = 0; $.JSNumber_methods.$lt(i, this.constraintCount); ++i) {
-      c = $.$index$as(this.constraints, i);
+      c = $.$index$asx(this.constraints, i);
       bodyA = c.get$bodyA();
       bodyB = c.get$bodyB();
       invMassA = bodyA.get$invMass();
@@ -7946,35 +10440,35 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       invIB = bodyB.get$invInertia();
       normal = c.get$normal();
       $.cross(normal, 1, t1);
-      for (j = 0; $.JSNumber_methods.$lt(j, c.get$pointCount()); ++j) {
-        ccp = $.$index$as(c.get$points(), j);
+      for (t2 = $.getInterceptor$x(c), j = 0; $.JSNumber_methods.$lt(j, c.get$pointCount()); ++j) {
+        ccp = $.$index$asx(t2.get$points(c), j);
         Px = $.$add$ns($.$mul$n(ccp.get$normalImpulse(), normal.x), $.$mul$n(ccp.get$tangentImpulse(), t1.x));
         Py = $.$add$ns($.$mul$n(ccp.get$normalImpulse(), normal.y), $.$mul$n(ccp.get$tangentImpulse(), t1.y));
-        t2 = bodyA.get$angularVelocity();
-        t3 = $.$sub$n($.$mul$n(ccp.get$rA().x, Py), $.$mul$n(ccp.get$rA().y, Px));
-        if (typeof t3 !== "number")
-          throw $.iae(t3);
-        bodyA.set$angularVelocity($.$sub$n(t2, invIA * t3));
-        t3 = bodyA.get$linearVelocity();
-        t2 = $.getInterceptor$n(Px);
-        t3.x = $.$sub$n(t3.x, t2.$mul(Px, invMassA));
-        t3 = bodyA.get$linearVelocity();
-        t4 = $.getInterceptor$n(Py);
-        t3.y = $.$sub$n(t3.y, t4.$mul(Py, invMassA));
-        t3 = bodyB.get$angularVelocity();
-        t5 = $.$sub$n($.$mul$n(ccp.get$rB().x, Py), $.$mul$n(ccp.get$rB().y, Px));
-        if (typeof t5 !== "number")
-          throw $.iae(t5);
-        bodyB.set$angularVelocity($.$add$ns(t3, invIB * t5));
-        t5 = bodyB.get$linearVelocity();
-        t5.x = $.$add$ns(t5.x, t2.$mul(Px, invMassB));
-        t2 = bodyB.get$linearVelocity();
-        t2.y = $.$add$ns(t2.y, t4.$mul(Py, invMassB));
+        t3 = bodyA.get$angularVelocity();
+        t4 = $.$sub$n($.$mul$n(ccp.get$rA().x, Py), $.$mul$n(ccp.get$rA().y, Px));
+        if (typeof t4 !== "number")
+          throw $.iae(t4);
+        bodyA.set$angularVelocity($.$sub$n(t3, invIA * t4));
+        t4 = bodyA.get$linearVelocity();
+        t3 = $.getInterceptor$n(Px);
+        t4.x = $.$sub$n(t4.x, t3.$mul(Px, invMassA));
+        t4 = bodyA.get$linearVelocity();
+        t5 = $.getInterceptor$n(Py);
+        t4.y = $.$sub$n(t4.y, t5.$mul(Py, invMassA));
+        t4 = bodyB.get$angularVelocity();
+        t6 = $.$sub$n($.$mul$n(ccp.get$rB().x, Py), $.$mul$n(ccp.get$rB().y, Px));
+        if (typeof t6 !== "number")
+          throw $.iae(t6);
+        bodyB.set$angularVelocity($.$add$ns(t4, invIB * t6));
+        t6 = bodyB.get$linearVelocity();
+        t6.x = $.$add$ns(t6.x, t3.$mul(Px, invMassB));
+        t3 = bodyB.get$linearVelocity();
+        t3.y = $.$add$ns(t3.y, t5.$mul(Py, invMassB));
       }
     }
   },
   solveVelocityConstraints$0: function() {
-    var t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, i, t11, c, bodyA, bodyB, wA, wB, vA, vB, invMassA, invIA, invMassB, invIB, t14, friction, j, ccp, a, t13, t18, t22, t25, lambda, maxFriction, newImpulse, t27, Px, Py, t33, t37, t12, t15, a1, b, t24, t26, vn, t28, cp1, cp2, t19, t30, t31, vn1, vn2, t39, t41, t43, t45, t48, t17;
+    var t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, i, t11, c, bodyA, bodyB, wA, wB, vA, vB, invMassA, invIA, invMassB, invIB, t14, friction, j, t12, ccp, a, t19, t23, t26, lambda, maxFriction, newImpulse, t28, Px, Py, t34, t38, t13, t15, t16, a1, t18, b, t22, t24, vn, cp1, cp2, t30, t31, t33, vn1, vn2, t41, t45, t48, t17;
     t1 = this.dv;
     t2 = this.tangent;
     t3 = this.d;
@@ -7989,12 +10483,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
     while (true) {
       t11 = this.constraintCount;
       if (typeof t11 !== "number")
-        return this.solveVelocityConstraints$0$bailout(1, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8);
+        return this.solveVelocityConstraints$0$bailout(1, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4);
       if (!(i < t11))
         break;
       t11 = this.constraints;
-      if (typeof t11 !== "string" && (typeof t11 !== "object" || t11 === null || t11.constructor !== Array && !$.getInterceptor(t11).$isJavaScriptIndexingBehavior))
-        return this.solveVelocityConstraints$0$bailout(2, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8);
+      if (typeof t11 !== "string" && (typeof t11 !== "object" || t11 === null || t11.constructor !== Array && !$.getInterceptor(t11).$isJavaScriptIndexingBehavior()))
+        return this.solveVelocityConstraints$0$bailout(2, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4);
       if (i >= t11.length)
         throw $.ioore(i);
       c = t11[i];
@@ -8002,10 +10496,10 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       bodyB = c.get$bodyB();
       wA = bodyA.get$angularVelocity();
       if (typeof wA !== "number")
-        return this.solveVelocityConstraints$0$bailout(3, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB);
+        return this.solveVelocityConstraints$0$bailout(3, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA);
       wB = bodyB.get$angularVelocity();
       if (typeof wB !== "number")
-        return this.solveVelocityConstraints$0$bailout(4, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB);
+        return this.solveVelocityConstraints$0$bailout(4, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB);
       vA = bodyA.get$linearVelocity();
       vB = bodyB.get$linearVelocity();
       invMassA = bodyA.get$invMass();
@@ -8022,196 +10516,197 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       t2.y = -1 * t14;
       friction = c.get$friction();
       if (typeof friction !== "number")
-        return this.solveVelocityConstraints$0$bailout(5, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB);
+        return this.solveVelocityConstraints$0$bailout(5, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB);
+      t11 = $.getInterceptor$x(c);
       j = 0;
       while (true) {
-        t11 = c.get$pointCount();
-        if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(6, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, t11);
-        if (!(j < t11))
+        t12 = c.get$pointCount();
+        if (typeof t12 !== "number")
+          return this.solveVelocityConstraints$0$bailout(6, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, t12);
+        if (!(j < t12))
           break;
-        t11 = c.get$points();
-        if (typeof t11 !== "string" && (typeof t11 !== "object" || t11 === null || t11.constructor !== Array && !$.getInterceptor(t11).$isJavaScriptIndexingBehavior))
-          return this.solveVelocityConstraints$0$bailout(7, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, t11);
-        if (j >= t11.length)
+        t12 = t11.get$points(c);
+        if (typeof t12 !== "string" && (typeof t12 !== "object" || t12 === null || t12.constructor !== Array && !$.getInterceptor(t12).$isJavaScriptIndexingBehavior()))
+          return this.solveVelocityConstraints$0$bailout(7, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, t12);
+        if (j >= t12.length)
           throw $.ioore(j);
-        ccp = t11[j];
+        ccp = t12[j];
         a = ccp.get$rA();
-        t11 = -wB;
-        t13 = ccp.get$rB().y;
-        if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(8, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, t13);
-        t13 = t11 * t13;
-        t11 = vB.x;
-        if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(9, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, t13);
-        t11 = t13 + t11;
-        t13 = vA.x;
-        if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(10, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, t13);
-        t13 = t11 - t13;
-        t11 = a.y;
-        if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(11, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, t13);
-        t1.x = t13 + wA * t11;
-        t11 = ccp.get$rB().x;
-        if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(12, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, 0, $.JSNumber_methods);
-        t11 = wB * t11;
-        t18 = vB.y;
-        if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(13, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, 0, $.JSNumber_methods, t18);
-        t18 = t11 + t18;
-        t11 = vA.y;
-        if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(14, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, a, t11, ccp, 0, $.JSNumber_methods, t18);
-        t11 = t18 - t11;
-        t18 = a.x;
-        if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(15, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, t11, ccp, 0, $.JSNumber_methods, t18);
-        t1.y = t11 - wA * t18;
-        t18 = t1.x;
-        if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(16, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t18);
-        t22 = t2.x;
-        if (typeof t22 !== "number")
-          return this.solveVelocityConstraints$0$bailout(17, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t18, t22);
-        t22 = t18 * t22;
-        t18 = t1.y;
-        if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(18, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t18, t22);
-        t25 = t2.y;
-        if (typeof t25 !== "number")
-          return this.solveVelocityConstraints$0$bailout(19, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t18, t22, t25);
-        lambda = ccp.get$tangentMass() * -(t22 + t18 * t25);
-        t25 = ccp.get$normalImpulse();
-        if (typeof t25 !== "number")
-          return this.solveVelocityConstraints$0$bailout(20, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t25, 0, 0, lambda);
-        maxFriction = friction * t25;
-        t25 = ccp.get$tangentImpulse();
-        if (typeof t25 !== "number")
-          return this.solveVelocityConstraints$0$bailout(21, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, t25, 0, 0, lambda, maxFriction);
-        newImpulse = $.clamp(t25 + lambda, -maxFriction, maxFriction, null);
+        t12 = -wB;
+        t14 = ccp.get$rB().y;
+        if (typeof t14 !== "number")
+          return this.solveVelocityConstraints$0$bailout(8, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, t14);
+        t14 = t12 * t14;
+        t12 = vB.x;
+        if (typeof t12 !== "number")
+          return this.solveVelocityConstraints$0$bailout(9, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, t14);
+        t12 = t14 + t12;
+        t14 = vA.x;
+        if (typeof t14 !== "number")
+          return this.solveVelocityConstraints$0$bailout(10, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, t14);
+        t14 = t12 - t14;
+        t12 = a.y;
+        if (typeof t12 !== "number")
+          return this.solveVelocityConstraints$0$bailout(11, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, t14);
+        t1.x = t14 + wA * t12;
+        t12 = ccp.get$rB().x;
+        if (typeof t12 !== "number")
+          return this.solveVelocityConstraints$0$bailout(12, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, 0, $.JSNumber_methods);
+        t12 = wB * t12;
+        t19 = vB.y;
+        if (typeof t19 !== "number")
+          return this.solveVelocityConstraints$0$bailout(13, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, 0, $.JSNumber_methods, t19);
+        t19 = t12 + t19;
+        t12 = vA.y;
+        if (typeof t12 !== "number")
+          return this.solveVelocityConstraints$0$bailout(14, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, a, ccp, t12, 0, $.JSNumber_methods, t19);
+        t12 = t19 - t12;
+        t19 = a.x;
+        if (typeof t19 !== "number")
+          return this.solveVelocityConstraints$0$bailout(15, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, t12, 0, $.JSNumber_methods, t19);
+        t1.y = t12 - wA * t19;
+        t19 = t1.x;
+        if (typeof t19 !== "number")
+          return this.solveVelocityConstraints$0$bailout(16, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t19);
+        t23 = t2.x;
+        if (typeof t23 !== "number")
+          return this.solveVelocityConstraints$0$bailout(17, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t19, t23);
+        t23 = t19 * t23;
+        t19 = t1.y;
+        if (typeof t19 !== "number")
+          return this.solveVelocityConstraints$0$bailout(18, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t19, t23);
+        t26 = t2.y;
+        if (typeof t26 !== "number")
+          return this.solveVelocityConstraints$0$bailout(19, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t19, t23, t26);
+        lambda = ccp.get$tangentMass() * -(t23 + t19 * t26);
+        t26 = ccp.get$normalImpulse();
+        if (typeof t26 !== "number")
+          return this.solveVelocityConstraints$0$bailout(20, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t26, 0, 0, lambda);
+        maxFriction = friction * t26;
+        t26 = ccp.get$tangentImpulse();
+        if (typeof t26 !== "number")
+          return this.solveVelocityConstraints$0$bailout(21, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, t26, 0, 0, lambda, maxFriction);
+        newImpulse = $.clamp(t26 + lambda, -maxFriction, maxFriction, null);
         if (typeof newImpulse !== "number")
-          return this.solveVelocityConstraints$0$bailout(22, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse);
-        t27 = ccp.get$tangentImpulse();
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(23, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t27);
-        lambda = newImpulse - t27;
-        t27 = t2.x;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(24, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, lambda, 0, newImpulse, t27);
-        Px = t27 * lambda;
-        t27 = t2.y;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(25, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, lambda, 0, newImpulse, t27, Px);
-        Py = t27 * lambda;
-        t27 = vA.x;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(26, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t27, Px, Py);
-        vA.x = t27 - Px * invMassA;
-        t27 = vA.y;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(27, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t27, Px, Py, $.JSNumber_methods);
-        vA.y = t27 - Py * invMassA;
-        t27 = ccp.get$rA();
-        t33 = t27.x;
-        if (typeof t33 !== "number")
-          return this.solveVelocityConstraints$0$bailout(28, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t33, Px, Py, $.JSNumber_methods, $.JSNumber_methods);
-        t33 *= Py;
-        t27 = t27.y;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(29, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t33, Px, Py, $.JSNumber_methods, $.JSNumber_methods, t27);
-        wA -= invIA * (t33 - t27 * Px);
-        t27 = vB.x;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(30, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, $.JSNumber_methods, $.JSNumber_methods, t27);
-        vB.x = t27 + Px * invMassB;
-        t27 = vB.y;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(31, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, t27, $.JSNumber_methods);
-        vB.y = t27 + Py * invMassB;
-        t27 = ccp.get$rB();
-        t37 = t27.x;
-        if (typeof t37 !== "number")
-          return this.solveVelocityConstraints$0$bailout(32, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, t37);
-        t37 *= Py;
-        t27 = t27.y;
-        if (typeof t27 !== "number")
-          return this.solveVelocityConstraints$0$bailout(33, t1, t10, t3, i, t4, t5, t6, $.JSNumber_methods, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, $.JSNumber_methods, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, t27, Px, 0, 0, t37);
-        wB += invIB * (t37 - t27 * Px);
+          return this.solveVelocityConstraints$0$bailout(22, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse);
+        t28 = ccp.get$tangentImpulse();
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(23, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t28);
+        lambda = newImpulse - t28;
+        t28 = t2.x;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(24, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, lambda, 0, newImpulse, t28);
+        Px = t28 * lambda;
+        t28 = t2.y;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(25, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, lambda, 0, newImpulse, t28, Px);
+        Py = t28 * lambda;
+        t28 = vA.x;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(26, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t28, Px, Py);
+        vA.x = t28 - Px * invMassA;
+        t28 = vA.y;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(27, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t28, Px, Py, $.JSNumber_methods);
+        vA.y = t28 - Py * invMassA;
+        t28 = ccp.get$rA();
+        t34 = t28.x;
+        if (typeof t34 !== "number")
+          return this.solveVelocityConstraints$0$bailout(28, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t34, Px, Py, $.JSNumber_methods, $.JSNumber_methods);
+        t34 *= Py;
+        t28 = t28.y;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(29, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, t34, Px, Py, $.JSNumber_methods, $.JSNumber_methods, t28);
+        wA -= invIA * (t34 - t28 * Px);
+        t28 = vB.x;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(30, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, $.JSNumber_methods, $.JSNumber_methods, t28);
+        vB.x = t28 + Px * invMassB;
+        t28 = vB.y;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(31, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, t28, $.JSNumber_methods);
+        vB.y = t28 + Py * invMassB;
+        t28 = ccp.get$rB();
+        t38 = t28.x;
+        if (typeof t38 !== "number")
+          return this.solveVelocityConstraints$0$bailout(32, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, t38);
+        t38 *= Py;
+        t28 = t28.y;
+        if (typeof t28 !== "number")
+          return this.solveVelocityConstraints$0$bailout(33, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, $.JSNumber_methods, j, $.JSNumber_methods, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, t28, Px, 0, 0, t38);
+        wB += invIB * (t38 - t28 * Px);
         ccp.set$tangentImpulse(newImpulse);
         ++j;
       }
-      t11 = t11 === 1;
-      t12 = c.get$points();
-      if (typeof t12 !== "string" && (typeof t12 !== "object" || t12 === null || t12.constructor !== Array && !$.getInterceptor(t12).$isJavaScriptIndexingBehavior))
-        return this.solveVelocityConstraints$0$bailout(35, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, 0, t12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods);
-      t14 = -wB;
-      t15 = t12.length;
-      if (t11) {
-        if (0 >= t15)
+      t12 = t12 === 1;
+      t13 = t11.get$points(c);
+      if (typeof t13 !== "string" && (typeof t13 !== "object" || t13 === null || t13.constructor !== Array && !$.getInterceptor(t13).$isJavaScriptIndexingBehavior()))
+        return this.solveVelocityConstraints$0$bailout(35, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, t12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t13);
+      t15 = -wB;
+      t16 = t13.length;
+      if (t12) {
+        if (0 >= t16)
           throw $.ioore(0);
-        ccp = t12[0];
+        ccp = t13[0];
         a1 = ccp.get$rA();
         t11 = ccp.get$rB().y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(36, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, t11, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1);
-        t11 = t14 * t11;
-        t14 = vB.x;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(37, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, t11, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1);
-        t14 = t11 + t14;
+          return this.solveVelocityConstraints$0$bailout(36, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, t11, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods);
+        t11 = t15 * t11;
+        t15 = vB.x;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(37, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, t11, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods);
+        t15 = t11 + t15;
         t11 = vA.x;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(38, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, t11, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1);
-        t11 = t14 - t11;
-        t14 = a1.y;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(39, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, t11, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1);
-        t1.x = t11 + wA * t14;
-        t14 = ccp.get$rB().x;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(40, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1);
-        t14 = wB * t14;
+          return this.solveVelocityConstraints$0$bailout(38, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, t11, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods);
+        t11 = t15 - t11;
+        t15 = a1.y;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(39, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, t11, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods);
+        t1.x = t11 + wA * t15;
+        t15 = ccp.get$rB().x;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(40, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods);
+        t15 = wB * t15;
         t18 = vB.y;
         if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(41, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1, t18);
-        t18 = t14 + t18;
-        t14 = vA.y;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(42, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, a1, t18);
-        t14 = t18 - t14;
+          return this.solveVelocityConstraints$0$bailout(41, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods, t18);
+        t18 = t15 + t18;
+        t15 = vA.y;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(42, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a1, $.JSNumber_methods, t18);
+        t15 = t18 - t15;
         t18 = a1.x;
         if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(43, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, t18);
-        t1.y = t14 - wA * t18;
+          return this.solveVelocityConstraints$0$bailout(43, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t18);
+        t1.y = t15 - wA * t18;
         b = c.get$normal();
         t18 = t1.x;
         if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(44, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, t18, b);
+          return this.solveVelocityConstraints$0$bailout(44, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t18, b);
         t22 = b.x;
         if (typeof t22 !== "number")
-          return this.solveVelocityConstraints$0$bailout(45, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, t18, b, t22);
+          return this.solveVelocityConstraints$0$bailout(45, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t18, b, t22);
         t18 *= t22;
         t24 = t1.y;
         if (typeof t24 !== "number")
-          return this.solveVelocityConstraints$0$bailout(46, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, t24, b, t18);
+          return this.solveVelocityConstraints$0$bailout(46, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t24, b, t18);
         t26 = b.y;
         if (typeof t26 !== "number")
-          return this.solveVelocityConstraints$0$bailout(47, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, t24, 0, t18, t26);
+          return this.solveVelocityConstraints$0$bailout(47, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t24, 0, t18);
         vn = t18 + t24 * t26;
         t24 = ccp.get$normalMass();
         if (typeof t24 !== "number")
-          return this.solveVelocityConstraints$0$bailout(48, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, t24, vn);
+          return this.solveVelocityConstraints$0$bailout(48, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, t24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, vn);
         t24 = -t24;
         t28 = ccp.get$velocityBias();
         if (typeof t28 !== "number")
-          return this.solveVelocityConstraints$0$bailout(49, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, t28, t24, vn);
+          return this.solveVelocityConstraints$0$bailout(49, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, t24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, t28, vn);
         lambda = t24 * (vn - t28);
         t28 = ccp.get$normalImpulse();
         if (typeof t28 !== "number")
-          return this.solveVelocityConstraints$0$bailout(50, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, lambda, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, t28);
+          return this.solveVelocityConstraints$0$bailout(50, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, lambda, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, t28);
         a = t28 + lambda;
         newImpulse = a > 0 ? a : 0;
         lambda = newImpulse - t28;
@@ -8219,222 +10714,224 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
         Py = t26 * lambda;
         t11 = vA.x;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(54, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, $.JSNumber_methods);
+          return this.solveVelocityConstraints$0$bailout(54, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods);
         vA.x = t11 - Px * invMassA;
         t11 = vA.y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(55, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, $.JSNumber_methods);
+          return this.solveVelocityConstraints$0$bailout(55, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, $.JSNumber_methods);
         vA.y = t11 - Py * invMassA;
         t11 = ccp.get$rA();
         t14 = t11.x;
         if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(56, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, $.JSNumber_methods);
+          return this.solveVelocityConstraints$0$bailout(56, t5, t1, t6, i, t2, t7, t9, t8, t14, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, $.JSNumber_methods, $.JSNumber_methods);
         t14 *= Py;
         t11 = t11.y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(57, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t11);
+          return this.solveVelocityConstraints$0$bailout(57, t5, t1, t6, i, t2, t7, t9, t8, t14, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, invMassB, invIB, 0, 0, 0, 0, ccp, 0, $.JSNumber_methods, 0, t11, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, $.JSNumber_methods, $.JSNumber_methods);
         wA -= invIA * (t14 - t11 * Px);
         t11 = vB.x;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(58, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, t11);
+          return this.solveVelocityConstraints$0$bailout(58, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, invMassB, invIB, 0, 0, 0, 0, ccp, 0, 0, 0, t11, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, $.JSNumber_methods, $.JSNumber_methods);
         vB.x = t11 + Px * invMassB;
         t11 = vB.y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(59, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, invMassB, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t11);
+          return this.solveVelocityConstraints$0$bailout(59, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, invMassB, invIB, 0, 0, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, t11, $.JSNumber_methods);
         vB.y = t11 + Py * invMassB;
         t11 = ccp.get$rB();
         t18 = t11.x;
         if (typeof t18 !== "number")
-          return this.solveVelocityConstraints$0$bailout(60, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, t18, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py);
+          return this.solveVelocityConstraints$0$bailout(60, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, Py, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t18);
         t18 *= Py;
         t11 = t11.y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(61, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, ccp, 0, t18, 0, 0, 0, 0, 0, newImpulse, 0, Px);
+          return this.solveVelocityConstraints$0$bailout(61, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, 0, ccp, 0, 0, 0, 0, 0, 0, 0, 0, newImpulse, 0, Px, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t18);
         wB += invIB * (t18 - t11 * Px);
         ccp.set$normalImpulse(newImpulse);
       } else {
-        if (0 >= t15)
+        if (0 >= t16)
           throw $.ioore(0);
-        cp1 = t12[0];
-        if (1 >= t12.length)
+        cp1 = t13[0];
+        if (1 >= t13.length)
           throw $.ioore(1);
-        cp2 = t12[1];
+        cp2 = t13[1];
         a = $.vec2$(cp1.get$normalImpulse(), cp2.get$normalImpulse());
         t11 = cp1.get$rB().y;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(63, t1, t10, t3, i, t4, t5, t6, t14, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t11 = t14 * t11;
+          return this.solveVelocityConstraints$0$bailout(63, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t11, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
+        t11 = t15 * t11;
         t13 = vB.x;
         if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(64, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(64, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t11, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
         t13 = t11 + t13;
         t11 = vA.x;
         if (typeof t11 !== "number")
-          return this.solveVelocityConstraints$0$bailout(65, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(65, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t11, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
         t11 = t13 - t11;
         t13 = cp1.get$rA().y;
         if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(66, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(66, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t11, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
         t9.x = t11 + wA * t13;
         t13 = cp1.get$rB().x;
         if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(67, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(67, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
         t13 = wB * t13;
         t19 = vB.y;
         if (typeof t19 !== "number")
-          return this.solveVelocityConstraints$0$bailout(68, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(68, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t19, cp1, cp2);
         t19 = t13 + t19;
         t13 = vA.y;
         if (typeof t13 !== "number")
-          return this.solveVelocityConstraints$0$bailout(69, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(69, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t19, cp1, cp2);
         t13 = t19 - t13;
         t19 = cp1.get$rA().x;
         if (typeof t19 !== "number")
-          return this.solveVelocityConstraints$0$bailout(70, t1, t10, t3, i, t4, t5, t6, t13, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(70, t5, t1, t6, i, t2, t7, t9, t8, t13, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t19, cp1, cp2);
         t9.y = t13 - wA * t19;
         t19 = cp2.get$rB().y;
         if (typeof t19 !== "number")
-          return this.solveVelocityConstraints$0$bailout(71, t1, t10, t3, i, t4, t5, t6, t19, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t19 = t14 * t19;
-        t14 = vB.x;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(72, t1, t10, t3, i, t4, t5, t6, t19, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t14 = t19 + t14;
+          return this.solveVelocityConstraints$0$bailout(71, t5, t1, t6, i, t2, t7, t9, t8, t19, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2);
+        t19 = t15 * t19;
+        t15 = vB.x;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(72, t5, t1, t6, i, t2, t7, t9, t8, t19, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2);
+        t15 = t19 + t15;
         t19 = vA.x;
         if (typeof t19 !== "number")
-          return this.solveVelocityConstraints$0$bailout(73, t1, t10, t3, i, t4, t5, t6, t19, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t19 = t14 - t19;
-        t14 = cp2.get$rA().y;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(74, t1, t10, t3, i, t4, t5, t6, t19, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t10.x = t19 + wA * t14;
-        t14 = cp2.get$rB().x;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(75, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t14 = wB * t14;
+          return this.solveVelocityConstraints$0$bailout(73, t5, t1, t6, i, t2, t7, t9, t8, t19, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2);
+        t19 = t15 - t19;
+        t15 = cp2.get$rA().y;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(74, t5, t1, t6, i, t2, t7, t9, t8, t19, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2);
+        t10.x = t19 + wA * t15;
+        t15 = cp2.get$rB().x;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(75, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2);
+        t15 = wB * t15;
         t26 = vB.y;
         if (typeof t26 !== "number")
-          return this.solveVelocityConstraints$0$bailout(76, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t26 = t14 + t26;
-        t14 = vA.y;
-        if (typeof t14 !== "number")
-          return this.solveVelocityConstraints$0$bailout(77, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t14 = t26 - t14;
+          return this.solveVelocityConstraints$0$bailout(76, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2, t26);
+        t26 = t15 + t26;
+        t15 = vA.y;
+        if (typeof t15 !== "number")
+          return this.solveVelocityConstraints$0$bailout(77, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2, t26);
+        t15 = t26 - t15;
         t26 = cp2.get$rA().x;
         if (typeof t26 !== "number")
-          return this.solveVelocityConstraints$0$bailout(78, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, t14, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
-        t10.y = t14 - wA * t26;
+          return this.solveVelocityConstraints$0$bailout(78, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, t15, cp1, cp2, t26);
+        t10.y = t15 - wA * t26;
         t26 = t9.x;
         if (typeof t26 !== "number")
-          return this.solveVelocityConstraints$0$bailout(79, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+          return this.solveVelocityConstraints$0$bailout(79, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, t26);
         t30 = c.get$normal();
         t31 = t30.x;
         if (typeof t31 !== "number")
-          return this.solveVelocityConstraints$0$bailout(80, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, t26, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, t31);
+          return this.solveVelocityConstraints$0$bailout(80, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, t26, t31);
         t26 *= t31;
         t33 = t9.y;
         if (typeof t33 !== "number")
-          return this.solveVelocityConstraints$0$bailout(81, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, t33, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, t26);
+          return this.solveVelocityConstraints$0$bailout(81, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, t33, t26);
         t30 = t30.y;
         if (typeof t30 !== "number")
-          return this.solveVelocityConstraints$0$bailout(82, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, t33, 0, 0, 0, 0, 0, 0, t30, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, t26);
+          return this.solveVelocityConstraints$0$bailout(82, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, t33, t26, t30);
         vn1 = t26 + t33 * t30;
         t33 = t10.x;
         if (typeof t33 !== "number")
-          return this.solveVelocityConstraints$0$bailout(83, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t33, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, vn1);
+          return this.solveVelocityConstraints$0$bailout(83, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, t33, vn1);
         t31 = t33 * t31;
         t33 = t10.y;
         if (typeof t33 !== "number")
-          return this.solveVelocityConstraints$0$bailout(85, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t33, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, t31, vn1);
+          return this.solveVelocityConstraints$0$bailout(85, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, t31, t33, vn1);
         vn2 = t31 + t33 * t30;
         t30 = cp1.get$velocityBias();
         if (typeof t30 !== "number")
-          return this.solveVelocityConstraints$0$bailout(87, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t30, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, vn1, vn2);
+          return this.solveVelocityConstraints$0$bailout(87, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, vn1, t30, vn2);
         t30 = vn1 - t30;
         t31 = cp2.get$velocityBias();
         if (typeof t31 !== "number")
-          return this.solveVelocityConstraints$0$bailout(88, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, t30, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, t31, 0, vn2);
+          return this.solveVelocityConstraints$0$bailout(88, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, t31, 0, 0, t30, vn2);
         b = $.vec2$(t30, vn2 - t31);
-        t31 = c.get$K();
-        t30 = t31.col0.get$x();
-        if (typeof t30 !== "number")
-          return this.solveVelocityConstraints$0$bailout(89, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, t30);
-        t39 = a.x;
-        if (typeof t39 !== "number")
-          return this.solveVelocityConstraints$0$bailout(90, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, t30, 0, 0, t39);
-        t39 = t30 * t39;
-        t31 = t31.col1.get$x();
+        t31 = $.get$x$x(c.get$K().col0);
         if (typeof t31 !== "number")
-          return this.solveVelocityConstraints$0$bailout(91, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, t31, 0, 0, t39);
+          return this.solveVelocityConstraints$0$bailout(89, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, t31);
+        t38 = a.x;
+        if (typeof t38 !== "number")
+          return this.solveVelocityConstraints$0$bailout(90, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, t31, 0, 0, 0, 0, t38);
+        t38 = t31 * t38;
+        t31 = $.get$x$x(c.get$K().col1);
+        if (typeof t31 !== "number")
+          return this.solveVelocityConstraints$0$bailout(91, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, t31, 0, 0, 0, 0, t38);
         t41 = a.y;
         if (typeof t41 !== "number")
-          return this.solveVelocityConstraints$0$bailout(92, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, t31, 0, 0, t39, t41);
-        t8.x = t39 + t31 * t41;
-        t41 = c.get$K();
-        t31 = t41.col0.get$y();
-        if (typeof t31 !== "number")
-          return this.solveVelocityConstraints$0$bailout(93, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, t31);
-        t43 = a.x;
-        if (typeof t43 !== "number")
-          return this.solveVelocityConstraints$0$bailout(94, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43, t31);
-        t43 = t31 * t43;
-        t41 = t41.col1.get$y();
+          return this.solveVelocityConstraints$0$bailout(92, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, t31, 0, 0, 0, 0, t38, t41);
+        t8.x = t38 + t31 * t41;
+        t41 = $.get$y$x(c.get$K().col0);
         if (typeof t41 !== "number")
-          return this.solveVelocityConstraints$0$bailout(95, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43, t41);
+          return this.solveVelocityConstraints$0$bailout(93, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, t41);
+        t38 = a.x;
+        if (typeof t38 !== "number")
+          return this.solveVelocityConstraints$0$bailout(94, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38, t41);
+        t38 = t41 * t38;
+        t41 = $.get$y$x(c.get$K().col1);
+        if (typeof t41 !== "number")
+          return this.solveVelocityConstraints$0$bailout(95, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38, t41);
         t45 = a.y;
         if (typeof t45 !== "number")
-          return this.solveVelocityConstraints$0$bailout(96, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43, t41, t45);
-        t8.y = t43 + t41 * t45;
+          return this.solveVelocityConstraints$0$bailout(96, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38, t41, t45);
+        t8.y = t38 + t41 * t45;
         t45 = b.x;
         if (typeof t45 !== "number")
-          return this.solveVelocityConstraints$0$bailout(97, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, t45);
-        t43 = t8.x;
-        if (typeof t43 !== "number")
-          return this.solveVelocityConstraints$0$bailout(98, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43, 0, t45);
-        b.x = t45 - t43;
-        t43 = b.y;
-        if (typeof t43 !== "number")
-          return this.solveVelocityConstraints$0$bailout(99, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43);
+          return this.solveVelocityConstraints$0$bailout(97, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, 0, t45);
+        t38 = t8.x;
+        if (typeof t38 !== "number")
+          return this.solveVelocityConstraints$0$bailout(98, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38, 0, t45);
+        b.x = t45 - t38;
+        t38 = b.y;
+        if (typeof t38 !== "number")
+          return this.solveVelocityConstraints$0$bailout(99, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38);
         t48 = t8.y;
         if (typeof t48 !== "number")
-          return this.solveVelocityConstraints$0$bailout(100, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, t43, 0, 0, t48);
-        b.y = t43 - t48;
+          return this.solveVelocityConstraints$0$bailout(100, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, t38, 0, 0, t48);
+        b.y = t38 - t48;
         $loop$1: {
           c.get$normalMass().transformed$2(b, t4);
           t4.negate$0();
           t11 = t4.x;
           if (typeof t11 !== "number")
-            return this.solveVelocityConstraints$0$bailout(101, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(101, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           if (t11 >= 0) {
             t11 = t4.y;
             if (typeof t11 !== "number")
-              return this.solveVelocityConstraints$0$bailout(102, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(102, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
             t11 = t11 >= 0;
           } else
             t11 = false;
           if (t11) {
             t3.copyFrom$1(t4).sub$1(a);
-            t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-            t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+            t11 = t5.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.x);
+            t11 = t6.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.y);
             t11 = t7.copyFrom$1(t5);
             t11.add$1(t11, t6);
-            t8.copyFrom$1(t7).scale$1(invMassA);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassA);
             vA.sub$1(t8);
-            t8.copyFrom$1(t7).scale$1(invMassB);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassB);
             vB.add$1(vB, t8);
             t11 = $.cross(cp1.get$rA(), t5, null);
             if (typeof t11 !== "number")
-              return this.solveVelocityConstraints$0$bailout(103, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(103, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t13 = $.cross(cp2.get$rA(), t6, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(104, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(104, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, t13, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wA -= invIA * (t11 + t13);
             t13 = $.cross(cp1.get$rB(), t5, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(105, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(105, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t15 = $.cross(cp2.get$rB(), t6, null);
             if (typeof t15 !== "number")
-              return this.solveVelocityConstraints$0$bailout(106, t1, t10, t3, i, t4, t5, t6, t15, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(106, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wB += invIB * (t13 + t15);
             cp1.set$normalImpulse(t4.x);
             cp2.set$normalImpulse(t4.y);
@@ -8442,46 +10939,50 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
           }
           t11 = cp1.get$normalMass();
           if (typeof t11 !== "number")
-            return this.solveVelocityConstraints$0$bailout(107, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(107, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t11 = -t11;
           t13 = b.x;
           if (typeof t13 !== "number")
-            return this.solveVelocityConstraints$0$bailout(108, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(108, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t4.x = t11 * t13;
           t4.y = 0;
-          t13 = c.get$K().col0.get$y();
+          t13 = $.get$y$x(c.get$K().col0);
           if (typeof t13 !== "number")
-            return this.solveVelocityConstraints$0$bailout(109, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(109, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t15 = t4.x;
           if (typeof t15 !== "number")
-            return this.solveVelocityConstraints$0$bailout(110, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, t15);
+            return this.solveVelocityConstraints$0$bailout(110, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, t15, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t13 *= t15;
           t17 = b.y;
           if (typeof t17 !== "number")
-            return this.solveVelocityConstraints$0$bailout(111, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, t13);
+            return this.solveVelocityConstraints$0$bailout(111, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t17, a, 0, t13, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           if (t15 >= 0 && t13 + t17 >= 0) {
             t3.copyFrom$1(t4).sub$1(a);
-            t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-            t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+            t11 = t5.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.x);
+            t11 = t6.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.y);
             t11 = t7.copyFrom$1(t5);
             t11.add$1(t11, t6);
-            t8.copyFrom$1(t7).scale$1(invMassA);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassA);
             vA.sub$1(t8);
-            t8.copyFrom$1(t7).scale$1(invMassB);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassB);
             vB.add$1(vB, t8);
             t11 = $.cross(cp1.get$rA(), t5, null);
             if (typeof t11 !== "number")
-              return this.solveVelocityConstraints$0$bailout(113, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(113, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t13 = $.cross(cp2.get$rA(), t6, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(114, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(114, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, t13, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wA -= invIA * (t11 + t13);
             t13 = $.cross(cp1.get$rB(), t5, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(115, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(115, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t15 = $.cross(cp2.get$rB(), t6, null);
             if (typeof t15 !== "number")
-              return this.solveVelocityConstraints$0$bailout(116, t1, t10, t3, i, t4, t5, t6, t15, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(116, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wB += invIB * (t13 + t15);
             cp1.set$normalImpulse(t4.x);
             cp2.set$normalImpulse(t4.y);
@@ -8490,45 +10991,49 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
           t4.x = 0;
           t11 = cp2.get$normalMass();
           if (typeof t11 !== "number")
-            return this.solveVelocityConstraints$0$bailout(117, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(117, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t11 = -t11;
           t13 = b.y;
           if (typeof t13 !== "number")
-            return this.solveVelocityConstraints$0$bailout(118, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(118, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t4.y = t11 * t13;
-          t13 = c.get$K().col1.get$x();
+          t13 = $.get$x$x(c.get$K().col1);
           if (typeof t13 !== "number")
-            return this.solveVelocityConstraints$0$bailout(119, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2);
+            return this.solveVelocityConstraints$0$bailout(119, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t15 = t4.y;
           if (typeof t15 !== "number")
-            return this.solveVelocityConstraints$0$bailout(120, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, t15);
+            return this.solveVelocityConstraints$0$bailout(120, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t13, a, 0, t15, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           t13 *= t15;
           t17 = b.x;
           if (typeof t17 !== "number")
-            return this.solveVelocityConstraints$0$bailout(121, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, t17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, 0, 0, 0, 0, t13);
+            return this.solveVelocityConstraints$0$bailout(121, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, t17, a, 0, t13, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2);
           if (t15 >= 0 && t13 + t17 >= 0) {
             t3.copyFrom$1(t4).sub$1(a);
-            t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-            t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+            t11 = t5.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.x);
+            t11 = t6.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.y);
             t11 = t7.copyFrom$1(t5);
             t11.add$1(t11, t6);
-            t8.copyFrom$1(t7).scale$1(invMassA);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassA);
             vA.sub$1(t8);
-            t8.copyFrom$1(t7).scale$1(invMassB);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassB);
             vB.add$1(vB, t8);
             t11 = $.cross(cp1.get$rA(), t5, null);
             if (typeof t11 !== "number")
-              return this.solveVelocityConstraints$0$bailout(123, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(123, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t13 = $.cross(cp2.get$rA(), t6, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(124, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(124, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, t13, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wA -= invIA * (t11 + t13);
             t13 = $.cross(cp1.get$rB(), t5, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(125, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(125, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t15 = $.cross(cp2.get$rB(), t6, null);
             if (typeof t15 !== "number")
-              return this.solveVelocityConstraints$0$bailout(126, t1, t10, t3, i, t4, t5, t6, t15, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(126, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wB += invIB * (t13 + t15);
             cp1.set$normalImpulse(t4.x);
             cp2.set$normalImpulse(t4.y);
@@ -8538,33 +11043,37 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
           t4.y = 0;
           vn1 = b.x;
           if (typeof vn1 !== "number")
-            return this.solveVelocityConstraints$0$bailout(127, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, b, 0, 0, 0, 0, 0, cp1, cp2, 0, vn1);
+            return this.solveVelocityConstraints$0$bailout(127, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, b, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, vn1);
           vn2 = b.y;
           if (typeof vn2 !== "number")
-            return this.solveVelocityConstraints$0$bailout(128, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, a, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, vn1, vn2);
+            return this.solveVelocityConstraints$0$bailout(128, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, c, bodyA, bodyB, wA, wB, 0, vA, vB, invMassA, invIA, invMassB, invIB, 0, 0, 0, a, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2, 0, 0, 0, vn1, 0, vn2);
           if (vn1 >= 0 && vn2 >= 0) {
             t3.copyFrom$1(t4).sub$1(a);
-            t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-            t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+            t11 = t5.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.x);
+            t11 = t6.copyFrom$1(c.get$normal());
+            t11.scale$1(t11, t3.y);
             t11 = t7.copyFrom$1(t5);
             t11.add$1(t11, t6);
-            t8.copyFrom$1(t7).scale$1(invMassA);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassA);
             vA.sub$1(t8);
-            t8.copyFrom$1(t7).scale$1(invMassB);
+            t11 = t8.copyFrom$1(t7);
+            t11.scale$1(t11, invMassB);
             vB.add$1(vB, t8);
             t11 = $.cross(cp1.get$rA(), t5, null);
             if (typeof t11 !== "number")
-              return this.solveVelocityConstraints$0$bailout(129, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(129, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t13 = $.cross(cp2.get$rA(), t6, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(130, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(130, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, invIA, 0, invIB, 0, 0, t13, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wA -= invIA * (t11 + t13);
             t13 = $.cross(cp1.get$rB(), t5, null);
             if (typeof t13 !== "number")
-              return this.solveVelocityConstraints$0$bailout(131, t1, t10, t3, i, t4, t5, t6, 0, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(131, t5, t1, t6, i, t2, t7, t9, t8, 0, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             t15 = $.cross(cp2.get$rB(), t6, null);
             if (typeof t15 !== "number")
-              return this.solveVelocityConstraints$0$bailout(132, t1, t10, t3, i, t4, t5, t6, t15, t2, t7, t9, t8, 0, bodyA, wA, bodyB, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, 0, $.JSNumber_methods, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, cp1, cp2);
+              return this.solveVelocityConstraints$0$bailout(132, t5, t1, t6, i, t2, t7, t9, t8, t15, t10, t3, t4, 0, bodyA, bodyB, wA, wB, 0, vA, vB, 0, 0, 0, invIB, 0, 0, t13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, $.JSNumber_methods, 0, 0, 0, 0, 0, 0, cp1, cp2);
             wB += invIB * (t13 + t15);
             cp1.set$normalImpulse(t4.x);
             cp2.set$normalImpulse(t4.y);
@@ -8580,7 +11089,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       ++i;
     }
   },
-  solveVelocityConstraints$0$bailout: function(state0, t1, t10, t3, i, t4, t5, t6, t11, t2, t7, t9, t8, c, bodyA, wA, bodyB, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, j, t12, a, t14, ccp, t15, t20, t21, t25, t28, lambda, maxFriction, newImpulse, t30, Px, Py, t35, t37, t39, t13, a1, t19, b, t23, t26, vn, t18, t22, cp1, cp2, t32, vn1, vn2, t42, t45, t49, t52, t17) {
+  solveVelocityConstraints$0$bailout: function(state0, t5, t1, t6, i, t2, t7, t9, t8, t11, t10, t3, t4, c, bodyA, bodyB, wA, wB, friction, vA, vB, invMassA, invIA, invMassB, invIB, t12, j, t13, a, ccp, t15, t16, t21, t22, t26, t29, lambda, maxFriction, newImpulse, t31, Px, Py, t36, t38, t40, t14, a1, t17, t19, b, t23, vn, t18, t20, cp1, cp2, t28, t32, t35, vn1, t39, vn2, t42, t45, t49, t52) {
     switch (state0) {
       case 0:
         t1 = this.dv;
@@ -8608,7 +11117,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 t11 = this.constraints;
               case 2:
                 state0 = 0;
-                c = $.$index$as(t11, i);
+                c = $.$index$asx(t11, i);
                 bodyA = c.get$bodyA();
                 bodyB = c.get$bodyB();
                 wA = bodyA.get$angularVelocity();
@@ -8634,151 +11143,152 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 friction = c.get$friction();
               case 5:
                 state0 = 0;
-                t11 = $.getInterceptor$n(friction);
+                t11 = $.getInterceptor$x(c);
+                t12 = $.getInterceptor$n(friction);
                 j = 0;
               default:
                 L1:
                   while (true)
                     switch (state0) {
                       case 0:
-                        t12 = c.get$pointCount();
+                        t13 = c.get$pointCount();
                       case 6:
                         state0 = 0;
-                        if (!$.JSNumber_methods.$lt(j, t12))
+                        if (!$.JSNumber_methods.$lt(j, t13))
                           break L1;
-                        t12 = c.get$points();
+                        t13 = t11.get$points(c);
                       case 7:
                         state0 = 0;
-                        ccp = $.$index$as(t12, j);
+                        ccp = $.$index$asx(t13, j);
                         a = ccp.get$rA();
-                        t12 = $.getInterceptor$n(wB);
-                        t14 = t12.$negate(wB);
-                        t15 = ccp.get$rB().y;
+                        t13 = $.getInterceptor$n(wB);
+                        t15 = t13.$negate(wB);
+                        t16 = ccp.get$rB().y;
                       case 8:
                         state0 = 0;
-                        t15 = $.$mul$n(t14, t15);
-                        t14 = vB.x;
+                        t16 = $.$mul$n(t15, t16);
+                        t15 = vB.x;
                       case 9:
                         state0 = 0;
-                        t14 = $.$add$ns(t15, t14);
-                        t15 = vA.x;
+                        t15 = $.$add$ns(t16, t15);
+                        t16 = vA.x;
                       case 10:
                         state0 = 0;
-                        t15 = $.$sub$n(t14, t15);
-                        t14 = a.y;
+                        t16 = $.$sub$n(t15, t16);
+                        t15 = a.y;
                       case 11:
                         state0 = 0;
-                        t20 = $.getInterceptor$n(wA);
-                        t1.x = $.$add$ns(t15, t20.$mul(wA, t14));
-                        t14 = ccp.get$rB().x;
+                        t21 = $.getInterceptor$n(wA);
+                        t1.x = $.$add$ns(t16, t21.$mul(wA, t15));
+                        t15 = ccp.get$rB().x;
                       case 12:
                         state0 = 0;
-                        t14 = t12.$mul(wB, t14);
-                        t21 = vB.y;
+                        t15 = t13.$mul(wB, t15);
+                        t22 = vB.y;
                       case 13:
                         state0 = 0;
-                        t21 = $.$add$ns(t14, t21);
-                        t14 = vA.y;
+                        t22 = $.$add$ns(t15, t22);
+                        t15 = vA.y;
                       case 14:
                         state0 = 0;
-                        t14 = $.$sub$n(t21, t14);
-                        t21 = a.x;
+                        t15 = $.$sub$n(t22, t15);
+                        t22 = a.x;
                       case 15:
                         state0 = 0;
-                        t1.y = $.$sub$n(t14, t20.$mul(wA, t21));
-                        t21 = t1.x;
+                        t1.y = $.$sub$n(t15, t21.$mul(wA, t22));
+                        t22 = t1.x;
                       case 16:
                         state0 = 0;
-                        t25 = t2.x;
+                        t26 = t2.x;
                       case 17:
                         state0 = 0;
-                        t25 = $.$mul$n(t21, t25);
-                        t21 = t1.y;
+                        t26 = $.$mul$n(t22, t26);
+                        t22 = t1.y;
                       case 18:
                         state0 = 0;
-                        t28 = t2.y;
+                        t29 = t2.y;
                       case 19:
                         state0 = 0;
-                        vt = $.$add$ns(t25, $.$mul$n(t21, t28));
-                        t28 = ccp.get$tangentMass();
-                        t21 = $.$negate$n(vt);
-                        if (typeof t21 !== "number")
-                          throw $.iae(t21);
-                        lambda = t28 * t21;
-                        t21 = ccp.get$normalImpulse();
+                        vt = $.$add$ns(t26, $.$mul$n(t22, t29));
+                        t29 = ccp.get$tangentMass();
+                        t22 = $.$negate$n(vt);
+                        if (typeof t22 !== "number")
+                          throw $.iae(t22);
+                        lambda = t29 * t22;
+                        t22 = ccp.get$normalImpulse();
                       case 20:
                         state0 = 0;
-                        maxFriction = t11.$mul(friction, t21);
-                        t21 = ccp.get$tangentImpulse();
+                        maxFriction = t12.$mul(friction, t22);
+                        t22 = ccp.get$tangentImpulse();
                       case 21:
                         state0 = 0;
-                        newImpulse = $.clamp($.$add$ns(t21, lambda), $.$negate$n(maxFriction), maxFriction, null);
+                        newImpulse = $.clamp($.$add$ns(t22, lambda), $.$negate$n(maxFriction), maxFriction, null);
                       case 22:
                         state0 = 0;
-                        t30 = ccp.get$tangentImpulse();
+                        t31 = ccp.get$tangentImpulse();
                       case 23:
                         state0 = 0;
-                        lambda = $.$sub$n(newImpulse, t30);
-                        t30 = t2.x;
+                        lambda = $.$sub$n(newImpulse, t31);
+                        t31 = t2.x;
                       case 24:
                         state0 = 0;
-                        Px = $.$mul$n(t30, lambda);
-                        t30 = t2.y;
+                        Px = $.$mul$n(t31, lambda);
+                        t31 = t2.y;
                       case 25:
                         state0 = 0;
-                        Py = $.$mul$n(t30, lambda);
-                        t30 = vA.x;
+                        Py = $.$mul$n(t31, lambda);
+                        t31 = vA.x;
                       case 26:
                         state0 = 0;
-                        t35 = $.getInterceptor$n(Px);
-                        vA.x = $.$sub$n(t30, t35.$mul(Px, invMassA));
-                        t30 = vA.y;
+                        t36 = $.getInterceptor$n(Px);
+                        vA.x = $.$sub$n(t31, t36.$mul(Px, invMassA));
+                        t31 = vA.y;
                       case 27:
                         state0 = 0;
-                        t37 = $.getInterceptor$n(Py);
-                        vA.y = $.$sub$n(t30, t37.$mul(Py, invMassA));
-                        t30 = ccp.get$rA().x;
+                        t38 = $.getInterceptor$n(Py);
+                        vA.y = $.$sub$n(t31, t38.$mul(Py, invMassA));
+                        t31 = ccp.get$rA().x;
                       case 28:
                         state0 = 0;
-                        t30 = $.$mul$n(t30, Py);
-                        t39 = ccp.get$rA().y;
+                        t31 = $.$mul$n(t31, Py);
+                        t40 = ccp.get$rA().y;
                       case 29:
                         state0 = 0;
-                        t39 = $.$sub$n(t30, $.$mul$n(t39, Px));
-                        if (typeof t39 !== "number")
-                          throw $.iae(t39);
-                        wA = t20.$sub(wA, invIA * t39);
-                        t39 = vB.x;
+                        t40 = $.$sub$n(t31, $.$mul$n(t40, Px));
+                        if (typeof t40 !== "number")
+                          throw $.iae(t40);
+                        wA = t21.$sub(wA, invIA * t40);
+                        t40 = vB.x;
                       case 30:
                         state0 = 0;
-                        vB.x = $.$add$ns(t39, t35.$mul(Px, invMassB));
-                        t35 = vB.y;
+                        vB.x = $.$add$ns(t40, t36.$mul(Px, invMassB));
+                        t36 = vB.y;
                       case 31:
                         state0 = 0;
-                        vB.y = $.$add$ns(t35, t37.$mul(Py, invMassB));
-                        t37 = ccp.get$rB().x;
+                        vB.y = $.$add$ns(t36, t38.$mul(Py, invMassB));
+                        t38 = ccp.get$rB().x;
                       case 32:
                         state0 = 0;
-                        t37 = $.$mul$n(t37, Py);
-                        t30 = ccp.get$rB().y;
+                        t38 = $.$mul$n(t38, Py);
+                        t31 = ccp.get$rB().y;
                       case 33:
                         state0 = 0;
-                        t30 = $.$sub$n(t37, $.$mul$n(t30, Px));
-                        if (typeof t30 !== "number")
-                          throw $.iae(t30);
-                        wB = t12.$add(wB, invIB * t30);
+                        t31 = $.$sub$n(t38, $.$mul$n(t31, Px));
+                        if (typeof t31 !== "number")
+                          throw $.iae(t31);
+                        wB = t13.$add(wB, invIB * t31);
                         ccp.set$tangentImpulse(newImpulse);
                         ++j;
                     }
-                t11 = c.get$pointCount();
+                t12 = c.get$pointCount();
               case 34:
                 state0 = 0;
-                t11 = $.$eq(t11, 1) === true;
-                t13 = $.getInterceptor$n(wA);
-                t14 = $.getInterceptor$n(wB);
-                t15 = c.get$points();
+                t12 = $.$eq(t12, 1) === true;
+                t14 = t11.get$points(c);
               case 35:
                 state0 = 0;
+                t16 = $.getInterceptor$n(wA);
+                t17 = $.getInterceptor$n(wB);
               case 36:
               case 37:
               case 38:
@@ -8876,12 +11386,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
               case 130:
               case 131:
               case 132:
-                if (state0 === 61 || state0 === 60 || state0 === 59 || state0 === 58 || state0 === 57 || state0 === 56 || state0 === 55 || state0 === 54 || state0 === 53 || state0 === 52 || state0 === 51 || state0 === 50 || state0 === 49 || state0 === 48 || state0 === 47 || state0 === 46 || state0 === 45 || state0 === 44 || state0 === 43 || state0 === 42 || state0 === 41 || state0 === 40 || state0 === 39 || state0 === 38 || state0 === 37 || state0 === 36 || state0 === 0 && t11)
+                if (state0 === 61 || state0 === 60 || state0 === 59 || state0 === 58 || state0 === 57 || state0 === 56 || state0 === 55 || state0 === 54 || state0 === 53 || state0 === 52 || state0 === 51 || state0 === 50 || state0 === 49 || state0 === 48 || state0 === 47 || state0 === 46 || state0 === 45 || state0 === 44 || state0 === 43 || state0 === 42 || state0 === 41 || state0 === 40 || state0 === 39 || state0 === 38 || state0 === 37 || state0 === 36 || state0 === 0 && t12)
                   switch (state0) {
                     case 0:
-                      ccp = $.$index$as(t15, 0);
+                      ccp = $.$index$asx(t14, 0);
                       a1 = ccp.get$rA();
-                      t11 = t14.$negate(wB);
+                      t11 = t17.$negate(wB);
                       t12 = ccp.get$rB().y;
                     case 36:
                       state0 = 0;
@@ -8897,11 +11407,11 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t11 = a1.y;
                     case 39:
                       state0 = 0;
-                      t1.x = $.$add$ns(t12, t13.$mul(wA, t11));
+                      t1.x = $.$add$ns(t12, t16.$mul(wA, t11));
                       t11 = ccp.get$rB().x;
                     case 40:
                       state0 = 0;
-                      t11 = t14.$mul(wB, t11);
+                      t11 = t17.$mul(wB, t11);
                       t19 = vB.y;
                     case 41:
                       state0 = 0;
@@ -8913,7 +11423,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t19 = a1.x;
                     case 43:
                       state0 = 0;
-                      t1.y = $.$sub$n(t11, t13.$mul(wA, t19));
+                      t1.y = $.$sub$n(t11, t16.$mul(wA, t19));
                       b = c.get$normal();
                       t19 = t1.x;
                     case 44:
@@ -8974,7 +11484,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t22 = $.$sub$n(t11, $.$mul$n(t22, Px));
                       if (typeof t22 !== "number")
                         throw $.iae(t22);
-                      wA = t13.$sub(wA, invIA * t22);
+                      wA = t16.$sub(wA, invIA * t22);
                       t22 = vB.x;
                     case 58:
                       state0 = 0;
@@ -8993,39 +11503,39 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t11 = $.$sub$n(t20, $.$mul$n(t11, Px));
                       if (typeof t11 !== "number")
                         throw $.iae(t11);
-                      wB = t14.$add(wB, invIB * t11);
+                      wB = t17.$add(wB, invIB * t11);
                       ccp.set$normalImpulse(newImpulse);
                   }
                 else
                   switch (state0) {
                     case 0:
-                      cp1 = $.$index$as(t15, 0);
-                      t11 = c.get$points();
+                      cp1 = $.$index$asx(t14, 0);
+                      t11 = t11.get$points(c);
                     case 62:
                       state0 = 0;
-                      cp2 = $.$index$as(t11, 1);
+                      cp2 = $.$index$asx(t11, 1);
                       a = $.vec2$(cp1.get$normalImpulse(), cp2.get$normalImpulse());
-                      t11 = t14.$negate(wB);
-                      t15 = cp1.get$rB().y;
+                      t11 = t17.$negate(wB);
+                      t13 = cp1.get$rB().y;
                     case 63:
                       state0 = 0;
-                      t15 = $.$mul$n(t11, t15);
+                      t13 = $.$mul$n(t11, t13);
                       t11 = vB.x;
                     case 64:
                       state0 = 0;
-                      t11 = $.$add$ns(t15, t11);
-                      t15 = vA.x;
+                      t11 = $.$add$ns(t13, t11);
+                      t13 = vA.x;
                     case 65:
                       state0 = 0;
-                      t15 = $.$sub$n(t11, t15);
+                      t13 = $.$sub$n(t11, t13);
                       t11 = cp1.get$rA().y;
                     case 66:
                       state0 = 0;
-                      t9.x = $.$add$ns(t15, t13.$mul(wA, t11));
+                      t9.x = $.$add$ns(t13, t16.$mul(wA, t11));
                       t11 = cp1.get$rB().x;
                     case 67:
                       state0 = 0;
-                      t11 = t14.$mul(wB, t11);
+                      t11 = t17.$mul(wB, t11);
                       t20 = vB.y;
                     case 68:
                       state0 = 0;
@@ -9037,8 +11547,8 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t20 = cp1.get$rA().x;
                     case 70:
                       state0 = 0;
-                      t9.y = $.$sub$n(t11, t13.$mul(wA, t20));
-                      t20 = t14.$negate(wB);
+                      t9.y = $.$sub$n(t11, t16.$mul(wA, t20));
+                      t20 = t17.$negate(wB);
                       t11 = cp2.get$rB().y;
                     case 71:
                       state0 = 0;
@@ -9054,11 +11564,11 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t20 = cp2.get$rA().y;
                     case 74:
                       state0 = 0;
-                      t10.x = $.$add$ns(t11, t13.$mul(wA, t20));
+                      t10.x = $.$add$ns(t11, t16.$mul(wA, t20));
                       t20 = cp2.get$rB().x;
                     case 75:
                       state0 = 0;
-                      t20 = t14.$mul(wB, t20);
+                      t20 = t17.$mul(wB, t20);
                       t28 = vB.y;
                     case 76:
                       state0 = 0;
@@ -9070,7 +11580,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                       t28 = cp2.get$rA().x;
                     case 78:
                       state0 = 0;
-                      t10.y = $.$sub$n(t20, t13.$mul(wA, t28));
+                      t10.y = $.$sub$n(t20, t16.$mul(wA, t28));
                       t28 = t9.x;
                     case 79:
                       state0 = 0;
@@ -9107,28 +11617,28 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                     case 88:
                       state0 = 0;
                       b = $.vec2$(t39, $.$sub$n(vn2, t32));
-                      t32 = c.get$K().col0.get$x();
+                      t32 = $.get$x$x(c.get$K().col0);
                     case 89:
                       state0 = 0;
                       t42 = a.x;
                     case 90:
                       state0 = 0;
                       t42 = $.$mul$n(t32, t42);
-                      t32 = c.get$K().col1.get$x();
+                      t32 = $.get$x$x(c.get$K().col1);
                     case 91:
                       state0 = 0;
                       t45 = a.y;
                     case 92:
                       state0 = 0;
                       t8.x = $.$add$ns(t42, $.$mul$n(t32, t45));
-                      t45 = c.get$K().col0.get$y();
+                      t45 = $.get$y$x(c.get$K().col0);
                     case 93:
                       state0 = 0;
                       t42 = a.x;
                     case 94:
                       state0 = 0;
                       t42 = $.$mul$n(t45, t42);
-                      t45 = c.get$K().col1.get$y();
+                      t45 = $.get$y$x(c.get$K().col1);
                     case 95:
                       state0 = 0;
                       t49 = a.y;
@@ -9174,34 +11684,38 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                               switch (state0) {
                                 case 0:
                                   t3.copyFrom$1(t4).sub$1(a);
-                                  t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-                                  t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+                                  t11 = t5.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.x);
+                                  t11 = t6.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.y);
                                   t11 = t7.copyFrom$1(t5);
                                   t11.add$1(t11, t6);
-                                  t8.copyFrom$1(t7).scale$1(invMassA);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassA);
                                   vA.sub$1(t8);
-                                  t8.copyFrom$1(t7).scale$1(invMassB);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassB);
                                   vB.add$1(vB, t8);
                                   t11 = $.cross(cp1.get$rA(), t5, null);
                                 case 103:
                                   state0 = 0;
-                                  t15 = $.cross(cp2.get$rA(), t6, null);
+                                  t13 = $.cross(cp2.get$rA(), t6, null);
                                 case 104:
                                   state0 = 0;
-                                  t15 = $.$add$ns(t11, t15);
-                                  if (typeof t15 !== "number")
-                                    throw $.iae(t15);
-                                  wA = t13.$sub(wA, invIA * t15);
-                                  t15 = $.cross(cp1.get$rB(), t5, null);
+                                  t13 = $.$add$ns(t11, t13);
+                                  if (typeof t13 !== "number")
+                                    throw $.iae(t13);
+                                  wA = t16.$sub(wA, invIA * t13);
+                                  t13 = $.cross(cp1.get$rB(), t5, null);
                                 case 105:
                                   state0 = 0;
                                   t11 = $.cross(cp2.get$rB(), t6, null);
                                 case 106:
                                   state0 = 0;
-                                  t11 = $.$add$ns(t15, t11);
+                                  t11 = $.$add$ns(t13, t11);
                                   if (typeof t11 !== "number")
                                     throw $.iae(t11);
-                                  wB = t14.$add(wB, invIB * t11);
+                                  wB = t17.$add(wB, invIB * t11);
                                   cp1.set$normalImpulse(t4.x);
                                   cp2.set$normalImpulse(t4.y);
                                   break $loop$1;
@@ -9210,22 +11724,22 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                           case 107:
                             state0 = 0;
                             t11 = $.$negate$n(t11);
-                            t15 = b.x;
+                            t13 = b.x;
                           case 108:
                             state0 = 0;
-                            t4.x = $.$mul$n(t11, t15);
+                            t4.x = $.$mul$n(t11, t13);
                             t4.y = 0;
-                            t15 = c.get$K().col0.get$y();
+                            t13 = $.get$y$x(c.get$K().col0);
                           case 109:
                             state0 = 0;
-                            t17 = t4.x;
+                            t15 = t4.x;
                           case 110:
                             state0 = 0;
-                            t17 = $.$mul$n(t15, t17);
-                            t15 = b.y;
+                            t15 = $.$mul$n(t13, t15);
+                            t13 = b.y;
                           case 111:
                             state0 = 0;
-                            vn2 = $.$add$ns(t17, t15);
+                            vn2 = $.$add$ns(t15, t13);
                             t11 = t4.x;
                           case 112:
                             state0 = 0;
@@ -9237,34 +11751,38 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                               switch (state0) {
                                 case 0:
                                   t3.copyFrom$1(t4).sub$1(a);
-                                  t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-                                  t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+                                  t11 = t5.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.x);
+                                  t11 = t6.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.y);
                                   t11 = t7.copyFrom$1(t5);
                                   t11.add$1(t11, t6);
-                                  t8.copyFrom$1(t7).scale$1(invMassA);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassA);
                                   vA.sub$1(t8);
-                                  t8.copyFrom$1(t7).scale$1(invMassB);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassB);
                                   vB.add$1(vB, t8);
                                   t11 = $.cross(cp1.get$rA(), t5, null);
                                 case 113:
                                   state0 = 0;
-                                  t15 = $.cross(cp2.get$rA(), t6, null);
+                                  t13 = $.cross(cp2.get$rA(), t6, null);
                                 case 114:
                                   state0 = 0;
-                                  t15 = $.$add$ns(t11, t15);
-                                  if (typeof t15 !== "number")
-                                    throw $.iae(t15);
-                                  wA = t13.$sub(wA, invIA * t15);
-                                  t15 = $.cross(cp1.get$rB(), t5, null);
+                                  t13 = $.$add$ns(t11, t13);
+                                  if (typeof t13 !== "number")
+                                    throw $.iae(t13);
+                                  wA = t16.$sub(wA, invIA * t13);
+                                  t13 = $.cross(cp1.get$rB(), t5, null);
                                 case 115:
                                   state0 = 0;
                                   t11 = $.cross(cp2.get$rB(), t6, null);
                                 case 116:
                                   state0 = 0;
-                                  t11 = $.$add$ns(t15, t11);
+                                  t11 = $.$add$ns(t13, t11);
                                   if (typeof t11 !== "number")
                                     throw $.iae(t11);
-                                  wB = t14.$add(wB, invIB * t11);
+                                  wB = t17.$add(wB, invIB * t11);
                                   cp1.set$normalImpulse(t4.x);
                                   cp2.set$normalImpulse(t4.y);
                                   break $loop$1;
@@ -9274,21 +11792,21 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                           case 117:
                             state0 = 0;
                             t11 = $.$negate$n(t11);
-                            t15 = b.y;
+                            t13 = b.y;
                           case 118:
                             state0 = 0;
-                            t4.y = $.$mul$n(t11, t15);
-                            t15 = c.get$K().col1.get$x();
+                            t4.y = $.$mul$n(t11, t13);
+                            t13 = $.get$x$x(c.get$K().col1);
                           case 119:
                             state0 = 0;
-                            t17 = t4.y;
+                            t15 = t4.y;
                           case 120:
                             state0 = 0;
-                            t17 = $.$mul$n(t15, t17);
-                            t15 = b.x;
+                            t15 = $.$mul$n(t13, t15);
+                            t13 = b.x;
                           case 121:
                             state0 = 0;
-                            vn1 = $.$add$ns(t17, t15);
+                            vn1 = $.$add$ns(t15, t13);
                             t11 = t4.y;
                           case 122:
                             state0 = 0;
@@ -9300,34 +11818,38 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                               switch (state0) {
                                 case 0:
                                   t3.copyFrom$1(t4).sub$1(a);
-                                  t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-                                  t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+                                  t11 = t5.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.x);
+                                  t11 = t6.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.y);
                                   t11 = t7.copyFrom$1(t5);
                                   t11.add$1(t11, t6);
-                                  t8.copyFrom$1(t7).scale$1(invMassA);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassA);
                                   vA.sub$1(t8);
-                                  t8.copyFrom$1(t7).scale$1(invMassB);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassB);
                                   vB.add$1(vB, t8);
                                   t11 = $.cross(cp1.get$rA(), t5, null);
                                 case 123:
                                   state0 = 0;
-                                  t15 = $.cross(cp2.get$rA(), t6, null);
+                                  t13 = $.cross(cp2.get$rA(), t6, null);
                                 case 124:
                                   state0 = 0;
-                                  t15 = $.$add$ns(t11, t15);
-                                  if (typeof t15 !== "number")
-                                    throw $.iae(t15);
-                                  wA = t13.$sub(wA, invIA * t15);
-                                  t15 = $.cross(cp1.get$rB(), t5, null);
+                                  t13 = $.$add$ns(t11, t13);
+                                  if (typeof t13 !== "number")
+                                    throw $.iae(t13);
+                                  wA = t16.$sub(wA, invIA * t13);
+                                  t13 = $.cross(cp1.get$rB(), t5, null);
                                 case 125:
                                   state0 = 0;
                                   t11 = $.cross(cp2.get$rB(), t6, null);
                                 case 126:
                                   state0 = 0;
-                                  t11 = $.$add$ns(t15, t11);
+                                  t11 = $.$add$ns(t13, t11);
                                   if (typeof t11 !== "number")
                                     throw $.iae(t11);
-                                  wB = t14.$add(wB, invIB * t11);
+                                  wB = t17.$add(wB, invIB * t11);
                                   cp1.set$normalImpulse(t4.x);
                                   cp2.set$normalImpulse(t4.y);
                                   break $loop$1;
@@ -9348,34 +11870,38 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                               switch (state0) {
                                 case 0:
                                   t3.copyFrom$1(t4).sub$1(a);
-                                  t5.copyFrom$1(c.get$normal()).scale$1(t3.x);
-                                  t6.copyFrom$1(c.get$normal()).scale$1(t3.y);
+                                  t11 = t5.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.x);
+                                  t11 = t6.copyFrom$1(c.get$normal());
+                                  t11.scale$1(t11, t3.y);
                                   t11 = t7.copyFrom$1(t5);
                                   t11.add$1(t11, t6);
-                                  t8.copyFrom$1(t7).scale$1(invMassA);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassA);
                                   vA.sub$1(t8);
-                                  t8.copyFrom$1(t7).scale$1(invMassB);
+                                  t11 = t8.copyFrom$1(t7);
+                                  t11.scale$1(t11, invMassB);
                                   vB.add$1(vB, t8);
                                   t11 = $.cross(cp1.get$rA(), t5, null);
                                 case 129:
                                   state0 = 0;
-                                  t15 = $.cross(cp2.get$rA(), t6, null);
+                                  t13 = $.cross(cp2.get$rA(), t6, null);
                                 case 130:
                                   state0 = 0;
-                                  t15 = $.$add$ns(t11, t15);
-                                  if (typeof t15 !== "number")
-                                    throw $.iae(t15);
-                                  wA = t13.$sub(wA, invIA * t15);
-                                  t15 = $.cross(cp1.get$rB(), t5, null);
+                                  t13 = $.$add$ns(t11, t13);
+                                  if (typeof t13 !== "number")
+                                    throw $.iae(t13);
+                                  wA = t16.$sub(wA, invIA * t13);
+                                  t13 = $.cross(cp1.get$rB(), t5, null);
                                 case 131:
                                   state0 = 0;
                                   t11 = $.cross(cp2.get$rB(), t6, null);
                                 case 132:
                                   state0 = 0;
-                                  t11 = $.$add$ns(t15, t11);
+                                  t11 = $.$add$ns(t13, t11);
                                   if (typeof t11 !== "number")
                                     throw $.iae(t11);
-                                  wB = t14.$add(wB, invIB * t11);
+                                  wB = t17.$add(wB, invIB * t11);
                                   cp1.set$normalImpulse(t4.x);
                                   cp2.set$normalImpulse(t4.y);
                                   break $loop$1;
@@ -9393,13 +11919,13 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
     }
   },
   storeImpulses$0: function() {
-    var i, c, m, j;
+    var i, c, m, t1, t2, j;
     for (i = 0; $.JSNumber_methods.$lt(i, this.constraintCount); ++i) {
-      c = $.$index$as(this.constraints, i);
+      c = $.$index$asx(this.constraints, i);
       m = c.get$manifold();
-      for (j = 0; $.JSNumber_methods.$lt(j, c.get$pointCount()); ++j) {
-        $.$index$as(m.get$points(), j).set$normalImpulse($.$index$as(c.get$points(), j).get$normalImpulse());
-        $.$index$as(m.get$points(), j).set$tangentImpulse($.$index$as(c.get$points(), j).get$tangentImpulse());
+      for (t1 = $.getInterceptor$x(m), t2 = $.getInterceptor$x(c), j = 0; $.JSNumber_methods.$lt(j, c.get$pointCount()); ++j) {
+        $.$index$asx(t1.get$points(m), j).set$normalImpulse($.$index$asx(t2.get$points(c), j).get$normalImpulse());
+        $.$index$asx(t1.get$points(m), j).set$tangentImpulse($.$index$asx(t2.get$points(c), j).get$tangentImpulse());
       }
     }
   },
@@ -9417,12 +11943,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
     while (true) {
       t5 = this.constraintCount;
       if (typeof t5 !== "number")
-        return this.solvePositionConstraints$1$bailout(1, baumgarte, normal, t4, point, minSeparation, i, t1, t2, t5, t3, psm);
+        return this.solvePositionConstraints$1$bailout(1, baumgarte, t3, t5, psm, normal, point, t4, minSeparation, i, t1, t2);
       if (!(i < t5))
         break;
       t5 = this.constraints;
-      if (typeof t5 !== "string" && (typeof t5 !== "object" || t5 === null || t5.constructor !== Array && !$.getInterceptor(t5).$isJavaScriptIndexingBehavior))
-        return this.solvePositionConstraints$1$bailout(2, baumgarte, normal, t4, point, minSeparation, i, t1, t2, t5, t3, psm);
+      if (typeof t5 !== "string" && (typeof t5 !== "object" || t5 === null || t5.constructor !== Array && !$.getInterceptor(t5).$isJavaScriptIndexingBehavior()))
+        return this.solvePositionConstraints$1$bailout(2, baumgarte, t3, t5, psm, normal, point, t4, minSeparation, i, t1, t2);
       if (i >= t5.length)
         throw $.ioore(i);
       c = t5[i];
@@ -9430,12 +11956,12 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       bodyB = c.get$bodyB();
       t5 = bodyA.get$mass();
       if (typeof t5 !== "number")
-        return this.solvePositionConstraints$1$bailout(3, baumgarte, normal, t4, point, minSeparation, i, t1, t2, t5, t3, psm, bodyA, bodyB, c);
+        return this.solvePositionConstraints$1$bailout(3, baumgarte, t3, t5, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c);
       invMassA = t5 * bodyA.get$invMass();
       invIA = t5 * bodyA.get$invInertia();
       t5 = bodyB.get$mass();
       if (typeof t5 !== "number")
-        return this.solvePositionConstraints$1$bailout(5, baumgarte, normal, t4, point, minSeparation, i, t1, t2, t5, t3, psm, bodyA, bodyB, c, invMassA, invIA);
+        return this.solvePositionConstraints$1$bailout(5, baumgarte, t3, t5, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA);
       invMassB = t5 * bodyB.get$invMass();
       invIB = t5 * bodyB.get$invInertia();
       t5 = invMassA + invMassB;
@@ -9443,49 +11969,52 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
       while (true) {
         t6 = c.get$pointCount();
         if (typeof t6 !== "number")
-          return this.solvePositionConstraints$1$bailout(7, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, t6);
+          return this.solvePositionConstraints$1$bailout(7, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, t6, $.JSNumber_methods, $.JSNumber_methods, invIB);
         if (!(j < t6))
           break;
-        psm.initialize$2(c, j);
+        psm.initialize$2(psm, c, j);
         separation = psm.separation;
         t3.copyFrom$1(point).sub$1(bodyA.get$sweep().center);
         t4.copyFrom$1(point).sub$1(bodyB.get$sweep().center);
         minSeparation = $.min(minSeparation, separation);
         if (minSeparation !== (minSeparation | 0))
-          return this.solvePositionConstraints$1$bailout(8, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, separation);
+          return this.solvePositionConstraints$1$bailout(8, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, separation);
         C = $.clamp(baumgarte * (separation + 0.005), -0.2, 0, null);
         if (typeof C !== "number")
-          return this.solvePositionConstraints$1$bailout(9, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, 0, C);
+          return this.solvePositionConstraints$1$bailout(9, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, C);
         rnA = $.cross(t3, normal, null);
         if (typeof rnA !== "number")
-          return this.solvePositionConstraints$1$bailout(10, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, 0, C, rnA);
+          return this.solvePositionConstraints$1$bailout(10, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, C, rnA);
         rnB = $.cross(t4, normal, null);
         if (typeof rnB !== "number")
-          return this.solvePositionConstraints$1$bailout(11, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, 0, C, rnA, rnB);
+          return this.solvePositionConstraints$1$bailout(11, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, C, rnA, rnB);
         K = t5 + invIA * rnA * rnA + invIB * rnB * rnB;
         impulse = K > 0 ? -C / K : 0;
-        t1.copyFrom$1(normal).scale$1(impulse);
-        t2.copyFrom$1(t1).scale$1(invMassA);
+        t6 = t1.copyFrom$1(normal);
+        t6.scale$1(t6, impulse);
+        t6 = t2.copyFrom$1(t1);
+        t6.scale$1(t6, invMassA);
         bodyA.get$sweep().center.sub$1(t2);
         t6 = bodyA.get$sweep();
         t7 = t6.angle;
         if (typeof t7 !== "number")
-          return this.solvePositionConstraints$1$bailout(12, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, t6, 0, 0, 0, 0, t7);
+          return this.solvePositionConstraints$1$bailout(12, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, t6, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, 0, 0, 0, t7);
         t9 = $.cross(t3, t1, null);
         if (typeof t9 !== "number")
-          return this.solvePositionConstraints$1$bailout(13, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, t6, 0, 0, 0, 0, t7, t9);
+          return this.solvePositionConstraints$1$bailout(13, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, t6, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, 0, 0, 0, t7, t9);
         t6.angle = t7 - invIA * t9;
         bodyA.synchronizeTransform$0();
-        t2.copyFrom$1(t1).scale$1(invMassB);
+        t9 = t2.copyFrom$1(t1);
+        t9.scale$1(t9, invMassB);
         t9 = bodyB.get$sweep().center;
         t9.add$1(t9, t2);
         t9 = bodyB.get$sweep();
         t7 = t9.angle;
         if (typeof t7 !== "number")
-          return this.solvePositionConstraints$1$bailout(14, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, 0, 0, 0, 0, t7, t9);
+          return this.solvePositionConstraints$1$bailout(14, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, 0, 0, 0, t7, t9);
         t11 = $.cross(t4, t1, null);
         if (typeof t11 !== "number")
-          return this.solvePositionConstraints$1$bailout(15, baumgarte, normal, t4, point, minSeparation, i, t1, t2, $.JSNumber_methods, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, $.JSNumber_methods, invIB, $.JSNumber_methods, 0, 0, 0, 0, 0, t7, t9, t11);
+          return this.solvePositionConstraints$1$bailout(15, baumgarte, t3, $.JSNumber_methods, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, 0, $.JSNumber_methods, $.JSNumber_methods, invIB, 0, 0, 0, 0, t7, t9, t11);
         t9.angle = t7 + invIB * t11;
         bodyB.synchronizeTransform$0();
         ++j;
@@ -9494,7 +12023,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
     }
     return minSeparation >= -0.0075;
   },
-  solvePositionConstraints$1$bailout: function(state0, baumgarte, normal, t4, point, minSeparation, i, t1, t2, t5, t3, psm, bodyA, bodyB, c, invMassA, invIA, invMassB, j, t6, invIB, t7, t8, separation, C, rnA, rnB, t9, t11, t13) {
+  solvePositionConstraints$1$bailout: function(state0, baumgarte, t3, t5, psm, normal, point, t4, minSeparation, i, t1, t2, bodyA, bodyB, c, invMassA, invIA, invMassB, j, t8, t7, t6, invIB, separation, C, rnA, rnB, t9, t11, t13) {
     switch (state0) {
       case 0:
         t1 = this.P;
@@ -9520,7 +12049,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                 t5 = this.constraints;
               case 2:
                 state0 = 0;
-                c = $.$index$as(t5, i);
+                c = $.$index$asx(t5, i);
                 bodyA = c.get$bodyA();
                 bodyB = c.get$bodyB();
                 t5 = bodyA.get$mass();
@@ -9553,7 +12082,7 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                         state0 = 0;
                         if (!$.JSNumber_methods.$lt(j, t8))
                           break L1;
-                        psm.initialize$2(c, j);
+                        psm.initialize$2(psm, c, j);
                         separation = psm.separation;
                         t3.copyFrom$1(point).sub$1(bodyA.get$sweep().center);
                         t4.copyFrom$1(point).sub$1(bodyB.get$sweep().center);
@@ -9577,8 +12106,10 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                           throw $.iae(rnB);
                         K = $.$add$ns(t12, $.$mul$n(t6.$mul(invIB, rnB), rnB));
                         impulse = $.$gt$n(K, 0) ? $.$div$n($.$negate$n(C), K) : 0;
-                        t1.copyFrom$1(normal).scale$1(impulse);
-                        t2.copyFrom$1(t1).scale$1(invMassA);
+                        t8 = t1.copyFrom$1(normal);
+                        t8.scale$1(t8, impulse);
+                        t8 = t2.copyFrom$1(t1);
+                        t8.scale$1(t8, invMassA);
                         bodyA.get$sweep().center.sub$1(t2);
                         t8 = bodyA.get$sweep();
                         t9 = t8.angle;
@@ -9591,7 +12122,8 @@ $$.ContactSolver = {"": "Object;constraints,constraintCount,worldManifold,tangen
                           throw $.iae(t11);
                         t8.angle = $.$sub$n(t9, t5.$mul(invIA, t11));
                         bodyA.synchronizeTransform$0();
-                        t2.copyFrom$1(t1).scale$1(invMassB);
+                        t11 = t2.copyFrom$1(t1);
+                        t11.scale$1(t11, invMassB);
                         t11 = bodyB.get$sweep().center;
                         t11.add$1(t11, t2);
                         t11 = bodyB.get$sweep();
@@ -9622,62 +12154,64 @@ $$.anon7 = {"": "Closure;",
 };
 
 $$.PositionSolverManifold = {"": "Object;normal<,point,separation,pointA,pointB,temp,planePoint,clipPoint",
-  initialize$2: function(cc, index) {
+  initialize$2: function(_, cc, index) {
     var t1, t2, t3, t4;
-    switch (cc.get$type()) {
+    t1 = $.getInterceptor$x(cc);
+    switch (t1.get$type(cc)) {
       case 0:
-        t1 = this.pointA;
-        cc.get$bodyA().getWorldPointToOut$2(cc.get$localPoint(), t1);
-        t2 = this.pointB;
-        cc.get$bodyB().getWorldPointToOut$2($.$index$as(cc.get$points(), 0).get$localPoint(), t2);
-        t3 = this.normal;
-        if (t1.$sub(t1, t2).get$length2() > 1.4208639999999999e-14) {
-          t3.copyFrom$1(t2).sub$1(t1);
-          t3.normalize$0();
-        } else
-          t3.splat$1(0);
-        t3 = this.point.copyFrom$1(t1);
-        t3.add$1(t3, t2).scale$1(0.5);
-        t3 = this.temp;
-        t3.copyFrom$1(t2).sub$1(t1);
-        t3 = t3.dot$1(this.normal);
-        t1 = cc.get$radius();
-        if (typeof t1 !== "number")
-          throw $.iae(t1);
-        this.separation = t3 - t1;
-        break;
-      case 1:
-        t1 = this.normal;
-        cc.get$bodyA().getWorldVectorToOut$2(cc.get$localNormal(), t1);
-        t2 = this.planePoint;
+        t2 = this.pointA;
         cc.get$bodyA().getWorldPointToOut$2(cc.get$localPoint(), t2);
-        t3 = this.clipPoint;
-        cc.get$bodyB().getWorldPointToOut$2($.$index$as(cc.get$points(), index).get$localPoint(), t3);
-        t4 = this.temp;
-        t4.copyFrom$1(t3).sub$1(t2);
-        t1 = t4.dot$1(t1);
-        t4 = cc.get$radius();
-        if (typeof t4 !== "number")
-          throw $.iae(t4);
-        this.separation = t1 - t4;
-        this.point.copyFrom$1(t3);
-        break;
-      case 2:
+        t3 = this.pointB;
+        cc.get$bodyB().getWorldPointToOut$2($.$index$asx(t1.get$points(cc), 0).get$localPoint(), t3);
         t1 = this.normal;
-        cc.get$bodyB().getWorldVectorToOut$2(cc.get$localNormal(), t1);
-        t2 = this.planePoint;
-        cc.get$bodyB().getWorldPointToOut$2(cc.get$localPoint(), t2);
-        t3 = this.clipPoint;
-        cc.get$bodyA().getWorldPointToOut$2($.$index$as(cc.get$points(), index).get$localPoint(), t3);
-        t4 = this.temp;
-        t4.copyFrom$1(t3).sub$1(t2);
-        t4 = t4.dot$1(t1);
+        if (t2.$sub(t2, t3).get$length2() > 1.4208639999999999e-14) {
+          t1.copyFrom$1(t3).sub$1(t2);
+          t1.normalize$0();
+        } else
+          t1.splat$1(0);
+        t1 = this.point.copyFrom$1(t2);
+        t1 = t1.add$1(t1, t3);
+        t1.scale$1(t1, 0.5);
+        t1 = this.temp;
+        t1.copyFrom$1(t3).sub$1(t2);
+        t1 = t1.dot$1(this.normal);
         t2 = cc.get$radius();
         if (typeof t2 !== "number")
           throw $.iae(t2);
-        this.separation = t4 - t2;
-        this.point.copyFrom$1(t3);
-        t1.negate$0();
+        this.separation = t1 - t2;
+        break;
+      case 1:
+        t2 = this.normal;
+        cc.get$bodyA().getWorldVectorToOut$2(cc.get$localNormal(), t2);
+        t3 = this.planePoint;
+        cc.get$bodyA().getWorldPointToOut$2(cc.get$localPoint(), t3);
+        t4 = this.clipPoint;
+        cc.get$bodyB().getWorldPointToOut$2($.$index$asx(t1.get$points(cc), index).get$localPoint(), t4);
+        t1 = this.temp;
+        t1.copyFrom$1(t4).sub$1(t3);
+        t2 = t1.dot$1(t2);
+        t1 = cc.get$radius();
+        if (typeof t1 !== "number")
+          throw $.iae(t1);
+        this.separation = t2 - t1;
+        this.point.copyFrom$1(t4);
+        break;
+      case 2:
+        t2 = this.normal;
+        cc.get$bodyB().getWorldVectorToOut$2(cc.get$localNormal(), t2);
+        t3 = this.planePoint;
+        cc.get$bodyB().getWorldPointToOut$2(cc.get$localPoint(), t3);
+        t4 = this.clipPoint;
+        cc.get$bodyA().getWorldPointToOut$2($.$index$asx(t1.get$points(cc), index).get$localPoint(), t4);
+        t1 = this.temp;
+        t1.copyFrom$1(t4).sub$1(t3);
+        t1 = t1.dot$1(t2);
+        t3 = cc.get$radius();
+        if (typeof t3 !== "number")
+          throw $.iae(t3);
+        this.separation = t1 - t3;
+        this.point.copyFrom$1(t4);
+        t2.negate$0();
         break;
     }
   }
@@ -9685,53 +12219,53 @@ $$.PositionSolverManifold = {"": "Object;normal<,point,separation,pointA,pointB,
 
 $$.PolygonAndCircleContact = {"": "Contact;flags,prev,next,edge1,edge2,fixtureA,fixtureB,manifold,toiCount,pool,_oldManifold",
   init$2: function(fA, fB) {
-    $.expect(1, fA.get$type(), null, null, false);
-    $.expect(0, fB.get$type(), null, null, false);
+    $.expect(1, $.get$type$x(fA), null, null, false);
+    $.expect(0, $.get$type$x(fB), null, null, false);
     $.Contact.prototype.init$2.call(this, fA, fB);
   },
   evaluate$3: function(argManifold, xfA, xfB) {
-    this.pool.collision.collidePolygonAndCircle$5(argManifold, this.fixtureA.get$shape(), xfA, this.fixtureB.get$shape(), xfB);
+    this.pool.collision.collidePolygonAndCircle$5(argManifold, $.get$shape$x(this.fixtureA), xfA, $.get$shape$x(this.fixtureB), xfB);
   }
 };
 
 $$.PolygonContact = {"": "Contact;flags,prev,next,edge1,edge2,fixtureA,fixtureB,manifold,toiCount,pool,_oldManifold",
   init$2: function(fA, fB) {
-    $.expect(1, fA.get$type(), null, null, false);
-    $.expect(1, fB.get$type(), null, null, false);
+    $.expect(1, $.get$type$x(fA), null, null, false);
+    $.expect(1, $.get$type$x(fB), null, null, false);
     $.Contact.prototype.init$2.call(this, fA, fB);
   },
   evaluate$3: function(argManifold, xfA, xfB) {
-    this.pool.collision.collidePolygons$5(argManifold, this.fixtureA.get$shape(), xfA, this.fixtureB.get$shape(), xfB);
+    this.pool.collision.collidePolygons$5(argManifold, $.get$shape$x(this.fixtureA), xfA, $.get$shape$x(this.fixtureB), xfB);
   }
 };
 
-$$.TimeOfImpactConstraint = {"": "Object;localPoints<,localNormal<,localPoint<,type@,radius@,pointCount@,bodyA@,bodyB@",
+$$.TimeOfImpactConstraint = {"": "Object;localPoints<,localNormal<,localPoint<,type*,radius@,pointCount@,bodyA@,bodyB@",
   setFrom$1: function(argOther) {
     var t1, t2, i;
-    t1 = $.get$length$as(argOther.get$localPoints());
+    t1 = $.get$length$asx(argOther.get$localPoints());
     t2 = this.localPoints;
-    if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior))
-      return this.setFrom$1$bailout(1, argOther, t1, t2);
+    if (typeof t2 !== "string" && (typeof t2 !== "object" || t2 === null || t2.constructor !== Array && !$.getInterceptor(t2).$isJavaScriptIndexingBehavior()))
+      return this.setFrom$1$bailout(1, argOther, t2, t1);
     $.expect(t1, t2.length, null, null, false);
     for (i = 0; i < t2.length; ++i)
-      t2[i].copyFrom$1($.$index$as(argOther.get$localPoints(), i));
+      t2[i].copyFrom$1($.$index$asx(argOther.get$localPoints(), i));
     this.localNormal.copyFrom$1(argOther.get$localNormal());
     this.localPoint.copyFrom$1(argOther.get$localPoint());
-    this.type = argOther.get$type();
+    this.type = $.get$type$x(argOther);
     this.radius = argOther.get$radius();
     this.pointCount = argOther.get$pointCount();
     this.bodyA = argOther.get$bodyA();
     this.bodyB = argOther.get$bodyB();
   },
-  setFrom$1$bailout: function(state0, argOther, t1, t2) {
+  setFrom$1$bailout: function(state0, argOther, t2, t1) {
     var t4, i;
-    t4 = $.getInterceptor$as(t2);
+    t4 = $.getInterceptor$asx(t2);
     $.expect(t1, t4.get$length(t2), null, null, false);
-    for (i = 0; $.JSNumber_methods.$lt(i, t4.get$length(t2)); ++i)
-      t4.$index(t2, i).copyFrom$1($.$index$as(argOther.get$localPoints(), i));
+    for (t1 = $.getInterceptor$asx(t2), i = 0; $.JSNumber_methods.$lt(i, t4.get$length(t2)); ++i)
+      t1.$index(t2, i).copyFrom$1($.$index$asx(argOther.get$localPoints(), i));
     this.localNormal.copyFrom$1(argOther.get$localNormal());
     this.localPoint.copyFrom$1(argOther.get$localPoint());
-    this.type = argOther.get$type();
+    this.type = $.get$type$x(argOther);
     this.radius = argOther.get$radius();
     this.pointCount = argOther.get$pointCount();
     this.bodyA = argOther.get$bodyA();
@@ -9747,22 +12281,22 @@ $$.anon = {"": "Closure;",
 };
 
 $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,temp",
-  initialize$3: function(contacts, argCount, argToiBody) {
-    var old, t1, t2, i, contact, fixtureA, fixtureB, shapeA, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, constraint, j, cp;
+  initialize$3: function(_, contacts, argCount, argToiBody) {
+    var old, t1, t2, i, contact, fixtureA, fixtureB, shapeA, t3, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, constraint, j, cp;
     this.count = argCount;
     this.toiBody = argToiBody;
-    if ($.JSInt_methods.$ge(this.count, $.get$length$as(this.constraints))) {
+    if ($.JSInt_methods.$ge(this.count, $.get$length$asx(this.constraints))) {
       old = this.constraints;
-      t1 = $.getInterceptor$as(old);
+      t1 = $.getInterceptor$asx(old);
       t2 = $.List_List($.max(this.count, $.$mul$n(t1.get$length(old), 2)), $.TimeOfImpactConstraint);
       $.setRuntimeTypeInfo(t2, [$.TimeOfImpactConstraint]);
       this.constraints = t2;
-      $.setRange$3$a(this.constraints, 0, t1.get$length(old), old);
+      $.setRange$3$ax(this.constraints, 0, t1.get$length(old), old);
       i = t1.get$length(old);
       if (typeof i !== "number")
         return this.initialize$3$bailout(1, contacts, i);
-      for (; $.JSNumber_methods.$lt(i, $.get$length$as(this.constraints)); ++i)
-        $.$indexSet$a(this.constraints, i, $.TimeOfImpactConstraint$());
+      for (; $.JSNumber_methods.$lt(i, $.get$length$asx(this.constraints)); ++i)
+        $.$indexSet$ax(this.constraints, i, $.TimeOfImpactConstraint$());
     }
     for (t1 = contacts.length, i = 0; i < this.count; ++i) {
       if (i >= t1)
@@ -9770,24 +12304,27 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
       contact = contacts[i];
       fixtureA = contact.get$fixtureA();
       fixtureB = contact.get$fixtureB();
-      shapeA = fixtureA.get$shape();
-      shapeB = fixtureB.get$shape();
+      t2 = $.getInterceptor$x(fixtureA);
+      shapeA = t2.get$shape(fixtureA);
+      t3 = $.getInterceptor$x(fixtureB);
+      shapeB = t3.get$shape(fixtureB);
       radiusA = shapeA.get$radius();
       radiusB = shapeB.get$radius();
-      bodyA = fixtureA.get$body();
-      bodyB = fixtureB.get$body();
+      bodyA = t2.get$body(fixtureA);
+      bodyB = t3.get$body(fixtureB);
       manifold = contact.get$manifold();
-      constraint = $.$index$as(this.constraints, i);
+      constraint = $.$index$asx(this.constraints, i);
       constraint.set$bodyA(bodyA);
       constraint.set$bodyB(bodyB);
       constraint.get$localNormal().copyFrom$1(manifold.get$localNormal());
       constraint.get$localPoint().copyFrom$1(manifold.get$localPoint());
-      constraint.set$type(manifold.get$type());
+      t3 = $.getInterceptor$x(manifold);
+      $.set$type$x(constraint, t3.get$type(manifold));
       constraint.set$pointCount(manifold.get$pointCount());
       constraint.set$radius($.$add$ns(radiusA, radiusB));
       for (j = 0; $.JSNumber_methods.$lt(j, constraint.get$pointCount()); ++j) {
-        cp = $.$index$as(manifold.get$points(), j);
-        $.$indexSet$a(constraint.get$localPoints(), j, cp.get$localPoint());
+        cp = $.$index$asx(t3.get$points(manifold), j);
+        $.$indexSet$ax(constraint.get$localPoints(), j, cp.get$localPoint());
       }
     }
   },
@@ -9797,21 +12334,21 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
         this.count = argCount;
         this.toiBody = argToiBody;
       case 1:
-        var old, t1, t2, contact, fixtureA, fixtureB, shapeA, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, constraint, j, cp;
-        if (state0 === 1 || state0 === 0 && $.JSInt_methods.$ge(this.count, $.get$length$as(this.constraints)))
+        var old, t1, t2, contact, fixtureA, fixtureB, shapeA, t3, shapeB, radiusA, radiusB, bodyA, bodyB, manifold, constraint, j, cp;
+        if (state0 === 1 || state0 === 0 && $.JSInt_methods.$ge(this.count, $.get$length$asx(this.constraints)))
           switch (state0) {
             case 0:
               old = this.constraints;
-              t1 = $.getInterceptor$as(old);
+              t1 = $.getInterceptor$asx(old);
               t2 = $.List_List($.max(this.count, $.$mul$n(t1.get$length(old), 2)), $.TimeOfImpactConstraint);
               $.setRuntimeTypeInfo(t2, [$.TimeOfImpactConstraint]);
               this.constraints = t2;
-              $.setRange$3$a(this.constraints, 0, t1.get$length(old), old);
+              $.setRange$3$ax(this.constraints, 0, t1.get$length(old), old);
               i = t1.get$length(old);
             case 1:
               state0 = 0;
-              for (; t1 = $.getInterceptor$n(i), t1.$lt(i, $.get$length$as(this.constraints)); i = t1.$add(i, 1))
-                $.$indexSet$a(this.constraints, i, $.TimeOfImpactConstraint$());
+              for (; t1 = $.getInterceptor$n(i), t1.$lt(i, $.get$length$asx(this.constraints)); i = t1.$add(i, 1))
+                $.$indexSet$ax(this.constraints, i, $.TimeOfImpactConstraint$());
           }
         for (t1 = contacts.length, i = 0; i < this.count; ++i) {
           if (i >= t1)
@@ -9819,24 +12356,27 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
           contact = contacts[i];
           fixtureA = contact.get$fixtureA();
           fixtureB = contact.get$fixtureB();
-          shapeA = fixtureA.get$shape();
-          shapeB = fixtureB.get$shape();
+          t2 = $.getInterceptor$x(fixtureA);
+          shapeA = t2.get$shape(fixtureA);
+          t3 = $.getInterceptor$x(fixtureB);
+          shapeB = t3.get$shape(fixtureB);
           radiusA = shapeA.get$radius();
           radiusB = shapeB.get$radius();
-          bodyA = fixtureA.get$body();
-          bodyB = fixtureB.get$body();
+          bodyA = t2.get$body(fixtureA);
+          bodyB = t3.get$body(fixtureB);
           manifold = contact.get$manifold();
-          constraint = $.$index$as(this.constraints, i);
+          constraint = $.$index$asx(this.constraints, i);
           constraint.set$bodyA(bodyA);
           constraint.set$bodyB(bodyB);
           constraint.get$localNormal().copyFrom$1(manifold.get$localNormal());
           constraint.get$localPoint().copyFrom$1(manifold.get$localPoint());
-          constraint.set$type(manifold.get$type());
+          t3 = $.getInterceptor$x(manifold);
+          $.set$type$x(constraint, t3.get$type(manifold));
           constraint.set$pointCount(manifold.get$pointCount());
           constraint.set$radius($.$add$ns(radiusA, radiusB));
           for (j = 0; $.JSNumber_methods.$lt(j, constraint.get$pointCount()); ++j) {
-            cp = $.$index$as(manifold.get$points(), j);
-            $.$indexSet$a(constraint.get$localPoints(), j, cp.get$localPoint());
+            cp = $.$index$asx(t3.get$points(manifold), j);
+            $.$indexSet$ax(constraint.get$localPoints(), j, cp.get$localPoint());
           }
         }
     }
@@ -9845,8 +12385,8 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
     var t1, t2, t3, t4, t5, normal, point, minSeparation, i, t6, c, bodyA, bodyB, massA, massB, invMassA, invIA, invMassB, invIB, j, t7, separation, C, rnA, rnB, K, impulse, t8, t10, t12;
     for (t1 = this.P, t2 = this.temp, t3 = this.rA, t4 = this.rB, t5 = this.psm, normal = t5.normal, point = t5.point, minSeparation = 0, i = 0; i < this.count; ++i) {
       t6 = this.constraints;
-      if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior))
-        return this.solve$1$bailout(1, baumgarte, point, t4, minSeparation, i, t1, t2, t6, t5, t3, normal);
+      if (typeof t6 !== "string" && (typeof t6 !== "object" || t6 === null || t6.constructor !== Array && !$.getInterceptor(t6).$isJavaScriptIndexingBehavior()))
+        return this.solve$1$bailout(1, baumgarte, t5, t3, normal, point, minSeparation, i, t6, t4, t1, t2);
       if (i >= t6.length)
         throw $.ioore(i);
       c = t6[i];
@@ -9854,10 +12394,10 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
       bodyB = c.get$bodyB();
       massA = bodyA.get$mass();
       if (typeof massA !== "number")
-        return this.solve$1$bailout(2, baumgarte, point, t4, minSeparation, i, t1, t2, 0, t5, t3, normal, c, bodyA, bodyB, massA);
+        return this.solve$1$bailout(2, baumgarte, t5, t3, normal, point, minSeparation, i, 0, t4, t1, t2, c, bodyA, massA, bodyB);
       massB = bodyB.get$mass();
       if (typeof massB !== "number")
-        return this.solve$1$bailout(3, baumgarte, point, t4, minSeparation, i, t1, t2, 0, t5, t3, normal, c, bodyA, bodyB, massA, massB);
+        return this.solve$1$bailout(3, baumgarte, t5, t3, normal, point, minSeparation, i, 0, t4, t1, t2, c, bodyA, massA, bodyB, massB);
       if ($.$eq(bodyA, this.toiBody) === true)
         massB = 0;
       else
@@ -9871,49 +12411,52 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
       while (true) {
         t7 = c.get$pointCount();
         if (typeof t7 !== "number")
-          return this.solve$1$bailout(4, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, t7);
+          return this.solve$1$bailout(4, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, t7);
         if (!(j < t7))
           break;
-        t5.initialize$2(c, j);
+        t5.initialize$2(t5, c, j);
         separation = t5.separation;
         t3.copyFrom$1(point).sub$1(bodyA.get$sweep().center);
         t4.copyFrom$1(point).sub$1(bodyB.get$sweep().center);
         minSeparation = $.min(minSeparation, separation);
         if (minSeparation !== (minSeparation | 0))
-          return this.solve$1$bailout(5, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, separation);
+          return this.solve$1$bailout(5, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, separation);
         C = $.clamp(baumgarte * (separation + 0.005), -0.2, 0, null);
         if (typeof C !== "number")
-          return this.solve$1$bailout(6, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, 0, C);
+          return this.solve$1$bailout(6, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, 0, C);
         rnA = $.cross(t3, normal, null);
         if (typeof rnA !== "number")
-          return this.solve$1$bailout(7, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, 0, C, rnA);
+          return this.solve$1$bailout(7, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, 0, C, rnA);
         rnB = $.cross(t4, normal, null);
         if (typeof rnB !== "number")
-          return this.solve$1$bailout(8, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, 0, C, rnA, rnB);
+          return this.solve$1$bailout(8, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, 0, C, rnA, rnB);
         K = t6 + invIA * rnA * rnA + invIB * rnB * rnB;
         impulse = K > 0 ? -C / K : 0;
-        t1.copyFrom$1(normal).scale$1(impulse);
-        t2.copyFrom$1(t1).scale$1(invMassA);
+        t7 = t1.copyFrom$1(normal);
+        t7.scale$1(t7, impulse);
+        t7 = t2.copyFrom$1(t1);
+        t7.scale$1(t7, invMassA);
         bodyA.get$sweep().center.sub$1(t2);
         t7 = bodyA.get$sweep();
         t8 = t7.angle;
         if (typeof t8 !== "number")
-          return this.solve$1$bailout(9, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, t7, 0, 0, 0, 0, t8);
+          return this.solve$1$bailout(9, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, t7, 0, 0, 0, 0, t8);
         t10 = $.cross(t3, t1, null);
         if (typeof t10 !== "number")
-          return this.solve$1$bailout(10, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, t7, 0, 0, 0, 0, t8, t10);
+          return this.solve$1$bailout(10, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, t7, 0, 0, 0, 0, t8, t10);
         t7.angle = t8 - invIA * t10;
         bodyA.synchronizeTransform$0();
-        t2.copyFrom$1(t1).scale$1(invMassB);
+        t10 = t2.copyFrom$1(t1);
+        t10.scale$1(t10, invMassB);
         t10 = bodyB.get$sweep().center;
         t10.add$1(t10, t2);
         t10 = bodyB.get$sweep();
         t8 = t10.angle;
         if (typeof t8 !== "number")
-          return this.solve$1$bailout(11, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, 0, 0, 0, 0, t8, t10);
+          return this.solve$1$bailout(11, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, 0, 0, 0, 0, t8, t10);
         t12 = $.cross(t4, t1, null);
         if (typeof t12 !== "number")
-          return this.solve$1$bailout(12, baumgarte, point, t4, minSeparation, i, t1, t2, $.JSNumber_methods, t5, t3, normal, c, bodyA, bodyB, 0, 0, invMassA, $.JSNumber_methods, invIA, $.JSNumber_methods, invMassB, invIB, j, 0, 0, 0, 0, 0, t8, t10, t12);
+          return this.solve$1$bailout(12, baumgarte, t5, t3, normal, point, minSeparation, i, $.JSNumber_methods, t4, t1, t2, c, bodyA, 0, bodyB, 0, invMassA, invIA, $.JSNumber_methods, invMassB, $.JSNumber_methods, invIB, j, 0, 0, 0, 0, 0, t8, t10, t12);
         t10.angle = t8 + invIB * t12;
         bodyB.synchronizeTransform$0();
         ++j;
@@ -9921,7 +12464,7 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
     }
     return minSeparation >= -0.0075;
   },
-  solve$1$bailout: function(state0, baumgarte, point, t4, minSeparation, i, t1, t2, t6, t5, t3, normal, c, bodyA, bodyB, massA, massB, invMassA, t7, invIA, t8, invMassB, invIB, j, t9, separation, C, rnA, rnB, t10, t12, t14) {
+  solve$1$bailout: function(state0, baumgarte, t5, t3, normal, point, minSeparation, i, t6, t4, t1, t2, c, bodyA, massA, bodyB, massB, invMassA, invIA, t8, invMassB, t7, invIB, j, t9, separation, C, rnA, rnB, t10, t12, t14) {
     switch (state0) {
       case 0:
         t1 = this.P;
@@ -9944,7 +12487,7 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
                 t6 = this.constraints;
               case 1:
                 state0 = 0;
-                c = $.$index$as(t6, i);
+                c = $.$index$asx(t6, i);
                 bodyA = c.get$bodyA();
                 bodyB = c.get$bodyB();
                 massA = bodyA.get$mass();
@@ -9977,7 +12520,7 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
                         state0 = 0;
                         if (!$.JSNumber_methods.$lt(j, t9))
                           break L1;
-                        t5.initialize$2(c, j);
+                        t5.initialize$2(t5, c, j);
                         separation = t5.separation;
                         t3.copyFrom$1(point).sub$1(bodyA.get$sweep().center);
                         t4.copyFrom$1(point).sub$1(bodyB.get$sweep().center);
@@ -10001,8 +12544,10 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
                           throw $.iae(rnB);
                         K = $.$add$ns(t13, $.$mul$n(t7.$mul(invIB, rnB), rnB));
                         impulse = $.$gt$n(K, 0) ? $.$div$n($.$negate$n(C), K) : 0;
-                        t1.copyFrom$1(normal).scale$1(impulse);
-                        t2.copyFrom$1(t1).scale$1(invMassA);
+                        t9 = t1.copyFrom$1(normal);
+                        t9.scale$1(t9, impulse);
+                        t9 = t2.copyFrom$1(t1);
+                        t9.scale$1(t9, invMassA);
                         bodyA.get$sweep().center.sub$1(t2);
                         t9 = bodyA.get$sweep();
                         t10 = t9.angle;
@@ -10015,7 +12560,8 @@ $$.TimeOfImpactSolver = {"": "Object;constraints,count<,toiBody,psm,rA<,rB<,P,te
                           throw $.iae(t12);
                         t9.angle = $.$sub$n(t10, t6.$mul(invIA, t12));
                         bodyA.synchronizeTransform$0();
-                        t2.copyFrom$1(t1).scale$1(invMassB);
+                        t12 = t2.copyFrom$1(t1);
+                        t12.scale$1(t12, invMassB);
                         t12 = bodyB.get$sweep().center;
                         t12.add$1(t12, t2);
                         t12 = bodyB.get$sweep();
@@ -10046,14 +12592,14 @@ $$.anon9 = {"": "Closure;",
 };
 
 $$.TimeOfImpactSolverManifold = {"": "Object;normal<,point,separation,pointA,pointB,temp,planePoint,clipPoint",
-  initialize$2: function(cc, index) {
+  initialize$2: function(_, cc, index) {
     var t1, t2, t3, t4;
-    switch (cc.get$type()) {
+    switch ($.get$type$x(cc)) {
       case 0:
         t1 = this.pointA;
         t1.copyFrom$1(cc.get$bodyA().getWorldPoint$1(cc.get$localPoint()));
         t2 = this.pointB;
-        t2.copyFrom$1(cc.get$bodyB().getWorldPoint$1($.$index$as(cc.get$localPoints(), 0)));
+        t2.copyFrom$1(cc.get$bodyB().getWorldPoint$1($.$index$asx(cc.get$localPoints(), 0)));
         t3 = this.normal;
         if (t1.$sub(t1, t2).get$length2() > 1.4208639999999999e-14) {
           t3.copyFrom$1(t2).sub$1(t1);
@@ -10061,7 +12607,8 @@ $$.TimeOfImpactSolverManifold = {"": "Object;normal<,point,separation,pointA,poi
         } else
           t3.splat$1(0);
         t3 = this.point.copyFrom$1(t1);
-        t3.add$1(t3, t2).scale$1(0.5);
+        t3 = t3.add$1(t3, t2);
+        t3.scale$1(t3, 0.5);
         t3 = this.temp;
         t3.copyFrom$1(t2).sub$1(t1);
         t3 = t3.dot$1(this.normal);
@@ -10076,7 +12623,7 @@ $$.TimeOfImpactSolverManifold = {"": "Object;normal<,point,separation,pointA,poi
         t2 = this.planePoint;
         t2.copyFrom$1(cc.get$bodyA().getWorldPoint$1(cc.get$localPoint()));
         t3 = this.clipPoint;
-        t3.copyFrom$1(cc.get$bodyB().getWorldPoint$1($.$index$as(cc.get$localPoints(), index)));
+        t3.copyFrom$1(cc.get$bodyB().getWorldPoint$1($.$index$asx(cc.get$localPoints(), index)));
         t4 = this.temp;
         t4.copyFrom$1(t3).sub$1(t2);
         t1 = t4.dot$1(t1);
@@ -10092,7 +12639,7 @@ $$.TimeOfImpactSolverManifold = {"": "Object;normal<,point,separation,pointA,poi
         t2 = this.planePoint;
         t2.copyFrom$1(cc.get$bodyB().getWorldPoint$1(cc.get$localPoint()));
         t3 = this.clipPoint;
-        t3.copyFrom$1(cc.get$bodyA().getWorldPoint$1($.$index$as(cc.get$localPoints(), index)));
+        t3.copyFrom$1(cc.get$bodyA().getWorldPoint$1($.$index$asx(cc.get$localPoints(), index)));
         t4 = this.temp;
         t4.copyFrom$1(t3).sub$1(t2);
         t4 = t4.dot$1(t1);
@@ -10148,10 +12695,10 @@ $$.BaseMatcher = {"": "Object;",
 $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
   _compareIterables$4: function(expected, actual, matcher, depth) {
     var expectedIterator, actualIterator, position, reason, r;
-    if (!(typeof actual === "object" && actual !== null && (actual.constructor === Array || !!$.getInterceptor(actual).$isIterable)))
+    if (!(typeof actual === "object" && actual !== null && (actual.constructor === Array || $.getInterceptor(actual).$isIterable())))
       return "is not Iterable";
-    expectedIterator = $.get$iterator$a(expected);
-    actualIterator = $.get$iterator$a(actual);
+    expectedIterator = $.get$iterator$ax(expected);
+    actualIterator = $.get$iterator$ax(actual);
     for (position = 0, reason = null; reason == null;)
       if (expectedIterator.moveNext$0() === true)
         if (actualIterator.moveNext$0() === true) {
@@ -10172,7 +12719,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
   },
   _recursiveMatch$4: function(expected, actual, $location, depth) {
     var canRecurse, reason, r, err, t1, t2, t3, eType, aType, includeTypes;
-    if (typeof expected !== "object" || expected === null || expected.constructor !== Array && !$.getInterceptor(expected).$isJavaScriptIndexingBehavior)
+    if (typeof expected !== "object" || expected === null || expected.constructor !== Array && !$.getInterceptor(expected).$isJavaScriptIndexingBehavior())
       return this._recursiveMatch$4$bailout(1, expected, actual, $location, depth);
     if (typeof depth !== "number")
       return this._recursiveMatch$4$bailout(1, expected, actual, $location, depth);
@@ -10189,7 +12736,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
         reason = $.StringDescription$("expected a map");
       else {
         err = expected.length === actual.get$length(actual) ? "" : "different map lengths; ";
-        for (t1 = expected.get$keys(), t1 = t1.get$iterator(t1); reason = null, t1.moveNext$0();) {
+        for (t1 = expected.get$keys(), t1 = t1.get$iterator(t1); reason = null, t1.moveNext$0() === true;) {
           t2 = t1.get$current();
           if (actual.containsKey$1(t2) !== true) {
             reason = $.StringDescription$(err);
@@ -10199,7 +12746,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
           }
         }
         if (reason == null) {
-          for (t1 = actual.get$keys(), t1 = t1.get$iterator(t1); t1.moveNext$0();) {
+          for (t1 = actual.get$keys(), t1 = t1.get$iterator(t1); t1.moveNext$0() === true;) {
             t2 = t1.get$current();
             if (expected.containsKey$1(t2) !== true) {
               reason = $.StringDescription$(err);
@@ -10209,7 +12756,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
             }
           }
           if (reason == null)
-            for (t1 = expected.get$keys(), t1 = t1.get$iterator(t1), t2 = depth + 1; t1.moveNext$0();) {
+            for (t1 = expected.get$keys(), t1 = t1.get$iterator(t1), t2 = depth + 1; t1.moveNext$0() === true;) {
               t3 = t1.get$current();
               if (t3 !== (t3 | 0))
                 throw $.iae(t3);
@@ -10244,14 +12791,14 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
       reason.addDescriptionOf$1(actual);
     }
     if (reason != null) {
-      t1 = $.get$length$as($location);
+      t1 = $.get$length$asx($location);
       if (typeof t1 !== "number")
         return this._recursiveMatch$4$bailout(2, 0, 0, $location, 0, reason, t1);
       t1 = t1 > 0;
     } else
       t1 = false;
     if (t1)
-      $.add$1$a($.add$1$a(reason, " "), $location);
+      $.add$1$ax($.add$1$ax(reason, " "), $location);
     return reason;
   },
   _recursiveMatch$4$bailout: function(state0, expected, actual, $location, depth, reason, t1) {
@@ -10266,7 +12813,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
           reason = null;
         else if (t1.$gt(depth, this._limit))
           reason = $.StringDescription$("recursion depth limit exceeded");
-        else if (typeof expected === "object" && expected !== null && (expected.constructor === Array || !!$.getInterceptor(expected).$isIterable) && canRecurse) {
+        else if (typeof expected === "object" && expected !== null && (expected.constructor === Array || $.getInterceptor(expected).$isIterable()) && canRecurse) {
           r = this._compareIterables$4(expected, actual, this.get$_recursiveMatch(), t1.$add(depth, 1));
           reason = r != null ? $.StringDescription$(r) : null;
         } else if (typeof expected === "object" && expected !== null && !!$.getInterceptor(expected).$isMap && canRecurse)
@@ -10274,7 +12821,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
             reason = $.StringDescription$("expected a map");
           else {
             err = $.$eq(t2.get$length(expected), actual.get$length(actual)) === true ? "" : "different map lengths; ";
-            for (t3 = expected.get$keys(), t3 = t3.get$iterator(t3); reason = null, t3.moveNext$0();) {
+            for (t3 = expected.get$keys(), t3 = t3.get$iterator(t3); reason = null, t3.moveNext$0() === true;) {
               t4 = t3.get$current();
               if (actual.containsKey$1(t4) !== true) {
                 reason = $.StringDescription$(err);
@@ -10284,7 +12831,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
               }
             }
             if (reason == null) {
-              for (t3 = actual.get$keys(), t3 = t3.get$iterator(t3); t3.moveNext$0();) {
+              for (t3 = actual.get$keys(), t3 = t3.get$iterator(t3); t3.moveNext$0() === true;) {
                 t4 = t3.get$current();
                 if (expected.containsKey$1(t4) !== true) {
                   reason = $.StringDescription$(err);
@@ -10294,7 +12841,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
                 }
               }
               if (reason == null)
-                for (t3 = expected.get$keys(), t3 = t3.get$iterator(t3); t3.moveNext$0();) {
+                for (t3 = expected.get$keys(), t3 = t3.get$iterator(t3); t3.moveNext$0() === true;) {
                   t4 = t3.get$current();
                   reason = this._recursiveMatch$4(t2.$index(expected, t4), actual.$index(actual, t4), "with key <" + $.S(t4) + "> " + $.S($location), t1.$add(depth, 1));
                   if (reason != null)
@@ -10329,7 +12876,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
         if (state0 === 2 || state0 === 0 && reason != null)
           switch (state0) {
             case 0:
-              t1 = $.get$length$as($location);
+              t1 = $.get$length$asx($location);
             case 2:
               state0 = 0;
               t1 = $.$gt$n(t1, 0);
@@ -10337,7 +12884,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
         else
           t1 = false;
         if (t1)
-          $.add$1$a($.add$1$a(reason, " "), $location);
+          $.add$1$ax($.add$1$ax(reason, " "), $location);
         return reason;
     }
   },
@@ -10358,7 +12905,7 @@ $$._DeepMatcher = {"": "BaseMatcher;_expected,_limit,count<",
     }
 
   },
-  matches$2: function(item, matchState) {
+  matches$2: function(_, item, matchState) {
     var reason = this._recursiveMatch$4(this._expected, item, "", 0);
     return (reason == null ? null : $.toString$0(reason)) == null;
   },
@@ -10375,7 +12922,7 @@ $$._Predicate = {"": "BaseMatcher;_matcher,_description",
   _matcher$1: function(arg0) {
     return this._matcher.call$1(arg0);
   },
-  matches$2: function(item, matchState) {
+  matches$2: function(_, item, matchState) {
     return this._matcher$1(item);
   },
   describe$1: function(description) {
@@ -10526,7 +13073,7 @@ $$.mat2 = {"": "Object;col0<,col1<",
   toString$0: function(_) {
     return "[0] " + $.S(this.getRow$1(0)) + "\n[1] " + $.S(this.getRow$1(1)) + "\n";
   },
-  get$rows: function() {
+  get$rows: function(_) {
     return 2;
   },
   get$length: function(_) {
@@ -10554,30 +13101,30 @@ $$.mat2 = {"": "Object;col0<,col1<",
   },
   getRow$1: function(row) {
     var r = $.vec2$zero();
-    r.x = $.$index$as(this.col0, row);
-    r.y = $.$index$as(this.col1, row);
+    r.x = $.$index$asx(this.col0, row);
+    r.y = $.$index$asx(this.col1, row);
     return r;
   },
   _mul_scale$1: function(arg) {
     var r = $.mat2$zero();
-    r.col0.set$x($.$mul$n(this.col0.get$x(), arg));
-    r.col0.set$y($.$mul$n(this.col0.get$y(), arg));
-    r.col1.set$x($.$mul$n(this.col1.get$x(), arg));
-    r.col1.set$y($.$mul$n(this.col1.get$y(), arg));
+    $.set$x$x(r.col0, $.$mul$n($.get$x$x(this.col0), arg));
+    $.set$y$x(r.col0, $.$mul$n($.get$y$x(this.col0), arg));
+    $.set$x$x(r.col1, $.$mul$n($.get$x$x(this.col1), arg));
+    $.set$y$x(r.col1, $.$mul$n($.get$y$x(this.col1), arg));
     return r;
   },
   _mul_matrix$1: function(arg) {
     var r = $.mat2$zero();
-    r.col0.set$x($.$add$ns($.$mul$n(this.col0.get$x(), arg.get$col0().get$x()), $.$mul$n(this.col1.get$x(), arg.get$col0().get$y())));
-    r.col1.set$x($.$add$ns($.$mul$n(this.col0.get$x(), arg.get$col1().get$x()), $.$mul$n(this.col1.get$x(), arg.get$col1().get$y())));
-    r.col0.set$y($.$add$ns($.$mul$n(this.col0.get$y(), arg.get$col0().get$x()), $.$mul$n(this.col1.get$y(), arg.get$col0().get$y())));
-    r.col1.set$y($.$add$ns($.$mul$n(this.col0.get$y(), arg.get$col1().get$x()), $.$mul$n(this.col1.get$y(), arg.get$col1().get$y())));
+    $.set$x$x(r.col0, $.$add$ns($.$mul$n($.get$x$x(this.col0), $.get$x$x(arg.get$col0())), $.$mul$n($.get$x$x(this.col1), $.get$y$x(arg.get$col0()))));
+    $.set$x$x(r.col1, $.$add$ns($.$mul$n($.get$x$x(this.col0), $.get$x$x(arg.get$col1())), $.$mul$n($.get$x$x(this.col1), $.get$y$x(arg.get$col1()))));
+    $.set$y$x(r.col0, $.$add$ns($.$mul$n($.get$y$x(this.col0), $.get$x$x(arg.get$col0())), $.$mul$n($.get$y$x(this.col1), $.get$y$x(arg.get$col0()))));
+    $.set$y$x(r.col1, $.$add$ns($.$mul$n($.get$y$x(this.col0), $.get$x$x(arg.get$col1())), $.$mul$n($.get$y$x(this.col1), $.get$y$x(arg.get$col1()))));
     return r;
   },
   _mul_vector$1: function(arg) {
     var r = $.vec2$zero();
-    r.x = $.$add$ns($.$mul$n(this.col0.get$x(), arg.x), $.$mul$n(this.col1.get$x(), arg.y));
-    r.y = $.$add$ns($.$mul$n(this.col0.get$y(), arg.x), $.$mul$n(this.col1.get$y(), arg.y));
+    r.x = $.$add$ns($.$mul$n($.get$x$x(this.col0), arg.x), $.$mul$n($.get$x$x(this.col1), arg.y));
+    r.y = $.$add$ns($.$mul$n($.get$y$x(this.col0), arg.x), $.$mul$n($.get$y$x(this.col1), arg.y));
     return r;
   },
   $mul: function(_, arg) {
@@ -10585,24 +13132,24 @@ $$.mat2 = {"": "Object;col0<,col1<",
       return this._mul_scale$1(arg);
     if (typeof arg === "object" && arg !== null && !!$.getInterceptor(arg).$isvec2)
       return this._mul_vector$1(arg);
-    if (2 === arg.get$rows())
+    if (2 === $.get$rows$x(arg))
       return this._mul_matrix$1(arg);
     throw $.wrapException($.ArgumentError$(arg));
   },
   $add: function(_, arg) {
     var r = $.mat2$zero();
-    r.col0.set$x($.$add$ns(this.col0.get$x(), arg.get$col0().get$x()));
-    r.col0.set$y($.$add$ns(this.col0.get$y(), arg.get$col0().get$y()));
-    r.col1.set$x($.$add$ns(this.col1.get$x(), arg.get$col1().get$x()));
-    r.col1.set$y($.$add$ns(this.col1.get$y(), arg.get$col1().get$y()));
+    $.set$x$x(r.col0, $.$add$ns($.get$x$x(this.col0), $.get$x$x(arg.get$col0())));
+    $.set$y$x(r.col0, $.$add$ns($.get$y$x(this.col0), $.get$y$x(arg.get$col0())));
+    $.set$x$x(r.col1, $.$add$ns($.get$x$x(this.col1), $.get$x$x(arg.get$col1())));
+    $.set$y$x(r.col1, $.$add$ns($.get$y$x(this.col1), $.get$y$x(arg.get$col1())));
     return r;
   },
   $sub: function(_, arg) {
     var r = $.mat2$zero();
-    r.col0.set$x($.$sub$n(this.col0.get$x(), arg.get$col0().get$x()));
-    r.col0.set$y($.$sub$n(this.col0.get$y(), arg.get$col0().get$y()));
-    r.col1.set$x($.$sub$n(this.col1.get$x(), arg.get$col1().get$x()));
-    r.col1.set$y($.$sub$n(this.col1.get$y(), arg.get$col1().get$y()));
+    $.set$x$x(r.col0, $.$sub$n($.get$x$x(this.col0), $.get$x$x(arg.get$col0())));
+    $.set$y$x(r.col0, $.$sub$n($.get$y$x(this.col0), $.get$y$x(arg.get$col0())));
+    $.set$x$x(r.col1, $.$sub$n($.get$x$x(this.col1), $.get$x$x(arg.get$col1())));
+    $.set$y$x(r.col1, $.$sub$n($.get$y$x(this.col1), $.get$y$x(arg.get$col1())));
     return r;
   },
   $negate: function(_) {
@@ -10613,28 +13160,31 @@ $$.mat2 = {"": "Object;col0<,col1<",
   },
   transposed$0: function() {
     var r = $.mat2$zero();
-    r.col0.set$x(this.col0.get$x());
-    r.col0.set$y(this.col1.get$x());
-    r.col1.set$x(this.col0.get$y());
-    r.col1.set$y(this.col1.get$y());
+    $.set$x$x(r.col0, $.get$x$x(this.col0));
+    $.set$y$x(r.col0, $.get$x$x(this.col1));
+    $.set$x$x(r.col1, $.get$y$x(this.col0));
+    $.set$y$x(r.col1, $.get$y$x(this.col1));
     return r;
   },
   invert$0: function() {
-    var det, invDet, t1, temp;
-    det = $.$sub$n($.$mul$n(this.col0.get$x(), this.col1.get$y()), $.$mul$n(this.col0.get$y(), this.col1.get$x()));
+    var det, invDet, t1, t2, temp;
+    det = $.$sub$n($.$mul$n($.get$x$x(this.col0), $.get$y$x(this.col1)), $.$mul$n($.get$y$x(this.col0), $.get$x$x(this.col1)));
     if ($.$eq(det, 0) === true)
       return 0;
     if (typeof det !== "number")
       throw $.iae(det);
     invDet = 1 / det;
     t1 = this.col0;
-    temp = t1.get$x();
-    t1.set$x($.$mul$n(this.col1.get$y(), invDet));
+    t2 = $.getInterceptor$x(t1);
+    temp = t2.get$x(t1);
+    t2.set$x(t1, $.$mul$n($.get$y$x(this.col1), invDet));
     t1 = this.col0;
-    t1.set$y($.$mul$n($.$negate$n(t1.get$y()), invDet));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$mul$n($.$negate$n(t2.get$y(t1)), invDet));
     t1 = this.col1;
-    t1.set$x($.$mul$n($.$negate$n(t1.get$x()), invDet));
-    this.col1.set$y($.$mul$n(temp, invDet));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$mul$n($.$negate$n(t2.get$x(t1)), invDet));
+    $.set$y$x(this.col1, $.$mul$n(temp, invDet));
     return det;
   },
   setRotation$1: function(radians) {
@@ -10642,93 +13192,109 @@ $$.mat2 = {"": "Object;col0<,col1<",
     radians_ = $.toDouble$0$n(radians);
     c = Math.cos(radians_);
     s = Math.sin(radians_);
-    this.col0.set$x(c);
-    this.col0.set$y(s);
-    this.col1.set$x(-s);
-    this.col1.set$y(c);
+    $.set$x$x(this.col0, c);
+    $.set$y$x(this.col0, s);
+    $.set$x$x(this.col1, -s);
+    $.set$y$x(this.col1, c);
   },
-  clone$0: function() {
+  clone$0: function(_) {
     return $.mat2$copy(this);
   },
   copyFrom$1: function(arg) {
-    this.col0.set$x(arg.get$col0().get$x());
-    this.col0.set$y(arg.get$col0().get$y());
-    this.col1.set$x(arg.get$col1().get$x());
-    this.col1.set$y(arg.get$col1().get$y());
+    $.set$x$x(this.col0, $.get$x$x(arg.get$col0()));
+    $.set$y$x(this.col0, $.get$y$x(arg.get$col0()));
+    $.set$x$x(this.col1, $.get$x$x(arg.get$col1()));
+    $.set$y$x(this.col1, $.get$y$x(arg.get$col1()));
     return this;
   },
   add$1: function(_, o) {
-    var t1 = this.col0;
-    t1.set$x($.$add$ns(t1.get$x(), o.get$col0().get$x()));
+    var t1, t2;
     t1 = this.col0;
-    t1.set$y($.$add$ns(t1.get$y(), o.get$col0().get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$add$ns(t2.get$x(t1), $.get$x$x(o.get$col0())));
+    t1 = this.col0;
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$add$ns(t2.get$y(t1), $.get$y$x(o.get$col0())));
     t1 = this.col1;
-    t1.set$x($.$add$ns(t1.get$x(), o.get$col1().get$x()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$add$ns(t2.get$x(t1), $.get$x$x(o.get$col1())));
     t1 = this.col1;
-    t1.set$y($.$add$ns(t1.get$y(), o.get$col1().get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$add$ns(t2.get$y(t1), $.get$y$x(o.get$col1())));
     return this;
   },
   sub$1: function(o) {
-    var t1 = this.col0;
-    t1.set$x($.$sub$n(t1.get$x(), o.get$col0().get$x()));
+    var t1, t2;
     t1 = this.col0;
-    t1.set$y($.$sub$n(t1.get$y(), o.get$col0().get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$sub$n(t2.get$x(t1), $.get$x$x(o.get$col0())));
+    t1 = this.col0;
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$sub$n(t2.get$y(t1), $.get$y$x(o.get$col0())));
     t1 = this.col1;
-    t1.set$x($.$sub$n(t1.get$x(), o.get$col1().get$x()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$sub$n(t2.get$x(t1), $.get$x$x(o.get$col1())));
     t1 = this.col1;
-    t1.set$y($.$sub$n(t1.get$y(), o.get$col1().get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$sub$n(t2.get$y(t1), $.get$y$x(o.get$col1())));
     return this;
   },
   negate$0: function() {
-    var t1 = this.col0;
-    t1.set$x($.$negate$n(t1.get$x()));
+    var t1, t2;
     t1 = this.col0;
-    t1.set$y($.$negate$n(t1.get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$negate$n(t2.get$x(t1)));
+    t1 = this.col0;
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$negate$n(t2.get$y(t1)));
     t1 = this.col1;
-    t1.set$x($.$negate$n(t1.get$x()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$x(t1, $.$negate$n(t2.get$x(t1)));
     t1 = this.col1;
-    t1.set$y($.$negate$n(t1.get$y()));
+    t2 = $.getInterceptor$x(t1);
+    t2.set$y(t1, $.$negate$n(t2.get$y(t1)));
     return this;
   },
-  transform$1: function(arg) {
+  transform$1: function(_, arg) {
     var x_, y_;
-    x_ = $.$add$ns($.$mul$n(this.col0.get$x(), arg.x), $.$mul$n(this.col1.get$x(), arg.y));
-    y_ = $.$add$ns($.$mul$n(this.col0.get$y(), arg.x), $.$mul$n(this.col1.get$y(), arg.y));
+    x_ = $.$add$ns($.$mul$n($.get$x$x(this.col0), arg.x), $.$mul$n($.get$x$x(this.col1), arg.y));
+    y_ = $.$add$ns($.$mul$n($.get$y$x(this.col0), arg.x), $.$mul$n($.get$y$x(this.col1), arg.y));
     arg.x = x_;
     arg.y = y_;
     return arg;
   },
   transformed$2: function(arg, out) {
     out.copyFrom$1(arg);
-    return this.transform$1(out);
+    return this.transform$1(this, out);
   },
   mat2$copy$1: function(other) {
     this.col0 = $.vec2$zero();
     this.col1 = $.vec2$zero();
-    this.col0.set$x(other.col0.get$x());
-    this.col0.set$y(other.col0.get$y());
-    this.col1.set$x(other.col1.get$x());
-    this.col1.set$y(other.col1.get$y());
+    $.set$x$x(this.col0, $.get$x$x(other.col0));
+    $.set$y$x(this.col0, $.get$y$x(other.col0));
+    $.set$x$x(this.col1, $.get$x$x(other.col1));
+    $.set$y$x(this.col1, $.get$y$x(other.col1));
   },
   mat2$zero$0: function() {
     this.col0 = $.vec2$zero();
     this.col1 = $.vec2$zero();
-    this.col0.set$x(0);
-    this.col0.set$y(0);
-    this.col1.set$x(0);
-    this.col1.set$y(0);
+    $.set$x$x(this.col0, 0);
+    $.set$y$x(this.col0, 0);
+    $.set$x$x(this.col1, 0);
+    $.set$y$x(this.col1, 0);
   }
 };
 
-$$.vec2 = {"": "Object;x@,y@",
+$$.vec2 = {"": "Object;x*,y*",
   makeZero$0: function() {
     this.x = 0;
     this.y = 0;
     return this;
   },
   makeCopy$1: function(other) {
-    this.x = other.get$x();
-    this.y = other.get$y();
+    var t1 = $.getInterceptor$x(other);
+    this.x = t1.get$x(other);
+    this.y = t1.get$y(other);
     return this;
   },
   makeRaw$2: function(x_, y_) {
@@ -10749,10 +13315,12 @@ $$.vec2 = {"": "Object;x@,y@",
     return $.vec2$raw($.$negate$n(this.x), $.$negate$n(this.y));
   },
   $sub: function(_, other) {
-    return $.vec2$raw($.$sub$n(this.x, other.get$x()), $.$sub$n(this.y, other.get$y()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec2$raw($.$sub$n(this.x, t1.get$x(other)), $.$sub$n(this.y, t1.get$y(other)));
   },
   $add: function(_, other) {
-    return $.vec2$raw($.$add$ns(this.x, other.get$x()), $.$add$ns(this.y, other.get$y()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec2$raw($.$add$ns(this.x, t1.get$x(other)), $.$add$ns(this.y, t1.get$y(other)));
   },
   $div: function(_, other) {
     var o = 1 / $.JSDouble_methods.toDouble$0(other);
@@ -10856,16 +13424,18 @@ $$.vec2 = {"": "Object;x@,y@",
   },
   dot$1: function(other) {
     var t1, t2;
-    t1 = $.$mul$n(this.x, other.get$x());
-    if (typeof t1 !== "number")
-      throw $.iae(t1);
-    t2 = $.$mul$n(this.y, other.get$y());
+    t1 = $.getInterceptor$x(other);
+    t2 = $.$mul$n(this.x, t1.get$x(other));
     if (typeof t2 !== "number")
       throw $.iae(t2);
-    return 0 + t1 + t2;
+    t1 = $.$mul$n(this.y, t1.get$y(other));
+    if (typeof t1 !== "number")
+      throw $.iae(t1);
+    return 0 + t2 + t1;
   },
   cross$1: function(other) {
-    return $.$sub$n($.$mul$n(this.x, other.get$y()), $.$mul$n(this.y, other.get$x()));
+    var t1 = $.getInterceptor$x(other);
+    return $.$sub$n($.$mul$n(this.x, t1.get$y(other)), $.$mul$n(this.y, t1.get$x(other)));
   },
   set$xy: function(arg) {
     this.x = arg.x;
@@ -10879,82 +13449,86 @@ $$.vec2 = {"": "Object;x@,y@",
     return $.vec2$(this.x, this.y);
   },
   add$1: function(_, arg) {
-    var t1, t3, t5;
+    var t1, t3, t4;
     t1 = this.x;
     if (typeof t1 !== "number")
       return this.add$1$bailout(1, arg, t1);
-    t3 = arg.get$x();
+    t3 = $.getInterceptor$x(arg);
+    t4 = t3.get$x(arg);
+    if (typeof t4 !== "number")
+      return this.add$1$bailout(2, arg, t1, t3, t4);
+    this.x = t1 + t4;
+    t4 = this.y;
+    if (typeof t4 !== "number")
+      return this.add$1$bailout(3, arg, 0, t3, t4);
+    t3 = t3.get$y(arg);
     if (typeof t3 !== "number")
-      return this.add$1$bailout(2, arg, t1, t3);
-    this.x = t1 + t3;
-    t3 = this.y;
-    if (typeof t3 !== "number")
-      return this.add$1$bailout(3, arg, 0, t3);
-    t5 = arg.get$y();
-    if (typeof t5 !== "number")
-      return this.add$1$bailout(4, 0, 0, t3, t5);
-    this.y = t3 + t5;
+      return this.add$1$bailout(4, 0, 0, t3, t4);
+    this.y = t4 + t3;
     return this;
   },
-  add$1$bailout: function(state0, arg, t1, t3, t5) {
+  add$1$bailout: function(state0, arg, t1, t3, t4) {
     switch (state0) {
       case 0:
         t1 = this.x;
       case 1:
         state0 = 0;
-        t3 = arg.get$x();
+        t3 = $.getInterceptor$x(arg);
+        t4 = t3.get$x(arg);
       case 2:
         state0 = 0;
-        this.x = $.$add$ns(t1, t3);
-        t3 = this.y;
+        this.x = $.$add$ns(t1, t4);
+        t4 = this.y;
       case 3:
         state0 = 0;
-        t5 = arg.get$y();
+        t3 = t3.get$y(arg);
       case 4:
         state0 = 0;
-        this.y = $.$add$ns(t3, t5);
+        this.y = $.$add$ns(t4, t3);
         return this;
     }
   },
   sub$1: function(arg) {
-    var t1, t3, t5;
+    var t1, t3, t4;
     t1 = this.x;
     if (typeof t1 !== "number")
       return this.sub$1$bailout(1, arg, t1);
-    t3 = arg.get$x();
+    t3 = $.getInterceptor$x(arg);
+    t4 = t3.get$x(arg);
+    if (typeof t4 !== "number")
+      return this.sub$1$bailout(2, arg, t1, t3, t4);
+    this.x = t1 - t4;
+    t4 = this.y;
+    if (typeof t4 !== "number")
+      return this.sub$1$bailout(3, arg, 0, t3, t4);
+    t3 = t3.get$y(arg);
     if (typeof t3 !== "number")
-      return this.sub$1$bailout(2, arg, t1, t3);
-    this.x = t1 - t3;
-    t3 = this.y;
-    if (typeof t3 !== "number")
-      return this.sub$1$bailout(3, arg, 0, t3);
-    t5 = arg.get$y();
-    if (typeof t5 !== "number")
-      return this.sub$1$bailout(4, 0, 0, t3, t5);
-    this.y = t3 - t5;
+      return this.sub$1$bailout(4, 0, 0, t3, t4);
+    this.y = t4 - t3;
     return this;
   },
-  sub$1$bailout: function(state0, arg, t1, t3, t5) {
+  sub$1$bailout: function(state0, arg, t1, t3, t4) {
     switch (state0) {
       case 0:
         t1 = this.x;
       case 1:
         state0 = 0;
-        t3 = arg.get$x();
+        t3 = $.getInterceptor$x(arg);
+        t4 = t3.get$x(arg);
       case 2:
         state0 = 0;
-        this.x = $.$sub$n(t1, t3);
-        t3 = this.y;
+        this.x = $.$sub$n(t1, t4);
+        t4 = this.y;
       case 3:
         state0 = 0;
-        t5 = arg.get$y();
+        t3 = t3.get$y(arg);
       case 4:
         state0 = 0;
-        this.y = $.$sub$n(t3, t5);
+        this.y = $.$sub$n(t4, t3);
         return this;
     }
   },
-  scale$1: function(arg) {
+  scale$1: function(_, arg) {
     var a, t1;
     a = $.toDouble$0$n(arg);
     t1 = this.x;
@@ -10981,6 +13555,9 @@ $$.vec2 = {"": "Object;x@,y@",
         this.y = $.$mul$n(t1, a);
         return this;
     }
+  },
+  get$scale: function(receiver) {
+    return new $.BoundClosure$i1(this, "scale$1", receiver);
   },
   negate$0: function() {
     var t1 = this.x;
@@ -11012,18 +13589,22 @@ $$.vec2 = {"": "Object;x@,y@",
     this.y = $.abs$0$n(this.y);
     return this;
   },
-  clone$0: function() {
+  clone$0: function(_) {
     return $.vec2$copy(this);
   },
   copyFrom$1: function(arg) {
-    this.x = arg.get$x();
-    this.y = arg.get$y();
+    var t1 = $.getInterceptor$x(arg);
+    this.x = t1.get$x(arg);
+    this.y = t1.get$y(arg);
     return this;
   },
   setComponents$2: function(x_, y_) {
     this.x = $.JSNumber_methods.toDouble$0(x_);
     this.y = $.JSNumber_methods.toDouble$0(y_);
     return this;
+  },
+  vec2$zero$0: function() {
+    this.makeZero$0();
   },
   vec2$copy$1: function(other) {
     this.makeCopy$1(other);
@@ -11052,13 +13633,10 @@ $$.vec2 = {"": "Object;x@,y@",
   vec2$raw$2: function(x_, y_) {
     this.makeRaw$2(x_, y_);
   },
-  vec2$zero$0: function() {
-    this.makeZero$0();
-  },
   $isvec2: true
 };
 
-$$.vec3 = {"": "Object;x@,y@,z@",
+$$.vec3 = {"": "Object;x*,y*,z*",
   makeZero$0: function() {
     this.x = 0;
     this.y = 0;
@@ -11084,10 +13662,12 @@ $$.vec3 = {"": "Object;x@,y@,z@",
     return $.vec3$raw($.$negate$n(this.x), $.$negate$n(this.y), $.$negate$n(this.z));
   },
   $sub: function(_, other) {
-    return $.vec3$raw($.$sub$n(this.x, other.get$x()), $.$sub$n(this.y, other.get$y()), $.$sub$n(this.z, other.get$z()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec3$raw($.$sub$n(this.x, t1.get$x(other)), $.$sub$n(this.y, t1.get$y(other)), $.$sub$n(this.z, t1.get$z(other)));
   },
   $add: function(_, other) {
-    return $.vec3$raw($.$add$ns(this.x, other.get$x()), $.$add$ns(this.y, other.get$y()), $.$add$ns(this.z, other.get$z()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec3$raw($.$add$ns(this.x, t1.get$x(other)), $.$add$ns(this.y, t1.get$y(other)), $.$add$ns(this.z, t1.get$z(other)));
   },
   $div: function(_, other) {
     var o = 1 / $.JSDouble_methods.toDouble$0(other);
@@ -11159,17 +13739,20 @@ $$.vec3 = {"": "Object;x@,y@,z@",
     t2 = $.$mul$n(this.y, other.y);
     if (typeof t2 !== "number")
       throw $.iae(t2);
-    t3 = $.$mul$n(this.z, other.get$z());
+    t3 = $.$mul$n(this.z, other.get$z(other));
     if (typeof t3 !== "number")
       throw $.iae(t3);
     return 0 + t1 + t2 + t3;
   },
   cross$2: function(other, out) {
+    var t1, t2;
     if (out == null)
       out = $.vec3$zero();
-    out.set$x($.$sub$n($.$mul$n(this.y, other.get$z()), $.$mul$n(this.z, other.get$y())));
-    out.set$y($.$sub$n($.$mul$n(this.z, other.get$x()), $.$mul$n(this.x, other.get$z())));
-    out.set$z($.$sub$n($.$mul$n(this.x, other.get$y()), $.$mul$n(this.y, other.get$x())));
+    t1 = $.getInterceptor$x(other);
+    t2 = $.getInterceptor$x(out);
+    t2.set$x(out, $.$sub$n($.$mul$n(this.y, t1.get$z(other)), $.$mul$n(this.z, t1.get$y(other))));
+    t2.set$y(out, $.$sub$n($.$mul$n(this.z, t1.get$x(other)), $.$mul$n(this.x, t1.get$z(other))));
+    t2.set$z(out, $.$sub$n($.$mul$n(this.x, t1.get$y(other)), $.$mul$n(this.y, t1.get$x(other))));
     return out;
   },
   cross$1: function(other) {
@@ -11180,23 +13763,27 @@ $$.vec3 = {"": "Object;x@,y@,z@",
     return arg;
   },
   add$1: function(_, arg) {
-    this.x = $.$add$ns(this.x, arg.get$x());
-    this.y = $.$add$ns(this.y, arg.get$y());
-    this.z = $.$add$ns(this.z, arg.get$z());
+    var t1 = $.getInterceptor$x(arg);
+    this.x = $.$add$ns(this.x, t1.get$x(arg));
+    this.y = $.$add$ns(this.y, t1.get$y(arg));
+    this.z = $.$add$ns(this.z, t1.get$z(arg));
     return this;
   },
   sub$1: function(arg) {
     this.x = $.$sub$n(this.x, arg.x);
     this.y = $.$sub$n(this.y, arg.y);
-    this.z = $.$sub$n(this.z, arg.get$z());
+    this.z = $.$sub$n(this.z, arg.get$z(arg));
     return this;
   },
-  scale$1: function(arg) {
-    var a = $.JSDouble_methods.toDouble$0(arg);
+  scale$1: function(_, arg) {
+    var a = $.toDouble$0$n(arg);
     this.x = $.$mul$n(this.x, a);
     this.y = $.$mul$n(this.y, a);
     this.z = $.$mul$n(this.z, a);
     return this;
+  },
+  get$scale: function(receiver) {
+    return new $.BoundClosure$i1(this, "scale$1", receiver);
   },
   negate$0: function() {
     this.x = $.$negate$n(this.x);
@@ -11204,13 +13791,14 @@ $$.vec3 = {"": "Object;x@,y@,z@",
     this.z = $.$negate$n(this.z);
     return this;
   },
-  clone$0: function() {
+  clone$0: function(_) {
     return $.vec3$copy(this);
   },
   copyFrom$1: function(arg) {
-    this.x = arg.get$x();
-    this.y = arg.get$y();
-    this.z = arg.get$z();
+    var t1 = $.getInterceptor$x(arg);
+    this.x = t1.get$x(arg);
+    this.y = t1.get$y(arg);
+    this.z = t1.get$z(arg);
     return this;
   },
   vec3$copy$1: function(other) {
@@ -11225,7 +13813,7 @@ $$.vec3 = {"": "Object;x@,y@,z@",
   $isvec3: true
 };
 
-$$.vec4 = {"": "Object;x@,y@,z@,w<",
+$$.vec4 = {"": "Object;x*,y*,z*,w<",
   makeZero$0: function() {
     this.x = 0;
     this.y = 0;
@@ -11254,10 +13842,12 @@ $$.vec4 = {"": "Object;x@,y@,z@,w<",
     return $.vec4$raw($.$negate$n(this.x), $.$negate$n(this.y), $.$negate$n(this.z), $.$negate$n(this.w));
   },
   $sub: function(_, other) {
-    return $.vec4$raw($.$sub$n(this.x, other.get$x()), $.$sub$n(this.y, other.get$y()), $.$sub$n(this.z, other.get$z()), $.$sub$n(this.w, other.get$w()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec4$raw($.$sub$n(this.x, t1.get$x(other)), $.$sub$n(this.y, t1.get$y(other)), $.$sub$n(this.z, t1.get$z(other)), $.$sub$n(this.w, other.get$w()));
   },
   $add: function(_, other) {
-    return $.vec4$raw($.$add$ns(this.x, other.get$x()), $.$add$ns(this.y, other.get$y()), $.$add$ns(this.z, other.get$z()), $.$add$ns(this.w, other.get$w()));
+    var t1 = $.getInterceptor$x(other);
+    return $.vec4$raw($.$add$ns(this.x, t1.get$x(other)), $.$add$ns(this.y, t1.get$y(other)), $.$add$ns(this.z, t1.get$z(other)), $.$add$ns(this.w, other.get$w()));
   },
   $div: function(_, other) {
     var o = 1 / $.JSDouble_methods.toDouble$0(other);
@@ -11339,7 +13929,7 @@ $$.vec4 = {"": "Object;x@,y@,z@,w<",
     t2 = $.$mul$n(this.y, other.y);
     if (typeof t2 !== "number")
       throw $.iae(t2);
-    t3 = $.$mul$n(this.z, other.get$z());
+    t3 = $.$mul$n(this.z, other.get$z(other));
     if (typeof t3 !== "number")
       throw $.iae(t3);
     t4 = $.$mul$n(this.w, other.get$w());
@@ -11359,26 +13949,30 @@ $$.vec4 = {"": "Object;x@,y@,z@,w<",
     return this.w;
   },
   add$1: function(_, arg) {
-    this.x = $.$add$ns(this.x, arg.get$x());
-    this.y = $.$add$ns(this.y, arg.get$y());
-    this.z = $.$add$ns(this.z, arg.get$z());
+    var t1 = $.getInterceptor$x(arg);
+    this.x = $.$add$ns(this.x, t1.get$x(arg));
+    this.y = $.$add$ns(this.y, t1.get$y(arg));
+    this.z = $.$add$ns(this.z, t1.get$z(arg));
     this.w = $.$add$ns(this.w, arg.get$w());
     return this;
   },
   sub$1: function(arg) {
     this.x = $.$sub$n(this.x, arg.x);
     this.y = $.$sub$n(this.y, arg.y);
-    this.z = $.$sub$n(this.z, arg.get$z());
+    this.z = $.$sub$n(this.z, arg.get$z(arg));
     this.w = $.$sub$n(this.w, arg.get$w());
     return this;
   },
-  scale$1: function(arg) {
-    var a = $.JSDouble_methods.toDouble$0(arg);
+  scale$1: function(_, arg) {
+    var a = $.toDouble$0$n(arg);
     this.x = $.$mul$n(this.x, a);
     this.y = $.$mul$n(this.y, a);
     this.z = $.$mul$n(this.z, a);
     this.w = $.$mul$n(this.w, a);
     return this;
+  },
+  get$scale: function(receiver) {
+    return new $.BoundClosure$i1(this, "scale$1", receiver);
   },
   negate$0: function() {
     this.x = $.$negate$n(this.x);
@@ -11387,13 +13981,14 @@ $$.vec4 = {"": "Object;x@,y@,z@,w<",
     this.w = $.$negate$n(this.w);
     return this;
   },
-  clone$0: function() {
+  clone$0: function(_) {
     return $.vec4$copy(this);
   },
   copyFrom$1: function(arg) {
-    this.x = arg.get$x();
-    this.y = arg.get$y();
-    this.z = arg.get$z();
+    var t1 = $.getInterceptor$x(arg);
+    this.x = t1.get$x(arg);
+    this.y = t1.get$y(arg);
+    this.z = t1.get$z(arg);
     this.w = arg.get$w();
     return this;
   },
@@ -11409,17 +14004,831 @@ $$.vec4 = {"": "Object;x@,y@,z@,w<",
   $isvec4: true
 };
 
-$$.Closure = {"": "Object;",
-  toString$0: function(_) {
-    return "Closure";
+$$._WorkerStub = {"": "Interceptor;",
+  get$id: function(receiver) {
+    return receiver.id;
   },
-  $isFunction: true
+  set$id: function(receiver, i) {
+    receiver.id = i;
+  },
+  set$onmessage: function(receiver, f) {
+    receiver.onmessage = f;
+  },
+  postMessage$1: function(receiver, msg) {
+    receiver.postMessage(msg);
+  },
+  terminate$0: function(receiver) {
+    receiver.terminate();
+  }
 };
 
+$$._HTMLElement = {"": "Element;"};
+
+$$.AnchorElement = {"": "Element;type%",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.AreaElement = {"": "Element;shape="};
+
+$$.Attr = {"": "Node;"};
+
+$$.AudioElement = {"": "MediaElement;"};
+
+$$.AutocompleteErrorEvent = {"": "Event;"};
+
+$$.BRElement = {"": "Element;"};
+
+$$.BaseElement = {"": "Element;"};
+
+$$.BodyElement = {"": "Element;"};
+
+$$.ButtonElement = {"": "Element;type%"};
+
+$$.CDataSection = {"": "Text;"};
+
+$$.CanvasElement = {"": "Element;height},width}",
+  getContext$2: function(receiver, contextId, attrs) {
+    var t1 = $ === attrs;
+    if (t1)
+      attrs = null;
+    if (!t1)
+      return receiver.getContext(contextId, $.convertDartToNative_Dictionary(attrs));
+    return receiver.getContext(contextId);
+  },
+  getContext$1: function($receiver, contextId) {
+    return this.getContext$2($receiver, contextId, $);
+  }
+};
+
+$$.CanvasGradient = {"": "Interceptor;"};
+
+$$.CanvasPattern = {"": "Interceptor;"};
+
+$$.CanvasRenderingContext = {"": "Interceptor;"};
+
+$$.CanvasRenderingContext2D = {"": "CanvasRenderingContext;",
+  beginPath$0: function(receiver) {
+    return receiver.beginPath();
+  },
+  clearRect$4: function(receiver, x, y, width, height) {
+    return receiver.clearRect(x, y, width, height);
+  },
+  closePath$0: function(receiver) {
+    return receiver.closePath();
+  },
+  fill$1: function(receiver, winding) {
+    return receiver.fill(winding);
+  },
+  fill$0: function($receiver) {
+    return $receiver.fill();
+  },
+  lineTo$2: function(receiver, x, y) {
+    return receiver.lineTo(x, y);
+  },
+  moveTo$2: function(receiver, x, y) {
+    return receiver.moveTo(x, y);
+  },
+  scale$2: function(receiver, sx, sy) {
+    return receiver.scale(sx, sy);
+  },
+  get$scale: function(receiver) {
+    return new $.BoundClosure$i2(this, "scale$2", receiver);
+  },
+  stroke$0: function(receiver) {
+    return receiver.stroke();
+  },
+  setFillColorRgb$4: function(receiver, r, g, b, a) {
+    receiver.fillStyle = "rgba(" + $.S(r) + ", " + $.S(g) + ", " + $.S(b) + ", " + $.S(a) + ")";
+  },
+  setStrokeColorRgb$4: function(receiver, r, g, b, a) {
+    receiver.strokeStyle = "rgba(" + $.S(r) + ", " + $.S(g) + ", " + $.S(b) + ", " + $.S(a) + ")";
+  },
+  arc$6: function(receiver, x, y, radius, startAngle, endAngle, anticlockwise) {
+    receiver.arc(x, y, radius, startAngle, endAngle, anticlockwise);
+  }
+};
+
+$$.CharacterData = {"": "Node;length="};
+
+$$.Comment = {"": "CharacterData;"};
+
+$$.ContentElement = {"": "Element;"};
+
+$$.CssStyleDeclaration = {"": "Interceptor;length=",
+  getPropertyValue$1: function(receiver, propertyName) {
+    var propValue = receiver.getPropertyValue(propertyName);
+    return propValue != null ? propValue : "";
+  },
+  setProperty$3: function(receiver, propertyName, value, priority) {
+    var exception;
+    try {
+      receiver.setProperty(propertyName, value, priority);
+      if (!!receiver.setAttribute)
+        receiver.setAttribute(propertyName, value);
+    } catch (exception) {
+      $.unwrapException(exception);
+    }
+
+  },
+  get$filter: function(receiver) {
+    return this.getPropertyValue$1(receiver, $.S($.Device_cssPrefix()) + "filter");
+  },
+  set$height: function(receiver, value) {
+    this.setProperty$3(receiver, "height", value, "");
+  },
+  get$position: function(receiver) {
+    return this.getPropertyValue$1(receiver, "position");
+  },
+  set$width: function(receiver, value) {
+    this.setProperty$3(receiver, "width", value, "");
+  }
+};
+
+$$.CustomElementConstructor = {"": "Interceptor;"};
+
+$$.DListElement = {"": "Element;"};
+
+$$.DataListElement = {"": "Element;"};
+
+$$.DetailsElement = {"": "Element;"};
+
+$$.DialogElement = {"": "Element;"};
+
+$$.DivElement = {"": "Element;"};
+
+$$.Document = {"": "Node;",
+  register$2: function(receiver, $name, options) {
+    var t1 = $ === options;
+    if (t1)
+      options = null;
+    if (!t1)
+      return receiver.webkitRegister($name, $.convertDartToNative_Dictionary(options));
+    return receiver.webkitRegister($name);
+  }
+};
+
+$$.DocumentFragment = {"": "Node;"};
+
+$$.DocumentType = {"": "Node;"};
+
+$$.DomError = {"": "Interceptor;"};
+
+$$.DomException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.Element = {"": "Node;id="};
+
+$$.EmbedElement = {"": "Element;height},type%,width}"};
+
+$$.EntityReference = {"": "Node;"};
+
+$$.ErrorEvent = {"": "Event;"};
+
+$$.Event = {"": "Interceptor;type="};
+
+$$.EventException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.EventTarget = {"": "Interceptor;"};
+
+$$.FieldSetElement = {"": "Element;type="};
+
+$$.FileError = {"": "Interceptor;"};
+
+$$.FileException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.FormElement = {"": "Element;length="};
+
+$$.HRElement = {"": "Element;"};
+
+$$.HeadElement = {"": "Element;"};
+
+$$.HeadingElement = {"": "Element;"};
+
+$$.HtmlCollection = {"": "Interceptor;",
+  get$length: function(receiver) {
+    return receiver.length;
+  },
+  $index: function(receiver, index) {
+    return receiver[index];
+  },
+  $indexSet: function(receiver, index, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot assign element of immutable List."));
+  },
+  get$iterator: function(receiver) {
+    return $.FixedSizeListIterator$(receiver, $.Node);
+  },
+  forEach$1: function(receiver, f) {
+    var t1;
+    for (t1 = this.get$iterator(receiver); t1.moveNext$0();)
+      f.call$1(t1.get$current());
+    return;
+  },
+  skip$1: function(receiver, n) {
+    return $.SubListIterable$(receiver, n, null, null);
+  },
+  elementAt$1: function(receiver, index) {
+    return receiver[index];
+  },
+  add$1: function(receiver, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  addAll$1: function(receiver, iterable) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  removeLast$0: function(receiver) {
+    throw $.wrapException($.UnsupportedError$("Cannot remove from immutable List."));
+  },
+  setRange$4: function(receiver, start, end, iterable, skipCount) {
+    throw $.wrapException($.UnsupportedError$("Cannot setRange on immutable List."));
+  },
+  setRange$3: function($receiver, start, end, iterable) {
+    return this.setRange$4($receiver, start, end, iterable, null);
+  },
+  sublist$2: function(receiver, start, end) {
+    if (end == null)
+      end = this.get$length(receiver);
+    return $.Lists_getRange(receiver, start, end, []);
+  },
+  sublist$1: function($receiver, start) {
+    return this.sublist$2($receiver, start, null);
+  },
+  toString$0: function(receiver) {
+    var buffer = $.StringBuffer$("[");
+    buffer.writeAll$2(receiver, ", ");
+    buffer.write$1("]");
+    return buffer.toString$0(buffer);
+  },
+  $isList: function() {
+    return true;
+  },
+  $asList: function() {
+    return function () { return [$.Node]; };
+  },
+  $isIterable: function() {
+    return true;
+  },
+  $asIterable: function() {
+    return function () { return [$.Node]; };
+  },
+  $isJavaScriptIndexingBehavior: function() {
+    return true;
+  },
+  $asJavaScriptIndexingBehavior: function() {
+    return null;
+  }
+};
+
+$$.HtmlDocument = {"": "Document;body="};
+
+$$.HtmlElement = {"": "Element;"};
+
+$$.HtmlFormControlsCollection = {"": "HtmlCollection;"};
+
+$$.HtmlOptionsCollection = {"": "HtmlCollection;"};
+
+$$.HttpRequestException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.IFrameElement = {"": "Element;height},width}"};
+
+$$.ImageElement = {"": "Element;height},width},x=,y="};
+
+$$.InputElement = {"": "Element;height},type%,width}"};
+
+$$.KeygenElement = {"": "Element;type="};
+
+$$.LIElement = {"": "Element;type%"};
+
+$$.LabelElement = {"": "Element;"};
+
+$$.LegendElement = {"": "Element;"};
+
+$$.LinkElement = {"": "Element;type%"};
+
+$$.MapElement = {"": "Element;"};
+
+$$.MediaElement = {"": "Element;"};
+
+$$.MediaError = {"": "Interceptor;"};
+
+$$.MediaKeyError = {"": "Interceptor;"};
+
+$$.MenuElement = {"": "Element;"};
+
+$$.MetaElement = {"": "Element;"};
+
+$$.MeterElement = {"": "Element;"};
+
+$$.ModElement = {"": "Element;"};
+
+$$.Navigator = {"": "Interceptor;"};
+
+$$.NavigatorUserMediaError = {"": "Interceptor;"};
+
+$$.Node = {"": "EventTarget;parent:parentElement=",
+  toString$0: function(receiver) {
+    var t1 = receiver.localName;
+    if (t1 == null) {
+      t1 = receiver.nodeValue;
+      if (t1 == null)
+        t1 = $.Object.prototype.toString$0.call(receiver, receiver);
+    }
+    return t1;
+  }
+};
+
+$$.NodeList = {"": "Interceptor;",
+  get$length: function(receiver) {
+    return receiver.length;
+  },
+  $index: function(receiver, index) {
+    return receiver[index];
+  },
+  $indexSet: function(receiver, index, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot assign element of immutable List."));
+  },
+  get$iterator: function(receiver) {
+    return $.FixedSizeListIterator$(receiver, $.Node);
+  },
+  forEach$1: function(receiver, f) {
+    var t1;
+    for (t1 = this.get$iterator(receiver); t1.moveNext$0();)
+      f.call$1(t1.get$current());
+    return;
+  },
+  skip$1: function(receiver, n) {
+    return $.SubListIterable$(receiver, n, null, null);
+  },
+  elementAt$1: function(receiver, index) {
+    return receiver[index];
+  },
+  add$1: function(receiver, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  addAll$1: function(receiver, iterable) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  removeLast$0: function(receiver) {
+    throw $.wrapException($.UnsupportedError$("Cannot remove from immutable List."));
+  },
+  setRange$4: function(receiver, start, end, iterable, skipCount) {
+    throw $.wrapException($.UnsupportedError$("Cannot setRange on immutable List."));
+  },
+  setRange$3: function($receiver, start, end, iterable) {
+    return this.setRange$4($receiver, start, end, iterable, null);
+  },
+  sublist$2: function(receiver, start, end) {
+    if (end == null)
+      end = this.get$length(receiver);
+    return $.Lists_getRange(receiver, start, end, []);
+  },
+  sublist$1: function($receiver, start) {
+    return this.sublist$2($receiver, start, null);
+  },
+  toString$0: function(receiver) {
+    var buffer = $.StringBuffer$("[");
+    buffer.writeAll$2(receiver, ", ");
+    buffer.write$1("]");
+    return buffer.toString$0(buffer);
+  },
+  $isList: function() {
+    return true;
+  },
+  $asList: function() {
+    return function () { return [$.Node]; };
+  },
+  $isIterable: function() {
+    return true;
+  },
+  $asIterable: function() {
+    return function () { return [$.Node]; };
+  },
+  $isJavaScriptIndexingBehavior: function() {
+    return true;
+  },
+  $asJavaScriptIndexingBehavior: function() {
+    return null;
+  }
+};
+
+$$.Notation = {"": "Node;"};
+
+$$.OListElement = {"": "Element;type%"};
+
+$$.ObjectElement = {"": "Element;height},type%,width}"};
+
+$$.OptGroupElement = {"": "Element;"};
+
+$$.OptionElement = {"": "Element;"};
+
+$$.OutputElement = {"": "Element;type="};
+
+$$.ParagraphElement = {"": "Element;"};
+
+$$.ParamElement = {"": "Element;"};
+
+$$.PositionError = {"": "Interceptor;"};
+
+$$.PreElement = {"": "Element;"};
+
+$$.ProcessingInstruction = {"": "Node;"};
+
+$$.ProgressElement = {"": "Element;position="};
+
+$$.QuoteElement = {"": "Element;"};
+
+$$.RadioNodeList = {"": "NodeList;"};
+
+$$.RangeException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.ScriptElement = {"": "Element;type%"};
+
+$$.SelectElement = {"": "Element;length=,type="};
+
+$$.ShadowElement = {"": "Element;"};
+
+$$.ShadowRoot = {"": "DocumentFragment;"};
+
+$$.SourceElement = {"": "Element;type%"};
+
+$$.SpanElement = {"": "Element;"};
+
+$$.SpeechRecognitionError = {"": "Event;"};
+
+$$.StyleElement = {"": "Element;type%"};
+
+$$.TableCaptionElement = {"": "Element;"};
+
+$$.TableCellElement = {"": "Element;"};
+
+$$.TableColElement = {"": "Element;"};
+
+$$.TableElement = {"": "Element;",
+  get$rows: function(receiver) {
+    return $._WrappedList$(receiver.rows, $.TableRowElement);
+  }
+};
+
+$$.TableRowElement = {"": "Element;"};
+
+$$.TableSectionElement = {"": "Element;",
+  get$rows: function(receiver) {
+    return $._WrappedList$(receiver.rows, $.TableRowElement);
+  }
+};
+
+$$.TemplateElement = {"": "Element;"};
+
+$$.Text = {"": "CharacterData;"};
+
+$$.TextAreaElement = {"": "Element;rows=,type="};
+
+$$.TitleElement = {"": "Element;"};
+
+$$.TrackElement = {"": "Element;"};
+
+$$.UListElement = {"": "Element;"};
+
+$$.UnknownElement = {"": "Element;"};
+
+$$.VideoElement = {"": "MediaElement;height},width}"};
+
+$$.Window = {"": "EventTarget;navigator=",
+  get$animationFrame: function(receiver) {
+    var completer = $.Completer_Completer($.num);
+    this.requestAnimationFrame$1(receiver, new $.Window_animationFrame_anon(completer));
+    return completer.get$future();
+  },
+  requestAnimationFrame$1: function(receiver, callback) {
+    this._ensureRequestAnimationFrame$0(receiver);
+    return this._requestAnimationFrame$1(receiver, callback);
+  },
+  _requestAnimationFrame$1: function(receiver, callback) {
+    return receiver.requestAnimationFrame($.convertDartClosureToJS(callback, 1));
+  },
+  _ensureRequestAnimationFrame$0: function(receiver) {
+    if (!!(receiver.requestAnimationFrame && receiver.cancelAnimationFrame))
+      return;
+      (function($this) {
+   var vendors = ['ms', 'moz', 'webkit', 'o'];
+   for (var i = 0; i < vendors.length && !$this.requestAnimationFrame; ++i) {
+     $this.requestAnimationFrame = $this[vendors[i] + 'RequestAnimationFrame'];
+     $this.cancelAnimationFrame =
+         $this[vendors[i]+'CancelAnimationFrame'] ||
+         $this[vendors[i]+'CancelRequestAnimationFrame'];
+   }
+   if ($this.requestAnimationFrame && $this.cancelAnimationFrame) return;
+   $this.requestAnimationFrame = function(callback) {
+      return window.setTimeout(function() {
+        callback(Date.now());
+      }, 16 /* 16ms ~= 60fps */);
+   };
+   $this.cancelAnimationFrame = function(id) { clearTimeout(id); }
+  })(receiver);
+  },
+  get$parent: function(receiver) {
+    return $._convertNativeToDart_Window(receiver.parent);
+  }
+};
+
+$$.XPathException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$._NamedNodeMap = {"": "Interceptor;",
+  get$length: function(receiver) {
+    return receiver.length;
+  },
+  $index: function(receiver, index) {
+    return receiver[index];
+  },
+  $indexSet: function(receiver, index, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot assign element of immutable List."));
+  },
+  get$iterator: function(receiver) {
+    return $.FixedSizeListIterator$(receiver, $.Node);
+  },
+  forEach$1: function(receiver, f) {
+    var t1;
+    for (t1 = this.get$iterator(receiver); t1.moveNext$0();)
+      f.call$1(t1.get$current());
+    return;
+  },
+  skip$1: function(receiver, n) {
+    return $.SubListIterable$(receiver, n, null, null);
+  },
+  elementAt$1: function(receiver, index) {
+    return receiver[index];
+  },
+  add$1: function(receiver, value) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  addAll$1: function(receiver, iterable) {
+    throw $.wrapException($.UnsupportedError$("Cannot add to immutable List."));
+  },
+  removeLast$0: function(receiver) {
+    throw $.wrapException($.UnsupportedError$("Cannot remove from immutable List."));
+  },
+  setRange$4: function(receiver, start, end, iterable, skipCount) {
+    throw $.wrapException($.UnsupportedError$("Cannot setRange on immutable List."));
+  },
+  setRange$3: function($receiver, start, end, iterable) {
+    return this.setRange$4($receiver, start, end, iterable, null);
+  },
+  sublist$2: function(receiver, start, end) {
+    if (end == null)
+      end = this.get$length(receiver);
+    return $.Lists_getRange(receiver, start, end, []);
+  },
+  sublist$1: function($receiver, start) {
+    return this.sublist$2($receiver, start, null);
+  },
+  toString$0: function(receiver) {
+    var buffer = $.StringBuffer$("[");
+    buffer.writeAll$2(receiver, ", ");
+    buffer.write$1("]");
+    return buffer.toString$0(buffer);
+  },
+  $isList: function() {
+    return true;
+  },
+  $asList: function() {
+    return function () { return [$.Node]; };
+  },
+  $isIterable: function() {
+    return true;
+  },
+  $asIterable: function() {
+    return function () { return [$.Node]; };
+  },
+  $isJavaScriptIndexingBehavior: function() {
+    return true;
+  },
+  $asJavaScriptIndexingBehavior: function() {
+    return null;
+  }
+};
+
+$$.AElement = {"": "StyledElement;"};
+
+$$.AltGlyphElement = {"": "TextPositioningElement;"};
+
+$$.AnimateElement = {"": "AnimationElement;"};
+
+$$.AnimateMotionElement = {"": "AnimationElement;"};
+
+$$.AnimateTransformElement = {"": "AnimationElement;"};
+
+$$.AnimatedEnumeration = {"": "Interceptor;"};
+
+$$.AnimatedLength = {"": "Interceptor;"};
+
+$$.AnimatedLengthList = {"": "Interceptor;"};
+
+$$.AnimatedNumber = {"": "Interceptor;"};
+
+$$.AnimatedNumberList = {"": "Interceptor;"};
+
+$$.AnimatedTransformList = {"": "Interceptor;"};
+
+$$.AnimationElement = {"": "SvgElement;"};
+
+$$.CircleElement = {"": "StyledElement;"};
+
+$$.ClipPathElement = {"": "StyledElement;"};
+
+$$.DefsElement = {"": "StyledElement;"};
+
+$$.DescElement = {"": "StyledElement;"};
+
+$$.EllipseElement = {"": "StyledElement;"};
+
+$$.FEBlendElement = {"": "StyledElement;x=,y="};
+
+$$.FEColorMatrixElement = {"": "StyledElement;type=,x=,y="};
+
+$$.FEComponentTransferElement = {"": "StyledElement;x=,y="};
+
+$$.FECompositeElement = {"": "StyledElement;x=,y="};
+
+$$.FEConvolveMatrixElement = {"": "StyledElement;x=,y="};
+
+$$.FEDiffuseLightingElement = {"": "StyledElement;x=,y="};
+
+$$.FEDisplacementMapElement = {"": "StyledElement;scale=,x=,y=",
+  scale$1: function($receiver, arg0) {
+    return this.scale.call$1(arg0);
+  }
+};
+
+$$.FEDistantLightElement = {"": "SvgElement;"};
+
+$$.FEFloodElement = {"": "StyledElement;x=,y="};
+
+$$.FEFuncAElement = {"": "_SVGComponentTransferFunctionElement;"};
+
+$$.FEFuncBElement = {"": "_SVGComponentTransferFunctionElement;"};
+
+$$.FEFuncGElement = {"": "_SVGComponentTransferFunctionElement;"};
+
+$$.FEFuncRElement = {"": "_SVGComponentTransferFunctionElement;"};
+
+$$.FEGaussianBlurElement = {"": "StyledElement;x=,y="};
+
+$$.FEImageElement = {"": "StyledElement;x=,y="};
+
+$$.FEMergeElement = {"": "StyledElement;x=,y="};
+
+$$.FEMergeNodeElement = {"": "SvgElement;"};
+
+$$.FEMorphologyElement = {"": "StyledElement;x=,y="};
+
+$$.FEOffsetElement = {"": "StyledElement;x=,y="};
+
+$$.FEPointLightElement = {"": "SvgElement;x=,y=,z="};
+
+$$.FESpecularLightingElement = {"": "StyledElement;x=,y="};
+
+$$.FESpotLightElement = {"": "SvgElement;x=,y=,z="};
+
+$$.FETileElement = {"": "StyledElement;x=,y="};
+
+$$.FETurbulenceElement = {"": "StyledElement;type=,x=,y="};
+
+$$.FilterElement = {"": "StyledElement;x=,y="};
+
+$$.ForeignObjectElement = {"": "StyledElement;x=,y="};
+
+$$.GElement = {"": "StyledElement;"};
+
+$$.ImageElement0 = {"": "StyledElement;x=,y="};
+
+$$.LineElement = {"": "StyledElement;"};
+
+$$.LinearGradientElement = {"": "_GradientElement;"};
+
+$$.MarkerElement = {"": "StyledElement;"};
+
+$$.MaskElement = {"": "StyledElement;x=,y="};
+
+$$.MetadataElement = {"": "SvgElement;"};
+
+$$.PathElement = {"": "StyledElement;"};
+
+$$.PatternElement = {"": "StyledElement;x=,y="};
+
+$$.PointList = {"": "Interceptor;"};
+
+$$.PolygonElement = {"": "StyledElement;points="};
+
+$$.PolylineElement = {"": "StyledElement;points="};
+
+$$.RadialGradientElement = {"": "_GradientElement;"};
+
+$$.Rect = {"": "Interceptor;height},width},x%,y%"};
+
+$$.RectElement = {"": "StyledElement;x=,y="};
+
+$$.ScriptElement0 = {"": "SvgElement;type%"};
+
+$$.SetElement = {"": "AnimationElement;"};
+
+$$.StopElement = {"": "StyledElement;"};
+
+$$.StyleElement0 = {"": "SvgElement;type%"};
+
+$$.StyledElement = {"": "SvgElement;"};
+
+$$.SvgDocument = {"": "Document;"};
+
+$$.SvgElement = {"": "Element;",
+  get$id: function(receiver) {
+    return receiver.id;
+  }
+};
+
+$$.SvgException = {"": "Interceptor;",
+  toString$0: function(receiver) {
+    return receiver.toString();
+  }
+};
+
+$$.SvgSvgElement = {"": "StyledElement;x=,y="};
+
+$$.SwitchElement = {"": "StyledElement;"};
+
+$$.SymbolElement = {"": "StyledElement;"};
+
+$$.TSpanElement = {"": "TextPositioningElement;"};
+
+$$.TextContentElement = {"": "StyledElement;"};
+
+$$.TextElement = {"": "TextPositioningElement;"};
+
+$$.TextPathElement = {"": "TextContentElement;"};
+
+$$.TextPositioningElement = {"": "TextContentElement;x=,y="};
+
+$$.TitleElement0 = {"": "StyledElement;"};
+
+$$.UseElement = {"": "StyledElement;x=,y="};
+
+$$.ViewElement = {"": "SvgElement;"};
+
+$$._GradientElement = {"": "StyledElement;"};
+
+$$._SVGComponentTransferFunctionElement = {"": "SvgElement;"};
+
+$$.RenderingContext = {"": "CanvasRenderingContext;"};
+
+$$.SqlError = {"": "Interceptor;"};
+
+$$.SqlException = {"": "Interceptor;"};
+
 // Bound closures
+$$.BoundClosure$1 = {"": "Closure;self,target",
+  call$1: function(p0) {
+    return this.self[this.target](p0);
+  }
+};
+
 $$.BoundClosure$4 = {"": "Closure;self,target",
   call$4: function(p0, p1, p2, p3) {
     return this.self[this.target](p0, p1, p2, p3);
+  }
+};
+
+$$.BoundClosure$i1 = {"": "Closure;self,target,receiver",
+  call$1: function(p0) {
+    return this.self[this.target](this.receiver, p0);
+  }
+};
+
+$$.BoundClosure$i2 = {"": "Closure;self,target,receiver",
+  call$2: function(p0, p1) {
+    return this.self[this.target](this.receiver, p0, p1);
   }
 };
 
@@ -11428,9 +14837,15 @@ $$ = null;
 
 $.Arrays_copy = function(src, srcStart, dst, dstStart, count) {
   var i, j, t1, t2, t3;
-  if (typeof src !== "string" && (typeof src !== "object" || src === null || src.constructor !== Array && !$.getInterceptor(src).$isJavaScriptIndexingBehavior))
+  if (typeof src !== "string" && (typeof src !== "object" || src === null || src.constructor !== Array && !$.getInterceptor(src).$isJavaScriptIndexingBehavior()))
     return $.Arrays_copy$bailout(1, src, srcStart, dst, dstStart, count);
-  if (typeof dst !== "object" || dst === null || (dst.constructor !== Array || !!dst.immutable$list) && !$.getInterceptor(dst).$isJavaScriptIndexingBehavior)
+  if (typeof srcStart !== "number")
+    return $.Arrays_copy$bailout(1, src, srcStart, dst, dstStart, count);
+  if (typeof dst !== "object" || dst === null || (dst.constructor !== Array || !!dst.immutable$list) && !$.getInterceptor(dst).$isJavaScriptIndexingBehavior())
+    return $.Arrays_copy$bailout(1, src, srcStart, dst, dstStart, count);
+  if (typeof dstStart !== "number")
+    return $.Arrays_copy$bailout(1, src, srcStart, dst, dstStart, count);
+  if (typeof count !== "number")
     return $.Arrays_copy$bailout(1, src, srcStart, dst, dstStart, count);
   if (srcStart < dstStart)
     for (i = srcStart + count - 1, j = dstStart + count - 1, t1 = src.length, t2 = dst.length; i >= srcStart; --i, --j) {
@@ -11447,6 +14862,8 @@ $.Arrays_copy = function(src, srcStart, dst, dstStart, count) {
     }
   else
     for (t1 = src.length, t2 = dst.length, j = dstStart, i = srcStart; i < srcStart + count; ++i, ++j) {
+      if (i !== (i | 0))
+        throw $.iae(i);
       if (i < 0 || i >= t1)
         throw $.ioore(i);
       t3 = src[i];
@@ -11459,13 +14876,14 @@ $.Arrays_copy = function(src, srcStart, dst, dstStart, count) {
 };
 
 $.Arrays_copy$bailout = function(state0, src, srcStart, dst, dstStart, count) {
-  var i, j, t1;
-  if (srcStart < dstStart)
-    for (i = srcStart + count - 1, j = dstStart + count - 1, t1 = $.getInterceptor$as(src); i >= srcStart; --i, --j)
+  var t1, i, j, t2, t3;
+  t1 = $.getInterceptor$n(srcStart);
+  if (t1.$lt(srcStart, dstStart))
+    for (i = $.$sub$n(t1.$add(srcStart, count), 1), j = $.$sub$n($.$add$ns(dstStart, count), 1), t1 = $.getInterceptor$asx(src); t2 = $.getInterceptor$n(i), t2.$ge(i, srcStart); i = t2.$sub(i, 1), j = $.$sub$n(j, 1))
       $.JSArray_methods.$indexSet(dst, j, t1.$index(src, i));
   else
-    for (t1 = $.getInterceptor$as(src), j = dstStart, i = srcStart; i < srcStart + count; ++i, ++j)
-      $.JSArray_methods.$indexSet(dst, j, t1.$index(src, i));
+    for (t2 = $.getInterceptor$asx(src), j = dstStart, i = srcStart; t3 = $.getInterceptor$n(i), t3.$lt(i, t1.$add(srcStart, count)); i = t3.$add(i, 1), j = $.$add$ns(j, 1))
+      $.JSArray_methods.$indexSet(dst, j, t2.$index(src, i));
 };
 
 $.SubListIterable$ = function(_iterable, _start, _endOrLength, E) {
@@ -11475,8 +14893,20 @@ $.SubListIterable$ = function(_iterable, _start, _endOrLength, E) {
 };
 
 $.ListIterator$ = function(iterable, E) {
-  var t1 = new $.ListIterator(iterable, $.get$length$as(iterable), 0, null);
+  var t1 = new $.ListIterator(iterable, $.get$length$asx(iterable), 0, null);
   $.setRuntimeTypeInfo(t1, [E]);
+  return t1;
+};
+
+$.MappedIterable$ = function(_iterable, _f, S, T) {
+  var t1 = new $.MappedIterable(_iterable, _f);
+  $.setRuntimeTypeInfo(t1, [S, T]);
+  return t1;
+};
+
+$.MappedIterator$ = function(_iterator, _f, S, T) {
+  var t1 = new $.MappedIterator(null, _iterator, _f);
+  $.setRuntimeTypeInfo(t1, [S, T]);
   return t1;
 };
 
@@ -11495,8 +14925,8 @@ $.SkipIterator$ = function(_iterator, _skipCount, E) {
 };
 
 $.IterableMixinWorkaround__rangeCheck = function(list, start, end) {
-  var t1;
-  if (start < 0 || start > list.length)
+  var t1 = $.getInterceptor$n(start);
+  if (t1.$lt(start, 0) || t1.$gt(start, list.length))
     throw $.wrapException($.RangeError$range(start, 0, list.length));
   t1 = $.getInterceptor$n(end);
   if (t1.$lt(end, start) || t1.$gt(end, list.length))
@@ -11509,26 +14939,24 @@ $.IterableMixinWorkaround_setRangeList = function(list, start, end, from, skipCo
   $length = $.$sub$n(end, start);
   if ($.$eq($length, 0) === true)
     return;
-  if (skipCount < 0)
+  if ($.$lt$n(skipCount, 0))
     throw $.wrapException($.ArgumentError$(skipCount));
-  if (typeof from === "object" && from !== null && (from.constructor === Array || !!$.getInterceptor(from).$isList)) {
+  if (typeof from === "object" && from !== null && (from.constructor === Array || $.getInterceptor(from).$isList())) {
     otherStart = skipCount;
     otherList = from;
   } else {
-    t1 = $.skip$1$a(from, skipCount);
+    t1 = $.skip$1$ax(from, skipCount);
     otherList = t1.toList$1$growable(t1, false);
     otherStart = 0;
   }
-  if (typeof $length !== "number")
-    throw $.iae($length);
-  if ($.JSNumber_methods.$gt(otherStart + $length, $.get$length$as(otherList)))
+  if ($.$gt$n($.$add$ns(otherStart, $length), $.get$length$asx(otherList)))
     throw $.wrapException($.StateError$("Not enough elements"));
   $.Arrays_copy(otherList, otherStart, list, start, $length);
 };
 
 $.Sort_insertionSort_ = function(a, left, right, compare) {
   var i, el, j, t1, t2, j0;
-  if (typeof a !== "object" || a === null || (a.constructor !== Array || !!a.immutable$list) && !$.getInterceptor(a).$isJavaScriptIndexingBehavior)
+  if (typeof a !== "object" || a === null || (a.constructor !== Array || !!a.immutable$list) && !$.getInterceptor(a).$isJavaScriptIndexingBehavior())
     return $.Sort_insertionSort_$bailout(1, a, left, right, compare);
   for (i = left + 1; i <= right; ++i) {
     if (i < 0 || i >= a.length)
@@ -11590,7 +15018,7 @@ $.Sort_insertionSort_$bailout = function(state0, a, left, right, compare) {
 
 $.Sort__dualPivotQuicksort = function(a, left, right, compare) {
   var sixth, index1, index5, index3, index2, index4, t1, el1, el2, el3, el4, el5, t0, t2, less, great, k, ak, comp, t3, great0, less0, t4;
-  if (typeof a !== "object" || a === null || (a.constructor !== Array || !!a.immutable$list) && !$.getInterceptor(a).$isJavaScriptIndexingBehavior)
+  if (typeof a !== "object" || a === null || (a.constructor !== Array || !!a.immutable$list) && !$.getInterceptor(a).$isJavaScriptIndexingBehavior())
     return $.Sort__dualPivotQuicksort$bailout(1, a, left, right, compare);
   sixth = $.JSNumber_methods.$tdiv(right - left + 1, 6);
   index1 = left + sixth;
@@ -12220,11 +15648,11 @@ $.Sort__dualPivotQuicksort$bailout = function(state0, a, left, right, compare) {
 
 $.ToString__emitValue = function(i, result, visiting) {
   var t1, isList, t2, first, t3;
-  t1 = $.getInterceptor$a(visiting);
+  t1 = $.getInterceptor$ax(visiting);
   t1.add$1(visiting, i);
-  isList = typeof i === "object" && i !== null && (i.constructor === Array || !!$.getInterceptor(i).$isList);
+  isList = typeof i === "object" && i !== null && (i.constructor === Array || $.getInterceptor(i).$isList());
   result.write$1(isList ? "[" : "{");
-  for (t2 = $.get$iterator$a(i), first = true; t2.moveNext$0() === true; first = false) {
+  for (t2 = $.get$iterator$ax(i), first = true; t2.moveNext$0() === true; first = false) {
     t3 = t2.get$current();
     if (!first)
       result.write$1(", ");
@@ -12235,9 +15663,9 @@ $.ToString__emitValue = function(i, result, visiting) {
 };
 
 $.ToString__emitObject = function(o, result, visiting) {
-  if (typeof o === "object" && o !== null && (o.constructor === Array || !!$.getInterceptor(o).$isIterable))
+  if (typeof o === "object" && o !== null && (o.constructor === Array || $.getInterceptor(o).$isIterable()))
     if ($.ToString__containsRef(visiting, o))
-      result.write$1(typeof o === "object" && o !== null && (o.constructor === Array || !!$.getInterceptor(o).$isList) ? "[...]" : "{...}");
+      result.write$1(typeof o === "object" && o !== null && (o.constructor === Array || $.getInterceptor(o).$isList()) ? "[...]" : "{...}");
     else
       $.ToString__emitValue(o, result, visiting);
   else if (typeof o === "object" && o !== null && !!$.getInterceptor(o).$isMap)
@@ -12251,7 +15679,7 @@ $.ToString__emitObject = function(o, result, visiting) {
 
 $.ToString__containsRef = function(i, ref) {
   var t1;
-  for (t1 = $.get$iterator$a(i); t1.moveNext$0() === true;)
+  for (t1 = $.get$iterator$ax(i); t1.moveNext$0() === true;)
     if (t1.get$current() === ref)
       return true;
   return false;
@@ -12260,13 +15688,36 @@ $.ToString__containsRef = function(i, ref) {
 $.ToString__emitPair = function(m, result, visiting) {
   var t1, t2;
   t1 = {};
-  t2 = $.getInterceptor$a(visiting);
+  t2 = $.getInterceptor$ax(visiting);
   t2.add$1(visiting, m);
   result.write$1("{");
   t1.first_0 = true;
   m.forEach$1(m, new $.ToString__emitPair_anon(t1, result, visiting));
   result.write$1("}");
   t2.removeLast$0(visiting);
+};
+
+$.HashMap__findBucketIndex = function(bucket, key) {
+  var $length, i;
+  if (bucket == null)
+    return -1;
+  $length = bucket.length;
+  for (i = 0; i < $length; i += 2)
+    if ($.$eq(bucket[i], key) === true)
+      return i;
+  return -1;
+};
+
+$.HashMapKeyIterable$ = function(_map, E) {
+  var t1 = new $.HashMapKeyIterable(_map);
+  $.setRuntimeTypeInfo(t1, [E]);
+  return t1;
+};
+
+$.HashMapKeyIterator$ = function(_map, _keys, E) {
+  var t1 = new $.HashMapKeyIterator(_map, _keys, 0, null);
+  $.setRuntimeTypeInfo(t1, [E]);
+  return t1;
 };
 
 $.LinkedHashMap__findBucketIndex = function(bucket, key) {
@@ -12323,6 +15774,241 @@ $.getNativeInterceptor = function(object) {
   record = $.lookupDispatchRecord(object);
   $.setDispatchProperty(Object.getPrototypeOf(object), record);
   return $.getNativeInterceptor(object);
+};
+
+$.JsIsolateSink$fromPort = function(_port) {
+  return new $.JsIsolateSink(false, _port);
+};
+
+$._callInIsolate = function(isolate, $function) {
+  var result = isolate.eval$1($function);
+  $globalState.topEventLoop.run$0();
+  return result;
+};
+
+$._currentIsolate = function() {
+  return $globalState.currentContext;
+};
+
+$.startRootIsolate = function(entry) {
+  var t1, rootContext;
+  t1 = $._Manager$();
+  $._globalState0(t1);
+  if ($globalState.isWorker === true)
+    return;
+  rootContext = $._IsolateContext$();
+  $globalState.rootContext = rootContext;
+  $globalState.currentContext = rootContext;
+  rootContext.eval$1(entry);
+  $globalState.topEventLoop.run$0();
+};
+
+$._globalState = function() {
+  return $globalState;
+};
+
+$._globalState0 = function(val) {
+  $globalState = val;
+};
+
+$._Manager$ = function() {
+  var t1 = new $._Manager(0, 0, 1, null, null, null, null, null, null, null, null, null);
+  t1._Manager$0();
+  return t1;
+};
+
+$._IsolateContext$ = function() {
+  var t1 = new $._IsolateContext(null, null, null);
+  t1._IsolateContext$0();
+  return t1;
+};
+
+$._EventLoop$ = function() {
+  return new $._EventLoop($.Queue_Queue($._IsolateEvent), 0);
+};
+
+$._IsolateEvent$ = function(isolate, fn, message) {
+  return new $._IsolateEvent(isolate, fn, message);
+};
+
+$._MainManagerStub$ = function() {
+  return new $._MainManagerStub();
+};
+
+$.IsolateNatives_computeThisScript = function() {
+  var currentScript, stack, matches;
+  currentScript = $.$currentScript;
+  if (currentScript != null)
+    return String(currentScript.src);
+  stack = new Error().stack;
+  if (stack == null)
+    stack = (function() {try { throw new Error() } catch(e) { return e.stack }})();
+  matches = stack.match(new RegExp("^ *at [^(]*\\((.*):[0-9]*:[0-9]*\\)$", "m"));
+  if (matches != null)
+    return matches[1];
+  matches = stack.match(new RegExp("^[^@]*@(.*):[0-9]*$", "m"));
+  if (matches != null)
+    return matches[1];
+  throw $.wrapException($.UnsupportedError$("Cannot extract URI from \"" + $.S(stack) + "\""));
+};
+
+$.IsolateNatives_computeGlobalThis = function() {
+  return function() { return this; }();
+};
+
+$.IsolateNatives__processWorkerMessage = function(sender, e) {
+  var msg, t1, entryPoint, replyTo, context, t2;
+  msg = $._deserializeMessage(e.data);
+  t1 = $.getInterceptor$asx(msg);
+  switch (t1.$index(msg, "command")) {
+    case "start":
+      $globalState.currentManagerId = t1.$index(msg, "id");
+      entryPoint = $[t1.$index(msg, "functionName")];
+      replyTo = $._deserializeMessage(t1.$index(msg, "replyTo"));
+      context = $._IsolateContext$();
+      $globalState.topEventLoop.enqueue$3(context, new $.IsolateNatives__processWorkerMessage_anon(entryPoint, replyTo), "worker-start");
+      $globalState.currentContext = context;
+      $globalState.topEventLoop.run$0();
+      break;
+    case "spawn-worker":
+      $.IsolateNatives__spawnWorker(t1.$index(msg, "functionName"), t1.$index(msg, "uri"), t1.$index(msg, "replyPort"));
+      break;
+    case "message":
+      if (t1.$index(msg, "port") != null)
+        t1.$index(msg, "port").send$2(t1.$index(msg, "msg"), t1.$index(msg, "replyTo"));
+      $globalState.topEventLoop.run$0();
+      break;
+    case "close":
+      $.IsolateNatives__log("Closing Worker");
+      t1 = $globalState.managers;
+      t2 = $.getInterceptor$x(sender);
+      t1.remove$1(t1, t2.get$id(sender));
+      t2.terminate$0(sender);
+      $globalState.topEventLoop.run$0();
+      break;
+    case "log":
+      $.IsolateNatives__log(t1.$index(msg, "msg"));
+      break;
+    case "print":
+      if ($globalState.isWorker === true) {
+        t1 = $globalState.mainManager;
+        t1.postMessage$1(t1, $._serializeMessage($.makeLiteralMap(["command", "print", "msg", msg])));
+      } else
+        $.Primitives_printString($.toString$0(t1.$index(msg, "msg")));
+      break;
+    case "error":
+      throw $.wrapException(t1.$index(msg, "msg"));
+  }
+};
+
+$.IsolateNatives__log = function(msg) {
+  var trace, t1, exception;
+  if ($globalState.isWorker === true) {
+    t1 = $globalState.mainManager;
+    t1.postMessage$1(t1, $._serializeMessage($.makeLiteralMap(["command", "log", "msg", msg])));
+  } else
+    try {
+      $.get$globalThis().console.log(msg);
+    } catch (exception) {
+      $.unwrapException(exception);
+      trace = $.getTraceFromException(exception);
+      throw $.wrapException($._ExceptionImplementation$(trace));
+    }
+
+};
+
+$.IsolateNatives__spawnWorker = function(functionName, uri, replyPort) {
+  var worker, t1, t2, workerId;
+  if (functionName == null)
+    functionName = "main";
+  if (uri == null)
+    uri = $.get$IsolateNatives_thisScript();
+  worker = new Worker(uri);
+  t1 = $.getInterceptor$x(worker);
+  t1.set$onmessage(worker, function(e) { $.IsolateNatives__processWorkerMessage.call$2(worker, e); });
+  t2 = $globalState;
+  workerId = t2.nextManagerId;
+  t2.nextManagerId = workerId + 1;
+  t1.set$id(worker, workerId);
+  t2 = $globalState.managers;
+  t2.$indexSet(t2, workerId, worker);
+  t1.postMessage$1(worker, $._serializeMessage($.makeLiteralMap(["command", "start", "id", workerId, "replyTo", $._serializeMessage(replyPort), "functionName", functionName])));
+};
+
+$._NativeJsSendPort$ = function(_receivePort, isolateId) {
+  return new $._NativeJsSendPort(_receivePort, isolateId);
+};
+
+$._WorkerSendPort$ = function(_workerId, isolateId, _receivePortId) {
+  return new $._WorkerSendPort(_workerId, _receivePortId, isolateId);
+};
+
+$.ReceivePortImpl$ = function() {
+  var t1 = $.ReceivePortImpl__nextFreeId;
+  $.ReceivePortImpl__nextFreeId = $.$add$ns(t1, 1);
+  t1 = new $.ReceivePortImpl(t1, null);
+  t1.ReceivePortImpl$0();
+  return t1;
+};
+
+$._waitForPendingPorts = function(message, callback) {
+  var finder = $._PendingSendPortFinder$();
+  finder.traverse$1(message);
+  $._FutureImpl__FutureImpl$wait(finder.ports, $.List).then$1(new $._waitForPendingPorts_anon(callback));
+};
+
+$._PendingSendPortFinder$ = function() {
+  var t1 = new $._PendingSendPortFinder([], $._MessageTraverserVisitedMap$());
+  t1._PendingSendPortFinder$0();
+  return t1;
+};
+
+$._serializeMessage = function(message) {
+  if ($globalState.get$needSerialization() === true)
+    return $._JsSerializer$().traverse$1(message);
+  else
+    return $._JsCopier$().traverse$1(message);
+};
+
+$._deserializeMessage = function(message) {
+  if ($globalState.get$needSerialization() === true)
+    return $._JsDeserializer$().deserialize$1(message);
+  else
+    return message;
+};
+
+$._JsSerializer$ = function() {
+  var t1 = new $._JsSerializer(0, $._MessageTraverserVisitedMap$());
+  t1._JsSerializer$0();
+  return t1;
+};
+
+$._JsCopier$ = function() {
+  var t1 = new $._JsCopier($._MessageTraverserVisitedMap$());
+  t1._JsCopier$0();
+  return t1;
+};
+
+$._JsDeserializer$ = function() {
+  return new $._JsDeserializer(null);
+};
+
+$._JsVisitedMap$ = function() {
+  return new $._JsVisitedMap(null);
+};
+
+$._MessageTraverserVisitedMap$ = function() {
+  return new $._MessageTraverserVisitedMap();
+};
+
+$.TimerImpl$ = function(milliseconds, callback) {
+  var t1 = new $.TimerImpl(true, false, null);
+  t1.TimerImpl$2(milliseconds, callback);
+  return t1;
+};
+
+$.hasTimer = function() {
+  return $.get$globalThis().setTimeout != null;
 };
 
 $.checkGrowable = function(list, reason) {
@@ -12388,13 +16074,16 @@ $.Primitives_objectTypeName = function(object) {
   return t1.codeUnitAt$1($name, 0) === 36 ? t1.substring$1($name, 1) : $name;
 };
 
-$.Primitives_numMicroseconds = function() {
-  if (typeof window != "undefined" && window !== null) {
-    var performance = window.performance;
-    if (performance != null && typeof performance.webkitNow == "function")
-      return $.JSNumber_methods.floor$0(1000 * performance.webkitNow());
-  }
-  return 1000 * Date.now();
+$.Primitives_getProperty = function(object, key) {
+  if (object == null || typeof object === "boolean" || typeof object === "number" || typeof object === "string")
+    throw $.wrapException($.ArgumentError$(object));
+  return object[key];
+};
+
+$.Primitives_setProperty = function(object, key, value) {
+  if (object == null || typeof object === "boolean" || typeof object === "number" || typeof object === "string")
+    throw $.wrapException($.ArgumentError$(object));
+  object[key] = value;
 };
 
 $.iae = function(argument) {
@@ -12499,6 +16188,31 @@ $.makeLiteralMap = function(keyValuePairs) {
   return result;
 };
 
+$.invokeClosure = function(closure, isolate, numberOfArguments, arg1, arg2) {
+  var t1 = $.getInterceptor(numberOfArguments);
+  if (t1.$eq(numberOfArguments, 0) === true)
+    return $._callInIsolate(isolate, new $.invokeClosure_anon(closure));
+  else if (t1.$eq(numberOfArguments, 1) === true)
+    return $._callInIsolate(isolate, new $.invokeClosure_anon0(closure, arg1));
+  else if (t1.$eq(numberOfArguments, 2) === true)
+    return $._callInIsolate(isolate, new $.invokeClosure_anon1(closure, arg1, arg2));
+  else
+    throw $.wrapException($._ExceptionImplementation$("Unsupported number of arguments for wrapped closure"));
+};
+
+$.convertDartClosureToJS = function(closure, arity) {
+  var $function = closure.$identity;
+  if (!!$function)
+    return $function;
+  $function = (function ($2, $3) { return function($0, $1) { return $3(closure, $2, arity, $0, $1) }})($._currentIsolate(), $.invokeClosure.call$5);
+  closure.$identity = $function;
+  return $function;
+};
+
+$.throwCyclicInit = function(staticName) {
+  throw $.wrapException($.RuntimeError$("Cyclic initialization for static " + $.S(staticName)));
+};
+
 $.setRuntimeTypeInfo = function(target, typeInfo) {
   target.$builtinTypeInfo = typeInfo;
 };
@@ -12521,7 +16235,7 @@ $.TypeImpl$ = function(typeName) {
 };
 
 $.runtimeTypeToString = function(type) {
-  if (typeof type !== "string" && (typeof type !== "object" || type === null || type.constructor !== Array && !$.getInterceptor(type).$isJavaScriptIndexingBehavior))
+  if (typeof type !== "string" && (typeof type !== "object" || type === null || type.constructor !== Array && !$.getInterceptor(type).$isJavaScriptIndexingBehavior()))
     return $.runtimeTypeToString$bailout(1, type);
   if (type.constructor === Array) {
     if (0 >= type.length)
@@ -12536,14 +16250,14 @@ $.runtimeTypeToString$bailout = function(state0, type) {
   if (t1)
     return "dynamic";
   else if (!t1 && type.constructor === Array)
-    return $.$index$as(type, 0).builtin$cls + $.joinArguments(type, 1);
+    return $.$index$asx(type, 0).builtin$cls + $.joinArguments(type, 1);
   else
     return type.builtin$cls;
 };
 
 $.joinArguments = function(types, startIndex) {
   var buffer, index, firstArgument, allDynamic, argument;
-  if (typeof types !== "string" && (typeof types !== "object" || types === null || types.constructor !== Array && !$.getInterceptor(types).$isJavaScriptIndexingBehavior))
+  if (typeof types !== "string" && (typeof types !== "object" || types === null || types.constructor !== Array && !$.getInterceptor(types).$isJavaScriptIndexingBehavior()))
     return $.joinArguments$bailout(1, types, startIndex);
   buffer = $.StringBuffer$("");
   for (index = startIndex, firstArgument = true, allDynamic = true; index < types.length; ++index) {
@@ -12744,6 +16458,43 @@ $.getFunctionForTypeNameOf = function() {
     return $.constructorNameFallback;
 };
 
+$.toStringForNativeObject = function(obj) {
+  if ($._getTypeNameOf == null)
+    $._getTypeNameOf = $.getFunctionForTypeNameOf();
+  return "Instance of " + $._getTypeNameOf.call$1(obj);
+};
+
+$.hashCodeForNativeObject = function(object) {
+  return $.Primitives_objectHashCode(object);
+};
+
+$.defineProperty = function(obj, property, value) {
+  Object.defineProperty(obj, property, {value: value, enumerable: false, writable: true, configurable: true});
+};
+
+$.defineNativeMethods = function(tags, interceptorClass) {
+  $.defineNativeMethodsCommon(tags, interceptorClass, true);
+};
+
+$.defineNativeMethodsNonleaf = function(tags, interceptorClass) {
+  $.defineNativeMethodsCommon(tags, interceptorClass, false);
+};
+
+$.defineNativeMethodsCommon = function(tags, interceptorClass, isLeaf) {
+  var methods, tagsList, i, tag;
+  methods = interceptorClass.prototype;
+  if ($.interceptorsByTag == null)
+    $.interceptorsByTag = {};
+  if ($.leafTags == null)
+    $.leafTags = {};
+  tagsList = tags.split("|");
+  for (i = 0; i < tagsList.length; ++i) {
+    tag = tagsList[i];
+    $.interceptorsByTag[tag] = methods;
+    $.leafTags[tag] = isLeaf;
+  }
+};
+
 $.defineNativeMethodsFinish = function() {
 };
 
@@ -12798,8 +16549,65 @@ $.lookupInterceptor = function(hasOwnPropertyFunction, tag, methods) {
   return method;
 };
 
+$.MetaInfo$ = function(_tag, _tags, _set) {
+  return new $.MetaInfo(_tag, _tags, _set);
+};
+
 $._dynamicMetadata = function(table) {
   $dynamicMetadata = table;
+};
+
+$.buildDynamicMetadata = function(inputTable) {
+  var result, i, tag, tags, set, tagNames, j;
+  result = [];
+  for (i = 0; i < inputTable.length; ++i) {
+    tag = inputTable[i][0];
+    tags = inputTable[i][1];
+    set = {};
+    tagNames = tags.split("|");
+    for (j = 0; j < tagNames.length; ++j)
+      set[tagNames[j]] = true;
+    result.push($.MetaInfo$(tag, tags, set));
+  }
+  return result;
+};
+
+$.dynamicSetMetadata = function(inputTable) {
+  var t1 = $.buildDynamicMetadata(inputTable);
+  $._dynamicMetadata(t1);
+};
+
+$.StringMatch$ = function(start, str, pattern) {
+  return new $.StringMatch(start, str, pattern);
+};
+
+$.allMatchesInStringUnchecked = function(needle, haystack) {
+  var result, $length, patternLength, startIndex, position, endIndex;
+  result = $.List_List($, $.Match);
+  $.setRuntimeTypeInfo(result, [$.Match]);
+  $length = haystack.length;
+  patternLength = needle.length;
+  for (startIndex = 0; true;) {
+    position = $.JSString_methods.indexOf$2(haystack, needle, startIndex);
+    if (position === -1)
+      break;
+    result.push($.StringMatch$(position, haystack, needle));
+    endIndex = position + patternLength;
+    if (endIndex === $length)
+      break;
+    else
+      startIndex = position === endIndex ? startIndex + 1 : endIndex;
+  }
+  return result;
+};
+
+$.stringContainsUnchecked = function(receiver, other, startIndex) {
+  if (typeof other === "string")
+    return $.JSString_methods.indexOf$2(receiver, other, startIndex) !== -1;
+  else if (typeof other === "object" && other !== null && !!$.getInterceptor(other).$isJSSyntaxRegExp)
+    return other.hasMatch$1($.JSString_methods.substring$1(receiver, startIndex));
+  else
+    return $.get$iterator$ax($.allMatches$1$s(other, $.JSString_methods.substring$1(receiver, startIndex))).moveNext$0();
 };
 
 $.stringReplaceAllUnchecked = function(receiver, from, to) {
@@ -12819,6 +16627,118 @@ $.stringReplaceAllUnchecked = function(receiver, from, to) {
     }
   else
     return receiver.replace(new RegExp(from.replace(new RegExp("[-[\\]{}()*+?.,\\\\^$|#\\s]", 'g'), "\\$&"), 'g'), to.replace("$", "$$$$"));
+};
+
+$._attachStackTrace = function(o, st) {
+  if (o == null || typeof o === "boolean" || typeof o === "number" || typeof o === "string")
+    return;
+  $.$indexSet$ax($.get$_stackTraceExpando(), o, st);
+};
+
+$.getAttachedStackTrace = function(o) {
+  if (o == null || typeof o === "boolean" || typeof o === "number" || typeof o === "string")
+    return;
+  return $.$index$asx($.get$_stackTraceExpando(), o);
+};
+
+$.Completer_Completer = function(T) {
+  return $._CompleterImpl$(T);
+};
+
+$._CompleterImpl$ = function(T) {
+  var t1 = new $._CompleterImpl($._FutureImpl$(T), false);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$._FutureListenerWrapper$ = function(future, T) {
+  var t1 = new $._FutureListenerWrapper(future, null);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$._FutureImpl$ = function(T) {
+  var t1 = new $._FutureImpl(0, null);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$._FutureImpl$immediate = function(value, T) {
+  var t1 = new $._FutureImpl(0, null);
+  $.setRuntimeTypeInfo(t1, [T]);
+  t1._FutureImpl$immediate$1(value, T);
+  return t1;
+};
+
+$._FutureImpl__FutureImpl$wait = function(futures, T) {
+  var t1, t2, t3, t4, pos;
+  t1 = {};
+  t1.completer_0 = null;
+  t1.values_1 = null;
+  t2 = new $._FutureImpl__FutureImpl$wait_handleError(t1);
+  t1.remaining_2 = 0;
+  for (t3 = $.JSArray_methods.get$iterator(futures); t3.moveNext$0();) {
+    t4 = t3.get$current();
+    pos = t1.remaining_2;
+    t1.remaining_2 = $.$add$ns(pos, 1);
+    t4.catchError$1(t2).then$1(new $._FutureImpl__FutureImpl$wait_anon(t1, pos));
+  }
+  if ($.$eq(t1.remaining_2, 0) === true)
+    return $._FutureImpl$immediate($.List_empty, null);
+  t1.values_1 = $.List_List(t1.remaining_2, null);
+  t1.completer_0 = $._CompleterImpl$($.List);
+  return t1.completer_0.future;
+};
+
+$._ThenFuture$ = function(_onValue, S, T) {
+  var t1 = new $._ThenFuture(_onValue, null, 0, null);
+  $.setRuntimeTypeInfo(t1, [S, T]);
+  return t1;
+};
+
+$._CatchErrorFuture$ = function(_onError, _test, T) {
+  var t1 = new $._CatchErrorFuture(_test, _onError, null, 0, null);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$._SubscribeFuture$ = function(onValue, _onError, S, T) {
+  var t1 = new $._SubscribeFuture(_onError, onValue, null, 0, null);
+  $.setRuntimeTypeInfo(t1, [S, T]);
+  return t1;
+};
+
+$._FutureWrapper$ = function(_future, T) {
+  var t1 = new $._FutureWrapper(_future);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$._asyncError = function(error, stackTrace) {
+  if (stackTrace == null)
+    return error;
+  if ($.getAttachedStackTrace(error) != null)
+    return error;
+  $._attachStackTrace(error, stackTrace);
+  return error;
+};
+
+$.Timer_run = function(callback) {
+  var t1, milliseconds;
+  $.add$1$ax($.get$Timer__runCallbacks(), callback);
+  if ($.$eq($.get$length$asx($.get$Timer__runCallbacks()), 1) === true) {
+    t1 = new $.Timer_run_anon();
+    milliseconds = $.Duration_0.get$inMilliseconds();
+    if (milliseconds < 0)
+      milliseconds = 0;
+    $.TimerImpl$(milliseconds, t1);
+  }
+};
+
+$.HashMap$ = function(K, V) {
+  var t1 = new $.HashMap(0, null, null, null, null);
+  $.setRuntimeTypeInfo(t1, [K, V]);
+  return t1;
 };
 
 $.LinkedHashMap$ = function(K, V) {
@@ -12844,7 +16764,7 @@ $.ListQueue__isPowerOf2 = function(number) {
 
 $.ListQueue__nextPowerOf2 = function(number) {
   var nextNumber;
-  number = $.JSNull_methods.$shl(number, 2) - 1;
+  number = $.$shl$n(number, 2) - 1;
   for (; true; number = nextNumber) {
     nextNumber = (number & number - 1) >>> 0;
     if (nextNumber === 0)
@@ -12860,6 +16780,12 @@ $._ListQueueIterator$ = function(queue, E) {
 
 $.Comparable_compare = function(a, b) {
   return $.compareTo$1$ns(a, b);
+};
+
+$.Duration$ = function(days, hours, microseconds, milliseconds, minutes, seconds) {
+  if (typeof microseconds !== "number")
+    throw $.iae(microseconds);
+  return new $.Duration(days * 86400000000 + hours * 3600000000 + minutes * 60000000 + seconds * 1000000 + milliseconds * 1000 + microseconds);
 };
 
 $.Error_safeToString = function(object) {
@@ -12890,6 +16816,10 @@ $.UnsupportedError$ = function(message) {
   return new $.UnsupportedError(message);
 };
 
+$.UnimplementedError$ = function(message) {
+  return new $.UnimplementedError(message);
+};
+
 $.StateError$ = function(message) {
   return new $.StateError(message);
 };
@@ -12902,8 +16832,18 @@ $.StackOverflowError$ = function() {
   return new $.StackOverflowError();
 };
 
+$.RuntimeError$ = function(message) {
+  return new $.RuntimeError(message);
+};
+
 $._ExceptionImplementation$ = function(message) {
   return new $._ExceptionImplementation(message);
+};
+
+$.Expando$ = function($name, T) {
+  var t1 = new $.Expando($name);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
 };
 
 $.List_List = function($length, E) {
@@ -12924,9 +16864,9 @@ $.List_List$from = function(other, growable, E) {
   var list, t1, $length, fixedList, t2, i, t3;
   list = $.List_List($, E);
   $.setRuntimeTypeInfo(list, [E]);
-  for (t1 = $.get$iterator$a(other); t1.moveNext$0() === true;)
+  for (t1 = $.get$iterator$ax(other); t1.moveNext$0() === true;)
     list.push(t1.get$current());
-  if (growable === true)
+  if (growable)
     return list;
   $length = list.length;
   fixedList = $.List_List($length, E);
@@ -12960,22 +16900,151 @@ $.List_List$generate = function($length, generator, growable, E) {
   return result;
 };
 
-$.Stopwatch$ = function() {
-  return new $.Stopwatch(null, null);
+$.Map_Map = function(K, V) {
+  return $.HashMap$(K, V);
 };
 
-$.Stopwatch__frequency = function() {
-  return 1000000;
-};
-
-$.Stopwatch__now = function() {
-  return $.Primitives_numMicroseconds();
+$.Object$ = function() {
+  return new $.Object();
 };
 
 $.StringBuffer$ = function($content) {
   var t1 = new $.StringBuffer("");
   t1.StringBuffer$1($content);
   return t1;
+};
+
+$.window = function() {
+  return window;
+};
+
+$.CanvasElement_CanvasElement = function(height, width) {
+  var e = document.createElement("canvas");
+  if (width != null)
+    $.set$width$x(e, width);
+  if (height != null)
+    $.set$height$x(e, height);
+  return e;
+};
+
+$._WrappedList$ = function(_list, E) {
+  var t1 = new $._WrappedList(_list);
+  $.setRuntimeTypeInfo(t1, [E]);
+  return t1;
+};
+
+$._WrappedIterator$ = function(_iterator, E) {
+  var t1 = new $._WrappedIterator(_iterator);
+  $.setRuntimeTypeInfo(t1, [E]);
+  return t1;
+};
+
+$._convertNativeToDart_Window = function(win) {
+  return $._DOMWindowCrossFrame__createSafe(win);
+};
+
+$._DOMWindowCrossFrame$ = function(_window) {
+  return new $._DOMWindowCrossFrame(_window);
+};
+
+$._DOMWindowCrossFrame__createSafe = function(w) {
+  if (w === window)
+    return w;
+  else
+    return $._DOMWindowCrossFrame$(w);
+};
+
+$.FixedSizeListIterator$ = function(array, T) {
+  var t1 = new $.FixedSizeListIterator(array, $.get$length$asx(array), -1, null);
+  $.setRuntimeTypeInfo(t1, [T]);
+  return t1;
+};
+
+$.convertDartToNative_Dictionary = function(dict) {
+  var object;
+  if (dict == null)
+    return;
+  object = {};
+  dict.forEach$1(dict, new $.convertDartToNative_Dictionary_anon(object));
+  return object;
+};
+
+$.Device_userAgent = function() {
+  return $.get$navigator$x($.window()).userAgent;
+};
+
+$.Device_isOpera = function() {
+  if ($.Device__isOpera == null)
+    $.Device__isOpera = $.contains$2$asx($.Device_userAgent(), "Opera", 0);
+  return $.Device__isOpera;
+};
+
+$.Device_isIE = function() {
+  if ($.Device__isIE == null)
+    $.Device__isIE = $.Device_isOpera() !== true && $.contains$2$asx($.Device_userAgent(), "MSIE", 0) === true;
+  return $.Device__isIE;
+};
+
+$.Device_isFirefox = function() {
+  if ($.Device__isFirefox == null)
+    $.Device__isFirefox = $.contains$2$asx($.Device_userAgent(), "Firefox", 0);
+  return $.Device__isFirefox;
+};
+
+$.Device_cssPrefix = function() {
+  if ($.Device__cachedCssPrefix == null)
+    if ($.Device_isFirefox() === true)
+      $.Device__cachedCssPrefix = "-moz-";
+    else if ($.Device_isIE() === true)
+      $.Device__cachedCssPrefix = "-ms-";
+    else if ($.Device_isOpera() === true)
+      $.Device__cachedCssPrefix = "-o-";
+    else
+      $.Device__cachedCssPrefix = "-webkit-";
+  return $.Device__cachedCssPrefix;
+};
+
+$.Lists_getRange = function(a, start, end, accumulator) {
+  var t1, i;
+  if (typeof start !== "number")
+    return $.Lists_getRange$bailout(1, a, start, end, accumulator);
+  if (typeof end !== "number")
+    return $.Lists_getRange$bailout(1, a, start, end, accumulator);
+  if (start < 0)
+    throw $.wrapException($.RangeError$value(start));
+  if (end < start)
+    throw $.wrapException($.RangeError$value(end));
+  t1 = $.getInterceptor$asx(a);
+  if (end > t1.get$length(a))
+    throw $.wrapException($.RangeError$value(end));
+  for (i = start; i < end; ++i)
+    accumulator.push(t1.$index(a, i));
+  return accumulator;
+};
+
+$.Lists_getRange$bailout = function(state0, a, start, end, accumulator) {
+  var t1, t2, i;
+  if ($.$lt$n(start, 0))
+    throw $.wrapException($.RangeError$value(start));
+  t1 = $.getInterceptor$n(end);
+  if (t1.$lt(end, start))
+    throw $.wrapException($.RangeError$value(end));
+  t2 = $.getInterceptor$asx(a);
+  if (t1.$gt(end, t2.get$length(a)))
+    throw $.wrapException($.RangeError$value(end));
+  for (i = start; t1 = $.getInterceptor$n(i), t1.$lt(i, end); i = t1.$add(i, 1))
+    accumulator.push(t2.$index(a, i));
+  return accumulator;
+};
+
+$.ReceivePort_ReceivePort = function() {
+  return $.ReceivePortImpl$();
+};
+
+$._Isolate_port = function() {
+  if ($.lazyPort == null)
+    $.lazyPort = $.ReceivePort_ReceivePort();
+  return $.lazyPort;
 };
 
 $.min = function(a, b) {
@@ -13028,17 +17097,22 @@ $.sqrt = function(x) {
   return Math.sqrt(x);
 };
 
-$.Bench2d$ = function() {
-  var t1 = new $.Bench2d(null, null, null, null, null);
+$.Bench2dWeb$ = function() {
+  var t1 = new $.Bench2dWeb(null, null, null, null, null);
   t1.Bench2d$0();
   return t1;
 };
 
 $.main = function() {
-  var bench2d = $.Bench2d$();
-  bench2d.initialize$0();
-  bench2d.warmup$0();
-  bench2d.bench$0();
+  var bench2d = $.Bench2dWeb$();
+  bench2d.initializeAnimation$0();
+  bench2d.runAnimation$0();
+};
+
+$.CanvasDraw$ = function(viewport, ctx) {
+  var t1 = new $.CanvasDraw(ctx, 1, viewport);
+  t1.CanvasDraw$2(viewport, ctx);
+  return t1;
 };
 
 $.ContactFilter$ = function() {
@@ -13116,10 +17190,11 @@ $.Collision_clipSegmentToLine = function(vOut, vIn, norm, offset) {
   if (distance0 * distance1 < 0) {
     if (numOut >= vOut.length)
       throw $.ioore(numOut);
-    t1 = vOut[numOut].get$v().copyFrom$1(vIn[1].get$v()).sub$1(vIn[0].get$v()).scale$1(distance0 / (distance0 - distance1));
+    t1 = vOut[numOut].get$v().copyFrom$1(vIn[1].get$v()).sub$1(vIn[0].get$v());
+    t1 = t1.scale$1(t1, distance0 / (distance0 - distance1));
     t1.add$1(t1, vIn[0].get$v());
     vin = distance0 > 0 ? vIn[0] : vIn[1];
-    vOut[numOut].get$id().setFrom$1(vin.get$id());
+    $.get$id$x(vOut[numOut]).setFrom$1($.get$id$x(vin));
     ++numOut;
   }
   return numOut;
@@ -13291,6 +17366,24 @@ $.PolygonShape$copy = function(other) {
   return t1;
 };
 
+$.CanvasViewportTransform$ = function(_extents, _center) {
+  var t1 = new $.CanvasViewportTransform(null, $.vec2$copy(_extents), 20, $.vec2$copy(_center));
+  t1.CanvasViewportTransform$2(_extents, _center);
+  return t1;
+};
+
+$.Color3$ = function() {
+  return new $.Color3(0, 0, 0);
+};
+
+$.Color3$fromRGB = function(r, g, b) {
+  return new $.Color3(r, g, b);
+};
+
+$.Color3$fromRGBF = function(r, g, b) {
+  return new $.Color3($.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(r * 255)), $.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(g * 255)), $.JSNumber_methods.toInt$0($.JSDouble_methods.floor$0(b * 255)));
+};
+
 $.Sweep$ = function() {
   return new $.Sweep($.vec2$zero(), $.vec2$zero(), $.vec2$zero(), 0, 0);
 };
@@ -13300,43 +17393,49 @@ $.Transform$ = function() {
 };
 
 $.Transform_mulToOut = function(transform, vector, out) {
-  var t1, t2, t4, t5, t6, t8, t10, t12, tempY;
+  var t1, t2, t4, t5, t7, t8, t10, tempY, t12, t14;
   t1 = transform.position;
   t2 = t1.y;
   if (typeof t2 !== "number")
     return $.Transform_mulToOut$bailout(1, transform, vector, out, t1, t2);
   t4 = transform.rotation;
-  t5 = t4.col0;
-  t6 = t5.get$y();
-  if (typeof t6 !== "number")
-    return $.Transform_mulToOut$bailout(2, 0, vector, out, t1, t2, t6, t4);
-  t8 = vector.get$x();
+  t5 = $.get$y$x(t4.col0);
+  if (typeof t5 !== "number")
+    return $.Transform_mulToOut$bailout(2, 0, vector, out, t1, t2, t4, t5);
+  t7 = $.getInterceptor$x(vector);
+  t8 = t7.get$x(vector);
   if (typeof t8 !== "number")
-    return $.Transform_mulToOut$bailout(3, 0, vector, out, t1, t2, t6, t4, t8);
-  t6 = t2 + t6 * t8;
-  t2 = t4.col1;
-  t10 = t2.get$y();
+    return $.Transform_mulToOut$bailout(3, 0, vector, out, t1, t2, t4, t5, t7, t8);
+  t8 = t2 + t5 * t8;
+  t5 = $.get$y$x(t4.col1);
+  if (typeof t5 !== "number")
+    return $.Transform_mulToOut$bailout(4, 0, vector, out, t1, 0, t4, t5, t7, t8);
+  t10 = t7.get$y(vector);
   if (typeof t10 !== "number")
-    return $.Transform_mulToOut$bailout(4, 0, vector, out, t1, 0, t10, t4, t6);
-  t12 = vector.get$y();
-  if (typeof t12 !== "number")
-    return $.Transform_mulToOut$bailout(5, 0, vector, out, t1, 0, t10, t4, t6, t12);
-  tempY = t6 + t10 * t12;
+    return $.Transform_mulToOut$bailout(5, 0, vector, out, t1, 0, t4, t5, t7, t8, t10);
+  tempY = t8 + t5 * t10;
   t1 = t1.x;
   if (typeof t1 !== "number")
-    return $.Transform_mulToOut$bailout(6, 0, vector, out, t1, 0, 0, t4, 0, 0, tempY);
-  t5 = t5.get$x();
+    return $.Transform_mulToOut$bailout(6, 0, vector, out, t1, 0, t4, 0, t7, 0, 0, tempY);
+  t5 = $.get$x$x(t4.col0);
   if (typeof t5 !== "number")
-    return $.Transform_mulToOut$bailout(7, 0, vector, out, t1, 0, t5, t4, 0, 0, tempY);
-  t8 = t1 + t5 * t8;
-  t2 = t2.get$x();
-  if (typeof t2 !== "number")
-    return $.Transform_mulToOut$bailout(9, 0, vector, out, 0, 0, 0, t2, 0, 0, tempY, t8);
-  out.x = t8 + t2 * t12;
-  out.y = tempY;
+    return $.Transform_mulToOut$bailout(7, 0, vector, out, t1, 0, t4, t5, t7, 0, 0, tempY);
+  t12 = t7.get$x(vector);
+  if (typeof t12 !== "number")
+    return $.Transform_mulToOut$bailout(8, 0, vector, out, t1, 0, t4, t5, t7, 0, 0, tempY, t12);
+  t12 = t1 + t5 * t12;
+  t4 = $.get$x$x(t4.col1);
+  if (typeof t4 !== "number")
+    return $.Transform_mulToOut$bailout(9, 0, vector, out, 0, 0, t4, 0, t7, 0, 0, tempY, t12);
+  t7 = t7.get$y(vector);
+  if (typeof t7 !== "number")
+    return $.Transform_mulToOut$bailout(10, 0, 0, out, 0, 0, t4, 0, t7, 0, 0, tempY, t12);
+  t14 = $.getInterceptor$x(out);
+  t14.set$x(out, t12 + t4 * t7);
+  t14.set$y(out, tempY);
 };
 
-$.Transform_mulToOut$bailout = function(state0, transform, vector, out, t1, t2, t5, t4, t7, t9, tempY, t11) {
+$.Transform_mulToOut$bailout = function(state0, transform, vector, out, t1, t2, t4, t5, t7, t8, t10, tempY, t12) {
   switch (state0) {
     case 0:
       t1 = transform.position;
@@ -13344,73 +17443,78 @@ $.Transform_mulToOut$bailout = function(state0, transform, vector, out, t1, t2, 
     case 1:
       state0 = 0;
       t4 = transform.rotation;
-      t5 = t4.col0.get$y();
+      t5 = $.get$y$x(t4.col0);
     case 2:
       state0 = 0;
-      t7 = vector.get$x();
+      t7 = $.getInterceptor$x(vector);
+      t8 = t7.get$x(vector);
     case 3:
       state0 = 0;
-      t7 = $.$add$ns(t2, $.$mul$n(t5, t7));
-      t5 = t4.col1.get$y();
+      t8 = $.$add$ns(t2, $.$mul$n(t5, t8));
+      t5 = $.get$y$x(t4.col1);
     case 4:
       state0 = 0;
-      t9 = vector.get$y();
+      t10 = t7.get$y(vector);
     case 5:
       state0 = 0;
-      tempY = $.$add$ns(t7, $.$mul$n(t5, t9));
+      tempY = $.$add$ns(t8, $.$mul$n(t5, t10));
       t1 = t1.x;
     case 6:
       state0 = 0;
-      t5 = t4.col0.get$x();
+      t5 = $.get$x$x(t4.col0);
     case 7:
       state0 = 0;
-      t11 = vector.get$x();
+      t12 = t7.get$x(vector);
     case 8:
       state0 = 0;
-      t11 = $.$add$ns(t1, $.$mul$n(t5, t11));
-      t4 = t4.col1.get$x();
+      t12 = $.$add$ns(t1, $.$mul$n(t5, t12));
+      t4 = $.get$x$x(t4.col1);
     case 9:
       state0 = 0;
-      t1 = vector.get$y();
+      t7 = t7.get$y(vector);
     case 10:
+      var t14;
       state0 = 0;
-      out.x = $.$add$ns(t11, $.$mul$n(t4, t1));
-      out.y = tempY;
+      t14 = $.getInterceptor$x(out);
+      t14.set$x(out, $.$add$ns(t12, $.$mul$n(t4, t7)));
+      t14.set$y(out, tempY);
   }
 };
 
 $.Transform_mulTransToOut = function(T, v, out) {
-  var v1, t1, b, b1, t3, t5, t7, tempy;
+  var v1, t1, b, b1, t3, t4, t6, tempy;
   v1 = v.$sub(v, T.position);
   t1 = T.rotation;
   b = t1.col0;
   b1 = t1.col1;
   t1 = v1.x;
   if (typeof t1 !== "number")
-    return $.Transform_mulTransToOut$bailout(1, out, t1, b, v1, b1);
-  t3 = b1.get$x();
+    return $.Transform_mulTransToOut$bailout(1, b, out, b1, t1, v1);
+  t3 = $.getInterceptor$x(b1);
+  t4 = t3.get$x(b1);
+  if (typeof t4 !== "number")
+    return $.Transform_mulTransToOut$bailout(2, b, out, b1, t1, v1, t3, t4);
+  t4 = t1 * t4;
+  t6 = v1.y;
+  if (typeof t6 !== "number")
+    return $.Transform_mulTransToOut$bailout(3, b, out, b1, t6, v1, t3, t4);
+  t3 = t3.get$y(b1);
   if (typeof t3 !== "number")
-    return $.Transform_mulTransToOut$bailout(2, out, t1, b, v1, b1, t3);
-  t3 = t1 * t3;
-  t5 = v1.y;
-  if (typeof t5 !== "number")
-    return $.Transform_mulTransToOut$bailout(3, out, t5, b, v1, b1, t3);
-  t7 = b1.get$y();
-  if (typeof t7 !== "number")
-    return $.Transform_mulTransToOut$bailout(4, out, t5, b, v1, 0, t3, t7);
-  tempy = t3 + t5 * t7;
-  t7 = b.get$x();
-  if (typeof t7 !== "number")
-    return $.Transform_mulTransToOut$bailout(6, out, 0, b, v1, 0, t7, t1, tempy);
-  t7 = t1 * t7;
-  t1 = b.get$y();
-  if (typeof t1 !== "number")
-    return $.Transform_mulTransToOut$bailout(8, out, 0, 0, 0, 0, t7, t5, tempy, t1);
-  out.x = t7 + t5 * t1;
+    return $.Transform_mulTransToOut$bailout(4, b, out, 0, t6, v1, t3, t4);
+  tempy = t4 + t6 * t3;
+  t3 = $.getInterceptor$x(b);
+  t4 = t3.get$x(b);
+  if (typeof t4 !== "number")
+    return $.Transform_mulTransToOut$bailout(6, b, out, 0, 0, v1, t1, t3, tempy, t4);
+  t4 = t1 * t4;
+  t3 = t3.get$y(b);
+  if (typeof t3 !== "number")
+    return $.Transform_mulTransToOut$bailout(8, 0, out, 0, 0, 0, t6, t3, tempy, t4);
+  out.x = t4 + t6 * t3;
   out.y = tempy;
 };
 
-$.Transform_mulTransToOut$bailout = function(state0, out, t1, b, v1, b1, t3, t6, tempy, t10) {
+$.Transform_mulTransToOut$bailout = function(state0, b, out, b1, t1, v1, t3, t4, tempy, t8) {
   switch (state0) {
     case 0:
       v1 = v.$sub(v, T.position);
@@ -13420,31 +17524,33 @@ $.Transform_mulTransToOut$bailout = function(state0, out, t1, b, v1, b1, t3, t6,
       t1 = v1.x;
     case 1:
       state0 = 0;
-      t3 = b1.get$x();
+      t3 = $.getInterceptor$x(b1);
+      t4 = t3.get$x(b1);
     case 2:
       state0 = 0;
-      t3 = $.$mul$n(t1, t3);
+      t4 = $.$mul$n(t1, t4);
       t1 = v1.y;
     case 3:
       state0 = 0;
-      t6 = b1.get$y();
+      t3 = t3.get$y(b1);
     case 4:
       state0 = 0;
-      tempy = $.$add$ns(t3, $.$mul$n(t1, t6));
-      t6 = v1.x;
+      tempy = $.$add$ns(t4, $.$mul$n(t1, t3));
+      t3 = v1.x;
     case 5:
       state0 = 0;
-      t3 = b.get$x();
+      t4 = $.getInterceptor$x(b);
+      t8 = t4.get$x(b);
     case 6:
       state0 = 0;
-      t3 = $.$mul$n(t6, t3);
-      t6 = v1.y;
+      t8 = $.$mul$n(t3, t8);
+      t3 = v1.y;
     case 7:
       state0 = 0;
-      t10 = b.get$y();
+      t4 = t4.get$y(b);
     case 8:
       state0 = 0;
-      out.x = $.$add$ns(t3, $.$mul$n(t6, t10));
+      out.x = $.$add$ns(t8, $.$mul$n(t3, t4));
       out.y = tempy;
   }
 };
@@ -13618,7 +17724,7 @@ $.expect = function(actual, matcher, failureHandler, reason, verbose) {
   doesMatch = null;
   matchState = $.MatchState$(null);
   try {
-    doesMatch = matcher.matches$2(actual, matchState);
+    doesMatch = $.matches$2$x(matcher, actual, matchState);
   } catch (exception) {
     t1 = $.unwrapException(exception);
     e = t1;
@@ -13663,12 +17769,12 @@ $._defaultErrorFormatter = function(actual, matcher, reason, matchState, verbose
   matcher.describeMismatch$4(actual, description, matchState, verbose);
   description.add$1(description, ".\n");
   if (verbose === true)
-    if (typeof actual === "object" && actual !== null && (actual.constructor === Array || !!$.getInterceptor(actual).$isIterable)) {
+    if (typeof actual === "object" && actual !== null && (actual.constructor === Array || $.getInterceptor(actual).$isIterable())) {
       t1 = description.add$1(description, "Actual: ").addDescriptionOf$1(actual);
       t1.add$1(t1, "\n");
     } else if (typeof actual === "object" && actual !== null && !!$.getInterceptor(actual).$isMap) {
       description.add$1(description, "Actual: ");
-      for (t1 = actual.get$keys(), t1 = t1.get$iterator(t1), count = 25; t1.moveNext$0();) {
+      for (t1 = actual.get$keys(), t1 = t1.get$iterator(t1), count = 25; t1.moveNext$0() === true;) {
         t2 = t1.get$current();
         if (count === 0) {
           description.add$1(description, "...\n");
@@ -13723,12 +17829,12 @@ $.clamp = function(x, min_, max_, out) {
     t1 = x.x;
     if (typeof t1 !== "number")
       return $.clamp$bailout(2, x, min_, max_, out, t1);
-    t3 = min_.get$x();
+    t3 = $.JSNumber_methods.get$x(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(3, x, min_, max_, out, t1, t3);
-    t5 = max_.get$x();
+      return $.clamp$bailout(3, x, min_, max_, out, t1, $.JSNumber_methods, t3);
+    t5 = $.JSNumber_methods.get$x(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(4, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(4, x, min_, max_, out, t1, $.JSNumber_methods, t3, t5, $.JSNumber_methods);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13736,13 +17842,13 @@ $.clamp = function(x, min_, max_, out) {
     out.x = t1;
     t1 = x.y;
     if (typeof t1 !== "number")
-      return $.clamp$bailout(5, 0, min_, max_, out, t1);
-    t3 = min_.get$y();
+      return $.clamp$bailout(5, 0, min_, max_, out, t1, $.JSNumber_methods, 0, 0, $.JSNumber_methods);
+    t3 = $.JSNumber_methods.get$y(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(6, 0, 0, max_, out, t1, t3);
-    t5 = max_.get$y();
+      return $.clamp$bailout(6, 0, 0, max_, out, t1, t3, 0, 0, $.JSNumber_methods);
+    t5 = $.JSNumber_methods.get$y(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(7, 0, 0, 0, out, t1, t3, t5);
+      return $.clamp$bailout(7, 0, 0, 0, out, t1, t3, 0, 0, t5);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13756,12 +17862,12 @@ $.clamp = function(x, min_, max_, out) {
     t1 = x.x;
     if (typeof t1 !== "number")
       return $.clamp$bailout(8, x, min_, max_, out, t1);
-    t3 = min_.get$x();
+    t3 = $.JSNumber_methods.get$x(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(9, x, min_, max_, out, t1, t3);
-    t5 = max_.get$x();
+      return $.clamp$bailout(9, x, min_, max_, out, t1, $.JSNumber_methods, t3);
+    t5 = $.JSNumber_methods.get$x(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(10, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(10, x, min_, max_, out, t1, $.JSNumber_methods, t3, t5, $.JSNumber_methods);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13769,13 +17875,13 @@ $.clamp = function(x, min_, max_, out) {
     out.x = t1;
     t1 = x.y;
     if (typeof t1 !== "number")
-      return $.clamp$bailout(11, x, min_, max_, out, t1);
-    t3 = min_.get$y();
+      return $.clamp$bailout(11, x, min_, max_, out, t1, $.JSNumber_methods, 0, 0, $.JSNumber_methods);
+    t3 = $.JSNumber_methods.get$y(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(12, x, min_, max_, out, t1, t3);
-    t5 = max_.get$y();
+      return $.clamp$bailout(12, x, min_, max_, out, t1, $.JSNumber_methods, t3, 0, $.JSNumber_methods);
+    t5 = $.JSNumber_methods.get$y(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(13, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(13, x, min_, max_, out, t1, $.JSNumber_methods, t3, t5, $.JSNumber_methods);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13783,13 +17889,13 @@ $.clamp = function(x, min_, max_, out) {
     out.y = t1;
     t1 = x.z;
     if (typeof t1 !== "number")
-      return $.clamp$bailout(14, 0, min_, max_, out, t1);
-    t3 = min_.get$z();
+      return $.clamp$bailout(14, 0, min_, max_, out, t1, $.JSNumber_methods, 0, 0, $.JSNumber_methods);
+    t3 = $.JSNumber_methods.get$z(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(15, 0, 0, max_, out, t1, t3);
-    t5 = max_.get$z();
+      return $.clamp$bailout(15, 0, 0, max_, out, t1, t3, 0, 0, $.JSNumber_methods);
+    t5 = $.JSNumber_methods.get$z(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(16, 0, 0, 0, out, t1, t3, t5);
+      return $.clamp$bailout(16, 0, 0, 0, out, t1, t3, 0, 0, t5);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13803,12 +17909,12 @@ $.clamp = function(x, min_, max_, out) {
     t1 = x.x;
     if (typeof t1 !== "number")
       return $.clamp$bailout(17, x, min_, max_, out, t1);
-    t3 = min_.get$x();
+    t3 = $.JSNumber_methods.get$x(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(18, x, min_, max_, out, t1, t3);
-    t5 = max_.get$x();
+      return $.clamp$bailout(18, x, min_, max_, out, t1, $.JSNumber_methods, t3);
+    t5 = $.JSNumber_methods.get$x(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(19, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(19, x, min_, max_, out, t1, $.JSNumber_methods, t3, t5, $.JSNumber_methods);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13816,13 +17922,13 @@ $.clamp = function(x, min_, max_, out) {
     out.x = t1;
     t1 = x.y;
     if (typeof t1 !== "number")
-      return $.clamp$bailout(20, x, min_, max_, out, t1);
-    t3 = min_.get$y();
+      return $.clamp$bailout(20, x, min_, max_, out, t1, $.JSNumber_methods, 0, 0, $.JSNumber_methods);
+    t3 = $.JSNumber_methods.get$y(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(21, x, min_, max_, out, t1, t3);
-    t5 = max_.get$y();
+      return $.clamp$bailout(21, x, min_, max_, out, t1, $.JSNumber_methods, t3, 0, $.JSNumber_methods);
+    t5 = $.JSNumber_methods.get$y(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(22, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(22, x, min_, max_, out, t1, $.JSNumber_methods, t3, t5, $.JSNumber_methods);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13830,13 +17936,13 @@ $.clamp = function(x, min_, max_, out) {
     out.y = t1;
     t1 = x.z;
     if (typeof t1 !== "number")
-      return $.clamp$bailout(23, x, min_, max_, out, t1);
-    t3 = min_.get$z();
+      return $.clamp$bailout(23, x, min_, max_, out, t1, $.JSNumber_methods, 0, 0, $.JSNumber_methods);
+    t3 = $.JSNumber_methods.get$z(min_);
     if (typeof t3 !== "number")
-      return $.clamp$bailout(24, x, min_, max_, out, t1, t3);
-    t5 = max_.get$z();
+      return $.clamp$bailout(24, x, min_, max_, out, t1, t3, 0, 0, $.JSNumber_methods);
+    t5 = $.JSNumber_methods.get$z(max_);
     if (typeof t5 !== "number")
-      return $.clamp$bailout(25, x, min_, max_, out, t1, t3, t5);
+      return $.clamp$bailout(25, x, min_, max_, out, t1, t3, 0, 0, t5);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13850,7 +17956,7 @@ $.clamp = function(x, min_, max_, out) {
       return $.clamp$bailout(27, 0, 0, max_, out, t1, t3);
     t5 = max_.get$w();
     if (typeof t5 !== "number")
-      return $.clamp$bailout(28, 0, 0, 0, out, t1, t3, t5);
+      return $.clamp$bailout(28, 0, 0, 0, out, t1, t3, 0, 0, 0, t5);
     if (t1 < t3)
       t1 = t3;
     else if (t1 > t5)
@@ -13861,7 +17967,7 @@ $.clamp = function(x, min_, max_, out) {
   throw $.wrapException($.ArgumentError$(x));
 };
 
-$.clamp$bailout = function(state0, x, min_, max_, out, t1, t3, t5) {
+$.clamp$bailout = function(state0, x, min_, max_, out, t1, t3, t4, t7, t6, t5) {
   switch (state0) {
     case 0:
     case 1:
@@ -13882,32 +17988,34 @@ $.clamp$bailout = function(state0, x, min_, max_, out, t1, t3, t5) {
             t1 = x.x;
           case 2:
             state0 = 0;
-            t3 = min_.get$x();
+            t3 = $.getInterceptor$x(min_);
+            t4 = t3.get$x(min_);
           case 3:
             state0 = 0;
-            t5 = max_.get$x();
+            t6 = $.getInterceptor$x(max_);
+            t7 = t6.get$x(max_);
           case 4:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
-            if (t2.$lt(t1, t3))
-              t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            if (t2.$lt(t1, t4))
+              t1 = t4;
+            else if (t2.$gt(t1, t7))
+              t1 = t7;
             out.x = t1;
             t1 = x.y;
           case 5:
             state0 = 0;
-            t3 = min_.get$y();
+            t3 = t3.get$y(min_);
           case 6:
             state0 = 0;
-            t5 = max_.get$y();
+            t6 = t6.get$y(max_);
           case 7:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
             if (t2.$lt(t1, t3))
               t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            else if (t2.$gt(t1, t6))
+              t1 = t6;
             out.y = t1;
             return out;
         }
@@ -13928,47 +18036,49 @@ $.clamp$bailout = function(state0, x, min_, max_, out, t1, t3, t5) {
             t1 = x.x;
           case 8:
             state0 = 0;
-            t3 = min_.get$x();
+            t3 = $.getInterceptor$x(min_);
+            t4 = t3.get$x(min_);
           case 9:
             state0 = 0;
-            t5 = max_.get$x();
+            t6 = $.getInterceptor$x(max_);
+            t7 = t6.get$x(max_);
           case 10:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
-            if (t2.$lt(t1, t3))
-              t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            if (t2.$lt(t1, t4))
+              t1 = t4;
+            else if (t2.$gt(t1, t7))
+              t1 = t7;
             out.x = t1;
             t1 = x.y;
           case 11:
             state0 = 0;
-            t3 = min_.get$y();
+            t4 = t3.get$y(min_);
           case 12:
             state0 = 0;
-            t5 = max_.get$y();
+            t7 = t6.get$y(max_);
           case 13:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
-            if (t2.$lt(t1, t3))
-              t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            if (t2.$lt(t1, t4))
+              t1 = t4;
+            else if (t2.$gt(t1, t7))
+              t1 = t7;
             out.y = t1;
             t1 = x.z;
           case 14:
             state0 = 0;
-            t3 = min_.get$z();
+            t3 = t3.get$z(min_);
           case 15:
             state0 = 0;
-            t5 = max_.get$z();
+            t6 = t6.get$z(max_);
           case 16:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
             if (t2.$lt(t1, t3))
               t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            else if (t2.$gt(t1, t6))
+              t1 = t6;
             out.z = t1;
             return out;
         }
@@ -13993,47 +18103,49 @@ $.clamp$bailout = function(state0, x, min_, max_, out, t1, t3, t5) {
             t1 = x.x;
           case 17:
             state0 = 0;
-            t3 = min_.get$x();
+            t3 = $.getInterceptor$x(min_);
+            t4 = t3.get$x(min_);
           case 18:
             state0 = 0;
-            t5 = max_.get$x();
+            t6 = $.getInterceptor$x(max_);
+            t7 = t6.get$x(max_);
           case 19:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
-            if (t2.$lt(t1, t3))
-              t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            if (t2.$lt(t1, t4))
+              t1 = t4;
+            else if (t2.$gt(t1, t7))
+              t1 = t7;
             out.x = t1;
             t1 = x.y;
           case 20:
             state0 = 0;
-            t3 = min_.get$y();
+            t4 = t3.get$y(min_);
           case 21:
             state0 = 0;
-            t5 = max_.get$y();
+            t7 = t6.get$y(max_);
           case 22:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
-            if (t2.$lt(t1, t3))
-              t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            if (t2.$lt(t1, t4))
+              t1 = t4;
+            else if (t2.$gt(t1, t7))
+              t1 = t7;
             out.y = t1;
             t1 = x.z;
           case 23:
             state0 = 0;
-            t3 = min_.get$z();
+            t3 = t3.get$z(min_);
           case 24:
             state0 = 0;
-            t5 = max_.get$z();
+            t6 = t6.get$z(max_);
           case 25:
             state0 = 0;
             t2 = $.getInterceptor$n(t1);
             if (t2.$lt(t1, t3))
               t1 = t3;
-            else if (t2.$gt(t1, t5))
-              t1 = t5;
+            else if (t2.$gt(t1, t6))
+              t1 = t6;
             out.z = t1;
             t1 = x.w;
           case 26:
@@ -14129,7 +18241,7 @@ $.vec4$raw = function(x_, y_, z_, w_) {
 };
 
 $.cross = function(x, y, out) {
-  var t1;
+  var t1, t2, t3;
   if (typeof x === "object" && x !== null && !!$.getInterceptor(x).$isvec3 && typeof y === "object" && y !== null && !!$.getInterceptor(y).$isvec3)
     return x.cross$2(y, out);
   else {
@@ -14140,37 +18252,45 @@ $.cross = function(x, y, out) {
       x = $.toDouble$0$n(x);
       if (out == null)
         out = $.vec2$zero();
-      t1 = y.get$y();
+      t1 = $.getInterceptor$x(y);
+      t2 = t1.get$y(y);
+      if (typeof t2 !== "number")
+        throw $.iae(t2);
+      t3 = $.getInterceptor$x(out);
+      t3.set$x(out, -x * t2);
+      t1 = t1.get$x(y);
       if (typeof t1 !== "number")
         throw $.iae(t1);
-      out.set$x(-x * t1);
-      t1 = y.get$x();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      out.set$y(x * t1);
+      t3.set$y(out, x * t1);
       return out;
     } else if (t1 && typeof y === "number") {
       y = $.toDouble$0$n(y);
       if (out == null)
         out = $.vec2$zero();
-      t1 = x.get$y();
+      t1 = $.getInterceptor$x(x);
+      t2 = t1.get$y(x);
+      if (typeof t2 !== "number")
+        throw $.iae(t2);
+      t3 = $.getInterceptor$x(out);
+      t3.set$x(out, y * t2);
+      t1 = t1.get$x(x);
       if (typeof t1 !== "number")
         throw $.iae(t1);
-      out.set$x(y * t1);
-      t1 = x.get$x();
-      if (typeof t1 !== "number")
-        throw $.iae(t1);
-      out.set$y(-y * t1);
+      t3.set$y(out, -y * t1);
       return out;
     }
   }
   return;
 };
 
+$.IsolateNatives__processWorkerMessage.call$2 = $.IsolateNatives__processWorkerMessage;
+$.IsolateNatives__processWorkerMessage.$name = "IsolateNatives__processWorkerMessage";
 $.wrapException.call$1 = $.wrapException;
 $.wrapException.$name = "wrapException";
 $.DartError_toStringWrapper.call$0 = $.DartError_toStringWrapper;
 $.DartError_toStringWrapper.$name = "DartError_toStringWrapper";
+$.invokeClosure.call$5 = $.invokeClosure;
+$.invokeClosure.$name = "invokeClosure";
 $.typeNameInChrome.call$1 = $.typeNameInChrome;
 $.typeNameInChrome.$name = "typeNameInChrome";
 $.typeNameInSafari.call$1 = $.typeNameInSafari;
@@ -14187,28 +18307,46 @@ $.Comparable_compare.call$2 = $.Comparable_compare;
 $.Comparable_compare.$name = "Comparable_compare";
 $._defaultErrorFormatter.call$5 = $._defaultErrorFormatter;
 $._defaultErrorFormatter.$name = "_defaultErrorFormatter";
+$.Match = {builtin$cls: "Match"};
 $.Joint = {builtin$cls: "Joint"};
 $.String = {builtin$cls: "String"};
+$.ReceivePort = {builtin$cls: "ReceivePort"};
 $.$int = {builtin$cls: "int"};
+$._ManagerStub = {builtin$cls: "_ManagerStub"};
 $.List = {builtin$cls: "List"};
 $.num = {builtin$cls: "num"};
 $.JSArray_methods = $.JSArray.prototype;
 $.C_NullThrownError = new $.NullThrownError();
 $.JSInt_methods = $.JSInt.prototype;
-$.JSNull_methods = $.JSNull.prototype;
+Isolate.makeConstantList = function(list) {
+  list.immutable$list = true;
+  list.fixed$length = true;
+  return list;
+};
+$.List_empty = Isolate.makeConstantList([]);
 $.Type_$int = $.createRuntimeType('int');
+$.Type_String = $.createRuntimeType('String');
+$.JSDouble_methods = $.JSDouble.prototype;
+$.C_CloseToken = new $.CloseToken();
+$.JSNull_methods = $.JSNull.prototype;
+$.Type_Null = $.createRuntimeType('Null');
 $.JSNumber_methods = $.JSNumber.prototype;
 $.JSString_methods = $.JSString.prototype;
 $.Type_bool = $.createRuntimeType('bool');
-$.Type_Null = $.createRuntimeType('Null');
-$.Type_String = $.createRuntimeType('String');
-$.JSDouble_methods = $.JSDouble.prototype;
+$.Duration_0 = new $.Duration(0);
 $.Type_$double = $.createRuntimeType('double');
+$.Expando__keyCount = 0;
 $.dispatchPropertyName = "_zzyzx";
+$.lazyPort = null;
+$.ReceivePortImpl__nextFreeId = 1;
 $.Primitives_hashCodeSeed = 0;
 $._getTypeNameOf = null;
 $.interceptorsByTag = null;
 $.leafTags = null;
+$.Device__isOpera = null;
+$.Device__isIE = null;
+$.Device__isFirefox = null;
+$.Device__cachedCssPrefix = null;
 $.TimeOfImpact_toiCalls = null;
 $.TimeOfImpact_toiIters = null;
 $.TimeOfImpact_toiMaxIters = null;
@@ -14248,16 +18386,16 @@ $.$gt$n = function(receiver, a0) {
     return receiver > a0;
   return $.getInterceptor$n(receiver).$gt(receiver, a0);
 };
-$.$index$as = function(receiver, a0) {
+$.$index$asx = function(receiver, a0) {
   if (receiver.constructor == Array || typeof receiver == "string")
     if (a0 >>> 0 === a0 && a0 < receiver.length)
       return receiver[a0];
-  return $.getInterceptor$as(receiver).$index(receiver, a0);
+  return $.getInterceptor$asx(receiver).$index(receiver, a0);
 };
-$.$indexSet$a = function(receiver, a0, a1) {
+$.$indexSet$ax = function(receiver, a0, a1) {
   if (receiver.constructor == Array && !receiver.immutable$list && a0 >>> 0 === a0 && a0 < receiver.length)
     return receiver[a0] = a1;
-  return $.getInterceptor$a(receiver).$indexSet(receiver, a0, a1);
+  return $.getInterceptor$ax(receiver).$indexSet(receiver, a0, a1);
 };
 $.$le$n = function(receiver, a0) {
   if (typeof receiver == "number" && typeof a0 == "number")
@@ -14284,6 +18422,9 @@ $.$or$n = function(receiver, a0) {
     return (receiver | a0) >>> 0;
   return $.getInterceptor$n(receiver).$or(receiver, a0);
 };
+$.$shl$n = function(receiver, a0) {
+  return $.getInterceptor$n(receiver).$shl(receiver, a0);
+};
 $.$sub$n = function(receiver, a0) {
   if (typeof receiver == "number" && typeof a0 == "number")
     return receiver - a0;
@@ -14292,35 +18433,167 @@ $.$sub$n = function(receiver, a0) {
 $.abs$0$n = function(receiver) {
   return $.getInterceptor$n(receiver).abs$0(receiver);
 };
-$.add$1$a = function(receiver, a0) {
-  return $.getInterceptor$a(receiver).add$1(receiver, a0);
+$.add$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).add$1(receiver, a0);
+};
+$.addAll$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).addAll$1(receiver, a0);
+};
+$.allMatches$1$s = function(receiver, a0) {
+  return $.getInterceptor$s(receiver).allMatches$1(receiver, a0);
+};
+$.arc$6$x = function(receiver, a0, a1, a2, a3, a4, a5) {
+  return $.getInterceptor$x(receiver).arc$6(receiver, a0, a1, a2, a3, a4, a5);
+};
+$.beginPath$0$x = function(receiver) {
+  return $.getInterceptor$x(receiver).beginPath$0(receiver);
+};
+$.clearRect$4$x = function(receiver, a0, a1, a2, a3) {
+  return $.getInterceptor$x(receiver).clearRect$4(receiver, a0, a1, a2, a3);
+};
+$.clone$0$x = function(receiver) {
+  return $.getInterceptor$x(receiver).clone$0(receiver);
+};
+$.closePath$0$x = function(receiver) {
+  return $.getInterceptor$x(receiver).closePath$0(receiver);
 };
 $.compareTo$1$ns = function(receiver, a0) {
   return $.getInterceptor$ns(receiver).compareTo$1(receiver, a0);
 };
-$.elementAt$1$a = function(receiver, a0) {
-  return $.getInterceptor$a(receiver).elementAt$1(receiver, a0);
+$.contains$2$asx = function(receiver, a0, a1) {
+  return $.getInterceptor$asx(receiver).contains$2(receiver, a0, a1);
+};
+$.elementAt$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).elementAt$1(receiver, a0);
+};
+$.fill$0$x = function(receiver) {
+  return $.getInterceptor$x(receiver).fill$0(receiver);
 };
 $.floor$0$n = function(receiver) {
   return $.getInterceptor$n(receiver).floor$0(receiver);
 };
+$.forEach$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).forEach$1(receiver, a0);
+};
+$.get$animationFrame$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$animationFrame(receiver);
+};
+$.get$body$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$body(receiver);
+};
+$.get$filter$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$filter(receiver);
+};
 $.get$hashCode$ = function(receiver) {
   return $.getInterceptor(receiver).get$hashCode(receiver);
 };
-$.get$iterator$a = function(receiver) {
-  return $.getInterceptor$a(receiver).get$iterator(receiver);
+$.get$id$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$id(receiver);
 };
-$.get$length$as = function(receiver) {
-  return $.getInterceptor$as(receiver).get$length(receiver);
+$.get$iterator$ax = function(receiver) {
+  return $.getInterceptor$ax(receiver).get$iterator(receiver);
+};
+$.get$length$asx = function(receiver) {
+  return $.getInterceptor$asx(receiver).get$length(receiver);
+};
+$.get$navigator$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$navigator(receiver);
+};
+$.get$parent$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$parent(receiver);
+};
+$.get$points$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$points(receiver);
+};
+$.get$position$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$position(receiver);
+};
+$.get$rows$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$rows(receiver);
 };
 $.get$runtimeType$ = function(receiver) {
   return $.getInterceptor(receiver).get$runtimeType(receiver);
 };
-$.setRange$3$a = function(receiver, a0, a1, a2) {
-  return $.getInterceptor$a(receiver).setRange$3(receiver, a0, a1, a2);
+$.get$scale$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$scale(receiver);
 };
-$.skip$1$a = function(receiver, a0) {
-  return $.getInterceptor$a(receiver).skip$1(receiver, a0);
+$.get$shape$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$shape(receiver);
+};
+$.get$type$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$type(receiver);
+};
+$.get$x$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$x(receiver);
+};
+$.get$y$x = function(receiver) {
+  return $.getInterceptor$x(receiver).get$y(receiver);
+};
+$.getContext$1$x = function(receiver, a0) {
+  return $.getInterceptor$x(receiver).getContext$1(receiver, a0);
+};
+$.lineTo$2$x = function(receiver, a0, a1) {
+  return $.getInterceptor$x(receiver).lineTo$2(receiver, a0, a1);
+};
+$.matches$2$x = function(receiver, a0, a1) {
+  return $.getInterceptor$x(receiver).matches$2(receiver, a0, a1);
+};
+$.moveTo$2$x = function(receiver, a0, a1) {
+  return $.getInterceptor$x(receiver).moveTo$2(receiver, a0, a1);
+};
+$.postMessage$1$x = function(receiver, a0) {
+  return $.getInterceptor$x(receiver).postMessage$1(receiver, a0);
+};
+$.register$2$x = function(receiver, a0, a1) {
+  return $.getInterceptor$x(receiver).register$2(receiver, a0, a1);
+};
+$.removeLast$0$ax = function(receiver) {
+  return $.getInterceptor$ax(receiver).removeLast$0(receiver);
+};
+$.scale$1$x = function(receiver, a0) {
+  return $.getInterceptor$x(receiver).scale$1(receiver, a0);
+};
+$.set$height$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$height(receiver, value);
+};
+$.set$parent$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$parent(receiver, value);
+};
+$.set$type$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$type(receiver, value);
+};
+$.set$width$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$width(receiver, value);
+};
+$.set$x$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$x(receiver, value);
+};
+$.set$y$x = function(receiver, value) {
+  return $.getInterceptor$x(receiver).set$y(receiver, value);
+};
+$.setFillColorRgb$4$x = function(receiver, a0, a1, a2, a3) {
+  return $.getInterceptor$x(receiver).setFillColorRgb$4(receiver, a0, a1, a2, a3);
+};
+$.setRange$3$ax = function(receiver, a0, a1, a2) {
+  return $.getInterceptor$ax(receiver).setRange$3(receiver, a0, a1, a2);
+};
+$.setRange$4$ax = function(receiver, a0, a1, a2, a3) {
+  return $.getInterceptor$ax(receiver).setRange$4(receiver, a0, a1, a2, a3);
+};
+$.setStrokeColorRgb$4$x = function(receiver, a0, a1, a2, a3) {
+  return $.getInterceptor$x(receiver).setStrokeColorRgb$4(receiver, a0, a1, a2, a3);
+};
+$.skip$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).skip$1(receiver, a0);
+};
+$.stroke$0$x = function(receiver) {
+  return $.getInterceptor$x(receiver).stroke$0(receiver);
+};
+$.sublist$1$ax = function(receiver, a0) {
+  return $.getInterceptor$ax(receiver).sublist$1(receiver, a0);
+};
+$.sublist$2$ax = function(receiver, a0, a1) {
+  return $.getInterceptor$ax(receiver).sublist$2(receiver, a0, a1);
 };
 $.toDouble$0$n = function(receiver) {
   return $.getInterceptor$n(receiver).toDouble$0(receiver);
@@ -14352,21 +18625,33 @@ $.getInterceptor = function(receiver) {
     return $.Interceptor.prototype;
   return $.getNativeInterceptor(receiver);
 };
-$.getInterceptor$a = function(receiver) {
-  if (receiver == null)
-    return receiver;
-  if (receiver.constructor == Array)
-    return $.JSArray.prototype;
-  return receiver;
-};
-$.getInterceptor$as = function(receiver) {
+$.getInterceptor$asx = function(receiver) {
   if (typeof receiver == "string")
     return $.JSString.prototype;
   if (receiver == null)
     return receiver;
   if (receiver.constructor == Array)
     return $.JSArray.prototype;
-  return receiver;
+  if (typeof receiver != "object")
+    return receiver;
+  if (receiver instanceof $.Object)
+    return receiver;
+  if (Object.getPrototypeOf(receiver) === Object.prototype)
+    return $.Interceptor.prototype;
+  return $.getNativeInterceptor(receiver);
+};
+$.getInterceptor$ax = function(receiver) {
+  if (receiver == null)
+    return receiver;
+  if (receiver.constructor == Array)
+    return $.JSArray.prototype;
+  if (typeof receiver != "object")
+    return receiver;
+  if (receiver instanceof $.Object)
+    return receiver;
+  if (Object.getPrototypeOf(receiver) === Object.prototype)
+    return $.Interceptor.prototype;
+  return $.getNativeInterceptor(receiver);
 };
 $.getInterceptor$n = function(receiver) {
   if (typeof receiver == "number")
@@ -14391,26 +18676,479 @@ $.getInterceptor$s = function(receiver) {
     return receiver;
   return receiver;
 };
+$.getInterceptor$x = function(receiver) {
+  if (receiver == null)
+    return receiver;
+  if (typeof receiver != "object")
+    return receiver;
+  if (receiver instanceof $.Object)
+    return receiver;
+  if (Object.getPrototypeOf(receiver) === Object.prototype)
+    return $.Interceptor.prototype;
+  return $.getNativeInterceptor(receiver);
+};
+Isolate.$lazy($, "globalThis", "globalThis", "get$globalThis", function() {
+  return $.IsolateNatives_computeGlobalThis();
+});
+Isolate.$lazy($, "globalWindow", "globalWindow", "get$globalWindow", function() {
+  return $.get$globalThis().window;
+});
+Isolate.$lazy($, "globalWorker", "globalWorker", "get$globalWorker", function() {
+  return $.get$globalThis().Worker;
+});
+Isolate.$lazy($, "globalPostMessageDefined", "globalPostMessageDefined", "get$globalPostMessageDefined", function() {
+  return $.get$globalThis().postMessage !== void 0;
+});
+Isolate.$lazy($, "thisScript", "IsolateNatives_thisScript", "get$IsolateNatives_thisScript", function() {
+  return $.IsolateNatives_computeThisScript();
+});
+Isolate.$lazy($, "_stackTraceExpando", "_stackTraceExpando", "get$_stackTraceExpando", function() {
+  return $.Expando$("asynchronous error", null);
+});
+Isolate.$lazy($, "_runCallbacks", "Timer__runCallbacks", "get$Timer__runCallbacks", function() {
+  return [];
+});
+// Native classes
+(function(table) {
+  for (var key in table)
+    $.defineProperty(Object.prototype, key, table[key]);
+})({
+  $isJavaScriptIndexingBehavior: function() {
+    return false;
+  },
+  $asJavaScriptIndexingBehavior: function() {
+    return null;
+  },
+  $isIterable: function() {
+    return false;
+  },
+  $asIterable: function() {
+    return null;
+  },
+  $isList: function() {
+    return false;
+  },
+  $asList: function() {
+    return null;
+  }
+});
+
+$.defineNativeMethods("Worker", $._WorkerStub);
+
+$.defineNativeMethodsNonleaf("HTMLElement", $._HTMLElement);
+
+$.defineNativeMethods("HTMLAnchorElement", $.AnchorElement);
+
+$.defineNativeMethods("HTMLAreaElement", $.AreaElement);
+
+$.defineNativeMethods("Attr", $.Attr);
+
+$.defineNativeMethods("HTMLAudioElement", $.AudioElement);
+
+$.defineNativeMethods("AutocompleteErrorEvent", $.AutocompleteErrorEvent);
+
+$.defineNativeMethods("HTMLBRElement", $.BRElement);
+
+$.defineNativeMethods("HTMLBaseElement", $.BaseElement);
+
+$.defineNativeMethods("HTMLBodyElement", $.BodyElement);
+
+$.defineNativeMethods("HTMLButtonElement", $.ButtonElement);
+
+$.defineNativeMethods("CDATASection", $.CDataSection);
+
+$.defineNativeMethods("HTMLCanvasElement", $.CanvasElement);
+
+$.defineNativeMethods("CanvasGradient", $.CanvasGradient);
+
+$.defineNativeMethods("CanvasPattern", $.CanvasPattern);
+
+$.defineNativeMethodsNonleaf("CanvasRenderingContext", $.CanvasRenderingContext);
+
+$.defineNativeMethods("CanvasRenderingContext2D", $.CanvasRenderingContext2D);
+
+$.defineNativeMethodsNonleaf("CharacterData", $.CharacterData);
+
+$.defineNativeMethods("Comment", $.Comment);
+
+$.defineNativeMethods("HTMLContentElement", $.ContentElement);
+
+$.defineNativeMethods("CSSStyleDeclaration", $.CssStyleDeclaration);
+
+$.defineNativeMethods("CustomElementConstructor", $.CustomElementConstructor);
+
+$.defineNativeMethods("HTMLDListElement", $.DListElement);
+
+$.defineNativeMethods("HTMLDataListElement", $.DataListElement);
+
+$.defineNativeMethods("HTMLDetailsElement", $.DetailsElement);
+
+$.defineNativeMethods("HTMLDialogElement", $.DialogElement);
+
+$.defineNativeMethods("HTMLDivElement", $.DivElement);
+
+$.defineNativeMethodsNonleaf("Document", $.Document);
+
+$.defineNativeMethodsNonleaf("DocumentFragment", $.DocumentFragment);
+
+$.defineNativeMethods("DocumentType", $.DocumentType);
+
+$.defineNativeMethods("DOMError", $.DomError);
+
+$.defineNativeMethods("DOMException", $.DomException);
+
+$.defineNativeMethodsNonleaf("Element", $.Element);
+
+$.defineNativeMethods("HTMLEmbedElement", $.EmbedElement);
+
+$.defineNativeMethods("EntityReference", $.EntityReference);
+
+$.defineNativeMethods("ErrorEvent", $.ErrorEvent);
+
+$.defineNativeMethodsNonleaf("Event", $.Event);
+
+$.defineNativeMethods("EventException", $.EventException);
+
+$.defineNativeMethodsNonleaf("EventTarget", $.EventTarget);
+
+$.defineNativeMethods("HTMLFieldSetElement", $.FieldSetElement);
+
+$.defineNativeMethods("FileError", $.FileError);
+
+$.defineNativeMethods("FileException", $.FileException);
+
+$.defineNativeMethods("HTMLFormElement", $.FormElement);
+
+$.defineNativeMethods("HTMLHRElement", $.HRElement);
+
+$.defineNativeMethods("HTMLHeadElement", $.HeadElement);
+
+$.defineNativeMethods("HTMLHeadingElement", $.HeadingElement);
+
+$.defineNativeMethodsNonleaf("HTMLCollection", $.HtmlCollection);
+
+$.defineNativeMethods("HTMLDocument", $.HtmlDocument);
+
+$.defineNativeMethods("HTMLHtmlElement", $.HtmlElement);
+
+$.defineNativeMethods("HTMLFormControlsCollection", $.HtmlFormControlsCollection);
+
+$.defineNativeMethods("HTMLOptionsCollection", $.HtmlOptionsCollection);
+
+$.defineNativeMethods("XMLHttpRequestException", $.HttpRequestException);
+
+$.defineNativeMethods("HTMLIFrameElement", $.IFrameElement);
+
+$.defineNativeMethods("HTMLImageElement", $.ImageElement);
+
+$.defineNativeMethods("HTMLInputElement", $.InputElement);
+
+$.defineNativeMethods("HTMLKeygenElement", $.KeygenElement);
+
+$.defineNativeMethods("HTMLLIElement", $.LIElement);
+
+$.defineNativeMethods("HTMLLabelElement", $.LabelElement);
+
+$.defineNativeMethods("HTMLLegendElement", $.LegendElement);
+
+$.defineNativeMethods("HTMLLinkElement", $.LinkElement);
+
+$.defineNativeMethods("HTMLMapElement", $.MapElement);
+
+$.defineNativeMethodsNonleaf("HTMLMediaElement", $.MediaElement);
+
+$.defineNativeMethods("MediaError", $.MediaError);
+
+$.defineNativeMethods("MediaKeyError", $.MediaKeyError);
+
+$.defineNativeMethods("HTMLMenuElement", $.MenuElement);
+
+$.defineNativeMethods("HTMLMetaElement", $.MetaElement);
+
+$.defineNativeMethods("HTMLMeterElement", $.MeterElement);
+
+$.defineNativeMethods("HTMLModElement", $.ModElement);
+
+$.defineNativeMethods("Navigator", $.Navigator);
+
+$.defineNativeMethods("NavigatorUserMediaError", $.NavigatorUserMediaError);
+
+$.defineNativeMethodsNonleaf("Node", $.Node);
+
+$.defineNativeMethodsNonleaf("NodeList", $.NodeList);
+
+$.defineNativeMethods("Notation", $.Notation);
+
+$.defineNativeMethods("HTMLOListElement", $.OListElement);
+
+$.defineNativeMethods("HTMLObjectElement", $.ObjectElement);
+
+$.defineNativeMethods("HTMLOptGroupElement", $.OptGroupElement);
+
+$.defineNativeMethods("HTMLOptionElement", $.OptionElement);
+
+$.defineNativeMethods("HTMLOutputElement", $.OutputElement);
+
+$.defineNativeMethods("HTMLParagraphElement", $.ParagraphElement);
+
+$.defineNativeMethods("HTMLParamElement", $.ParamElement);
+
+$.defineNativeMethods("PositionError", $.PositionError);
+
+$.defineNativeMethods("HTMLPreElement", $.PreElement);
+
+$.defineNativeMethods("ProcessingInstruction", $.ProcessingInstruction);
+
+$.defineNativeMethods("HTMLProgressElement", $.ProgressElement);
+
+$.defineNativeMethods("HTMLQuoteElement", $.QuoteElement);
+
+$.defineNativeMethods("RadioNodeList", $.RadioNodeList);
+
+$.defineNativeMethods("RangeException", $.RangeException);
+
+$.defineNativeMethods("HTMLScriptElement", $.ScriptElement);
+
+$.defineNativeMethods("HTMLSelectElement", $.SelectElement);
+
+$.defineNativeMethods("HTMLShadowElement", $.ShadowElement);
+
+$.defineNativeMethods("ShadowRoot", $.ShadowRoot);
+
+$.defineNativeMethods("HTMLSourceElement", $.SourceElement);
+
+$.defineNativeMethods("HTMLSpanElement", $.SpanElement);
+
+$.defineNativeMethods("SpeechRecognitionError", $.SpeechRecognitionError);
+
+$.defineNativeMethods("HTMLStyleElement", $.StyleElement);
+
+$.defineNativeMethods("HTMLTableCaptionElement", $.TableCaptionElement);
+
+$.defineNativeMethods("HTMLTableCellElement", $.TableCellElement);
+
+$.defineNativeMethods("HTMLTableColElement", $.TableColElement);
+
+$.defineNativeMethods("HTMLTableElement", $.TableElement);
+
+$.defineNativeMethods("HTMLTableRowElement", $.TableRowElement);
+
+$.defineNativeMethods("HTMLTableSectionElement", $.TableSectionElement);
+
+$.defineNativeMethods("HTMLTemplateElement", $.TemplateElement);
+
+$.defineNativeMethodsNonleaf("Text", $.Text);
+
+$.defineNativeMethods("HTMLTextAreaElement", $.TextAreaElement);
+
+$.defineNativeMethods("HTMLTitleElement", $.TitleElement);
+
+$.defineNativeMethods("HTMLTrackElement", $.TrackElement);
+
+$.defineNativeMethods("HTMLUListElement", $.UListElement);
+
+$.defineNativeMethods("HTMLUnknownElement", $.UnknownElement);
+
+$.defineNativeMethods("HTMLVideoElement", $.VideoElement);
+
+$.defineNativeMethods("DOMWindow", $.Window);
+
+$.defineNativeMethods("XPathException", $.XPathException);
+
+$.defineNativeMethods("NamedNodeMap", $._NamedNodeMap);
+
+$.defineNativeMethods("SVGAElement", $.AElement);
+
+$.defineNativeMethods("SVGAltGlyphElement", $.AltGlyphElement);
+
+$.defineNativeMethods("SVGAnimateElement", $.AnimateElement);
+
+$.defineNativeMethods("SVGAnimateMotionElement", $.AnimateMotionElement);
+
+$.defineNativeMethods("SVGAnimateTransformElement", $.AnimateTransformElement);
+
+$.defineNativeMethods("SVGAnimatedEnumeration", $.AnimatedEnumeration);
+
+$.defineNativeMethods("SVGAnimatedLength", $.AnimatedLength);
+
+$.defineNativeMethods("SVGAnimatedLengthList", $.AnimatedLengthList);
+
+$.defineNativeMethods("SVGAnimatedNumber", $.AnimatedNumber);
+
+$.defineNativeMethods("SVGAnimatedNumberList", $.AnimatedNumberList);
+
+$.defineNativeMethods("SVGAnimatedTransformList", $.AnimatedTransformList);
+
+$.defineNativeMethodsNonleaf("SVGAnimationElement", $.AnimationElement);
+
+$.defineNativeMethods("SVGCircleElement", $.CircleElement);
+
+$.defineNativeMethods("SVGClipPathElement", $.ClipPathElement);
+
+$.defineNativeMethods("SVGDefsElement", $.DefsElement);
+
+$.defineNativeMethods("SVGDescElement", $.DescElement);
+
+$.defineNativeMethods("SVGEllipseElement", $.EllipseElement);
+
+$.defineNativeMethods("SVGFEBlendElement", $.FEBlendElement);
+
+$.defineNativeMethods("SVGFEColorMatrixElement", $.FEColorMatrixElement);
+
+$.defineNativeMethods("SVGFEComponentTransferElement", $.FEComponentTransferElement);
+
+$.defineNativeMethods("SVGFECompositeElement", $.FECompositeElement);
+
+$.defineNativeMethods("SVGFEConvolveMatrixElement", $.FEConvolveMatrixElement);
+
+$.defineNativeMethods("SVGFEDiffuseLightingElement", $.FEDiffuseLightingElement);
+
+$.defineNativeMethods("SVGFEDisplacementMapElement", $.FEDisplacementMapElement);
+
+$.defineNativeMethods("SVGFEDistantLightElement", $.FEDistantLightElement);
+
+$.defineNativeMethods("SVGFEFloodElement", $.FEFloodElement);
+
+$.defineNativeMethods("SVGFEFuncAElement", $.FEFuncAElement);
+
+$.defineNativeMethods("SVGFEFuncBElement", $.FEFuncBElement);
+
+$.defineNativeMethods("SVGFEFuncGElement", $.FEFuncGElement);
+
+$.defineNativeMethods("SVGFEFuncRElement", $.FEFuncRElement);
+
+$.defineNativeMethods("SVGFEGaussianBlurElement", $.FEGaussianBlurElement);
+
+$.defineNativeMethods("SVGFEImageElement", $.FEImageElement);
+
+$.defineNativeMethods("SVGFEMergeElement", $.FEMergeElement);
+
+$.defineNativeMethods("SVGFEMergeNodeElement", $.FEMergeNodeElement);
+
+$.defineNativeMethods("SVGFEMorphologyElement", $.FEMorphologyElement);
+
+$.defineNativeMethods("SVGFEOffsetElement", $.FEOffsetElement);
+
+$.defineNativeMethods("SVGFEPointLightElement", $.FEPointLightElement);
+
+$.defineNativeMethods("SVGFESpecularLightingElement", $.FESpecularLightingElement);
+
+$.defineNativeMethods("SVGFESpotLightElement", $.FESpotLightElement);
+
+$.defineNativeMethods("SVGFETileElement", $.FETileElement);
+
+$.defineNativeMethods("SVGFETurbulenceElement", $.FETurbulenceElement);
+
+$.defineNativeMethods("SVGFilterElement", $.FilterElement);
+
+$.defineNativeMethods("SVGForeignObjectElement", $.ForeignObjectElement);
+
+$.defineNativeMethods("SVGGElement", $.GElement);
+
+$.defineNativeMethods("SVGImageElement", $.ImageElement0);
+
+$.defineNativeMethods("SVGLineElement", $.LineElement);
+
+$.defineNativeMethods("SVGLinearGradientElement", $.LinearGradientElement);
+
+$.defineNativeMethods("SVGMarkerElement", $.MarkerElement);
+
+$.defineNativeMethods("SVGMaskElement", $.MaskElement);
+
+$.defineNativeMethods("SVGMetadataElement", $.MetadataElement);
+
+$.defineNativeMethods("SVGPathElement", $.PathElement);
+
+$.defineNativeMethods("SVGPatternElement", $.PatternElement);
+
+$.defineNativeMethods("SVGPointList", $.PointList);
+
+$.defineNativeMethods("SVGPolygonElement", $.PolygonElement);
+
+$.defineNativeMethods("SVGPolylineElement", $.PolylineElement);
+
+$.defineNativeMethods("SVGRadialGradientElement", $.RadialGradientElement);
+
+$.defineNativeMethods("SVGRect", $.Rect);
+
+$.defineNativeMethods("SVGRectElement", $.RectElement);
+
+$.defineNativeMethods("SVGScriptElement", $.ScriptElement0);
+
+$.defineNativeMethods("SVGSetElement", $.SetElement);
+
+$.defineNativeMethods("SVGStopElement", $.StopElement);
+
+$.defineNativeMethods("SVGStyleElement", $.StyleElement0);
+
+$.defineNativeMethodsNonleaf("SVGStyledElement", $.StyledElement);
+
+$.defineNativeMethods("SVGDocument", $.SvgDocument);
+
+$.defineNativeMethodsNonleaf("SVGElement", $.SvgElement);
+
+$.defineNativeMethods("SVGException", $.SvgException);
+
+$.defineNativeMethods("SVGSVGElement", $.SvgSvgElement);
+
+$.defineNativeMethods("SVGSwitchElement", $.SwitchElement);
+
+$.defineNativeMethods("SVGSymbolElement", $.SymbolElement);
+
+$.defineNativeMethods("SVGTSpanElement", $.TSpanElement);
+
+$.defineNativeMethodsNonleaf("SVGTextContentElement", $.TextContentElement);
+
+$.defineNativeMethods("SVGTextElement", $.TextElement);
+
+$.defineNativeMethods("SVGTextPathElement", $.TextPathElement);
+
+$.defineNativeMethodsNonleaf("SVGTextPositioningElement", $.TextPositioningElement);
+
+$.defineNativeMethods("SVGTitleElement", $.TitleElement0);
+
+$.defineNativeMethods("SVGUseElement", $.UseElement);
+
+$.defineNativeMethods("SVGViewElement", $.ViewElement);
+
+$.defineNativeMethodsNonleaf("SVGGradientElement", $._GradientElement);
+
+$.defineNativeMethodsNonleaf("SVGComponentTransferFunctionElement", $._SVGComponentTransferFunctionElement);
+
+$.defineNativeMethods("WebGLRenderingContext", $.RenderingContext);
+
+$.defineNativeMethods("SQLError", $.SqlError);
+
+$.defineNativeMethods("SQLException", $.SqlException);
+
+// 194 dynamic classes.
+// 219 classes
+// 19 !leaf
+(function() {
+  var v0_Text = "CDATASection|Text", v1_TextPositioningElement = "SVGAltGlyphElement|SVGTRefElement|SVGTSpanElement|SVGTextElement|SVGTextPositioningElement", v2_TextContentElement = [v1_TextPositioningElement, "SVGTextContentElement|SVGTextPathElement"].join("|"), v3__GradientElement = "SVGGradientElement|SVGLinearGradientElement|SVGRadialGradientElement", v4_StyledElement = [v2_TextContentElement, v3__GradientElement, "SVGAElement|SVGCircleElement|SVGClipPathElement|SVGDefsElement|SVGDescElement|SVGEllipseElement|SVGFEBlendElement|SVGFEColorMatrixElement|SVGFEComponentTransferElement|SVGFECompositeElement|SVGFEConvolveMatrixElement|SVGFEDiffuseLightingElement|SVGFEDisplacementMapElement|SVGFEDropShadowElement|SVGFEFloodElement|SVGFEGaussianBlurElement|SVGFEImageElement|SVGFEMergeElement|SVGFEMorphologyElement|SVGFEOffsetElement|SVGFESpecularLightingElement|SVGFETileElement|SVGFETurbulenceElement|SVGFilterElement|SVGForeignObjectElement|SVGGElement|SVGGlyphRefElement|SVGImageElement|SVGLineElement|SVGMarkerElement|SVGMaskElement|SVGMissingGlyphElement|SVGPathElement|SVGPatternElement|SVGPolygonElement|SVGPolylineElement|SVGRectElement|SVGSVGElement|SVGStopElement|SVGStyledElement|SVGSwitchElement|SVGSymbolElement|SVGTitleElement|SVGUseElement"].join("|"), v5_AnimationElement = "SVGAnimateColorElement|SVGAnimateElement|SVGAnimateMotionElement|SVGAnimateTransformElement|SVGAnimationElement|SVGSetElement", v6__SVGComponentTransferFunctionElement = "SVGComponentTransferFunctionElement|SVGFEFuncAElement|SVGFEFuncBElement|SVGFEFuncGElement|SVGFEFuncRElement", v7_MediaElement = "HTMLAudioElement|HTMLMediaElement|HTMLVideoElement", v8_SvgElement = [v4_StyledElement, v5_AnimationElement, v6__SVGComponentTransferFunctionElement, "SVGAltGlyphDefElement|SVGAltGlyphItemElement|SVGCursorElement|SVGElement|SVGFEDistantLightElement|SVGFEMergeNodeElement|SVGFEPointLightElement|SVGFESpotLightElement|SVGFontElement|SVGFontFaceElement|SVGFontFaceFormatElement|SVGFontFaceNameElement|SVGFontFaceSrcElement|SVGFontFaceUriElement|SVGGlyphElement|SVGHKernElement|SVGMPathElement|SVGMetadataElement|SVGScriptElement|SVGStyleElement|SVGVKernElement|SVGViewElement"].join("|"), v9_Element = [v7_MediaElement, v8_SvgElement, "Element|HTMLAnchorElement|HTMLAppletElement|HTMLAreaElement|HTMLBRElement|HTMLBaseElement|HTMLBaseFontElement|HTMLBodyElement|HTMLButtonElement|HTMLCanvasElement|HTMLContentElement|HTMLDListElement|HTMLDataListElement|HTMLDetailsElement|HTMLDialogElement|HTMLDirectoryElement|HTMLDivElement|HTMLElement|HTMLEmbedElement|HTMLFieldSetElement|HTMLFontElement|HTMLFormElement|HTMLFrameElement|HTMLFrameSetElement|HTMLHRElement|HTMLHeadElement|HTMLHeadingElement|HTMLHtmlElement|HTMLIFrameElement|HTMLImageElement|HTMLInputElement|HTMLKeygenElement|HTMLLIElement|HTMLLabelElement|HTMLLegendElement|HTMLLinkElement|HTMLMapElement|HTMLMarqueeElement|HTMLMenuElement|HTMLMetaElement|HTMLMeterElement|HTMLModElement|HTMLOListElement|HTMLObjectElement|HTMLOptGroupElement|HTMLOptionElement|HTMLOutputElement|HTMLParagraphElement|HTMLParamElement|HTMLPreElement|HTMLProgressElement|HTMLQuoteElement|HTMLScriptElement|HTMLSelectElement|HTMLShadowElement|HTMLSourceElement|HTMLSpanElement|HTMLStyleElement|HTMLTableCaptionElement|HTMLTableCellElement|HTMLTableColElement|HTMLTableElement|HTMLTableRowElement|HTMLTableSectionElement|HTMLTemplateElement|HTMLTextAreaElement|HTMLTitleElement|HTMLTrackElement|HTMLUListElement|HTMLUnknownElement"].join("|"), v10_DocumentFragment = "DocumentFragment|ShadowRoot", v11_CharacterData = [v0_Text, "CharacterData|Comment"].join("|"), v12_Document = "Document|HTMLDocument|SVGDocument", v13_Node = [v9_Element, v10_DocumentFragment, v11_CharacterData, v12_Document, "Attr|DocumentType|EntityReference|Node|Notation|ProcessingInstruction"].join("|");
+  $.dynamicSetMetadata([["CanvasRenderingContext", "CanvasRenderingContext|CanvasRenderingContext2D|WebGLRenderingContext"], ["Text", v0_Text], ["CharacterData", v11_CharacterData], ["Document", v12_Document], ["DocumentFragment", v10_DocumentFragment], ["HTMLMediaElement", v7_MediaElement], ["SVGTextPositioningElement", v1_TextPositioningElement], ["SVGTextContentElement", v2_TextContentElement], ["SVGGradientElement", v3__GradientElement], ["SVGStyledElement", v4_StyledElement], ["SVGAnimationElement", v5_AnimationElement], ["SVGComponentTransferFunctionElement", v6__SVGComponentTransferFunctionElement], ["SVGElement", v8_SvgElement], ["Element", v9_Element], ["Event", "AutocompleteErrorEvent|ErrorEvent|Event|SpeechRecognitionError"], ["Node", v13_Node], ["EventTarget", [v13_Node, "DOMWindow|EventTarget"].join("|")], ["HTMLCollection", "HTMLCollection|HTMLFormControlsCollection|HTMLOptionsCollection"], ["NodeList", "NodeList|RadioNodeList"]]);
+})();
 
 var $ = null;
 Isolate = Isolate.$finishIsolateConstructor(Isolate);
 var $ = new Isolate();
+$.main.call$0 = $.main;
 // BEGIN invoke [main].
 if (typeof document !== "undefined" && document.readyState !== "complete") {
   document.addEventListener("readystatechange", function () {
     if (document.readyState == "complete") {
       if (typeof dartMainRunner === "function") {
-        dartMainRunner(function() { $.main(); });
+        dartMainRunner(function() { $.startRootIsolate($.main); });
       } else {
-        $.main();
+        $.startRootIsolate($.main);
       }
     }
   }, false);
 } else {
   if (typeof dartMainRunner === "function") {
-    dartMainRunner(function() { $.main(); });
+    dartMainRunner(function() { $.startRootIsolate($.main); });
   } else {
-    $.main();
+    $.startRootIsolate($.main);
   }
 }
 // END invoke [main].
@@ -14530,6 +19268,35 @@ function init() {
     for (var cls in pendingClasses)
       finishClass(cls);
   };
+  Isolate.$lazy = function(prototype, staticName, fieldName, getterName, lazyValue) {
+    var getter = new Function("{ return $." + fieldName + ";}");
+    var sentinelUndefined = {};
+    var sentinelInProgress = {};
+    prototype[fieldName] = sentinelUndefined;
+    prototype[getterName] = function() {
+      var result = $[fieldName];
+      try {
+        if (result === sentinelUndefined) {
+          $[fieldName] = sentinelInProgress;
+          try {
+            result = $[fieldName] = lazyValue();
+          } finally {
+            if (result === sentinelUndefined) {
+              if ($[fieldName] === sentinelInProgress) {
+                $[fieldName] = null;
+              }
+            }
+          }
+        } else {
+          if (result === sentinelInProgress)
+            $.throwCyclicInit(staticName);
+        }
+        return result;
+      } finally {
+        $[getterName] = getter;
+      }
+    };
+  };
   Isolate.$finishIsolateConstructor = function(oldIsolate) {
     var isolateProperties = oldIsolate.$isolateProperties;
     isolateProperties.$currentScript = typeof document == "object" ? document.currentScript || document.scripts[document.scripts.length - 1] : null;
@@ -14551,4 +19318,4 @@ function init() {
     return newIsolate;
   };
 }
-//@ sourceMappingURL=Bench2d.dart.js.map
+//@ sourceMappingURL=bench2d_web.dart.js.map
