@@ -12,33 +12,19 @@
   </head>
   <body>
     <script type="text/javascript">
-      function getQueryVariable(variable) {
-        var query = window.location.search.substring(1);
-        var vars = query.split('&');
-        for (var i = 0; i < vars.length; i++) {
-            var pair = vars[i].split('=');
-            if (pair[0] == variable) {
-                return unescape(pair[1]);
-            }
-        }
-        return null;
-      }
-
       console.log('Loading Bench2d');
-      console.log('Checking for native dart support');
-      var script = document.createElement('script');
-      if(getQueryVariable('native') && document.implementation.hasFeature('dart')) {
-        // Browser has the goods, so kick it in to dart gear.
-        console.log('Dart supported.');
-        script.setAttribute('type', 'application/dart');
-        script.setAttribute('src', 'Bench2d.dart');
+
+      // Dart.js handles the JS fallback when Dart isn't supported.
+      // Use the same condition to tell us whether to expect Dart or JS.
+      if(navigator.webkitStartDart) {
+        console.log('Dart supported. High-five!');
       } else {
-        // If browser doesn't support dart, redirect to js version.
-        console.log('JS fallback.');
-        script.setAttribute('src', 'Bench2d.dart.js');
+        console.log('Browser does not support Dart. Expect JS fallback.');
       }
-      document.body.appendChild(script);
     </script>
+    <script type="application/dart" src="Bench2d.dart"></script>
+    <!-- Bootstraps the Dart VM and handles non-Dart browsers. -->
+    <script src="packages/browser/dart.js"></script>
   </body>
 </html>
 
