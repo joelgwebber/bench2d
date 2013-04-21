@@ -1,4 +1,4 @@
-library Bench2d;
+library bench2d;
 
 import 'dart:html';
 import 'dart:math';
