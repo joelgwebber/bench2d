@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bench2d</title>
+
+    <!-- This tag improves the experience on mobile browsers. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,
+    maximum-scale=1.0, user-scalable=0">
+
+    <!-- These tags improve web apps on ios. -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+  </head>
+  <body>
+    <script type="text/javascript">
+      console.log('Loading Bench2d');
+
+      // Dart.js handles the JS fallback when Dart isn't supported.
+      // Use the same condition to tell us whether to expect Dart or JS.
+      if(navigator.webkitStartDart) {
+        console.log('Dart supported. High-five!');
+      } else {
+        console.log('Browser does not support Dart. Expect JS fallback.');
+      }
+    </script>
+    <script type="application/dart" src="bench2d_web.dart"></script>
+    <!-- Bootstraps the Dart VM and handles non-Dart browsers. -->
+    <script src="packages/browser/dart.js"></script>
+  </body>
+</html>
+
+
