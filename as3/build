@@ -1,2 +1,3 @@
 #!/bin/sh
-/opt/flex_sdk_4.6/bin/mxmlc -compiler.library-path=./Box2DFlexLib/bin/:/opt/flex_sdk_4.6/frameworks/libs/:/opt/flex_sdk_4.6/frameworks/locale/en_US/ Bench2d.mxml
+$FLEX_HOME/bin/mxmlc -compiler.library-path=./Box2DFlexLib/bin/:$FLEX_HOME/frameworks/libs/:$FLEX_HOME/frameworks/locale/en_US/ Bench2d.mxml
+$FLEX_HOME/bin/mxmlc -compiler.library-path=./NapeLib/bin/:$FLEX_HOME/frameworks/libs/:$FLEX_HOME/frameworks/locale/en_US/ Bench2dNape.mxml

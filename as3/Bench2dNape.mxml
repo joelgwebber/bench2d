@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  Nape library from: http://napephys.com/downloads.html
+  (nape-release.swc used for benchmarking)
+-->
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+	xmlns:s="library://ns.adobe.com/flex/spark"
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+  preinitialize="main(event)"
+  minWidth="300" minHeight="300"
+  frameRate="30">
+
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+      import mx.controls.Alert;
+      import flash.utils.*;
+
+      import nape.space.*;
+      import nape.geom.*;
+      import nape.phys.*;
+      import nape.shape.Polygon;
+
+      protected const PYRAMID_SIZE:int = 40;
+      protected const WARMUP:int = 64;
+      protected const FRAMES:int = 256;
+
+      protected var world:Space;
+      protected const M_TO_PX:Number = 60;
+
+      protected function initWorld():void {
+        var gravity:Vec2 = new Vec2(0, -10*M_TO_PX);
+        world = new Space(gravity);
+
+        var ground:Body = new Body(BodyType.STATIC);
+        ground.shapes.add(new Polygon(Polygon.rect(-40*M_TO_PX, 0, 80*M_TO_PX, 1)));
+        ground.space = world;
+
+        var a:Number = .5;
+        var shape:Polygon = new Polygon(Polygon.box(a*M_TO_PX,a*M_TO_PX));
+        shape.material.density = 5;
+
+        var x:Vec2 = new Vec2(-7*M_TO_PX, 0.75*M_TO_PX);
+        var y:Vec2 = new Vec2();
+        var deltaX:Vec2 = new Vec2(0.5625*M_TO_PX, 1*M_TO_PX);
+        var deltaY:Vec2 = new Vec2(1.125*M_TO_PX, 0.0*M_TO_PX);
+
+        for (var i:int = 0; i < PYRAMID_SIZE; ++i) {
+          y.set(x);
+
+          for (var j:int = i; j < PYRAMID_SIZE; ++j) {
+            var body:Body = new Body();
+            body.shapes.add(shape.copy());
+            body.position.set(y);
+            body.space = world;
+            y.addeq(deltaY);
+          }
+
+          x.addeq(deltaX);
+        }
+      }
+
+      protected function step():void {
+        world.step(1/60, 3, 3);
+      }
+
+      protected function warmup():void {
+        for (var i:int = 0; i < WARMUP; ++i) {
+          step();
+        }
+      }
+
+      public function mean(values : Array) : Number {
+        var total:Number = 0;
+        for (var i:int = 0; i < values.length; ++i) {
+          total += values[i];
+        }
+        return total / values.length;
+      }
+
+      public function stddev(values : Array, mean : Number) : Number {
+        var variance : Number = 0;
+        for (var i:int = 0; i < values.length; ++i) {
+          var diff:Number = values[i] - mean;
+          variance += diff * diff;
+        }
+        return Math.sqrt(variance / values.length);
+      }
+
+      protected function run():void {
+        var times:Array = new Array();
+        for (var i:int = 0; i < FRAMES; i++) {
+          var start:Number = getTimer();
+          step();
+          times[i] = getTimer() - start;
+        }
+
+        var mean:Number = mean(times);
+        Alert.show("Benchmark complete.\nms/frame: " + mean + " +/- " + stddev(times, mean));
+      }
+
+			protected function main(event:FlexEvent):void {
+        initWorld();
+        warmup();
+        run();
+			}
+		]]>
+	</fx:Script>
+</s:Application>
