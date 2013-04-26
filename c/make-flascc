@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# You can download the FLasCC SDK here: http://gaming.adobe.com/technologies/flascc/
+# you can find the latest flash runtime here: http://www.adobe.com/support/flashplayer/downloads.html
+# To build:
+# FLASCC="/path/to/flascc/sdk" ./make-flascc
+
+CFLAGS=-O4
+CXXFLAGS="-O4 -fno-exceptions -fno-rtti"
+
+mkdir -p flascc_build
+cd flascc_build
+PATH="$FLASCC/usr/bin:$PATH" CC=gcc CXX=g++ CFLAGS=$CFLAGS CXXFLAGS=$CXXFLAGS cmake ../Box2D_v2.2.1/ -DBOX2D_BUILD_EXAMPLES=OFF
+PATH="$FLASCC/usr/bin:$PATH" CC=gcc CXX=g++ CFLAGS=$CFLAGS CXXFLAGS=$CXXFLAGS make -j4
+
+# for smaller SWFs:
+# -flto-api=../flascc_exports.txt
+
+$FLASCC/usr/bin/g++ $CXXFLAGS  -I../Box2D_v2.2.1/ ../bench2d.cpp ../bench2d_main.cpp Box2D/libBox2D.a -emit-swf -swf-version=16 -o bench_flascc.swf
