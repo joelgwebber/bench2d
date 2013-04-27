@@ -1,6 +1,6 @@
 library bench2d;
 
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:box2d/box2d.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
@@ -90,6 +90,23 @@ class Bench2d {
     for (int i = 0; i < WARMUP; ++i) step();
   }
 
+  float mean(List<int> values) {
+    float total = 0;
+    for (int i = 0; i < FRAMES; ++i) {
+      total += values[i];
+    }
+    return total / FRAMES;
+  }
+
+  float stddev(List<int> values, float mean) {
+    float variance = 0;
+    for (int i = 0; i < values.length; ++i) {
+      float diff = values[i] - mean;
+      variance += diff * diff;
+    }
+    return math.sqrt(variance / FRAMES);
+  }
+
   void bench() {
     final times = new List<int>(FRAMES);
 
@@ -101,9 +118,8 @@ class Bench2d {
       print('$i: ${times[i]}');
     }
 
-    int total = 0;
-    for (int i = 0; i < FRAMES; ++i) total += times[i];
-    print('Average: ${total / FRAMES}');
+    float mean = mean(times);
+    print('Benchmark complete.\nms/frame: ${mean} +/- ${stddev(times, mean)}');
   }
 }
 
