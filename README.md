@@ -3,8 +3,8 @@
 A simple VM performance benchmark suite that attempts to guage the performance of various VMs on a real-world
 workload using the Box2D (http://box2d.org/) physics library. This library is particularly suited to benchmarking
 VM performance because it's compute-intensive, often a real-world performance bottleneck in games, and has been
-ported to many languages. You can find more background [here][http://j15r.com/blog/2011/12/15/Box2D_as_a_Measure_of_Runtime_Performance]
-and [here][http://j15r.com/blog/2013/04/25/Box2d_Revisited].
+ported to many languages. You can find more background [here](http://j15r.com/blog/2011/12/15/Box2D_as_a_Measure_of_Runtime_Performance)
+and [here](http://j15r.com/blog/2013/04/25/Box2d_Revisited).
 
 ### Current results (as of 5 July 2013):
 
