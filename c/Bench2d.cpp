@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <time.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "Box2D/Box2D.h"
 #include "Bench2d.h"
@@ -9,6 +10,16 @@ using namespace std;
 
 const int e_count = 40;
 
+// Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
+float percentile(clock_t times[FRAMES], float pc) {
+  int rank = (int)((pc * FRAMES) / 100);
+  return times[rank];
+}
+
+int _cmp(const void *a, const void *b) {
+	return *(clock_t*)a - *(clock_t*)b;
+}
+
 result_t measure(clock_t times[FRAMES]) {
   float values[FRAMES];
   result_t r;
@@ -16,17 +27,13 @@ result_t measure(clock_t times[FRAMES]) {
 	float total = 0;
 	for (int i = 0; i < FRAMES; ++i) {
 		values[i] = (float)times[i] / CLOCKS_PER_SEC * 1000;
-		total += values[i];
+	 	total += values[i];
 	}
   r.mean = total / FRAMES;
 
-  float variance = 0;
-	for (int i = 0; i < FRAMES; ++i) {
-		float diff = values[i] - r.mean;
-		variance += diff * diff;
-	}
-  r.stddev = sqrt(variance / FRAMES);
-
+	qsort(times, FRAMES, sizeof(clock_t), _cmp);
+  r.pc_5th = percentile(times, 5) / CLOCKS_PER_SEC * 1000;
+  r.pc_95th = percentile(times, 95) / CLOCKS_PER_SEC * 1000;
   return r;
 }
 
@@ -96,4 +103,3 @@ result_t bench() {
 
   return measure(times);
 }
-

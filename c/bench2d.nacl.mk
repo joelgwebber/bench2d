@@ -1,12 +1,11 @@
 PROJECT=bench2d
-NACL_SDK_ROOT=/opt/nacl_sdk/pepper_26
 LDFLAGS := -lppapi_cpp -lppapi
 OPTS := -O3
 WARNINGS := -Wno-long-long -Wswitch-enum -pedantic
-CXXFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 -I$(NACL_SDK_ROOT)/include $(WARNINGS) $(OPTS)
+CXXFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 -I$(NACL_SDK)/include $(WARNINGS) $(OPTS)
 
-OSNAME := $(shell python $(NACL_SDK_ROOT)/tools/getos.py)
-TC_PATH := $(abspath $(NACL_SDK_ROOT)/toolchain/$(OSNAME)_x86_newlib)
+OSNAME := $(shell python $(NACL_SDK)/tools/getos.py)
+TC_PATH := $(abspath $(NACL_SDK)/toolchain/$(OSNAME)_x86_newlib)
 CXX := $(TC_PATH)/bin/i686-nacl-g++
 
 CXX_SOURCES = \
@@ -75,4 +74,3 @@ $(x86_64_OBJS) : %_64.o : %.cpp $(THIS_MAKE)
 
 $(PROJECT)_x86_64.nexe : $(x86_64_OBJS)
 	$(CXX) -o $@ $^ -m64 $(CXXFLAGS) $(LDFLAGS)
-

@@ -1,0 +1,11 @@
+#!/bin/bash
+CFLAGS=-O4
+CXXFLAGS="-O4 -fno-exceptions -fno-rtti"
+
+mkdir -p crossbridge_build
+cd crossbridge_build
+PATH="$CROSSBRIDGE/usr/bin:$PATH" CC=gcc CXX=g++ CFLAGS=$CFLAGS CXXFLAGS=$CXXFLAGS cmake ../Box2D_v2.2.1/ -DBOX2D_BUILD_EXAMPLES=OFF
+PATH="$CROSSBRIDGE/usr/bin:$PATH" CC=gcc CXX=g++ CFLAGS=$CFLAGS CXXFLAGS=$CXXFLAGS make -j4
+
+$CROSSBRIDGE/usr/bin/g++ $CXXFLAGS  -I../Box2D_v2.2.1/ ../bench2d.cpp ../bench2d_main.cpp Box2D/libBox2D.a -swf-version=16 -o bench2d_crossbridge
+$CROSSBRIDGE/usr/bin/g++ $CXXFLAGS  -I../Box2D_v2.2.1/ ../bench2d.cpp ../bench2d_main.cpp Box2D/libBox2D.a -emit-swf -swf-version=16 -o bench2d_crossbridge.swf

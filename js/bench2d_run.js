@@ -1,5 +1,5 @@
 var WARMUP = 64;
-var FRAMES = 256;
+var FRAMES = 1024;
 
 function warmup() {
   for (var i = 0; i < WARMUP; ++i) {
@@ -15,13 +15,10 @@ function mean(values) {
   return total / FRAMES;
 }
 
-function stddev(values, mean) {
-  var variance = 0;
-  for (var i = 0; i < values.length; ++i) {
-    var diff = values[i] - mean;
-    variance += diff * diff;
-  }
-  return Math.sqrt(variance / FRAMES);
+// Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
+function percentile(values, pc) {
+  var rank = Math.floor((pc * values.length) / 100);
+  return values[rank];
 }
 
 function bench() {
@@ -32,11 +29,11 @@ function bench() {
     times[i] = new Date().getTime() - begin;
   }
 
+  times.sort();
   var avg = mean(times);
-  print("Benchmark complete.\nms/frame: " + avg + " +/- " + stddev(times, avg));
+  print("Benchmark complete.\nms/frame: " + avg + " 5th %ile: " + percentile(times, 5) + " 95th %ile: " + percentile(times, 95));
 }
 
 init();
 warmup();
 bench();
-

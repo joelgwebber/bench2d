@@ -93,6 +93,12 @@
         return total / values.length;
       }
 
+      // Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
+      public function percentile(values : Array, pc : Number) : Number {
+        var rank:int = (int)((pc * values.length) / 100);
+        return values[rank];
+      }
+
       public function stddev(values : Array, mean : Number) : Number {
         var variance : Number = 0;
         for (var i:int = 0; i < values.length; ++i) {
@@ -110,8 +116,9 @@
           times[i] = getTimer() - start;
         }
 
+        times.sort(Array.NUMERIC);
         var mean:Number = mean(times);
-        Alert.show("Benchmark complete.\nms/frame: " + mean + " +/- " + stddev(times, mean));
+        Alert.show("Benchmark complete.\nms/frame: " + mean + " 5th %ile: " + percentile(times, 5) + " 95th %ile: " + percentile(times, 95));
       }
 
 			protected function main(event:FlexEvent):void {

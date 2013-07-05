@@ -1,6 +1,7 @@
 package j15r.bench2d;
 
 import java.util.Date;
+import java.util.Arrays;
 
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.common.Vec2;
@@ -32,13 +33,10 @@ public class Bench2d {
     return total / FRAMES;
   }
 
-  public float stddev(float[] values, float mean) {
-    float variance = 0;
-    for (int i = 0; i < values.length; ++i) {
-      float diff = values[i] - mean;
-      variance += diff * diff;
-    }
-    return (float) Math.sqrt(variance / FRAMES);
+  // Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
+  public float percentile(float[] values, float pc) {
+    int rank = (int)((pc * values.length) / 100);
+    return values[rank];
   }
 
   public void bench() {
@@ -51,8 +49,9 @@ public class Bench2d {
       log("" + times[i]);
     }
 
+    Arrays.sort(times);
     float mean = mean(times);
-    System.out.println("Benchmark complete.\nms/frame: " + mean + " +/- " + stddev(times, mean));
+    System.out.println("Benchmark complete.\nms/frame: " + mean + " 5th %ile: " + percentile(times, 5) + " 95th %ile: " + percentile(times, 95));
   }
 
   void warmup() {

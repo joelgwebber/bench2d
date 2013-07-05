@@ -1,7 +1,0 @@
-<module rename-to='bench2d'>
-  <inherits name='com.google.gwt.user.User'/>
-  <inherits name='org.jbox2d.GwtBox2D'/>
-  <source path='bench2d'/>
-  <set-property name='user.agent' value='safari'/>
-  <entry-point class='j15r.bench2d.GwtBench2d'/>
-</module>

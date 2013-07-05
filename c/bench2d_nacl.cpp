@@ -24,7 +24,7 @@ class Bench2dInstance : public pp::Instance {
     if (message == kBenchString) {
       result_t result = bench();
       char msg[256];
-      sprintf(msg, "Benchmark complete.\n  ms/frame: %f +/- %f\n", result.mean, result.stddev);
+      sprintf(msg, "Benchmark complete.\n  ms/frame: %f 5th %%ile: %f 95th %%ile: %f\n", result.mean, result.pc_5th, result.pc_95th);
       var_reply = pp::Var(msg);
       PostMessage(var_reply);
     }

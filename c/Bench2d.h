@@ -9,10 +9,10 @@
 
 typedef struct {
   float mean;
-  float stddev;
+  float pc_5th;
+  float pc_95th;
 } result_t;
 
 result_t bench();
 
 #endif
-

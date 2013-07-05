@@ -1,12 +1,11 @@
 # Makefile for generating Javascript from the C++ source, using Emscripten.
 
 # You'll likely need to edit these for your particular directory layout.
-EMSCRIPTEN=~/src/emscripten/emscripten.py
-LLVM=/usr/local/bin
-EMCC=~/src/emscripten/emcc -IBox2D_v2.2.1
+EMCC=$(EMSCRIPTEN)/emcc -IBox2D_v2.2.1
 HEAP=67108864
 
-OBJECTS = bench2d_main.bc \
+OBJECTS = \
+bench2d_main.bc \
 Bench2d.bc \
 Box2D_v2.2.1/Box2D/Collision/b2BroadPhase.bc \
 Box2D_v2.2.1/Box2D/Collision/b2CollideCircle.bc \
@@ -54,7 +53,7 @@ Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WeldJoint.bc \
 Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WheelJoint.bc \
 Box2D_v2.2.1/Box2D/Rope/b2Rope.bc
 
-all: bench2d.js
+all: bench2d.asm.js
 
 %.bc: %.cpp
 	python $(EMCC) $< -o $@
@@ -62,9 +61,8 @@ all: bench2d.js
 bench2d.bc: $(OBJECTS)
 	$(LLVM)/llvm-link -o $@ $(OBJECTS)
 
-bench2d.js: bench2d.bc
+bench2d.asm.js: bench2d.bc
 	$(EMCC) -O2 -s ASM_JS=1 -s TOTAL_MEMORY=$(HEAP) $< -o $@
 
 clean:
-	rm bench2d.js bench2d.bc $(OBJECTS)
-
+	rm bench2d.asm.js $(OBJECTS)

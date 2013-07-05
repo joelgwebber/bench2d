@@ -21,7 +21,7 @@ class Bench2d {
   static final int WARMUP = 64;
   static final int FRAMES = 256;
   static final int PYRAMID_SIZE = 40;
-  static final num GRAVITY = -10;
+  static final double GRAVITY = -10.0;
   static final num TIME_STEP = 1/60;
   static final int VELOCITY_ITERATIONS = 3;
   static final int POSITION_ITERATIONS = 3;
@@ -29,7 +29,7 @@ class Bench2d {
   World world;
 
   Bench2d() {
-    final gravity = new vec2(0, GRAVITY);
+    final gravity = new Vector2(0.0, GRAVITY);
     bool doSleep = true;
     world = new World(gravity, doSleep, new DefaultWorldPool());
   }
@@ -40,7 +40,7 @@ class Bench2d {
       Body ground = world.createBody(bd);
 
       PolygonShape shape = new PolygonShape()
-        ..setAsEdge(new vec2(-40.0, 0), new vec2(40.0, 0));
+        ..setAsEdge(new Vector2(-40.0, 0.0), new Vector2(40.0, 0.0));
 
       final fixDef = new FixtureDef()
         ..shape = shape
@@ -58,26 +58,26 @@ class Bench2d {
         ..shape = shape
         ..density = 5;
 
-      vec2 x = new vec2(-7.0, 0.75);
-      vec2 y = new vec2();
-      vec2 deltaX = new vec2(0.5625, 1);
-      vec2 deltaY = new vec2(1.125, 0.0);
+      Vector2 x = new Vector2(-7.0, 0.75);
+      Vector2 y = new Vector2.zero();
+      Vector2 deltaX = new Vector2(0.5625, 1.0);
+      Vector2 deltaY = new Vector2(1.125, 0.0);
 
       for (int i = 0; i < PYRAMID_SIZE; ++i){
-        y.copyFrom(x);
+        y.setFrom(x);
 
         for (int j = i; j < PYRAMID_SIZE; ++j){
           BodyDef bd = new BodyDef()
             ..type = BodyType.DYNAMIC
-            ..position.copyFrom(y);
+            ..position.setFrom(y);
 
           Body body = world.createBody(bd)
             ..createFixture(fixDef);
 
-          y.add(deltaY);
+          y.addLocal(deltaY);
         }
 
-        x.add(deltaX);
+        x.addLocal(deltaX);
       }
     }
   }
@@ -90,21 +90,18 @@ class Bench2d {
     for (int i = 0; i < WARMUP; ++i) step();
   }
 
-  float mean(List<int> values) {
-    float total = 0;
+  double mean(List<int> values) {
+    double total = 0;
     for (int i = 0; i < FRAMES; ++i) {
       total += values[i];
     }
     return total / FRAMES;
   }
 
-  float stddev(List<int> values, float mean) {
-    float variance = 0;
-    for (int i = 0; i < values.length; ++i) {
-      float diff = values[i] - mean;
-      variance += diff * diff;
-    }
-    return math.sqrt(variance / FRAMES);
+  // Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
+  float percentile(List<int> values, float pc) {
+    int rank = ((pc * values.length) / 100).floor();
+    return values[rank];
   }
 
   void bench() {
@@ -115,11 +112,11 @@ class Bench2d {
       step();
       watch.stop();
       times[i] = watch.elapsedMilliseconds;
-      print('$i: ${times[i]}');
     }
 
-    float mean = mean(times);
-    print('Benchmark complete.\nms/frame: ${mean} +/- ${stddev(times, mean)}');
+    times.sort();
+    double mean = mean(times);
+    print('Benchmark complete.\nms/frame: ${mean} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
   }
 }
 
@@ -129,4 +126,3 @@ void main() {
      ..warmup()
      ..bench();
 }
-
