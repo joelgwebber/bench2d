@@ -3,10 +3,8 @@
 A simple VM performance benchmark suite that attempts to guage the performance of various VMs on a real-world
 workload using the Box2D (http://box2d.org/) physics library. This library is particularly suited to benchmarking
 VM performance because it's compute-intensive, often a real-world performance bottleneck in games, and has been
-ported to many languages.
-
-You can find more background here (http://j15r.com/blog/2011/12/15/Box2D_as_a_Measure_of_Runtime_Performance),
-here (http://j15r.com/blog/2013/04/25/Box2d_Revisited) and here (...).
+ported to many languages. You can find more background [here][http://j15r.com/blog/2011/12/15/Box2D_as_a_Measure_of_Runtime_Performance]
+and [here][http://j15r.com/blog/2013/04/25/Box2d_Revisited].
 
 ### Current results (as of 5 July 2013):
 
@@ -27,9 +25,13 @@ here (http://j15r.com/blog/2013/04/25/Box2d_Revisited) and here (...).
   </table>
 </center>
 
-<center> ![](graph.png) </center>
+<center>
+  ![](graph.png)
+  Scaled to multiples of native performance.
+</center>
 
 (*) Crossbridge has awful clock() resolution, so I just assumed +/- 1ms percentiles.
+
 (**) Here, 'asm.js' refers to the asm.js output running in Firefox Nightly, with full optimizations.
 
 [Test platform: MacBook Pro, 2.5 GHz i7, 16G memory, Mac OS X 10.8.4.
@@ -93,3 +95,6 @@ here (http://j15r.com/blog/2013/04/25/Box2d_Revisited) and here (...).
 ## Future work
 
 - Make the timer resolution less bad.
+- Find a way to automate the benchmarks.
+- Benchmark IE9+.
+- Benchmark .NET
