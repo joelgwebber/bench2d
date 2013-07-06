@@ -27,33 +27,34 @@ ported to many languages. You can find more background [here](http://j15r.com/bl
     <tr><td>Box2dWeb (IE10) (***)</td>    <td>37.9</td><td>35.0</td><td>48.3</td><td>15.3</td></tr>
     <tr><td>asm.js (Safari) (****)</td>   <td>-</td><td>-</td><td>-</td><td>-</td></tr>
   </table>
+</center>
 
-  (*) Crossbridge has awful clock() resolution, so I just assumed +/- 1ms
-  percentiles.
+[Test platform: MacBook Pro, 2.5 GHz i7, 16G memory, Mac OS X 10.8.4.
+ All platform and compiler versions are latest unless otherwise specified.]
 
-  (**) Here, 'asm.js' refers to the asm.js output running in Firefox Nightly,
-  with full optimizations.
+(*) Crossbridge has awful clock() resolution, so I just assumed +/- 1ms
+percentiles.
 
-  (***) I don't have any easy way to run Windows natively on my Mac (I'm not
-  going to setup dual boot partitions just for this benchmark), so I had to try
-  and back out IE10 numbers using VirtualBox. I calculated a performance penalty
-  ratio by running the Javascript benchmarks on Chrome/Mac and Chrome/Win (VM)
-  (`38.5ms / 26.9ms = 1.43x`), then used that to adjust the IE10 numbers. There
-  are all sorts of things that could be wrong with this, but I expect it at
-  least gives us a rough idea.
+(**) Here, 'asm.js' refers to the asm.js output running in Firefox Nightly,
+with full optimizations.
 
-  (****) asm.js unfortunately hung on Safari and never recovered. Hopefully
-  this will be sorted out at some point.
+(***) I don't have any easy way to run Windows natively on my Mac (I'm not
+going to setup dual boot partitions just for this benchmark), so I had to try
+and back out IE10 numbers using VirtualBox. I calculated a performance penalty
+ratio by running the Javascript benchmarks on Chrome/Mac and Chrome/Win (VM)
+(`38.5ms / 26.9ms = 1.43x`), then used that to adjust the IE10 numbers. There
+are all sorts of things that could be wrong with this, but I expect it at
+least gives us a rough idea.
 
-  [Test platform: MacBook Pro, 2.5 GHz i7, 16G memory, Mac OS X 10.8.4.
-   All platform and compiler versions are latest unless otherwise specified.]
+(****) asm.js unfortunately hung on Safari and never recovered. Hopefully
+this will be sorted out at some point.
 
+<center>
   ![](graph.png)
 
   Scaled to multiples of native performance. The white line denotes the mean,
   and the edges of   the box denote the 5th and 95th %iles.
 </center>
-
 
 ### Mini FAQ:
 
