@@ -22,7 +22,9 @@ DATA = [
   ["Box2dWeb (Safari)", 20.0, 18.0, 23.0, 1],
   ["asm.js (Chrome)", 23.0, 17.0, 29.0, -2],
   ["Box2Web (Chrome)", 26.9, 23.0, 42.0, -1],
-  ["Box2dWeb (Firefox)", 29.5, 27.0, 32.0, 0]
+  ["Box2dWeb (Firefox)", 29.5, 27.0, 32.0, 0],
+  ["asm.js (IE10)", 33.7, 26.6, 42.0, 1],
+  ["Box2dWeb (IE10)", 37.9, 35.0, 48.3, 0]
 ]
 
 BASELINE = DATA[0][1]
@@ -73,7 +75,6 @@ def renderTicks():
     font("Helvetica", 12)
     align(CENTER)
 
-    print(RANGE)
     for x in range(1, int(RANGE+1), STEP):
         line(scale(x), 0, scale(x), FHEIGHT - 16)
         w = textwidth(str(x))
@@ -81,6 +82,6 @@ def renderTicks():
 
 size(FWIDTH + BORDER_SIZE*2, FHEIGHT + BORDER_SIZE*2)
 translate(-10, BORDER_SIZE)
-# RANGE = computeRange()
+RANGE = math.ceil(computeRange())
 renderTicks()
 renderIntervals()
