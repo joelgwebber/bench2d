@@ -56,7 +56,7 @@ Box2D_v2.2.1/Box2D/Rope/b2Rope.bc
 all: bench2d.asm.js
 
 %.bc: %.cpp
-	python $(EMCC) $< -o $@
+	$(EMCC) -O2 -s ASM_JS=1 $< -o $@
 
 bench2d.bc: $(OBJECTS)
 	$(LLVM)/llvm-link -o $@ $(OBJECTS)
