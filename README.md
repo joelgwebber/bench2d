@@ -9,24 +9,25 @@ ported to many languages. You can find more background [here](http://j15r.com/bl
 ### Current results (as of 5 July 2013):
 
 <center>
-  <table>
-    <tr><th></th>                         <th>ms/frame</th><th>5th %ile</th><th>95th %ile</th><th>Ratio to C</th></tr>
-    <tr><td>C (gcc 4.8)</td>              <td>2.48</td><td>2.17</td><td>2.80</td><td>1.00</td></tr>
-    <tr><td>NaCl (x86-32)</td>            <td>3.31</td><td>2.94</td><td>3.70</td><td>1.34</td></tr>
-    <tr><td>Java (1.8)</td>               <td>5.95</td><td>5.00</td><td>7.00</td><td>2.40</td></tr>
-    <tr><td>Flash/Crossbridge (*)</td>    <td>5.98</td><td>4.98</td><td>6.98</td><td>2.41</td></tr>
-    <tr><td>asm.js (**)</td>              <td>6.72</td><td>6.00</td><td>8.00</td><td>2.71</td></tr>
-    <tr><td>AS3</td>                      <td>10.4</td><td>9.00</td><td>12.0</td><td>4.19</td></tr>
-    <tr><td>asm.js (Firefox)</td>         <td>14.2</td><td>13.0</td><td>16.0</td><td>5.73</td></tr>
-    <tr><td>Dart</td>                     <td>18.6</td><td>17.0</td><td>20.0</td><td>7.50</td></tr>
-    <tr><td>Box2dWeb (Safari)</td>        <td>20.0</td><td>18.0</td><td>23.0</td><td>8.07</td></tr>
-    <tr><td>asm.js (Chrome)</td>          <td>23.0</td><td>17.0</td><td>29.0</td><td>9.27</td></tr>
-    <tr><td>Box2dWeb (Chrome)</td>        <td>26.9</td><td>23.0</td><td>42.0</td><td>10.9</td></tr>
-    <tr><td>Box2dWeb (Firefox)</td>       <td>29.5</td><td>27.0</td><td>32.0</td><td>12.0</td></tr>
-    <tr><td>asm.js (IE10) (***)</td>      <td>33.7</td><td>26.6</td><td>42.0</td><td>13.6</td></tr>
-    <tr><td>Box2dWeb (IE10) (***)</td>    <td>37.9</td><td>35.0</td><td>48.3</td><td>15.3</td></tr>
-    <tr><td>asm.js (Safari) (****)</td>   <td>-</td><td>-</td><td>-</td><td>-</td></tr>
-  </table>
+
+|                           | ms/frame | 5th %ile | 95th %ile | Ratio to C |
+|---------------------------|----------|----------|-----------|------------|
+|C (gcc 4.8)                | 2.48     | 2.17     | 2.80      | 1.00       |
+|NaCl (x86-32)              | 3.31     | 2.94     | 3.70      | 1.34       |
+|asm.js (Firefox 22)        | 4.80     | 4.0      | 6.0       | 1.94       |
+|Java (1.8)                 | 5.95     | 5.00     | 7.00      | 2.40       |
+|Flash/Crossbridge (\*)     | 5.98     | 4.98     | 6.98      | 2.41       |
+|asm.js (Chrome 30)         | 7.10     | 6.0      | 8.0       | 2.86       |
+|AS3                        | 10.4     | 9.00     | 12.0      | 4.19       |
+|Box2dWeb (Firefox 22)      | 16.1     | 13.0     | 23.0      | 6.50       |
+|Dart                       | 18.6     | 17.0     | 20.0      | 7.50       |
+|Box2dWeb (Safari 6)        | 20.0     | 18.0     | 23.0      | 8.07       |
+|asm.js (Chrome 27)         | 23.0     | 17.0     | 29.0      | 9.27       |
+|Box2dWeb (Chrome 27)       | 26.9     | 23.0     | 42.0      | 10.9       |
+|asm.js (IE10) (\*\*)       | 33.7     | 26.6     | 42.0      | 13.6       |
+|Box2dWeb (IE10) (\*\*)     | 37.9     | 35.0     | 48.3      | 15.3       |
+|asm.js (Safari) (\*\*\*)   | -        | -        | -         | -          |
+
 </center>
 
 [Test platform: MacBook Pro, 2.5 GHz i7, 16G memory, Mac OS X 10.8.4.
@@ -35,10 +36,7 @@ ported to many languages. You can find more background [here](http://j15r.com/bl
 (*) Crossbridge has awful clock() resolution, so I just assumed +/- 1ms
 percentiles.
 
-(**) Here, 'asm.js' refers to the asm.js output running in Firefox Nightly,
-with full optimizations.
-
-(***) I don't have any easy way to run Windows natively on my Mac (I'm not
+(**) I don't have any easy way to run Windows natively on my Mac (I'm not
 going to setup dual boot partitions just for this benchmark), so I had to try
 and back out IE10 numbers using VirtualBox. I calculated a performance penalty
 ratio by running the Javascript benchmarks on Chrome/Mac and Chrome/Win (VM)
@@ -46,7 +44,7 @@ ratio by running the Javascript benchmarks on Chrome/Mac and Chrome/Win (VM)
 are all sorts of things that could be wrong with this, but I expect it at
 least gives us a rough idea.
 
-(****) asm.js unfortunately hung on Safari and never recovered. Hopefully
+(***) asm.js unfortunately hung on Safari and never recovered. Hopefully
 this will be sorted out at some point.
 
 <center>
@@ -104,7 +102,7 @@ this will be sorted out at some point.
   - `ant run`
 - /js:
   - `run-d8` (if you have V8's standalone shell, or open bench2d_run.html in your favorite browser)
-- /as3: 
+- /as3:
   - `./build` (open Bench2d.html in your favorite browser, or Bench2d.swf in the standalone Flash Player)
   - (There's also a version that uses the "Nape" physics library, but this is not relevent to VM benchmarking)
 - /dart:
