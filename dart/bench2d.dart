@@ -1,6 +1,5 @@
 library bench2d;
 
-import 'dart:math' as math;
 import 'package:box2d/box2d.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
@@ -18,33 +17,30 @@ import 'package:box2d/box2d.dart';
 // limitations under the License.
 
 class Bench2d {
-  static final int WARMUP = 64;
-  static final int FRAMES = 256;
-  static final int PYRAMID_SIZE = 40;
-  static final double GRAVITY = -10.0;
-  static final num TIME_STEP = 1/60;
-  static final int VELOCITY_ITERATIONS = 3;
-  static final int POSITION_ITERATIONS = 3;
+  static const int WARMUP = 64;
+  static const int FRAMES = 256;
+  static const int PYRAMID_SIZE = 40;
+  static const double GRAVITY = -10.0;
+  static const num TIME_STEP = 1/60;
+  static const int VELOCITY_ITERATIONS = 3;
+  static const int POSITION_ITERATIONS = 3;
 
-  World world;
+  final World world;
 
-  Bench2d() {
-    final gravity = new Vector2(0.0, GRAVITY);
-    bool doSleep = true;
-    world = new World(gravity, doSleep, new DefaultWorldPool());
-  }
+  Bench2d()
+  : this.world = new World(new Vector2(0.0, GRAVITY), true, new DefaultWorldPool());
 
   void initialize() {
     {
-      BodyDef bd = new BodyDef();
+      var bd = new BodyDef();
       Body ground = world.createBody(bd);
 
       PolygonShape shape = new PolygonShape()
         ..setAsEdge(new Vector2(-40.0, 0.0), new Vector2(40.0, 0.0));
 
-      final fixDef = new FixtureDef()
+      var fixDef = new FixtureDef()
         ..shape = shape
-        ..density = 0;
+        ..density = 0.0;
 
       ground.createFixture(fixDef);
     }
@@ -56,12 +52,12 @@ class Bench2d {
 
       final fixDef = new FixtureDef()
         ..shape = shape
-        ..density = 5;
+        ..density = 5.0;
 
-      Vector2 x = new Vector2(-7.0, 0.75);
-      Vector2 y = new Vector2.zero();
-      Vector2 deltaX = new Vector2(0.5625, 1.0);
-      Vector2 deltaY = new Vector2(1.125, 0.0);
+      var x = new Vector2(-7.0, 0.75);
+      var y = new Vector2.zero();
+      var deltaX = new Vector2(0.5625, 1.0);
+      var deltaY = new Vector2(1.125, 0.0);
 
       for (int i = 0; i < PYRAMID_SIZE; ++i){
         y.setFrom(x);
@@ -74,10 +70,10 @@ class Bench2d {
           Body body = world.createBody(bd)
             ..createFixture(fixDef);
 
-          y.addLocal(deltaY);
+          y.add(deltaY);
         }
 
-        x.addLocal(deltaX);
+        x.add(deltaX);
       }
     }
   }
@@ -91,7 +87,7 @@ class Bench2d {
   }
 
   double mean(List<int> values) {
-    double total = 0;
+    double total = 0.0;
     for (int i = 0; i < FRAMES; ++i) {
       total += values[i];
     }
@@ -99,29 +95,29 @@ class Bench2d {
   }
 
   // Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
-  float percentile(List<int> values, float pc) {
+  num percentile(List<int> values, num pc) {
     int rank = ((pc * values.length) / 100).floor();
     return values[rank];
   }
 
   void bench() {
-    final times = new List<int>(FRAMES);
+    var times = new List<int>(FRAMES);
 
     for (int i = 0; i < FRAMES; ++i) {
-      final watch = new Stopwatch()..start();
+      var watch = new Stopwatch()..start();
       step();
       watch.stop();
       times[i] = watch.elapsedMilliseconds;
     }
 
     times.sort();
-    double mean = mean(times);
-    print('Benchmark complete.\nms/frame: ${mean} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
+    var avg = mean(times);
+    print('Benchmark complete.\nms/frame: ${avg} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
   }
 }
 
 void main() {
-  final bench2d = new Bench2d()
+  var bench2d = new Bench2d()
      ..initialize()
      ..warmup()
      ..bench();
