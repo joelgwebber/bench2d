@@ -19,9 +19,9 @@ import '../bench2d.dart';
 
 
 class Bench2dWeb extends Bench2d {
-  static final int CANVAS_WIDTH = 900;
-  static final int CANVAS_HEIGHT = 600;
-  static final num _VIEWPORT_SCALE = 10;
+  static const int CANVAS_WIDTH = 900;
+  static const int CANVAS_HEIGHT = 600;
+  static const double _VIEWPORT_SCALE = 10.0;
 
   CanvasElement canvas;
   CanvasRenderingContext2D ctx;
