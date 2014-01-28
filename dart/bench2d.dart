@@ -1,6 +1,5 @@
 library bench2d;
 
-import 'dart:math' as math;
 import 'package:box2d/box2d.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
@@ -44,7 +43,7 @@ class Bench2d {
 
       final fixDef = new FixtureDef()
         ..shape = shape
-        ..density = 0;
+        ..density = 0.0;
 
       ground.createFixture(fixDef);
     }
@@ -56,7 +55,7 @@ class Bench2d {
 
       final fixDef = new FixtureDef()
         ..shape = shape
-        ..density = 5;
+        ..density = 5.0;
 
       Vector2 x = new Vector2(-7.0, 0.75);
       Vector2 y = new Vector2.zero();
@@ -74,10 +73,10 @@ class Bench2d {
           Body body = world.createBody(bd)
             ..createFixture(fixDef);
 
-          y.addLocal(deltaY);
+          y.add(deltaY);
         }
 
-        x.addLocal(deltaX);
+        x.add(deltaX);
       }
     }
   }
@@ -91,7 +90,7 @@ class Bench2d {
   }
 
   double mean(List<int> values) {
-    double total = 0;
+    double total = 0.0;
     for (int i = 0; i < FRAMES; ++i) {
       total += values[i];
     }
@@ -99,7 +98,7 @@ class Bench2d {
   }
 
   // Simple nearest-rank %ile (on sorted array). We should have enough samples to make this reasonable.
-  float percentile(List<int> values, float pc) {
+  num percentile(List<int> values, num pc) {
     int rank = ((pc * values.length) / 100).floor();
     return values[rank];
   }
@@ -115,8 +114,8 @@ class Bench2d {
     }
 
     times.sort();
-    double mean = mean(times);
-    print('Benchmark complete.\nms/frame: ${mean} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
+    var avg = mean(times);
+    print('Benchmark complete.\nms/frame: ${avg} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
   }
 }
 

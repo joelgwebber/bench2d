@@ -1,5 +1,4 @@
 import 'dart:html';
-import 'dart:math';
 import 'dart:async';
 import 'package:box2d/box2d_browser.dart';
 import '../bench2d.dart';

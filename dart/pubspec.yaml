@@ -1,5 +1,6 @@
 name: bench2d
+environment:
+  sdk: '>=1.0.0'
 dependencies:
-  box2d:
-    git: https://github.com/dart-lang/dart-box2d.git
+  box2d: '>=0.1.7'
   browser: any
