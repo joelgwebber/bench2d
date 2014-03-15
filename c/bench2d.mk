@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS=-s -O3 -msse -mfpmath=sse -ffast-math -fomit-frame-pointer -IBox2D_v2.2.1 -DNDEBUG=1
+CFLAGS = -O3 -msse -ffast-math -fomit-frame-pointer -Wno-null-conversion -IBox2D_v2.2.1 -DNDEBUG=1
 LFLAGS = -lstdc++
 
 OBJECTS = \
@@ -61,4 +61,3 @@ bench2d: $(OBJECTS)
 
 clean:
 	rm $(OBJECTS)
-

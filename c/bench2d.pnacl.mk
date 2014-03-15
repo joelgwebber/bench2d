@@ -3,7 +3,7 @@ include $(NACL_SDK_ROOT)/tools/common.mk
 TARGET = bench2d
 LIBS = ppapi_cpp ppapi
 OPTS := -O3
-WARNINGS := -Wno-long-long -Wno-switch-enum -pedantic
+WARNINGS := -Wno-long-long -Wno-switch-enum -Wno-null-conversion -Wno-newline-eof -pedantic
 CFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 $(WARNINGS) $(OPTS)
 
 SOURCES = \

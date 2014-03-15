@@ -3,4 +3,5 @@ environment:
   sdk: '>=1.0.0'
 dependencies:
   box2d: '>=0.1.7'
+  vector_math: any
   browser: any

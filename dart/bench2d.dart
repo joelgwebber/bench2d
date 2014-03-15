@@ -1,7 +1,7 @@
 library bench2d;
 
 import 'package:box2d/box2d.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:vector_math/vector_math.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //

@@ -1,7 +1,7 @@
 # Makefile for generating Javascript from the C++ source, using Emscripten.
 
 # You'll likely need to edit these for your particular directory layout.
-EMCC=$(EMSCRIPTEN)/emcc -IBox2D_v2.2.1
+EMCC=$(EMSCRIPTEN)/emcc -IBox2D_v2.2.1 -DNDEBUG=1
 HEAP=67108864
 
 OBJECTS = \
