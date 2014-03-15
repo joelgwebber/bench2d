@@ -1,2 +1,2 @@
 #!/bin/sh
-d8 Box2dWeb-2.1a.3/Box2dWeb-2.1.a.3.min.js bench2d.js bench2d-run.js
+d8 Box2dWeb-2.1a.3/Box2dWeb-2.1.a.3.min.js bench2d.js bench2d_run.js
