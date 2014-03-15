@@ -6,46 +6,38 @@ VM performance because it's compute-intensive, often a real-world performance bo
 ported to many languages. You can find more background [here](http://j15r.com/blog/2011/12/15/Box2D_as_a_Measure_of_Runtime_Performance),
 [here](http://j15r.com/blog/2013/04/25/Box2d_Revisited), and [here](http://j15r.com/blog/2013/04/25/Box2d_Addendum).
 
-### Current results (as of 5 July 2013):
+### Current results (as of 15 March 2014):
 
 <center>
 
 |                           | ms/frame | 5th %ile | 95th %ile | Ratio to C |
 |---------------------------|----------|----------|-----------|------------|
-|C (gcc 4.8)                | 2.48     | 2.17     | 2.80      | 1.00       |
-|NaCl (x86-32)              | 3.31     | 2.94     | 3.70      | 1.34       |
-|asm.js (Firefox 22)        | 4.80     | 4.0      | 6.0       | 1.94       |
-|Java (1.8)                 | 5.95     | 5.00     | 7.00      | 2.40       |
-|Flash/Crossbridge (\*)     | 5.98     | 4.98     | 6.98      | 2.41       |
-|asm.js (Chrome 30)         | 7.10     | 6.0      | 8.0       | 2.86       |
-|AS3                        | 10.4     | 9.00     | 12.0      | 4.19       |
-|Box2dWeb (Firefox 22)      | 16.1     | 13.0     | 23.0      | 6.50       |
-|Dart                       | 18.6     | 17.0     | 20.0      | 7.50       |
-|Box2dWeb (Safari 6)        | 20.0     | 18.0     | 23.0      | 8.07       |
-|asm.js (Chrome 27)         | 23.0     | 17.0     | 29.0      | 9.27       |
-|Box2dWeb (Chrome 27)       | 26.9     | 23.0     | 42.0      | 10.9       |
-|asm.js (IE10) (\*\*)       | 33.7     | 26.6     | 42.0      | 13.6       |
-|Box2dWeb (IE10) (\*\*)     | 37.9     | 35.0     | 48.3      | 15.3       |
-|asm.js (Safari) (\*\*\*)   | -        | -        | -         | -          |
+|C (clang-500.2.79)         | 2.14     | 1.89     | 2.41      | 1.00       |
+|pNaCl                      | 2.61     | 2.31     | 2.92      | xxxx       |
+|asm.js (Firefox 27)        | 3.24     | 3.00     | 4.00      | xxxx       |
+|Flash/Crossbridge (\*)     | 5.16     | 4.16     | 7.81      | xxxx       |
+|asm.js (Chrome 33)         | 5.43     | 4.00     | 6.00      | xxxx       |
+|Java (1.8)                 | 5.71     | 5.00     | 6.00      | xxxx       |
+|AS3                        | 8.15     | 7.00     | 9.00      | xxxx       |
+|asm.js (IE11)              | 9.54     | 7.00     | 12.0      | xxxx       |
+|Dart (Dartium)             | 10.8     | 9.00     | 14.0      | xxxx       |
+|Box2dWeb (Firefox 27)      | 10.9     | 10.0     | 11.0      | xxxx       |
+|Box2dWeb (Chrome 33)       | 14.5     | 12.0     | 18.0      | xxxx       |
+|Box2dWeb (Safari 7)        | 15.5     | 13.0     | 19.0      | xxxx       |
+|Box2dWeb (IE11)            | 15.6     | 13.0     | 21.0      | xxxx       |
+|Dart2js (Chrome 33)        | 30.6     | 26.0     | 35.0      | xxxx       |
+|asm.js (Safari 7) (\*\*)   | 272.     | 240.     | 309.      | xxxx       |
 
 </center>
 
-[Test platform: MacBook Pro, 2.5 GHz i7, 16G memory, Mac OS X 10.8.4.
+[Test platform: MacBook Pro, 2.3 GHz i7, 16G memory, Mac OS X 10.9.2, Windows 7.
  All platform and compiler versions are latest unless otherwise specified.]
 
-(*) Crossbridge has awful clock() resolution, so I just assumed +/- 1ms
-percentiles.
+(*) Crossbridge is exhibiting some kind of problem calculating 5th %ile, so I
+just set it to the mean - 1.
 
-(**) I don't have any easy way to run Windows natively on my Mac (I'm not
-going to setup dual boot partitions just for this benchmark), so I had to try
-and back out IE10 numbers using VirtualBox. I calculated a performance penalty
-ratio by running the Javascript benchmarks on Chrome/Mac and Chrome/Win (VM)
-(`38.5ms / 26.9ms = 1.43x`), then used that to adjust the IE10 numbers. There
-are all sorts of things that could be wrong with this, but I expect it at
-least gives us a rough idea.
-
-(***) asm.js unfortunately hung on Safari and never recovered. Hopefully
-this will be sorted out at some point.
+(**) asm.js performs so badly on Safari 7 that I left it off the graph to
+avoid making it impossible to read.
 
 <center>
   ![](graph.png)
@@ -54,6 +46,12 @@ this will be sorted out at some point.
   and the edges of   the box denote the 5th and 95th %iles.
 </center>
 
+
+### Old Results:
+
+[5 July 2013][/2014.07.05/results.md]
+
+
 ### Mini FAQ:
 
 - But physics library (X) outperforms Box2D on platform (Y)!
@@ -61,25 +59,29 @@ this will be sorted out at some point.
 - But Box2dweb is a crappy port of Flash code!
   - Feel free to improve it, or hand-port your own. I'll happily accept the patch.
     That said, the code's fairly straightforward, and I'd be surprised if manual tweaking of it made much of a difference.
+- Why haven't you updated to Box2D 2.3?
+  - Because there do not appear to be updated versions of Box2dWeb, the Flash port, and the Dart port. One of the real
+    benefits of using Box2d for this benchmark is that the ports are pretty structurally similar to the original C++
+    version.
 
 
 ## Test platforms:
 
 - Mac OS X: I'm using this. It works well.
 - Linux: Others use this. It seems to work, but I don't personally test it.
-- Windows: Can probably be cajoled into working, but will likely take a lot of manual labor.
+- Windows: Can probably be cajoled into working, but will likely take a lot of manual labor. I prefer to build on my
+  Mac then use the output files directly on a Windows box without building them there.
 
 
 ## Required tools:
 
-- GCC: If you're running these benchmarks, you should know how to get this.
-- JDK: I believe any JDK after 1.5 will work; I'm using 1.7.
+- GCC or Clang: If you're running these benchmarks, you should know how to get this.
+- JDK: I believe any JDK after 1.5 will work; I'm using 1.8.
 - NaCl SDK: https://developers.google.com/native-client/sdk/download
-- LLVM: http://llvm.org/ (I installed it with homebrew)
-- Emscripten: https://github.com/kripken/emscripten/wiki (you have to build it, but there's a quick tutorial)
+- Emscripten: https://github.com/kripken/emscripten/wiki (there's a binary build available now)
 - Flex SDK: http://www.adobe.com/devnet/flex/flex-sdk-download.html
 - Adobe Crossbridge: http://adobe-flash.github.io/crossbridge/
-- Dart SDK: http://www.dartlang.org/tools/sdk/
+- Dart SDK and Dartium: http://www.dartlang.org/tools/sdk/
 
 
 ## Environment variables (largely to locate the above tools):
@@ -107,6 +109,8 @@ this will be sorted out at some point.
   - (There's also a version that uses the "Nape" physics library, but this is not relevent to VM benchmarking)
 - /dart:
   - `pub update; dart bench2d.dart`
+- /dart (dart2js):
+  - `dart2js -o bench2d.dart.js; open dart/bench2d.html in Dartium or another browser`
 
 
 ## Future work
