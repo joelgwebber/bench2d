@@ -49,7 +49,7 @@ avoid making it impossible to read.
 
 ### Old Results:
 
-[5 July 2013](2014.07.05/results.md)
+[5 July 2013](2013.07.05/results.md)
 
 
 ### Mini FAQ:
