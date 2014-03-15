@@ -2,6 +2,7 @@ library bench2d;
 
 import 'dart:math' as math;
 import 'package:box2d/box2d.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //
@@ -74,10 +75,10 @@ class Bench2d {
           Body body = world.createBody(bd)
             ..createFixture(fixDef);
 
-          y.addLocal(deltaY);
+          y +=  deltaY; // .addLocal(deltaY);
         }
 
-        x.addLocal(deltaX);
+        x += deltaX; // .addLocal(deltaX);
       }
     }
   }
@@ -115,8 +116,8 @@ class Bench2d {
     }
 
     times.sort();
-    double mean = mean(times);
-    print('Benchmark complete.\nms/frame: ${mean} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
+    double mean_times = mean(times);
+    print('Benchmark complete.\nms/frame: ${mean_times} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
   }
 }
 
