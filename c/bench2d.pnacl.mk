@@ -1,19 +1,10 @@
 VALID_TOOLCHAINS := pnacl newlib glibc
-NACL_SDK_ROOT := $(NACL_SDK)
-include $(NACL_SDK)/tools/common.mk
+include $(NACL_SDK_ROOT)/tools/common.mk
 TARGET = bench2d
 LIBS = ppapi_cpp ppapi
 OPTS := -O3
 WARNINGS := -Wno-long-long -Wno-switch-enum -pedantic
 CFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 $(WARNINGS) $(OPTS)
-
-# OSNAME   := $(shell python $(NACL_SDK)/tools/getos.py)
-# TC_PATH  := $(abspath $(NACL_SDK)/toolchain/$(OSNAME)_pnacl)
-# CC       := $(TC_PATH)/bin/pnacl-clang
-# CXX      := $(TC_PATH)/bin/pnacl-clang++
-# LD       := $(TC_PATH)/bin/pnacl-clang++
-# AR       := $(TC_PATH)/bin/pnacl-ar
-# FINALIZE := $(TC_PATH)/bin/pnacl-finalize
 
 SOURCES = \
 bench2d_nacl.cpp \
