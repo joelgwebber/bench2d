@@ -8,3 +8,4 @@ bench2d
 *.bc
 *.o
 crossbridge_build
+pnacl

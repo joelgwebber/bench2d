@@ -1,14 +1,12 @@
-PROJECT=bench2d
-LDFLAGS := -lppapi_cpp -lppapi
+VALID_TOOLCHAINS := pnacl newlib glibc
+include $(NACL_SDK_ROOT)/tools/common.mk
+TARGET = bench2d
+LIBS = ppapi_cpp ppapi
 OPTS := -O3
-WARNINGS := -Wno-long-long -Wswitch-enum -pedantic
-CXXFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 -I$(NACL_SDK)/include $(WARNINGS) $(OPTS)
+WARNINGS := -Wno-long-long -Wno-switch-enum -pedantic
+CFLAGS := -pthread -std=gnu++98 -IBox2D_v2.2.1 $(WARNINGS) $(OPTS)
 
-OSNAME := $(shell python $(NACL_SDK)/tools/getos.py)
-TC_PATH := $(abspath $(NACL_SDK)/toolchain/$(OSNAME)_x86_newlib)
-CXX := $(TC_PATH)/bin/i686-nacl-g++
-
-CXX_SOURCES = \
+SOURCES = \
 bench2d_nacl.cpp \
 Bench2d.cpp \
 Box2D_v2.2.1/Box2D/Collision/b2BroadPhase.cpp \
@@ -57,20 +55,13 @@ Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WeldJoint.cpp \
 Box2D_v2.2.1/Box2D/Dynamics/Joints/b2WheelJoint.cpp \
 Box2D_v2.2.1/Box2D/Rope/b2Rope.cpp
 
-all: $(PROJECT)_x86_32.nexe $(PROJECT)_x86_64.nexe
+$(foreach src,$(SOURCES),$(eval $(call COMPILE_RULE,$(src),$(CFLAGS))))
 
-# Define 32 bit compile and link rules for main application
-x86_32_OBJS := $(patsubst %.cpp,%_32.o,$(CXX_SOURCES))
-$(x86_32_OBJS) : %_32.o : %.cpp $(THIS_MAKE)
-	$(CXX) -o $@ -c $< -m32 $(CXXFLAGS)
+ifeq ($(CONFIG),Release)
+$(eval $(call LINK_RULE,$(TARGET)_unstripped,$(SOURCES),$(LIBS),$(DEPS)))
+$(eval $(call STRIP_RULE,$(TARGET),$(TARGET)_unstripped))
+else
+$(eval $(call LINK_RULE,$(TARGET),$(SOURCES),$(LIBS),$(DEPS)))
+endif
 
-$(PROJECT)_x86_32.nexe : $(x86_32_OBJS)
-	$(CXX) -o $@ $^ -m32 $(CXXFLAGS) $(LDFLAGS)
-
-# Define 64 bit compile and link rules for C++ sources
-x86_64_OBJS := $(patsubst %.cpp,%_64.o,$(CXX_SOURCES))
-$(x86_64_OBJS) : %_64.o : %.cpp $(THIS_MAKE)
-	$(CXX) -o $@ -c $< -m64 $(CXXFLAGS)
-
-$(PROJECT)_x86_64.nexe : $(x86_64_OBJS)
-	$(CXX) -o $@ $^ -m64 $(CXXFLAGS) $(LDFLAGS)
+$(eval $(call NMF_RULE,$(TARGET),))
