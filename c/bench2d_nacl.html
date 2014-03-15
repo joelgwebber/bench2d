@@ -44,7 +44,10 @@
       listener.addEventListener('message', handleMessage, true);
     </script>
 
-    <embed name="nacl_module" id="Bench2d" width=0 height=0 src="bench2d.nmf" type="application/x-nacl"/>
+    <embed name="nacl_module"
+        id="Bench2d" width="0" height="0"
+        src="pnacl/Release/bench2d.nmf"
+        type="application/x-pnacl"/>
   </div>
 
   <div id="status_field"></div>
