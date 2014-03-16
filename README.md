@@ -115,7 +115,7 @@ avoid making it impossible to read.
 
 ## Future work
 
-- Make the timer resolution less bad.
+- Find or build a better Javascript port of Box2D.
 - Find a way to automate the benchmarks.
-- Benchmark IE9+.
+- Make the timer resolution less bad.
 - Benchmark .NET
