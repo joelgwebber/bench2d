@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.Arrays;
 
 import org.jbox2d.collision.shapes.PolygonShape;
+import org.jbox2d.collision.shapes.EdgeShape;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.BodyDef;
@@ -39,7 +40,8 @@ public class Bench2d {
     return values[rank];
   }
 
-  public void bench() {
+  
+  public float[] bench() {
     float[] times = new float[FRAMES];
     for (int i = 0; i < FRAMES; ++i) {
       long begin = new Date().getTime();
@@ -51,7 +53,10 @@ public class Bench2d {
 
     Arrays.sort(times);
     float mean = mean(times);
+    float fifth = percentile(times, 5);
+    float ninetyFifth = percentile(times, 95);
     System.out.println("Benchmark complete.\nms/frame: " + mean + " 5th %ile: " + percentile(times, 5) + " 95th %ile: " + percentile(times, 95));
+    return new float[] {mean,fifth, ninetyFifth};
   }
 
   void warmup() {
@@ -62,14 +67,14 @@ public class Bench2d {
 
   Bench2d() {
 		Vec2 gravity = new Vec2(0, -10f);
-		world = new World(gravity, true);
+		world = new World(gravity);
 
 		{
 			BodyDef bd = new BodyDef();
 			Body ground = world.createBody(bd);
 
-			PolygonShape shape = new PolygonShape();
-			shape.setAsEdge(new Vec2(-40.0f, 0f), new Vec2(40.0f, 0f));
+			EdgeShape shape = new EdgeShape();
+			shape.set(new Vec2(-40.0f, 0f), new Vec2(40.0f, 0f));
 			ground.createFixture(shape, 0.0f);
 		}
 
