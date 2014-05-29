@@ -64,6 +64,7 @@ public class Bench2d {
       step();
     }
   }
+  protected Body topBody = null;
 
   Bench2d() {
 		Vec2 gravity = new Vec2(0, -10f);
@@ -77,6 +78,7 @@ public class Bench2d {
 			shape.set(new Vec2(-40.0f, 0f), new Vec2(40.0f, 0f));
 			ground.createFixture(shape, 0.0f);
 		}
+
 
 		{
 			float a = .5f;
@@ -97,6 +99,7 @@ public class Bench2d {
 					bd.position.set(y);
 					Body body = world.createBody(bd);
 					body.createFixture(shape, 5.0f);
+                                        topBody = body;
 					y.addLocal(deltaY);
 				}
 
