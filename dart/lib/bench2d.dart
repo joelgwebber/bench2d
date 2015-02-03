@@ -117,7 +117,7 @@ class Bench2d {
 }
 
 void main() {
-  var bench2d = new Bench2d()
+  new Bench2d()
     ..initialize()
     ..warmup()
     ..bench();
