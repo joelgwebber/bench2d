@@ -1,5 +1,4 @@
 import 'dart:html';
-import 'dart:async';
 import 'package:box2d/box2d_browser.dart';
 import '../bench2d.dart';
 
@@ -70,7 +69,7 @@ class Bench2dWeb extends Bench2d {
 
 void main() {
   // Render version
-  final bench2d = new Bench2dWeb()
+  new Bench2dWeb()
     ..initializeAnimation()
     ..runAnimation();
 }
