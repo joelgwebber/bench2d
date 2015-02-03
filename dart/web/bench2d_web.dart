@@ -16,7 +16,6 @@ import 'package:bench2d/bench2d.dart';
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 class Bench2dWeb extends Bench2d {
   static const int CANVAS_WIDTH = 900;
   static const int CANVAS_HEIGHT = 600;
