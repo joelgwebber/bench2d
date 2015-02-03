@@ -1,4 +1,4 @@
-library bench2d;
+library bench2d.lib;
 
 import 'package:box2d/box2d.dart';
 import 'package:vector_math/vector_math.dart';
@@ -116,7 +116,7 @@ class Bench2d {
   }
 }
 
-void main() {
+void start() {
   new Bench2d()
     ..initialize()
     ..warmup()

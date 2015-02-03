@@ -1,6 +1,6 @@
 import 'dart:html';
 import 'package:box2d/box2d_browser.dart';
-import 'package:bench2d/bench2d.dart';
+import 'package:bench2d/bench2d_lib.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //
