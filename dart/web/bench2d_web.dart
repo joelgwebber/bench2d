@@ -1,7 +1,6 @@
 import 'dart:html';
-import 'dart:async';
 import 'package:box2d/box2d_browser.dart';
-import '../bench2d.dart';
+import 'package:bench2d/bench2d_lib.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //
@@ -16,7 +15,6 @@ import '../bench2d.dart';
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 
 class Bench2dWeb extends Bench2d {
   static const int CANVAS_WIDTH = 900;
@@ -70,7 +68,7 @@ class Bench2dWeb extends Bench2d {
 
 void main() {
   // Render version
-  final bench2d = new Bench2dWeb()
+  new Bench2dWeb()
     ..initializeAnimation()
     ..runAnimation();
 }

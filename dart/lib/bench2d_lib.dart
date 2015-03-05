@@ -1,4 +1,4 @@
-library bench2d;
+library bench2d.lib;
 
 import 'package:box2d/box2d.dart';
 import 'package:vector_math/vector_math.dart';
@@ -22,14 +22,14 @@ class Bench2d {
   static const int FRAMES = 256;
   static const int PYRAMID_SIZE = 40;
   static const double GRAVITY = -10.0;
-  static const num TIME_STEP = 1/60;
+  static const num TIME_STEP = 1 / 60;
   static const int VELOCITY_ITERATIONS = 3;
   static const int POSITION_ITERATIONS = 3;
 
   final World world;
 
-  Bench2d()
-  : this.world = new World(new Vector2(0.0, GRAVITY), true, new DefaultWorldPool());
+  Bench2d() : this.world = new World(
+          new Vector2(0.0, GRAVITY), true, new DefaultWorldPool());
 
   void initialize() {
     {
@@ -48,8 +48,7 @@ class Bench2d {
 
     {
       num a = .5;
-      PolygonShape shape = new PolygonShape()
-        ..setAsBox(a, a);
+      PolygonShape shape = new PolygonShape()..setAsBox(a, a);
 
       final fixDef = new FixtureDef()
         ..shape = shape
@@ -60,18 +59,17 @@ class Bench2d {
       var deltaX = new Vector2(0.5625, 1.0);
       var deltaY = new Vector2(1.125, 0.0);
 
-      for (int i = 0; i < PYRAMID_SIZE; ++i){
+      for (int i = 0; i < PYRAMID_SIZE; ++i) {
         y.setFrom(x);
 
-        for (int j = i; j < PYRAMID_SIZE; ++j){
+        for (int j = i; j < PYRAMID_SIZE; ++j) {
           BodyDef bd = new BodyDef()
             ..type = BodyType.DYNAMIC
             ..position.setFrom(y);
 
-          Body body = world.createBody(bd)
-            ..createFixture(fixDef);
+          world.createBody(bd)..createFixture(fixDef);
 
-          y +=  deltaY; // .addLocal(deltaY);
+          y += deltaY; // .addLocal(deltaY);
         }
 
         x += deltaX; // .addLocal(deltaX);
@@ -113,13 +111,14 @@ class Bench2d {
 
     times.sort();
     double mean_times = mean(times);
-    print('Benchmark complete.\nms/frame: ${mean_times} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
+    print(
+        'Benchmark complete.\nms/frame: ${mean_times} 5th %ile: ${percentile(times, 5)} 95th %ile: ${percentile(times, 95)}');
   }
 }
 
-void main() {
-  var bench2d = new Bench2d()
-     ..initialize()
-     ..warmup()
-     ..bench();
+void start() {
+  new Bench2d()
+    ..initialize()
+    ..warmup()
+    ..bench();
 }

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <script type="text/javascript">
+      console.log('Loading Bench2d');
+      if (navigator.userAgent.indexOf('(Dart)') != -1) {
+        console.log('Dart supported. High-five!');
+      } else {
+        console.log('Browser does not support Dart. Expect JS fallback.');
+      }
+    </script>
+    <script type="application/dart" src="bench2d.dart"></script>
+    <script src="packages/browser/dart.js"></script>
+  </body>
+</html>
