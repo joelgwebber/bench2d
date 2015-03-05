@@ -5,3 +5,6 @@ dependencies:
   box2d: '>=0.1.7'
   vector_math: any
   browser: any
+transformers:
+- $dart2js:
+    commandLineOptions: [--trust-type-annotations, --trust-primitives]
