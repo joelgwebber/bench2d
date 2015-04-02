@@ -1,7 +1,6 @@
 library bench2d.lib;
 
 import 'package:box2d/box2d.dart';
-import 'package:vector_math/vector_math.dart';
 
 // Copyright 2012 Google Inc. All Rights Reserved.
 //
@@ -28,8 +27,7 @@ class Bench2d {
 
   final World world;
 
-  Bench2d() : this.world = new World(
-          new Vector2(0.0, GRAVITY), true, new DefaultWorldPool());
+  Bench2d() : this.world = new World.withGravity(new Vector2(0.0, GRAVITY));
 
   void initialize() {
     {
@@ -43,12 +41,12 @@ class Bench2d {
         ..shape = shape
         ..density = 0.0;
 
-      ground.createFixture(fixDef);
+      ground.createFixtureFromFixtureDef(fixDef);
     }
 
     {
       num a = .5;
-      PolygonShape shape = new PolygonShape()..setAsBox(a, a);
+      PolygonShape shape = new PolygonShape()..setAsBoxXY(a, a);
 
       final fixDef = new FixtureDef()
         ..shape = shape
@@ -67,7 +65,7 @@ class Bench2d {
             ..type = BodyType.DYNAMIC
             ..position.setFrom(y);
 
-          world.createBody(bd)..createFixture(fixDef);
+          world.createBody(bd)..createFixtureFromFixtureDef(fixDef);
 
           y += deltaY; // .addLocal(deltaY);
         }
@@ -78,7 +76,7 @@ class Bench2d {
   }
 
   void step() {
-    world.step(TIME_STEP, VELOCITY_ITERATIONS, POSITION_ITERATIONS);
+    world.stepDt(TIME_STEP, VELOCITY_ITERATIONS, POSITION_ITERATIONS);
   }
 
   void warmup() {
