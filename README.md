@@ -27,6 +27,8 @@ ported to many languages. You can find more background [here](http://j15r.com/bl
 |Box2dWeb (IE11)            | 15.6     | 13.0     | 21.0      | 7.29       |
 |Dart2js (Chrome 33)        | 30.6     | 26.0     | 35.0      | 14.3       |
 |asm.js (Safari 7) (\*\*)   | 272.     | 240.     | 309.      | 127.       |
+|Node.js (box2d.js)         | TBD      | TBD      | TDB       | TBD        |
+|Node.js (box2d-native)     | TBD      | TBD      | TDB       | TBD        |
 
 </center>
 
@@ -82,6 +84,7 @@ avoid making it impossible to read.
 - Flex SDK: http://www.adobe.com/devnet/flex/flex-sdk-download.html
 - Adobe Crossbridge: http://adobe-flash.github.io/crossbridge/
 - Dart SDK and Dartium: http://www.dartlang.org/tools/sdk/
+- Node.js and NPM: https://nodejs.org/
 
 
 ## Environment variables (largely to locate the above tools):
@@ -111,6 +114,8 @@ avoid making it impossible to read.
   - `pub update; dart bench2d.dart`
 - /dart (dart2js):
   - `dart2js -o bench2d.dart.js; open dart/bench2d.html in Dartium or another browser`
+- /nodejs
+  - `npm install; node index.js`
 
 
 ## Future work
@@ -119,3 +124,4 @@ avoid making it impossible to read.
 - Find a way to automate the benchmarks.
 - Make the timer resolution less bad.
 - Benchmark .NET
+- Benchmark Node.js
