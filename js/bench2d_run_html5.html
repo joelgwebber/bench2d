@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Bench2d</title></head>
+
+  <body>
+    <div>This is going to take a while to warm up and run. Your browser window will be locked up while it does so.</div>
+
+    <div id='echo'></div>
+
+    <script>
+    function print(msg) {
+      var echo = document.getElementById('echo');
+      echo.innerHTML += msg + '<br>';
+    }
+    </script>
+
+    <script src="box2d-html5/box2d-html5.js"></script>
+    <script src='bench2d_html5.js'></script>
+    <script src='bench2d_run.js'></script>
+  </body>
+</html>
+
