@@ -1,11 +1,4 @@
-*.nexe
-dbg_x86_32
-dbg_x86_64
-opt_x86_32
-opt_x86_64
 build
 bench2d
-*.bc
 *.o
-crossbridge_build
 pnacl

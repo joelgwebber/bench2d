@@ -1,0 +1,319 @@
+The system is: FreeBSD - 8.2-RELEASE - AVM2
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec1841625023/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec1841625023.dir/build.make CMakeFiles/cmTryCompileExec1841625023.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1841625023.dir/testCCompiler.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4      -o CMakeFiles/cmTryCompileExec1841625023.dir/testCCompiler.c.o   -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTryCompileExec1841625023
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1841625023.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc   -O4       CMakeFiles/cmTryCompileExec1841625023.dir/testCCompiler.c.o  -o cmTryCompileExec1841625023  
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec2070934516/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec2070934516.dir/build.make CMakeFiles/cmTryCompileExec2070934516.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2070934516.dir/CMakeCCompilerABI.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4      -o CMakeFiles/cmTryCompileExec2070934516.dir/CMakeCCompilerABI.c.o   -c /opt/crossbridge/sdk/usr/share/cmake-2.8/Modules/CMakeCCompilerABI.c
+Linking C executable cmTryCompileExec2070934516
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2070934516.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc   -O4       CMakeFiles/cmTryCompileExec2070934516.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec2070934516   
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec3345769860/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec3345769860.dir/build.make CMakeFiles/cmTryCompileExec3345769860.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec3345769860.dir/testCXXCompiler.cxx.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti      -o CMakeFiles/cmTryCompileExec3345769860.dir/testCXXCompiler.cxx.o -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTryCompileExec3345769860
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3345769860.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti       CMakeFiles/cmTryCompileExec3345769860.dir/testCXXCompiler.cxx.o  -o cmTryCompileExec3345769860  
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec2343208150/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec2343208150.dir/build.make CMakeFiles/cmTryCompileExec2343208150.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec2343208150.dir/CMakeCXXCompilerABI.cpp.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti      -o CMakeFiles/cmTryCompileExec2343208150.dir/CMakeCXXCompilerABI.cpp.o -c /opt/crossbridge/sdk/usr/share/cmake-2.8/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTryCompileExec2343208150
+/opt/crossbridge/sdk/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2343208150.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti       CMakeFiles/cmTryCompileExec2343208150.dir/CMakeCXXCompilerABI.cpp.o  -o cmTryCompileExec2343208150   
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+The system is: Darwin - 13.1.0 - i386
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti;
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti;
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec15704335/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec15704335.dir/build.make CMakeFiles/cmTryCompileExec15704335.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec15704335.dir/testCCompiler.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4      -o CMakeFiles/cmTryCompileExec15704335.dir/testCCompiler.c.o   -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTryCompileExec15704335
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec15704335.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc   -O4    -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTryCompileExec15704335.dir/testCCompiler.c.o  -o cmTryCompileExec15704335  
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec1472612310/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec1472612310.dir/build.make CMakeFiles/cmTryCompileExec1472612310.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1472612310.dir/CMakeCCompilerABI.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4      -o CMakeFiles/cmTryCompileExec1472612310.dir/CMakeCCompilerABI.c.o   -c /usr/local/Cellar/cmake/2.8.10.2/share/cmake/Modules/CMakeCCompilerABI.c
+Linking C executable cmTryCompileExec1472612310
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1472612310.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc   -O4    -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTryCompileExec1472612310.dir/CMakeCCompilerABI.c.o  -o cmTryCompileExec1472612310   
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec2667679619/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec2667679619.dir/build.make CMakeFiles/cmTryCompileExec2667679619.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec2667679619.dir/testCXXCompiler.cxx.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti      -o CMakeFiles/cmTryCompileExec2667679619.dir/testCXXCompiler.cxx.o -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTryCompileExec2667679619
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2667679619.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti    -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTryCompileExec2667679619.dir/testCXXCompiler.cxx.o  -o cmTryCompileExec2667679619  
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:/opt/crossbridge/sdk/usr/bin/make "cmTryCompileExec1352655308/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTryCompileExec1352655308.dir/build.make CMakeFiles/cmTryCompileExec1352655308.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_progress_report /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec1352655308.dir/CMakeCXXCompilerABI.cpp.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti      -o CMakeFiles/cmTryCompileExec1352655308.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/Cellar/cmake/2.8.10.2/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTryCompileExec1352655308
+/usr/local/Cellar/cmake/2.8.10.2/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1352655308.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti    -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTryCompileExec1352655308.dir/CMakeCXXCompilerABI.cpp.o  -o cmTryCompileExec1352655308   
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+The system is: Darwin - 15.4.0 - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.o"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti;
+Id flags: 
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /opt/crossbridge/sdk/usr/bin/g++ 
+Build flags: -O4;-fno-exceptions;-fno-rtti;
+Id flags: -c
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.o"
+
+Determining if the C compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/opt/crossbridge/sdk/usr/bin/make" "cmTC_eb032/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTC_eb032.dir/build.make CMakeFiles/cmTC_eb032.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_eb032.dir/testCCompiler.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4     -o CMakeFiles/cmTC_eb032.dir/testCCompiler.c.o   -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCCompiler.c
+Linking C executable cmTC_eb032
+/usr/local/Cellar/cmake/3.3.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_eb032.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc  -O4   -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_eb032.dir/testCCompiler.c.o  -o cmTC_eb032  
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/opt/crossbridge/sdk/usr/bin/make" "cmTC_f354f/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTC_f354f.dir/build.make CMakeFiles/cmTC_f354f.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_f354f.dir/CMakeCCompilerABI.c.o
+/opt/crossbridge/sdk/usr/bin/gcc   -O4     -o CMakeFiles/cmTC_f354f.dir/CMakeCCompilerABI.c.o   -c /usr/local/Cellar/cmake/3.3.2/share/cmake/Modules/CMakeCCompilerABI.c
+Linking C executable cmTC_f354f
+/usr/local/Cellar/cmake/3.3.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f354f.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/gcc  -O4   -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_f354f.dir/CMakeCCompilerABI.c.o  -o cmTC_f354f   
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Determining if the CXX compiler works passed with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/opt/crossbridge/sdk/usr/bin/make" "cmTC_be43d/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTC_be43d.dir/build.make CMakeFiles/cmTC_be43d.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_be43d.dir/testCXXCompiler.cxx.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti     -o CMakeFiles/cmTC_be43d.dir/testCXXCompiler.cxx.o -c /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp/testCXXCompiler.cxx
+Linking CXX executable cmTC_be43d
+/usr/local/Cellar/cmake/3.3.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_be43d.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++   -O4 -fno-exceptions -fno-rtti   -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_be43d.dir/testCXXCompiler.cxx.o  -o cmTC_be43d  
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp
+
+Run Build Command:"/opt/crossbridge/sdk/usr/bin/make" "cmTC_ba527/fast"
+/opt/crossbridge/sdk/usr/bin/make -f CMakeFiles/cmTC_ba527.dir/build.make CMakeFiles/cmTC_ba527.dir/build
+make[1]: Entering directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+Building CXX object CMakeFiles/cmTC_ba527.dir/CMakeCXXCompilerABI.cpp.o
+/opt/crossbridge/sdk/usr/bin/g++    -O4 -fno-exceptions -fno-rtti     -o CMakeFiles/cmTC_ba527.dir/CMakeCXXCompilerABI.cpp.o -c /usr/local/Cellar/cmake/3.3.2/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+Linking CXX executable cmTC_ba527
+/usr/local/Cellar/cmake/3.3.2/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ba527.dir/link.txt --verbose=1
+/opt/crossbridge/sdk/usr/bin/g++   -O4 -fno-exceptions -fno-rtti   -Wl,-search_paths_first -Wl,-headerpad_max_install_names   CMakeFiles/cmTC_ba527.dir/CMakeCXXCompilerABI.cpp.o  -o cmTC_ba527   
+/opt/crossbridge/sdk/usr/bin/ld: warning: cannot find entry symbol 'arch_paths_first'
+make[1]: Leaving directory `/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/CMakeTmp'
+
+

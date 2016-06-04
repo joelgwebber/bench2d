@@ -1,7 +1,6 @@
 'use strict';
-import box2djs from './run_box2d';
-import box2dnative from './run_box2d-native';
-//import './run_box2dweb.js';
+var box2djs = require('./run_box2d');
+var box2dnative = require('./run_box2d-native');
 
 var WARMUP = 64;
 var FRAMES = 1024;

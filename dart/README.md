@@ -19,7 +19,7 @@ $ pub serve
 ```
 
 * See see the output in your browser: http://localhost:8080/bench2d_web.html
-* Run the benchmark in your browser without UI: https://stackedit.io/editor
+* Run the benchmark in your browser without UI: http://localhost:8080/bench2d.html
   * *Open the developer tools to see the benchmark results printed to the console.*
 
 ### Using node.

@@ -1,0 +1,58 @@
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.1/CompilerIdC/a.out"
+
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.1/CompilerIdC/CMakeCCompilerId.o"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4
+Id flags: -Aa
+
+The output was:
+1
+<command-line>: error: missing '(' after predicate
+
+
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.1/CompilerIdCXX/a.out"
+
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.1/CompilerIdCXX/CMakeCXXCompilerId.o"
+
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.2/CompilerIdC/a.out"
+
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.2/CompilerIdC/CMakeCCompilerId.o"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: -Aa
+
+The output was:
+1
+<command-line>: error: missing '(' after predicate
+
+
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.2/CompilerIdCXX/a.out"
+
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/2.8.10.2/CompilerIdCXX/CMakeCXXCompilerId.o"
+
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/3.3.2/CompilerIdC/a.out"
+
+The C compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/3.3.2/CompilerIdC/CMakeCCompilerId.o"
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /opt/crossbridge/sdk/usr/bin/gcc 
+Build flags: -O4;
+Id flags: -Aa
+
+The output was:
+1
+<command-line>: error: missing '(' after predicate
+
+
+Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+gcc: no input files
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/3.3.2/CompilerIdCXX/a.out"
+
+The CXX compiler identification could not be found in "/Users/jgw/src/bench2d/c/crossbridge_build/CMakeFiles/3.3.2/CompilerIdCXX/CMakeCXXCompilerId.o"
+
+Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
+g++: no input files

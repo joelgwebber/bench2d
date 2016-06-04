@@ -1,11 +1,10 @@
 'use strict';
-//import Box2D from 'box2d-native';
 var Box2D = require('box2d-native');
-var world;
 
+var world;
 var PYRAMID_SIZE = 40;
 
-export function init() {
+exports.init = function() {
   var gravity = new Box2D.b2Vec2(0.0, -10.0);
   world = new Box2D.b2World(gravity);
 
@@ -46,8 +45,8 @@ export function init() {
   }
 }
 
-export function step() {
+exports.step = function() {
   world.Step(1 / 60, 3, 3);
 }
 
-export default {step, init};
+// export default {step, init};

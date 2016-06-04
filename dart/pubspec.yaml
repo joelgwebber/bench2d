@@ -2,7 +2,7 @@ name: bench2d
 environment:
   sdk: '>=1.0.0'
 dependencies:
-  box2d: '>=0.2.0-alpha.0 <0.3.0'
+  box2d: '^0.2.0'
   browser: any
 transformers:
 - $dart2js:
